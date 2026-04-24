@@ -1,5 +1,8 @@
 export type CreateProductTokenResponse = {
-  token: string;
+  payment_provider: 'doku_checkout';
+  payment_url: string;
+  payment_sdk_url?: string | null;
+  payment_due_date?: string | null;
   order_number: string;
   discount_amount?: number;
 };

@@ -3,7 +3,7 @@ import { getSupabaseFunctionStatus } from '../../lib/supabaseFunctionError';
 import { invokeSupabaseFunction } from '../../lib/supabaseFunctionInvoke';
 import { ensureFreshToken } from '../../utils/auth';
 import { withTimeout } from '../../utils/queryHelpers';
-import type { MidtransTokenResponse, PaymentBookingDetails } from './paymentTypes';
+import type { CheckoutPaymentResponse, PaymentBookingDetails } from './paymentTypes';
 
 export async function validatePaymentSession() {
   const { data: userData, error: userError } = await withTimeout(
@@ -38,7 +38,7 @@ export async function validatePaymentSession() {
   };
 }
 
-export async function createMidtransToken(params: {
+export async function createCheckoutPayment(params: {
   booking: PaymentBookingDetails;
   customerName: string;
   customerEmail: string;
@@ -47,7 +47,7 @@ export async function createMidtransToken(params: {
 }) {
   const invoke = (accessToken: string) =>
     withTimeout(
-      invokeSupabaseFunction<MidtransTokenResponse>({
+      invokeSupabaseFunction<CheckoutPaymentResponse>({
         functionName: 'create-midtrans-token',
         body: {
           items: [
@@ -74,7 +74,7 @@ export async function createMidtransToken(params: {
     );
 
   let accessToken = params.token;
-  let data: MidtransTokenResponse | null = null;
+  let data: CheckoutPaymentResponse | null = null;
 
   try {
     data = await invoke(accessToken);
@@ -102,9 +102,9 @@ export async function createMidtransToken(params: {
     }
   }
 
-  if (!data?.token || !data?.order_number) {
-    throw new Error('Payment token response was incomplete');
+  if (!data?.payment_url || !data?.order_number) {
+    throw new Error('Payment checkout response was incomplete');
   }
 
-  return data as MidtransTokenResponse;
+  return data as CheckoutPaymentResponse;
 }

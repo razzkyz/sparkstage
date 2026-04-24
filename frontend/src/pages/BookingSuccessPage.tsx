@@ -19,7 +19,7 @@ export default function BookingSuccessPage() {
   // Get order number from state or URL params
   const orderNumber = state?.orderNumber || searchParams.get('order_id') || '';
   const customerName = state?.customerName || 'Guest';
-  const initialIsPending = state?.isPending || false;
+  const initialIsPending = state?.isPending || searchParams.get('pending') === '1';
   const {
     tickets,
     orderData,

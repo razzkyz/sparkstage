@@ -1,9 +1,15 @@
 import { serve } from '../_shared/deps.ts'
 import { handleCors, json, jsonError, jsonErrorWithDetails } from '../_shared/http.ts'
-import { getMidtransEnv } from '../_shared/env.ts'
+import { getDokuEnv } from '../_shared/env.ts'
 import { createServiceClient } from '../_shared/supabase.ts'
-import { getMidtransBasicAuthHeader, getStatusBaseUrl } from '../_shared/midtrans.ts'
-import { mapMidtransStatus } from '../_shared/tickets.ts'
+import {
+  buildDokuRequestHeaders,
+  createDokuRequestId,
+  createDokuRequestTimestamp,
+  getDokuApiBaseUrl,
+  getDokuStatusPath,
+  mapDokuStatus,
+} from '../_shared/doku.ts'
 import { logWebhookEvent } from '../_shared/payment-effects.ts'
 import { processProductOrderTransition } from '../_shared/payment-processors.ts'
 import { requireAuthenticatedRequest } from '../_shared/auth.ts'
@@ -28,7 +34,7 @@ serve(async (req) => {
     if (authResult.response) return authResult.response
 
     const auth = authResult.context!
-    const { serverKey: midtransServerKey, isProduction: midtransIsProduction } = getMidtransEnv()
+    const dokuEnv = getDokuEnv()
 
     // Use service role key for database operations
     const supabase = createServiceClient(auth.supabaseEnv.url, auth.supabaseEnv.serviceRoleKey)
@@ -42,7 +48,7 @@ serve(async (req) => {
     // 2. Fetch order from order_products table
     const { data: order, error: orderError } = await supabase
       .from('order_products')
-      .select('id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, total, stock_released_at, voucher_id, voucher_code, discount_amount')
+      .select('id, user_id, order_number, status, payment_status, payment_expired_at, pickup_code, pickup_status, pickup_expires_at, total, stock_released_at, voucher_id, voucher_code, discount_amount')
       .eq('order_number', orderNumber)
       .single()
 
@@ -55,30 +61,44 @@ serve(async (req) => {
       return jsonError(req, 403, 'Forbidden')
     }
 
-    // 3. Active Sync: Query Midtrans API directly
-    const baseUrl = getStatusBaseUrl(midtransIsProduction)
-    const authString = getMidtransBasicAuthHeader(midtransServerKey)
-    const statusResponse = await fetch(`${baseUrl}/v2/${encodeURIComponent(orderNumber)}/status`, {
+    const dokuRequestId = createDokuRequestId()
+    const dokuRequestTimestamp = createDokuRequestTimestamp()
+    const requestTarget = getDokuStatusPath(orderNumber)
+    const statusResponse = await fetch(`${getDokuApiBaseUrl(dokuEnv.isProduction)}${requestTarget}`, {
       method: 'GET',
       headers: {
+        ...await buildDokuRequestHeaders({
+          clientId: dokuEnv.clientId,
+          requestId: dokuRequestId,
+          requestTimestamp: dokuRequestTimestamp,
+          requestTarget,
+          secretKey: dokuEnv.secretKey,
+        }),
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: authString,
       },
     })
 
     const statusData = await statusResponse.json().catch(() => null)
     if (!statusResponse.ok) {
-      console.error('[sync-midtrans-product-status] Midtrans status error:', statusData)
-      return jsonErrorWithDetails(req, 502, {
-        error: 'Failed to fetch Midtrans status',
-        code: 'MIDTRANS_STATUS_FETCH_FAILED',
-        details: statusData,
-      })
+      const orderExpiredLocally = Boolean(order.payment_expired_at && new Date(order.payment_expired_at) <= new Date())
+      if (!(statusResponse.status === 404 && orderExpiredLocally)) {
+        console.error('[sync-midtrans-product-status] DOKU status error:', statusData)
+        return jsonErrorWithDetails(req, 502, {
+          error: 'Failed to fetch DOKU status',
+          code: 'DOKU_STATUS_FETCH_FAILED',
+          details: statusData,
+        })
+      }
     }
 
-    // 4. Map Midtrans status to our internal status
-    const midtransStatus = mapMidtransStatus(statusData?.transaction_status, statusData?.fraud_status)
+    const providerStatus =
+      statusResponse.ok
+        ? mapDokuStatus(
+            (statusData as { transaction?: { status?: unknown } | null })?.transaction?.status,
+            (statusData as { order?: { status?: unknown } | null })?.order?.status
+          )
+        : 'expired'
     const nowIso = new Date().toISOString()
 
     const result = await processProductOrderTransition({
@@ -98,9 +118,9 @@ serve(async (req) => {
         voucher_code?: string | null
         discount_amount?: unknown
       },
-      nextStatus: midtransStatus,
+      nextStatus: providerStatus,
       paymentData: statusData,
-      grossAmount: statusData?.gross_amount,
+      grossAmount: (statusData as { order?: { amount?: unknown } | null })?.order?.amount,
       nowIso,
       shouldSetPaidAt: true,
     })
@@ -109,7 +129,7 @@ serve(async (req) => {
       orderNumber,
       eventType: 'product_sync_processed',
       payload: {
-        next_status: midtransStatus,
+        next_status: providerStatus,
         applied: result.applied,
         skipped_reason: result.skippedReason,
       },

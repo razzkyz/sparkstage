@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NavigateFunction, Location } from 'react-router-dom';
-import { loadSnapScript } from '../../utils/midtransSnap';
+import { loadDokuCheckoutScript, openDokuCheckout } from '../../utils/dokuCheckout';
 import {
   restoreBookingState,
   hasBookingState,
@@ -8,7 +8,7 @@ import {
 } from '../../utils/bookingStateManager';
 import { SessionErrorHandler } from '../../utils/sessionErrorHandler';
 import { buildBookingSuccessState, getPaymentBookingDetails, hasRequiredPaymentDetails } from './paymentHelpers';
-import { createMidtransToken, validatePaymentSession } from './paymentMidtrans';
+import { createCheckoutPayment, validatePaymentSession } from './paymentMidtrans';
 import type { PaymentLocationState, PreservedBookingData } from './paymentTypes';
 
 type UsePaymentPageControllerParams = {
@@ -31,15 +31,15 @@ export function usePaymentPageController({
   const [error, setError] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [snapLoaded, setSnapLoaded] = useState(false);
+  const [checkoutReady, setCheckoutReady] = useState(false);
 
   const bookingDetails = useMemo(() => getPaymentBookingDetails(locationState), [locationState]);
 
   useEffect(() => {
-    loadSnapScript()
-      .then(() => setSnapLoaded(true))
+    loadDokuCheckoutScript()
+      .then(() => setCheckoutReady(true))
       .catch((loadError) => {
-        console.error('Failed to load Snap:', loadError);
+        console.error('Failed to load DOKU Checkout:', loadError);
         setError('Failed to load payment system. Please refresh the page.');
       });
   }, []);
@@ -84,7 +84,7 @@ export function usePaymentPageController({
     [navigate]
   );
 
-  const handlePayWithMidtrans = async () => {
+  const handlePay = async () => {
     if (!user) {
       setError("Please log in to complete your payment. We'll save your booking details so you can continue immediately after signing in.");
       navigate('/login', { state: { returnTo: location.pathname, returnState: locationState } });
@@ -123,7 +123,7 @@ export function usePaymentPageController({
 
       console.log('[PaymentPage] Session validated and refreshed successfully');
 
-      const response = await createMidtransToken({
+      const response = await createCheckoutPayment({
         booking: bookingDetails,
         customerName: customerName.trim(),
         customerEmail: user.email || '',
@@ -131,61 +131,22 @@ export function usePaymentPageController({
         token: session.access_token,
       });
 
-      if (!window.snap || !snapLoaded) {
-        throw new Error('Midtrans Snap not loaded. Please refresh the page.');
+      if (!checkoutReady) {
+        throw new Error('Payment system is still loading. Please try again.');
       }
 
-      window.snap.pay(response.token, {
-        onSuccess: (result) => {
-          console.log('Payment success:', result);
-          clearBookingState();
-          navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}`, {
-            state: buildBookingSuccessState({
-              orderNumber: response.order_number,
-              orderId: response.order_id,
-              ticketName: bookingDetails.ticketName,
-              total: bookingDetails.total,
-              date: bookingDetails.bookingDate,
-              time: bookingDetails.timeSlot,
-              customerName: customerName.trim(),
-              paymentResult: result,
-            }),
-          });
-        },
-        onPending: (result) => {
-          console.log('Payment pending:', result);
-          navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}`, {
-            state: buildBookingSuccessState({
-              orderNumber: response.order_number,
-              orderId: response.order_id,
-              ticketName: bookingDetails.ticketName,
-              total: bookingDetails.total,
-              date: bookingDetails.bookingDate,
-              time: bookingDetails.timeSlot,
-              customerName: customerName.trim(),
-              paymentResult: result,
-            }),
-          });
-        },
-        onError: (result) => {
-          console.error('Payment error:', result);
-          setError('Payment failed. Please try again.');
-        },
-        onClose: () => {
-          console.log('Payment popup closed');
-          setLoading(false);
-          navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}`, {
-            state: buildBookingSuccessState({
-              orderNumber: response.order_number,
-              orderId: response.order_id,
-              ticketName: bookingDetails.ticketName,
-              total: bookingDetails.total,
-              date: bookingDetails.bookingDate,
-              time: bookingDetails.timeSlot,
-              customerName: customerName.trim(),
-            }),
-          });
-        },
+      clearBookingState();
+      openDokuCheckout(response.payment_url);
+      navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}&pending=1`, {
+        state: buildBookingSuccessState({
+          orderNumber: response.order_number,
+          orderId: response.order_id,
+          ticketName: bookingDetails.ticketName,
+          total: bookingDetails.total,
+          date: bookingDetails.bookingDate,
+          time: bookingDetails.timeSlot,
+          customerName: customerName.trim(),
+        }),
       });
     } catch (paymentError) {
       if ((paymentError as { status?: number }).status === 401) {
@@ -207,10 +168,10 @@ export function usePaymentPageController({
     error,
     customerName,
     customerPhone,
-    snapLoaded,
+    checkoutReady,
     bookingDetails,
     setCustomerName,
     setCustomerPhone,
-    handlePayWithMidtrans,
+    handlePay,
   };
 }

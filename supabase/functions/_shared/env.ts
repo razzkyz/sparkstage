@@ -33,6 +33,23 @@ export function getMidtransEnv() {
   }
 }
 
+export function getDokuEnv() {
+  const secretKey =
+    Deno.env.get('DOKU_SECRET_KEY') ||
+    Deno.env.get('DOKU_CLIENT_SECRET') ||
+    Deno.env.get('DOKU_SHARED_KEY')
+
+  if (!secretKey) {
+    throw new Error('Missing env: DOKU_SECRET_KEY')
+  }
+
+  return {
+    clientId: getRequiredEnv('DOKU_CLIENT_ID'),
+    secretKey,
+    isProduction: (Deno.env.get('DOKU_IS_PRODUCTION') ?? '').toLowerCase() === 'true',
+  }
+}
+
 export function getImageKitEnv() {
   const productImagesBasePathRaw = Deno.env.get('IMAGEKIT_PRODUCT_IMAGES_BASE_PATH') ?? '/products'
   const normalizedBasePath = `/${productImagesBasePathRaw.replace(/^\/+|\/+$/g, '')}`.replace(/\/{2,}/g, '/')

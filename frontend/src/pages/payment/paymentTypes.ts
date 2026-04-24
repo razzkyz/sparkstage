@@ -1,4 +1,3 @@
-import type { SnapResult } from '../../utils/midtransSnap';
 import type { BookingState } from '../../utils/bookingStateManager';
 
 export interface PaymentLocationState {
@@ -22,8 +21,11 @@ export interface PaymentBookingDetails {
   total: number;
 }
 
-export interface MidtransTokenResponse {
-  token: string;
+export interface CheckoutPaymentResponse {
+  payment_provider: 'doku_checkout';
+  payment_url: string;
+  payment_sdk_url?: string | null;
+  payment_due_date?: string | null;
   order_id: string | number;
   order_number: string;
 }
@@ -36,7 +38,7 @@ export interface PaymentSuccessNavigationState {
   date: string;
   time: string;
   customerName: string;
-  paymentResult?: SnapResult;
+  paymentResult?: unknown;
   isPending: true;
 }
 
