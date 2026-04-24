@@ -8,7 +8,7 @@ import { invokeSupabaseFunction } from '../../lib/supabaseFunctionInvoke';
 import { supabase } from '../../lib/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 import { withTimeout } from '../../utils/queryHelpers';
-import { loadSnapScript, type SnapResult } from '../../utils/midtransSnap';
+import { loadDokuCheckoutScript, openDokuCheckout } from '../../utils/dokuCheckout';
 import { calculateFinalTotal, calculateSubtotal, mapCheckoutOrderItems, selectCheckoutItems } from './checkoutPricing';
 import type {
   AppliedVoucher,
@@ -71,7 +71,7 @@ export function useProductCheckoutController({
   const [customerPhone, setCustomerPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [snapLoaded, setSnapLoaded] = useState(false);
+  const [checkoutReady, setCheckoutReady] = useState(false);
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
   const [voucherError, setVoucherError] = useState<string | null>(null);
@@ -79,8 +79,8 @@ export function useProductCheckoutController({
   const skipEmptyCartRedirectRef = useRef(false);
 
   useEffect(() => {
-    loadSnapScript()
-      .then(() => setSnapLoaded(true))
+    loadDokuCheckoutScript()
+      .then(() => setCheckoutReady(true))
       .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Failed to load payment system'));
   }, []);
 
@@ -101,7 +101,7 @@ export function useProductCheckoutController({
   const discountAmount = appliedVoucher?.discountAmount ?? 0;
   const finalTotal = useMemo(() => calculateFinalTotal(subtotal, discountAmount), [discountAmount, subtotal]);
   const orderItems = useMemo<CheckoutOrderItem[]>(() => mapCheckoutOrderItems(items), [items]);
-  const canCheckout = initialized && Boolean(sessionToken) && snapLoaded && items.length > 0;
+  const canCheckout = initialized && Boolean(sessionToken) && checkoutReady && items.length > 0;
 
   useEffect(() => {
     if (items.length === 0 && !skipEmptyCartRedirectRef.current) {
@@ -332,7 +332,7 @@ export function useProductCheckoutController({
       return;
     }
 
-    if (!snapLoaded) {
+    if (!checkoutReady) {
       setError('Payment system not ready. Please refresh.');
       return;
     }
@@ -342,32 +342,13 @@ export function useProductCheckoutController({
 
     try {
       const payload = (await createOrder('create-midtrans-product-token')) as CreateProductTokenResponse | null;
-      if (!payload?.token || !payload.order_number) {
+      if (!payload?.payment_url || !payload.order_number) {
         return;
       }
 
-      if (!window.snap) throw new Error('Midtrans Snap not loaded');
-
-      window.snap.pay(payload.token, {
-        onSuccess: () => {
-          showToast('success', '🎉 Payment successful! Your order is confirmed.');
-          completeSuccessfulOrder(payload.order_number, { paymentSuccess: true });
-        },
-        onPending: (result: SnapResult) => {
-          showToast('info', 'Payment is being processed. Please wait for confirmation.');
-          navigate(`/order/product/success/${payload.order_number}`, { state: { paymentResult: result, isPending: true } });
-        },
-        onError: () => {
-          showToast('error', 'Payment failed. Please try again.');
-          setError('Payment failed. Please try again.');
-          setAppliedVoucher(null);
-        },
-        onClose: () => {
-          setLoading(false);
-          showToast('info', 'Payment window closed. Check your order status.');
-          navigate(`/order/product/success/${payload.order_number}`, { state: { isPending: true } });
-        },
-      });
+      openDokuCheckout(payload.payment_url);
+      showToast('info', 'Payment popup opened. We will keep checking your order status.');
+      navigate(`/order/product/success/${payload.order_number}?pending=1`, { state: { isPending: true } });
     } catch (payError) {
       setError(payError instanceof Error ? payError.message : 'Failed to process payment');
     } finally {

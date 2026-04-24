@@ -4,7 +4,7 @@ import type { PaymentBookingDetails } from './paymentTypes';
 type PaymentCustomerFormProps = {
   bookingDetails: PaymentBookingDetails;
   loading: boolean;
-  snapLoaded: boolean;
+  checkoutReady: boolean;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -16,7 +16,7 @@ type PaymentCustomerFormProps = {
 export function PaymentCustomerForm({
   bookingDetails,
   loading,
-  snapLoaded,
+  checkoutReady,
   customerName,
   customerPhone,
   customerEmail,
@@ -78,9 +78,9 @@ export function PaymentCustomerForm({
         <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-blue-500">info</span>
           <div>
-            <p className="text-sm font-medium text-blue-800">Secure Payment via Midtrans</p>
+            <p className="text-sm font-medium text-blue-800">Secure Payment via DOKU Checkout</p>
             <p className="text-xs text-blue-600 mt-1">
-              You can pay using Credit Card, Bank Transfer, E-Wallet (GoPay, OVO, ShopeePay), QRIS, and more.
+              The DOKU payment popup will open after you continue. Complete payment there and this page will keep syncing your order.
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function PaymentCustomerForm({
 
       <button
         onClick={onPay}
-        disabled={loading || !bookingDetails.ticketId || !bookingDetails.price || !snapLoaded}
+        disabled={loading || !bookingDetails.ticketId || !bookingDetails.price || !checkoutReady}
         className="w-full bg-[#ff4b86] hover:bg-[#e63d75] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
       >
         {loading ? (
@@ -107,20 +107,11 @@ export function PaymentCustomerForm({
       <div className="mt-6 pt-6 border-t border-rose-100">
         <p className="text-xs text-center text-rose-700 mb-3">Supported Payment Methods</p>
         <div className="flex justify-center items-center gap-4 flex-wrap opacity-60">
-          <img
-            alt="Visa"
-            className="h-5"
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png"
-          />
-          <img
-            alt="Mastercard"
-            className="h-5"
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png"
-          />
-          <div className="px-2 py-1 bg-cyan-500 rounded text-white text-[10px] font-bold">GoPay</div>
-          <div className="px-2 py-1 bg-purple-700 rounded text-white text-[10px] font-bold">OVO</div>
-          <div className="px-2 py-1 bg-orange-500 rounded text-white text-[10px] font-bold">ShopeePay</div>
-          <div className="px-2 py-1 bg-gray-800 rounded text-white text-[10px] font-bold">QRIS</div>
+          <div className="px-3 py-1 bg-slate-900 rounded text-white text-[10px] font-bold">Cards</div>
+          <div className="px-3 py-1 bg-blue-700 rounded text-white text-[10px] font-bold">VA</div>
+          <div className="px-3 py-1 bg-emerald-600 rounded text-white text-[10px] font-bold">E-Wallet</div>
+          <div className="px-3 py-1 bg-orange-500 rounded text-white text-[10px] font-bold">OTO</div>
+          <div className="px-3 py-1 bg-gray-800 rounded text-white text-[10px] font-bold">QRIS</div>
         </div>
       </div>
     </div>

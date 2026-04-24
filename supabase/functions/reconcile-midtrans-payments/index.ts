@@ -1,7 +1,14 @@
 import { serve } from '../_shared/deps.ts'
-import { getMidtransEnv, getSupabaseEnv } from '../_shared/env.ts'
+import { getDokuEnv, getSupabaseEnv } from '../_shared/env.ts'
 import { getCorsHeaders, handleCors, json } from '../_shared/http.ts'
-import { getMidtransBasicAuthHeader, getStatusBaseUrl } from '../_shared/midtrans.ts'
+import {
+  buildDokuRequestHeaders,
+  createDokuRequestId,
+  createDokuRequestTimestamp,
+  getDokuApiBaseUrl,
+  getDokuStatusPath,
+  mapDokuStatus,
+} from '../_shared/doku.ts'
 import {
   isFinalOrPaidMidtransStatus,
   processProductOrderTransition,
@@ -16,7 +23,6 @@ import {
   type TicketOrderItem,
 } from '../_shared/payment-effects.ts'
 import { createServiceClient } from '../_shared/supabase.ts'
-import { mapMidtransStatus } from '../_shared/tickets.ts'
 
 type TicketOrderRow = {
   id: number
@@ -43,25 +49,33 @@ type ProductOrderRow = {
   discount_amount?: unknown
 }
 
-type MidtransStatusResult =
+type ProviderStatusResult =
   | { ok: true; mappedStatus: string; statusData: unknown }
-  | { ok: false; error: string; statusData: unknown }
+  | { ok: false; error: string; statusData: unknown; statusCode: number }
 
-function isMidtransFailure(result: MidtransStatusResult): result is Extract<MidtransStatusResult, { ok: false }> {
+function isProviderFailure(result: ProviderStatusResult): result is Extract<ProviderStatusResult, { ok: false }> {
   return result.ok === false
 }
 
-async function fetchMidtransStatus(params: {
-  baseUrl: string
-  authString: string
+async function fetchProviderStatus(params: {
+  dokuEnv: ReturnType<typeof getDokuEnv>
   orderNumber: string
-}): Promise<MidtransStatusResult> {
-  const statusResponse = await fetch(`${params.baseUrl}/v2/${encodeURIComponent(params.orderNumber)}/status`, {
+}): Promise<ProviderStatusResult> {
+  const requestId = createDokuRequestId()
+  const requestTimestamp = createDokuRequestTimestamp()
+  const requestTarget = getDokuStatusPath(params.orderNumber)
+  const statusResponse = await fetch(`${getDokuApiBaseUrl(params.dokuEnv.isProduction)}${requestTarget}`, {
     method: 'GET',
     headers: {
+      ...await buildDokuRequestHeaders({
+        clientId: params.dokuEnv.clientId,
+        requestId,
+        requestTimestamp,
+        requestTarget,
+        secretKey: params.dokuEnv.secretKey,
+      }),
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: params.authString,
     },
   })
 
@@ -69,16 +83,17 @@ async function fetchMidtransStatus(params: {
   if (!statusResponse.ok) {
     return {
       ok: false,
-      error: `Failed to fetch Midtrans status (${statusResponse.status})`,
+      error: `Failed to fetch DOKU status (${statusResponse.status})`,
       statusData,
+      statusCode: statusResponse.status,
     }
   }
 
   return {
     ok: true,
-    mappedStatus: mapMidtransStatus(
-      (statusData as { transaction_status?: unknown })?.transaction_status,
-      (statusData as { fraud_status?: unknown })?.fraud_status
+    mappedStatus: mapDokuStatus(
+      (statusData as { transaction?: { status?: unknown } | null })?.transaction?.status,
+      (statusData as { order?: { status?: unknown } | null })?.order?.status
     ),
     statusData,
   }
@@ -87,32 +102,42 @@ async function fetchMidtransStatus(params: {
 async function reconcileStaleTicketOrder(params: {
   supabase: ReturnType<typeof createServiceClient>
   order: TicketOrderRow
-  baseUrl: string
-  authString: string
+  dokuEnv: ReturnType<typeof getDokuEnv>
   nowIso: string
 }) {
-  const { supabase, order, baseUrl, authString, nowIso } = params
+  const { supabase, order, dokuEnv, nowIso } = params
 
   try {
-    const midtransResult = await fetchMidtransStatus({
-      baseUrl,
-      authString,
+    const providerResult = await fetchProviderStatus({
+      dokuEnv,
       orderNumber: order.order_number,
     })
 
-    if (isMidtransFailure(midtransResult)) {
-      await logWebhookEvent(supabase, {
-        orderNumber: order.order_number,
-        eventType: 'reconcile_ticket_status_fetch_failed',
-        payload: { error: midtransResult.error, response: midtransResult.statusData },
-        success: false,
-        errorMessage: midtransResult.error,
-        processedAt: nowIso,
-      })
-      return { checked: 1, finalized: 0 }
+    let nextStatus = 'expired'
+    let paymentData: unknown = providerResult.statusData
+
+    if (isProviderFailure(providerResult)) {
+      if (providerResult.statusCode !== 404) {
+        await logWebhookEvent(supabase, {
+          orderNumber: order.order_number,
+          eventType: 'reconcile_ticket_status_fetch_failed',
+          payload: { error: providerResult.error, response: providerResult.statusData },
+          success: false,
+          errorMessage: providerResult.error,
+          processedAt: nowIso,
+        })
+        return { checked: 1, finalized: 0 }
+      }
+
+      paymentData = {
+        source: 'reconcile_fallback',
+        reason: 'doku_status_not_found_after_expiry',
+        order: { invoice_number: order.order_number, status: 'ORDER_EXPIRED' },
+      }
+    } else {
+      nextStatus = providerResult.mappedStatus
     }
 
-    const nextStatus = midtransResult.mappedStatus
     if (!isFinalOrPaidMidtransStatus(nextStatus)) {
       await logWebhookEvent(supabase, {
         orderNumber: order.order_number,
@@ -128,7 +153,7 @@ async function reconcileStaleTicketOrder(params: {
       supabase,
       order,
       nextStatus,
-      paymentData: midtransResult.statusData,
+      paymentData,
       nowIso,
     })
 
@@ -171,32 +196,45 @@ async function reconcileStaleTicketOrder(params: {
 async function reconcileStaleProductOrder(params: {
   supabase: ReturnType<typeof createServiceClient>
   order: ProductOrderRow
-  baseUrl: string
-  authString: string
+  dokuEnv: ReturnType<typeof getDokuEnv>
   nowIso: string
 }) {
-  const { supabase, order, baseUrl, authString, nowIso } = params
+  const { supabase, order, dokuEnv, nowIso } = params
 
   try {
-    const midtransResult = await fetchMidtransStatus({
-      baseUrl,
-      authString,
+    const providerResult = await fetchProviderStatus({
+      dokuEnv,
       orderNumber: order.order_number,
     })
 
-    if (isMidtransFailure(midtransResult)) {
-      await logWebhookEvent(supabase, {
-        orderNumber: order.order_number,
-        eventType: 'reconcile_product_status_fetch_failed',
-        payload: { error: midtransResult.error, response: midtransResult.statusData },
-        success: false,
-        errorMessage: midtransResult.error,
-        processedAt: nowIso,
-      })
-      return { checked: 1, finalized: 0 }
+    let nextStatus = 'expired'
+    let paymentData: unknown = providerResult.statusData
+    let grossAmount: unknown =
+      (providerResult.statusData as { order?: { amount?: unknown } | null })?.order?.amount
+
+    if (isProviderFailure(providerResult)) {
+      if (providerResult.statusCode !== 404) {
+        await logWebhookEvent(supabase, {
+          orderNumber: order.order_number,
+          eventType: 'reconcile_product_status_fetch_failed',
+          payload: { error: providerResult.error, response: providerResult.statusData },
+          success: false,
+          errorMessage: providerResult.error,
+          processedAt: nowIso,
+        })
+        return { checked: 1, finalized: 0 }
+      }
+
+      paymentData = {
+        source: 'reconcile_fallback',
+        reason: 'doku_status_not_found_after_expiry',
+        order: { invoice_number: order.order_number, status: 'ORDER_EXPIRED' },
+      }
+      grossAmount = order.total
+    } else {
+      nextStatus = providerResult.mappedStatus
     }
 
-    const nextStatus = midtransResult.mappedStatus
     if (!isFinalOrPaidMidtransStatus(nextStatus)) {
       await logWebhookEvent(supabase, {
         orderNumber: order.order_number,
@@ -212,8 +250,8 @@ async function reconcileStaleProductOrder(params: {
       supabase,
       order,
       nextStatus,
-      paymentData: midtransResult.statusData,
-      grossAmount: (midtransResult.statusData as { gross_amount?: unknown })?.gross_amount,
+      paymentData,
+      grossAmount,
       nowIso,
       shouldSetPaidAt: true,
     })
@@ -265,10 +303,8 @@ serve(async (req) => {
 
   try {
     const { url: supabaseUrl, serviceRoleKey: supabaseServiceKey } = getSupabaseEnv()
-    const { serverKey: midtransServerKey, isProduction: midtransIsProduction } = getMidtransEnv()
+    const dokuEnv = getDokuEnv()
     const supabase = createServiceClient(supabaseUrl, supabaseServiceKey)
-    const baseUrl = getStatusBaseUrl(midtransIsProduction)
-    const authString = getMidtransBasicAuthHeader(midtransServerKey)
     const nowIso = new Date().toISOString()
 
     let staleTicketCheckedCount = 0
@@ -291,8 +327,7 @@ serve(async (req) => {
         const result = await reconcileStaleTicketOrder({
           supabase,
           order,
-          baseUrl,
-          authString,
+          dokuEnv,
           nowIso,
         })
         staleTicketCheckedCount += result.checked
@@ -316,8 +351,7 @@ serve(async (req) => {
         const result = await reconcileStaleProductOrder({
           supabase,
           order,
-          baseUrl,
-          authString,
+          dokuEnv,
           nowIso,
         })
         staleProductCheckedCount += result.checked

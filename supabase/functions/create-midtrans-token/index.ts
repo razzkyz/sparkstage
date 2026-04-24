@@ -1,7 +1,15 @@
 import { serve } from '../_shared/deps.ts'
-import { getMidtransBasicAuthHeader, getSnapUrl } from '../_shared/midtrans.ts'
+import {
+  buildDokuRequestHeaders,
+  createDokuRequestId,
+  createDokuRequestTimestamp,
+  getDokuApiBaseUrl,
+  getDokuCheckoutPath,
+  getDokuCheckoutSdkUrl,
+  parseDokuExpiredDate,
+} from '../_shared/doku.ts'
 import { handleCors, json, jsonError, jsonErrorWithDetails } from '../_shared/http.ts'
-import { getMidtransEnv, getPublicAppUrl } from '../_shared/env.ts'
+import { getDokuEnv, getPublicAppUrl } from '../_shared/env.ts'
 import { createServiceClient } from '../_shared/supabase.ts'
 import { toNumber } from '../_shared/payment-effects.ts'
 import { normalizeBookingTimeSlot, normalizeTicketTimeSlots } from '../_shared/tickets.ts'
@@ -32,6 +40,14 @@ type ReservedTicketHold = {
 
 const DEFAULT_MAX_TICKETS_PER_BOOKING = 5
 const DEFAULT_BOOKING_WINDOW_DAYS = 30
+
+// DOKU allows only: a-z A-Z 0-9 . - / + , = _ : ' @ % and space
+const DOKU_SAFE_CHARS = /[^a-zA-Z0-9 .\-/+,=_:'@%]/g
+
+function sanitizeDokuString(value: string, maxLength?: number): string {
+  const cleaned = value.replace(DOKU_SAFE_CHARS, '').replace(/\s+/g, ' ').trim()
+  return maxLength ? cleaned.substring(0, maxLength) : cleaned
+}
 
 function extractDateOnly(value: unknown): string {
   return String(value ?? '').split('T')[0].split(' ')[0]
@@ -89,15 +105,19 @@ serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  let supabase: ReturnType<typeof createServiceClient> | null = null
+  let createdOrderId: number | null = null
+  let reservedHolds: ReservedTicketHold[] = []
+
   try {
     const authResult = await requireAuthenticatedRequest(req)
     if (authResult.response) return authResult.response
 
     const auth = authResult.context!
-    const { serverKey: midtransServerKey, isProduction: midtransIsProduction } = getMidtransEnv()
+    const dokuEnv = getDokuEnv()
 
     // Create separate client with SERVICE ROLE KEY for database operations
-    const supabase = createServiceClient(auth.supabaseEnv.url, auth.supabaseEnv.serviceRoleKey)
+    supabase = createServiceClient(auth.supabaseEnv.url, auth.supabaseEnv.serviceRoleKey)
 
     const payload = (await req.json()) as CreateTokenRequest
     const items = payload.items
@@ -315,7 +335,6 @@ serve(async (req) => {
       }
     }
 
-    const reservedHolds: ReservedTicketHold[] = []
     for (const hold of holdsBySlot.values()) {
       const { data: reserved, error: reserveError } = await supabase.rpc('reserve_ticket_capacity', {
         p_ticket_id: hold.ticketId,
@@ -370,6 +389,8 @@ serve(async (req) => {
       return jsonError(req, 500, 'Failed to create order')
     }
 
+    createdOrderId = order.id
+
     // Create order items
     const orderItems = resolvedItems.map(item => ({
       order_id: order.id,
@@ -393,55 +414,120 @@ serve(async (req) => {
       return jsonError(req, 500, 'Failed to create order items')
     }
 
-    // Create Midtrans Snap token
-    const midtransUrl = getSnapUrl(midtransIsProduction)
-    const authString = getMidtransBasicAuthHeader(midtransServerKey)
+    const callbackUrl = `${appUrl}/booking-success?order_id=${encodeURIComponent(orderNumber)}&pending=1`
+    const dokuRequestId = createDokuRequestId()
+    const dokuRequestTimestamp = createDokuRequestTimestamp()
+    const dokuRequestTarget = getDokuCheckoutPath()
+    const dokuUrl = `${getDokuApiBaseUrl(dokuEnv.isProduction)}${dokuRequestTarget}`
 
-    const itemDetails = resolvedItems.map(item => ({
-      id: `ticket-${item.ticketId}`,
-      price: item.unitPrice,
-      quantity: item.quantity,
-      name: item.ticketName.substring(0, 50),
-    }))
+    const sanitizedCustomerName = sanitizeDokuString(payload.customerName.trim(), 255) || 'Customer'
+    const sanitizedEmail = sanitizeDokuString(payload.customerEmail.trim(), 128) || 'guest@sparkstage.id'
+    const sanitizedPhone = payload.customerPhone?.trim()
+      ? sanitizeDokuString(payload.customerPhone.trim(), 16)
+      : undefined
 
-    const midtransPayload = {
-      transaction_details: {
-        order_id: orderNumber,
-        gross_amount: totalAmount,
+    const dokuPayload = {
+      order: {
+        amount: totalAmount,
+        invoice_number: sanitizeDokuString(orderNumber, 64),
+        currency: 'IDR',
+        callback_url: callbackUrl,
+        callback_url_result: callbackUrl,
+        line_items: resolvedItems.map((item) => ({
+          name: sanitizeDokuString(item.ticketName, 90) || 'Ticket',
+          quantity: item.quantity,
+          price: item.unitPrice,
+          sku: sanitizeDokuString(`ticket-${item.ticketId}`, 64),
+          category: 'ticketing',
+          type: 'DIGITAL',
+        })),
+        language: 'EN',
+        auto_redirect: true,
       },
-      item_details: itemDetails,
-      customer_details: {
-        first_name: payload.customerName,
-        email: payload.customerEmail,
-        phone: payload.customerPhone || '',
+      payment: {
+        payment_due_date: paymentExpiryMinutes,
       },
-      custom_expiry: {
-        expiry_duration: paymentExpiryMinutes,
-        unit: 'minute',
-      },
-      callbacks: {
-        finish: `${appUrl}/booking-success?order_id=${orderNumber}`,
+      customer: {
+        id: sanitizeDokuString(userId, 50),
+        email: sanitizedEmail,
+        phone: sanitizedPhone || undefined,
+        name: sanitizedCustomerName,
       },
     }
 
-    const midtransResponse = await fetch(midtransUrl, {
+    const dokuPayloadText = JSON.stringify(dokuPayload)
+    const dokuHeaders = await buildDokuRequestHeaders({
+      clientId: dokuEnv.clientId,
+      requestId: dokuRequestId,
+      requestTimestamp: dokuRequestTimestamp,
+      requestTarget: dokuRequestTarget,
+      secretKey: dokuEnv.secretKey,
+      body: dokuPayloadText,
+    })
+
+
+    const dokuResponse = await fetch(dokuUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authString,
+        ...dokuHeaders,
       },
-      body: JSON.stringify(midtransPayload),
+      body: dokuPayloadText,
     })
 
-    const midtransData = await midtransResponse.json()
+    const dokuResponseText = await dokuResponse.text().catch(() => '')
+    console.log('[create-midtrans-token] DOKU response status:', dokuResponse.status, dokuResponse.statusText)
+    console.log('[create-midtrans-token] DOKU response body:', dokuResponseText)
 
-    if (!midtransResponse.ok) {
-      console.error('Midtrans error:', midtransData)
+    let dokuData: Record<string, unknown> | null = null
+    try {
+      dokuData = JSON.parse(dokuResponseText) as Record<string, unknown>
+    } catch {
+      dokuData = null
+    }
+
+    if (!dokuResponse.ok) {
+      console.error('[create-midtrans-token] DOKU error status:', dokuResponse.status)
+      console.error('[create-midtrans-token] DOKU error body:', dokuResponseText)
       await rollbackCreatedTicketOrder({ supabase, orderId: order.id, holds: reservedHolds })
+      createdOrderId = null
+      reservedHolds = []
       return jsonErrorWithDetails(req, 500, {
-        error: 'Failed to create payment token',
-        code: 'MIDTRANS_TOKEN_FAILED',
-        details: midtransData,
+        error: 'Failed to create payment checkout',
+        code: 'DOKU_CHECKOUT_FAILED',
+        details: dokuData ?? dokuResponseText,
+      })
+    }
+
+    const responseRecord =
+      typeof dokuData === 'object' && dokuData !== null
+        ? (dokuData as Record<string, unknown>)
+        : {}
+    const responsePayload =
+      typeof responseRecord.response === 'object' && responseRecord.response !== null
+        ? (responseRecord.response as Record<string, unknown>)
+        : {}
+    const responseOrder =
+      typeof responsePayload.order === 'object' && responsePayload.order !== null
+        ? (responsePayload.order as Record<string, unknown>)
+        : {}
+    const responsePayment =
+      typeof responsePayload.payment === 'object' && responsePayload.payment !== null
+        ? (responsePayload.payment as Record<string, unknown>)
+        : {}
+    const paymentUrl = String(responsePayment.url || '').trim()
+    const paymentId = String(responsePayment.token_id || responseOrder.session_id || dokuRequestId || '').trim() || null
+    const providerExpiresAt =
+      parseDokuExpiredDate(responsePayment.expired_date) ?? expiresAt.toISOString()
+
+    if (!paymentUrl) {
+      await rollbackCreatedTicketOrder({ supabase, orderId: order.id, holds: reservedHolds })
+      createdOrderId = null
+      reservedHolds = []
+      return jsonErrorWithDetails(req, 500, {
+        error: 'DOKU response missing payment url',
+        code: 'DOKU_PAYMENT_URL_MISSING',
+        details: dokuData,
       })
     }
 
@@ -449,20 +535,44 @@ serve(async (req) => {
     await supabase
       .from('orders')
       .update({
-        payment_id: midtransData.token,
-        payment_url: midtransData.redirect_url,
+        payment_id: paymentId,
+        payment_url: paymentUrl,
+        payment_data: {
+          provider: 'doku_checkout',
+          request_id: dokuRequestId,
+          request_timestamp: dokuRequestTimestamp,
+          payment_url: paymentUrl,
+          payment_provider_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
+          payment_due_date_minutes: paymentExpiryMinutes,
+          payment_expired_at: providerExpiresAt,
+          raw_response: dokuData,
+        },
         updated_at: new Date().toISOString(),
       })
       .eq('id', order.id)
 
     return json(req, {
-      token: midtransData.token,
-      redirect_url: midtransData.redirect_url,
+      payment_provider: 'doku_checkout',
+      payment_url: paymentUrl,
+      payment_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
+      payment_due_date: providerExpiresAt,
       order_number: orderNumber,
       order_id: order.id,
     })
   } catch (error) {
-    console.error('Error:', error)
-    return jsonError(req, 500, 'Internal server error')
+    const errMsg = error instanceof Error ? error.message : String(error)
+    const errStack = error instanceof Error ? error.stack : undefined
+    console.error('[create-midtrans-token] Unhandled error:', errMsg)
+    console.error('[create-midtrans-token] Stack:', errStack)
+    if (supabase && createdOrderId) {
+      await rollbackCreatedTicketOrder({ supabase, orderId: createdOrderId, holds: reservedHolds })
+    } else if (supabase && reservedHolds.length > 0) {
+      await releaseReservedTicketHolds({ supabase, holds: reservedHolds })
+    }
+    return jsonErrorWithDetails(req, 500, {
+      error: 'Internal server error',
+      code: 'UNHANDLED_ERROR',
+      details: errMsg,
+    })
   }
 })

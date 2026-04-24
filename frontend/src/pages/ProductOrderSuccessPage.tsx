@@ -1,4 +1,4 @@
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDateTimeWIB } from '../utils/timezone';
 import OrderSuccessSkeleton from '../components/skeletons/OrderSuccessSkeleton';
@@ -12,8 +12,13 @@ import { useProductOrderSuccessController } from './product-order-success/usePro
 export default function ProductOrderSuccessPage() {
   const params = useParams();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const orderNumber = params.orderNumber || '';
   const { initialized, session } = useAuth();
+  const locationState =
+    searchParams.get('pending') === '1'
+      ? { ...((location.state as Record<string, unknown> | null) ?? {}), isPending: true }
+      : location.state;
   const {
     order,
     items,
@@ -30,7 +35,7 @@ export default function ProductOrderSuccessPage() {
   } = useProductOrderSuccessController({
     orderNumber,
     initialized,
-    locationState: location.state,
+    locationState,
     sessionToken: session?.access_token,
   });
 

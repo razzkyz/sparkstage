@@ -16,11 +16,11 @@ export default function PaymentPage() {
     error,
     customerName,
     customerPhone,
-    snapLoaded,
+    checkoutReady,
     bookingDetails,
     setCustomerName,
     setCustomerPhone,
-    handlePayWithMidtrans,
+    handlePay,
   } = usePaymentPageController({
     location,
     navigate,
@@ -52,14 +52,14 @@ export default function PaymentPage() {
             <PaymentCustomerForm
               bookingDetails={bookingDetails}
               loading={loading}
-              snapLoaded={snapLoaded}
+              checkoutReady={checkoutReady}
               customerName={customerName}
               customerPhone={customerPhone}
               customerEmail={user?.email || ''}
               onChangeCustomerName={setCustomerName}
               onChangeCustomerPhone={setCustomerPhone}
               onPay={() => {
-                void handlePayWithMidtrans();
+                void handlePay();
               }}
             />
 

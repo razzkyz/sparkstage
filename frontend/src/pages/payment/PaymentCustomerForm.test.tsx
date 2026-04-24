@@ -17,7 +17,7 @@ describe('PaymentCustomerForm', () => {
           total: 150000,
         }}
         loading={false}
-        snapLoaded={true}
+        checkoutReady={true}
         customerName="Nadia"
         customerPhone="08123456789"
         customerEmail="nadia@example.com"

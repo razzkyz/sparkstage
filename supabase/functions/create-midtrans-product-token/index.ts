@@ -1,7 +1,15 @@
 import { serve } from '../_shared/deps.ts'
-import { getMidtransBasicAuthHeader, getSnapUrl } from '../_shared/midtrans.ts'
+import {
+  buildDokuRequestHeaders,
+  createDokuRequestId,
+  createDokuRequestTimestamp,
+  getDokuApiBaseUrl,
+  getDokuCheckoutPath,
+  getDokuCheckoutSdkUrl,
+  parseDokuExpiredDate,
+} from '../_shared/doku.ts'
 import { handleCors, json, jsonError, jsonErrorWithDetails } from '../_shared/http.ts'
-import { getMidtransEnv, getPublicAppUrl } from '../_shared/env.ts'
+import { getDokuEnv, getPublicAppUrl } from '../_shared/env.ts'
 import { createServiceClient } from '../_shared/supabase.ts'
 import { toNumber } from '../_shared/payment-effects.ts'
 import { requireAuthenticatedRequest } from '../_shared/auth.ts'
@@ -69,15 +77,20 @@ serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  let supabase: ReturnType<typeof createServiceClient> | null = null
+  let createdOrderId: number | null = null
+  let reservedVoucherId: string | null = null
+  let reservedAdjustments: ReservedProductAdjustment[] = []
+
   try {
     const authResult = await requireAuthenticatedRequest(req)
     if (authResult.response) return authResult.response
 
     const auth = authResult.context!
-    const { serverKey: midtransServerKey, isProduction: midtransIsProduction } = getMidtransEnv()
+    const dokuEnv = getDokuEnv()
 
     // Create separate client with SERVICE ROLE KEY for database operations
-    const supabase = createServiceClient(auth.supabaseEnv.url, auth.supabaseEnv.serviceRoleKey)
+    supabase = createServiceClient(auth.supabaseEnv.url, auth.supabaseEnv.serviceRoleKey)
 
     const payload = (await req.json()) as CreateTokenRequest
     if (!payload.items || payload.items.length === 0) {
@@ -230,6 +243,7 @@ serve(async (req) => {
       discountAmount = toNumber(result.discount_amount, 0)
 
       console.log(`Voucher applied: ${voucherCode}, discount: ${discountAmount}`)
+      reservedVoucherId = voucherId
     }
 
     // Dynamic payment expiry based on stock scarcity
@@ -258,8 +272,6 @@ serve(async (req) => {
     console.log(`Payment expiry set to ${paymentExpiryMinutes} minutes (min stock level: ${minStockLevel})`)
 
     const paymentExpiredAt = new Date(now.getTime() + paymentExpiryMinutes * 60 * 1000)
-
-    const reservedAdjustments: ReservedProductAdjustment[] = []
 
     for (const item of resolvedItems) {
       const row = variantMap.get(item.productVariantId)
@@ -330,6 +342,7 @@ serve(async (req) => {
     }
 
     const orderId = (order as unknown as { id: number }).id
+    createdOrderId = orderId
 
     const orderItems = resolvedItems.map((item) => ({
       order_product_id: orderId,
@@ -360,78 +373,175 @@ serve(async (req) => {
       })
     }
 
-    const midtransUrl = getSnapUrl(midtransIsProduction)
-    const authString = getMidtransBasicAuthHeader(midtransServerKey)
+    const callbackUrl = `${appUrl}/order/product/success/${encodeURIComponent(orderNumber)}?pending=1`
+    const dokuRequestId = createDokuRequestId()
+    const dokuRequestTimestamp = createDokuRequestTimestamp()
+    const dokuRequestTarget = getDokuCheckoutPath()
+    const dokuUrl = `${getDokuApiBaseUrl(dokuEnv.isProduction)}${dokuRequestTarget}`
 
-    const itemDetails = resolvedItems.map((item) => ({
-      id: `variant-${item.productVariantId}`,
-      price: item.unitPrice,
+    const lineItems = resolvedItems.map((item) => ({
+      name: item.name.slice(0, 90),
       quantity: item.quantity,
-      name: item.name,
+      price: item.unitPrice,
+      sku: `variant-${item.productVariantId}`,
+      category: 'beauty',
+      type: 'PHYSICAL',
     }))
 
-    const midtransPayload = {
-      transaction_details: {
-        order_id: orderNumber,
-        gross_amount: finalTotal,  // Use discounted total
+    if (discountAmount > 0) {
+      lineItems.push({
+        name: `Voucher ${voucherCode ?? 'DISCOUNT'}`.slice(0, 90),
+        quantity: 1,
+        price: discountAmount * -1,
+        sku: `voucher-${voucherId ?? 'discount'}`,
+        category: 'discount',
+        type: 'PROMOTION',
+      })
+    }
+
+    const dokuPayload = {
+      order: {
+        amount: finalTotal,
+        invoice_number: orderNumber,
+        currency: 'IDR',
+        callback_url: callbackUrl,
+        callback_url_result: callbackUrl,
+        line_items: lineItems,
+        language: 'EN',
+        auto_redirect: true,
       },
-      item_details: itemDetails,
-      customer_details: {
-        first_name: payload.customerName.trim(),
-        email: payload.customerEmail,
-        phone: payload.customerPhone || '',
+      payment: {
+        payment_due_date: paymentExpiryMinutes,
       },
-      custom_expiry: {
-        expiry_duration: paymentExpiryMinutes,
-        unit: 'minute',
-      },
-      callbacks: {
-        finish: `${appUrl}/order/product/success/${orderNumber}`,
+      customer: {
+        id: userId,
+        email: payload.customerEmail.trim(),
+        phone: payload.customerPhone?.trim() || undefined,
+        name: payload.customerName.trim(),
       },
     }
 
-    const midtransResponse = await fetch(midtransUrl, {
+    const dokuPayloadText = JSON.stringify(dokuPayload)
+    const dokuHeaders = await buildDokuRequestHeaders({
+      clientId: dokuEnv.clientId,
+      requestId: dokuRequestId,
+      requestTimestamp: dokuRequestTimestamp,
+      requestTarget: dokuRequestTarget,
+      secretKey: dokuEnv.secretKey,
+      body: dokuPayloadText,
+    })
+
+    const dokuResponse = await fetch(dokuUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: authString,
+        ...dokuHeaders,
       },
-      body: JSON.stringify(midtransPayload),
+      body: dokuPayloadText,
     })
 
-    const midtransData = await midtransResponse.json()
-    if (!midtransResponse.ok) {
+    const dokuData = await dokuResponse.json().catch(() => null)
+    if (!dokuResponse.ok) {
       await rollbackCreatedProductOrder({
         supabase,
         orderId,
         voucherId,
         reservedAdjustments,
       })
+      createdOrderId = null
+      reservedVoucherId = null
+      reservedAdjustments = []
 
-      console.error('[create-midtrans-product-token] Midtrans error:', midtransData)
+      console.error('[create-midtrans-product-token] DOKU error:', dokuData)
       return jsonErrorWithDetails(req, 500, {
-        error: 'Failed to create payment token',
-        code: 'MIDTRANS_TOKEN_FAILED',
-        details: midtransData,
+        error: 'Failed to create payment checkout',
+        code: 'DOKU_CHECKOUT_FAILED',
+        details: dokuData,
+      })
+    }
+
+    const responseRecord =
+      typeof dokuData === 'object' && dokuData !== null
+        ? (dokuData as Record<string, unknown>)
+        : {}
+    const responsePayload =
+      typeof responseRecord.response === 'object' && responseRecord.response !== null
+        ? (responseRecord.response as Record<string, unknown>)
+        : {}
+    const responseOrder =
+      typeof responsePayload.order === 'object' && responsePayload.order !== null
+        ? (responsePayload.order as Record<string, unknown>)
+        : {}
+    const responsePayment =
+      typeof responsePayload.payment === 'object' && responsePayload.payment !== null
+        ? (responsePayload.payment as Record<string, unknown>)
+        : {}
+    const paymentUrl = String(responsePayment.url || '').trim()
+    const paymentId = String(responsePayment.token_id || responseOrder.session_id || dokuRequestId || '').trim() || null
+    const providerExpiresAt =
+      parseDokuExpiredDate(responsePayment.expired_date) ?? paymentExpiredAt.toISOString()
+
+    if (!paymentUrl) {
+      await rollbackCreatedProductOrder({
+        supabase,
+        orderId,
+        voucherId,
+        reservedAdjustments,
+      })
+      createdOrderId = null
+      reservedVoucherId = null
+      reservedAdjustments = []
+      return jsonErrorWithDetails(req, 500, {
+        error: 'DOKU response missing payment url',
+        code: 'DOKU_PAYMENT_URL_MISSING',
+        details: dokuData,
       })
     }
 
     await supabase
       .from('order_products')
       .update({
-        payment_url: (midtransData as { redirect_url?: string }).redirect_url ?? null,
+        payment_url: paymentUrl,
+        payment_data: {
+          provider: 'doku_checkout',
+          provider_payment_id: paymentId,
+          request_id: dokuRequestId,
+          request_timestamp: dokuRequestTimestamp,
+          payment_url: paymentUrl,
+          payment_provider_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
+          payment_due_date_minutes: paymentExpiryMinutes,
+          payment_expired_at: providerExpiresAt,
+          raw_response: dokuData,
+        },
         updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
     return json(req, {
-      token: (midtransData as { token?: string }).token,
-      redirect_url: (midtransData as { redirect_url?: string }).redirect_url,
+      payment_provider: 'doku_checkout',
+      payment_url: paymentUrl,
+      payment_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
+      payment_due_date: providerExpiresAt,
       order_number: orderNumber,
       order_id: orderId,
       discount_amount: discountAmount,  // Include discount for frontend display
     })
-  } catch {
+  } catch (error) {
+    if (supabase && createdOrderId) {
+      await rollbackCreatedProductOrder({
+        supabase,
+        orderId: createdOrderId,
+        voucherId: reservedVoucherId,
+        reservedAdjustments,
+      })
+    } else if (supabase && (reservedVoucherId || reservedAdjustments.length > 0)) {
+      await releaseReservedProductResources({
+        supabase,
+        voucherId: reservedVoucherId,
+        reservedAdjustments,
+      })
+    }
+    console.error('[create-midtrans-product-token] Error:', error)
     return jsonError(req, 500, 'Internal server error')
   }
 })

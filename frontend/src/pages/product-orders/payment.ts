@@ -2,8 +2,11 @@ import { formatCurrency } from '../../utils/formatters';
 import type { ProductOrderDetail, ProductOrderPaymentInfo } from './types';
 
 type RawPaymentData = {
+  provider?: string;
+  payment_url?: string;
   payment_type?: string;
   expiry_time?: string;
+  payment_expired_at?: string;
   transaction_time?: string;
   gross_amount?: string | number;
   va_numbers?: { bank?: string; va_number?: string }[];
@@ -13,6 +16,18 @@ type RawPaymentData = {
   payment_code?: string;
   store?: string;
   qr_string?: string;
+  payment?: {
+    url?: string;
+    expired_date?: string;
+    token_id?: string;
+  } | null;
+  order?: {
+    amount?: string | number;
+  } | null;
+  virtual_account_info?: {
+    virtual_account_number?: string;
+    bank_name?: string;
+  } | null;
   actions?: { name?: string; method?: string; url?: string }[];
 };
 
@@ -20,16 +35,22 @@ export function getProductOrderPaymentInfo(
   order: Pick<ProductOrderDetail, 'payment_data'> | null | undefined
 ): ProductOrderPaymentInfo {
   const raw = (order?.payment_data as RawPaymentData | null | undefined) ?? null;
-  const expiryAt = raw?.expiry_time ? new Date(raw.expiry_time) : null;
+  const expirySource = raw?.expiry_time || raw?.payment_expired_at || null;
+  const expiryAt = expirySource ? new Date(expirySource) : null;
   const primaryVa = Array.isArray(raw?.va_numbers) && raw.va_numbers.length > 0 ? raw.va_numbers[0] : null;
+  const dokuVa = raw?.virtual_account_info?.virtual_account_number || null;
+  const dokuVaBank = raw?.virtual_account_info?.bank_name || null;
+  const paymentUrl = raw?.payment_url || raw?.payment?.url || null;
 
   return {
-    paymentType: raw?.payment_type ? String(raw.payment_type) : null,
+    paymentType: raw?.payment_type ? String(raw.payment_type) : raw?.provider ? String(raw.provider) : null,
     expiryAt: expiryAt && !Number.isNaN(expiryAt.getTime()) ? expiryAt : null,
     primaryCode:
-      primaryVa?.va_number || raw?.permata_va_number || raw?.bill_key || raw?.payment_code || null,
+      primaryVa?.va_number || dokuVa || raw?.permata_va_number || raw?.bill_key || raw?.payment_code || null,
     primaryCodeLabel: primaryVa?.va_number
       ? `${String(primaryVa.bank || 'VA').toUpperCase()} Virtual Account`
+      : dokuVa
+        ? `${String(dokuVaBank || 'VA').toUpperCase()} Virtual Account`
       : raw?.permata_va_number
         ? 'Permata Virtual Account'
         : raw?.bill_key
@@ -40,7 +61,7 @@ export function getProductOrderPaymentInfo(
     qrString: raw?.qr_string || null,
     billerCode: raw?.biller_code || null,
     store: raw?.store || null,
-    actions: raw?.actions || [],
+    actions: raw?.actions || (paymentUrl ? [{ name: 'Pay Now', method: 'GET', url: paymentUrl }] : []),
   };
 }
 
@@ -111,7 +132,9 @@ export function getPaymentMethodLabel(order: Pick<ProductOrderDetail, 'channel' 
   const raw = order?.payment_data as RawPaymentData | null | undefined;
   const paymentType = paymentInfo.paymentType;
 
-  if (!paymentType) return 'Midtrans';
+  if (!paymentType) return 'DOKU Checkout';
+
+  if (paymentType === 'doku_checkout') return 'DOKU Checkout';
 
   if (paymentType === 'bank_transfer') {
     const va = Array.isArray(raw?.va_numbers) && raw.va_numbers.length > 0 ? raw.va_numbers[0] : null;

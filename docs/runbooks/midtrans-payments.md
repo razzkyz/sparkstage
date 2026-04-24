@@ -1,8 +1,9 @@
-# Midtrans Payments Runbook
+# DOKU Payments Runbook
 
 ## Scope
 
 This runbook covers ticket payments, product payments, webhook handling, manual sync, and reconciliation.
+The active provider is DOKU Checkout, even though several edge function names still use the old Midtrans naming.
 
 ## Main Components
 
@@ -25,16 +26,23 @@ This runbook covers ticket payments, product payments, webhook handling, manual 
 - `supabase/functions/reconcile-midtrans-payments/`
 - shared side-effects in `supabase/functions/_shared/payment-effects.ts`
 
+## Required Env
+
+- `DOKU_CLIENT_ID`
+- `DOKU_SECRET_KEY`
+- `DOKU_IS_PRODUCTION`
+- `PUBLIC_APP_URL` or another allowed app origin so callback URLs can be generated correctly
+
 ## End-To-End Flow
 
 ### Ticket Orders
 
-1. Frontend requests a Snap token through `create-midtrans-token`.
-2. The function creates a pending order and stores Midtrans response data.
-3. Snap popup handles payment on the client.
-4. `midtrans-webhook` updates DB state when Midtrans sends a notification.
+1. Frontend requests a DOKU Checkout session through `create-midtrans-token`.
+2. The function creates a pending order and stores DOKU response data including `payment_url`.
+3. DOKU popup SDK opens with that `payment_url`.
+4. `midtrans-webhook` verifies DOKU signature headers and updates DB state from DOKU notifications.
 5. `sync-midtrans-status` is available as a fallback when status looks stuck.
-6. `reconcile-midtrans-payments` repairs mismatches that slip through.
+6. `reconcile-midtrans-payments` repairs mismatches that slip through or marks truly expired orders after local expiry.
 
 ### Product Orders
 
@@ -43,7 +51,7 @@ This runbook covers ticket payments, product payments, webhook handling, manual 
 3. Webhook or sync finalizes payment state.
 4. Paid orders generate pickup data.
 5. Failed or expired orders release reserved stock and voucher quota.
-6. If webhook or client sync misses a final state after local payment expiry, `reconcile-midtrans-payments` re-queries Midtrans and finalizes the order.
+6. If webhook or client sync misses a final state after local payment expiry, `reconcile-midtrans-payments` re-queries DOKU and finalizes the order.
 
 ### Cashier Product Orders
 
@@ -58,23 +66,23 @@ This runbook covers ticket payments, product payments, webhook handling, manual 
 - Webhook, sync, and reconciliation must reuse the same side-effects logic.
 - Webhook, sync, and reconciliation must route ticket and product status changes through the shared transition processors.
 - Ticket issuance, capacity release, pickup generation, and stock release must be idempotent.
-- Lower-priority Midtrans states must not overwrite a stronger local terminal state. In practice this means `pending` cannot regress `paid`, and `failed` or `expired` cannot overwrite a settled order.
+- Lower-priority provider states must not overwrite a stronger local terminal state. In practice this means `pending` cannot regress `paid`, and `failed` or `expired` cannot overwrite a settled order.
 - Final status in DB is the source of truth for frontend UI.
-- Midtrans online payment finality stays webhook-first, with cron-backed reconciliation as the fallback.
+- DOKU online payment finality stays webhook-first, with cron-backed reconciliation as the fallback.
 - App-owned expiry windows such as cashier QR and pickup QR are enforced by a frequent cron sweep, not a daily batch.
 
 ## Current Hardening Status
 
-- Signature verification is normalized for stable comparisons.
+- Signature verification is handled with DOKU non-SNAP HMAC request headers on webhook and status sync paths.
 - Shared transition processors are used across webhook, sync, and reconciliation finalization paths.
 - Reconciliation exists for mismatch repair.
 - Idempotency markers are used for ticket issuance and release flows.
 - Product voucher quota release is guarded so duplicate failed or expired callbacks do not decrement quota repeatedly.
 - Product stock release clamps to remaining reserved stock before releasing, so repeated recovery paths do not over-release.
-- Snap-token creators validate app callback URLs before reserving inventory and roll back created rows on token creation failures.
+- DOKU checkout creators validate app callback URLs before reserving inventory and roll back created rows on checkout creation failures.
 - Success pages use realtime plus polling fallback instead of assuming a single happy path.
 - Cashier QR expiry and pickup QR expiry are enforced by `expire-product-orders`.
-- Stale online Midtrans orders are re-checked by `reconcile-midtrans-payments`.
+- Stale online DOKU orders are re-checked by `reconcile-midtrans-payments`.
 
 ## Cron Jobs
 
@@ -94,19 +102,18 @@ This runbook covers ticket payments, product payments, webhook handling, manual 
   - 01:00 WIB
   - prunes webhook logs and stale reservation tables
 
-## Midtrans To App Status Mapping
+## DOKU To App Status Mapping
 
-- `settlement` -> `paid`
-- `capture` with accepted fraud status -> `paid`
-- `capture` with non-accepted fraud status -> `pending`
-- `pending` -> `pending`
-- `deny`, `cancel`, `failure` -> `failed`
-- `expire`, `expired` -> `expired`
-- `refund`, `refunded`, `partial_refund` -> `refunded`
+- `SUCCESS` -> `paid`
+- `PENDING`, `TIMEOUT`, `REDIRECT` -> `pending`
+- `FAILED` -> `failed`
+- `EXPIRED` or `ORDER_EXPIRED` -> `expired`
+- `REFUNDED` -> `refunded`
+- `ORDER_GENERATED` and `ORDER_RECOVERED` stay `pending`
 
 ## Quick Checks For "Paid But UI Still Pending"
 
-- Verify Midtrans notification is reaching the webhook endpoint.
+- Verify DOKU notification is reaching the webhook endpoint.
 - Verify signature calculation is correct for the received payload.
 - Check whether the order is already `paid` in the database.
 - Check whether ticket issuance or pickup generation is missing.
@@ -156,4 +163,4 @@ where op.status in ('expired', 'cancelled') and pv.reserved_stock > 0;
 npm run test
 ```
 
-Test coverage includes Midtrans status mapping and payment-related UI behavior.
+Test coverage should focus on DOKU status mapping and payment-related UI behavior.
