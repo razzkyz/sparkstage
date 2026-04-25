@@ -21,22 +21,22 @@ const CHARM_BAR_ASSET_BASE = '/images/Charm%20Bar%20assets';
 
 // Charm Bar specific categories (all top-level) with images
 const CHARM_BAR_CATEGORIES = [
-  { slug: 'charm', name: 'Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
-  { slug: 'holiday', name: 'Holiday', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
-  { slug: 'hobby', name: 'Hobby', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
-  { slug: 'italian-bracket', name: 'Italian Bracket', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
-  { slug: 'pendant-charm', name: 'Pendant Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
-  { slug: 'welded-charm', name: 'Welded Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
-  { slug: 'edgy-soul', name: 'Edgy Soul', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
-  { slug: 'foodie', name: 'Foodie', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
-  { slug: 'island-vibes', name: 'Island Vibes', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
-  { slug: 'love', name: 'Love', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
-  { slug: 'pets', name: 'Pets', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
-  { slug: 'pop-icon', name: 'Pop Icon', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
-  { slug: 'sky-dream', name: 'Sky Dream', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
-  { slug: 'soft-muse', name: 'Soft Muse', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
-  { slug: 'the-icon', name: 'The Icon', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
-  { slug: 'zodiac', name: 'Zodiac', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
+  { slug: 'charm', name: 'Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`], isActive: false },
+  { slug: 'holiday', name: 'Holiday', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`], isActive: true },
+  { slug: 'hobby', name: 'Hobby', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
+  { slug: 'italian-bracket', name: 'Italian Bracket', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
+  { slug: 'pendant-charm', name: 'Pendant Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`], isActive: true },
+  { slug: 'welded-charm', name: 'Welded Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`], isActive: true },
+  { slug: 'edgy-soul', name: 'Edgy Soul', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
+  { slug: 'foodie', name: 'Foodie', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`], isActive: true },
+  { slug: 'island-vibes', name: 'Island Vibes', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`], isActive: true },
+  { slug: 'love', name: 'Love', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
+  { slug: 'pets', name: 'Pets', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`], isActive: true },
+  { slug: 'pop-icon', name: 'Pop Icon', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`], isActive: true },
+  { slug: 'sky-dream', name: 'Sky Dream', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
+  { slug: 'soft-muse', name: 'Soft Muse', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`], isActive: true },
+  { slug: 'the-icon', name: 'The Icon', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`], isActive: true },
+  { slug: 'zodiac', name: 'Zodiac', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`], isActive: true },
 ];
 
 type ShopResultsProps = {
@@ -199,8 +199,8 @@ export default function CharmBar() {
   const filteredProducts = useMemo(() => {
     if (!products || !categories) return [];
     
-    // Filter to only show Charm Bar specific categories
-    const charmBarSlugs = CHARM_BAR_CATEGORIES.map(cat => cat.slug);
+    // Filter to only show active Charm Bar specific categories
+    const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
     const charmBarProducts = products.filter((product) => {
       if (!product.categorySlug) return false;
       
@@ -223,7 +223,7 @@ export default function CharmBar() {
   const availableCategories = useMemo(() => {
     if (!categories) return [];
     
-    const charmBarSlugs = CHARM_BAR_CATEGORIES.map(cat => cat.slug);
+    const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
     return categories.filter((cat) => charmBarSlugs.includes(cat.slug));
   }, [categories]);
 
@@ -317,7 +317,7 @@ export default function CharmBar() {
                 id="category-grid-container"
                 className="flex gap-4 overflow-x-auto hide-scrollbar px-12 py-4 scroll-smooth"
               >
-                {CHARM_BAR_CATEGORIES.map((category) => {
+                {CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map((category) => {
                   const isActive = activeCategory === category.slug;
                   return (
                     <button
