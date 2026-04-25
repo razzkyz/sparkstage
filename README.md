@@ -60,15 +60,20 @@ Copy `.env.example` to `.env.local`, then fill in:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_APP_URL=http://localhost:5173
 VITE_DOKU_IS_PRODUCTION=false
 ```
 
-Set these only in Supabase secrets, never in the frontend:
+`VITE_DOKU_IS_PRODUCTION` is an internal repo flag. `false` loads DOKU sandbox JS, `true` loads DOKU production JS.
+
+Set these only in Supabase secrets, never in frontend hosting env:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `DOKU_CLIENT_ID`
 - `DOKU_SECRET_KEY`
 - `DOKU_IS_PRODUCTION`
+- `PUBLIC_APP_URL`
+- `APP_ALLOWED_ORIGINS`
 
 ## Commands
 
