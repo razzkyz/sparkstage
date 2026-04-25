@@ -11,6 +11,32 @@ Catatan verifikasi repo per 2026-04-24:
 - Per 2026-04-24, rename codebase ke nama `doku-*` sudah selesai dan edge function baru dengan nama `doku-*` sudah ter-deploy ke Supabase.
 - Function remote lama dengan nama `midtrans-*` belum dihapus karena cutover webhook dashboard DOKU dan cron scheduler remote masih menunggu langkah operasional terakhir.
 
+Catatan status operasional per 2026-04-25:
+
+- Sandbox flow yang sudah dinyatakan lolos manual:
+  - booking tiket
+  - produk online
+  - produk bayar kasir
+- Secret DOKU production untuk Supabase sudah diisi manual oleh operator pada 2026-04-25.
+- `VITE_DOKU_IS_PRODUCTION=true` sudah diisi manual oleh operator pada hosting frontend production pada 2026-04-25.
+- `Checkout Appearance` DOKU sudah dibatasi manual untuk fase awal agar metode yang tampil lebih sempit.
+- `Pengaturan Kadaluarsa` DOKU dashboard sudah diset manual ke `0 jam 30 menit` pada 2026-04-25.
+- `Notification URL` sudah diisi manual untuk:
+  - Virtual Account Non-SNAP
+  - Convenience Store yang aktif
+- Repo ini memakai flag internal `DOKU_IS_PRODUCTION` dan `VITE_DOKU_IS_PRODUCTION` hanya untuk memilih endpoint / JS URL sandbox vs production.
+- DOKU Checkout sendiri tidak memakai parameter resmi bernama `production=true` atau `isProduction=true` pada request API.
+- Banyak channel merchant DOKU saat ini aktif sebagai `SNAP`; repo saat ini belum diperlakukan siap untuk membuka channel SNAP ke user publik.
+- Pada sesi operator 2026-04-25, menu `e-Wallet` di dashboard DOKU tidak berperilaku seperti `Virtual Account`:
+  - `DOKU e-Wallet` terlihat `ACTIVE`
+  - channel seperti DANA / OVO / LinkAja terlihat disabled / tidak bisa dipilih
+  - halaman `e-Wallet` sering menampilkan status `Hold On / service is not activated yet / Activate Now`, yang dibaca sebagai tanda service atau channel merchant belum fully activated / belum approved oleh DOKU
+- Untuk channel e-Wallet pihak ketiga seperti DANA / OVO / ShopeePay dan sejenisnya, repo ini belum menganggap channel siap dipakai sampai:
+  - channel benar-benar aktif dan selectable di dashboard merchant
+  - jalur notification / konfigurasi operasionalnya jelas
+  - scope launch awal memang sudah memerlukan channel tersebut
+- Cutover live tetap dianggap belum selesai sampai frontend, dashboard DOKU, dan transaksi uang asli kecil sudah tervalidasi.
+
 Asumsi dokumen ini:
 
 - Akun DOKU sudah terverifikasi dan siap dipakai
@@ -235,6 +261,14 @@ Checkpoint:
 - [x] Buat helper shared untuk generate signature DOKU Checkout
 - [x] Buat helper shared untuk request timestamp dan request id
 - [x] Simpan pemisahan sandbox vs production dengan jelas
+- [ ] Samakan env switch backend dan frontend untuk live cutover:
+- [x] `DOKU_IS_PRODUCTION=true` di Supabase secret
+- [x] `VITE_DOKU_IS_PRODUCTION=true` di frontend hosting
+
+Catatan implementasi:
+
+- `DOKU_IS_PRODUCTION` bukan parameter resmi DOKU; ini hanya konvensi internal repo untuk memilih endpoint `api-sandbox.doku.com` vs `api.doku.com`.
+- `VITE_DOKU_IS_PRODUCTION` bukan parameter resmi DOKU; ini hanya konvensi internal repo untuk memilih JS SDK `sandbox.doku.com` vs `jokul.doku.com`.
 
 Checkpoint:
 
@@ -252,9 +286,9 @@ Checkpoint:
 - [x] `payment_url`
 - [x] `payment_due_at`
 - [x] `provider_payload`
-- [ ] `provider_status`
+- [x] `provider_status`
 - [ ] Tambahkan migration bila schema sekarang belum cukup
-- [ ] Pastikan idempotency payment attempt bisa dilacak
+- [x] Pastikan idempotency payment attempt bisa dilacak
 
 Checkpoint:
 
@@ -269,7 +303,7 @@ Checkpoint:
 - [x] Isi `order.amount`, `invoice_number`, `line_items`, `customer`, callback URL, due date
 - [x] Kirim header `Client-Id`, `Request-Id`, `Request-Timestamp`, `Signature`
 - [x] Simpan `payment.url` dan metadata respons
-- [ ] Tangani `409 Conflict` idempotency dengan baik
+- [x] Tangani `409 Conflict` idempotency dengan baik
 - [x] Pastikan rollback stok / kapasitas tetap aman bila create payment gagal
 
 Checkpoint:
@@ -334,8 +368,9 @@ Checkpoint:
 
 ## Phase 7 - Testing sandbox
 
-- [ ] Uji create payment tiket di sandbox
-- [ ] Uji create payment produk di sandbox
+- [x] Uji create payment tiket di sandbox
+- [x] Uji create payment produk di sandbox
+- [x] Uji flow produk bayar kasir
 - [ ] Uji success notification
 - [ ] Uji expired flow
 - [ ] Uji failed / cancelled flow
@@ -343,6 +378,12 @@ Checkpoint:
 - [ ] Uji idempotency create payment dengan `Request-Id` yang sama
 - [ ] Uji polling fallback bila notification terlambat
 - [ ] Uji stok produk dan kapasitas tiket pada semua hasil status
+
+Catatan verifikasi manual:
+
+- booking test passed
+- produk test passed
+- produk bayar kasir passed
 
 Checkpoint:
 
@@ -352,11 +393,11 @@ Checkpoint:
 
 ## Phase 8 - Go-live preparation
 
-- [ ] Isi credential production
+- [x] Isi credential production
 - [ ] Konfigurasi Notification URL production di dashboard DOKU
 - [ ] Verifikasi domain URL publik dan HTTPS
-- [ ] Konfigurasi payment method yang ingin diaktifkan
-- [ ] Atur payment due date default
+- [x] Konfigurasi payment method yang ingin diaktifkan
+- [x] Atur payment due date default
 - [ ] Siapkan manual runbook untuk retry notification dan pengecekan dashboard
 - [ ] Tentukan feature flag atau cutover switch Midtrans ke DOKU
 
@@ -365,6 +406,194 @@ Checkpoint:
 - production env lengkap
 - notification production tervalidasi
 - cutover plan jelas dan bisa di-revert
+
+## Todo Super Detail - Cutover Production
+
+Checklist ini adalah daftar kerja operasional utama untuk pindah dari sandbox ke DOKU official. Gunakan ini sebagai source of truth saat context chat sudah tidak tersedia.
+
+### A. Konfigurasi yang wajib benar sebelum transaksi uang asli
+
+- [x] Verifikasi `DOKU_CLIENT_ID` production aktif di Supabase secrets
+- [x] Verifikasi `DOKU_SECRET_KEY` production aktif di Supabase secrets
+- [x] Verifikasi `DOKU_IS_PRODUCTION=true` aktif di Supabase secrets
+- [x] Verifikasi `VITE_DOKU_IS_PRODUCTION=true` aktif di frontend hosting
+- [ ] Verifikasi `VITE_APP_URL` mengarah ke domain production yang benar
+- [ ] Verifikasi `PUBLIC_APP_URL` di Supabase sama dengan domain app yang benar
+- [ ] Verifikasi `APP_ALLOWED_ORIGINS` mencakup domain production final
+- [ ] Verifikasi frontend memuat JS `https://jokul.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js`
+- [ ] Verifikasi backend membuat checkout ke `https://api.doku.com/checkout/v1/payment`
+
+### B. Dashboard DOKU Back Office
+
+- [x] Login ke DOKU Back Office production
+- [x] Buka menu pengaturan payment methods yang akan dipakai saat launch
+- [ ] Isi `Notification URL` production pada setiap channel yang aktif
+- [x] Pastikan URL notification memakai `https://`
+- [ ] Pastikan URL notification bisa diakses publik tanpa auth, VPN, atau port aneh
+- [ ] Jika memakai override notification URL, pastikan path sama dengan URL yang dikonfigurasi di dashboard
+- [x] Catat channel payment mana saja yang diaktifkan saat fase awal
+- [x] Nonaktifkan channel yang belum siap didukung payload repo
+
+Catatan operator saat ini:
+
+- Jalur fase awal difokuskan ke channel non-SNAP / yang paling mudah diverifikasi manual.
+- `Virtual Account` merchant banyak yang aktif sebagai SNAP, tetapi repo belum dianggap siap membuka SNAP ke user publik.
+- `Virtual Account` Non-SNAP sudah dikonfigurasi manual untuk notification URL.
+- `Convenience Store` aktif sudah dikonfigurasi manual untuk notification URL.
+- `PayLater` seperti Akulaku sengaja tidak dibuka dulu.
+- `e-Wallet` tidak menyediakan pola konfigurasi yang sama seperti `Virtual Account`; menu tersebut cenderung membawa operator ke halaman aktivasi service, bukan halaman configure notification.
+- Pada sesi 2026-04-25, `DOKU e-Wallet` terlihat aktif, tetapi channel pihak ketiga seperti DANA / OVO / LinkAja masih disabled / tidak selectable.
+- Untuk channel seperti ShopeePay dan e-Wallet pihak ketiga lain, prinsip operasionalnya sama: selama belum aktif / selectable / approved di dashboard merchant, channel tidak dianggap siap launch.
+- Karena itu, e-Wallet tidak dijadikan jalur utama smoke test production pertama.
+
+#### Jawaban konkret jika client / bos bertanya kenapa metode pembayaran masih dibatasi per 2026-04-25
+
+- Pembatasan ini **sengaja** dilakukan sebagai risk control saat cutover dari sandbox ke akun official, bukan karena repo gagal membuat checkout.
+- Sebagian besar service merchant DOKU saat ini aktif dalam varian `SNAP`, sedangkan repo Spark Stage per 2026-04-25 masih diperlakukan aman untuk jalur `Non-SNAP` terlebih dahulu.
+- Webhook repo saat ini belum dijadikan basis launch publik untuk channel `SNAP`, sehingga channel `SNAP` belum dibuka ke user agar status payment tidak ambigu saat live.
+- Untuk e-Wallet pihak ketiga seperti DANA / OVO / ShopeePay dkk, status dashboard merchant menunjukkan pola `Hold On / service is not activated yet / Activate Now` atau channel disabled, yang diartikan sebagai channel belum fully activated / belum approved / belum selectable dari sisi akun merchant.
+- Karena channel tersebut belum fully usable dari dashboard merchant, operator juga belum mendapat jalur konfigurasi notification yang setara dengan `Virtual Account` Non-SNAP.
+- Metode yang dibuka lebih dulu hanyalah metode yang memenuhi tiga syarat:
+  - channel merchant aktif dan bisa dikonfigurasi
+  - notification URL bisa diarahkan ke endpoint production yang benar
+  - flow channel tersebut cocok dengan kemampuan repo saat ini
+- Jadi jawaban paling singkat untuk pihak non-teknis adalah:
+  - **opsi pembayaran masih dibatasi karena akun official DOKU baru dicutover, banyak channel merchant masih SNAP atau belum fully activated, dan tim sengaja membuka jalur yang paling aman dulu agar transaksi uang asli tidak masuk ke flow yang belum tervalidasi penuh**
+
+### C. Scope payment methods fase awal
+
+- [x] Putuskan daftar payment methods yang aman untuk launch awal
+- [ ] Utamakan channel yang tidak butuh payload tambahan yang belum tersedia di repo
+- [ ] Jangan aktifkan semua channel sekaligus hanya karena tersedia di dashboard
+- [ ] Jika perlu, implementasikan `payment.payment_method_types` agar checkout page hanya menampilkan metode yang sengaja dipilih
+- [ ] Review apakah channel paylater / direct debit / Jenius butuh field tambahan yang belum dikirim repo
+
+Channel launch awal yang diprioritaskan:
+
+- Virtual Account Non-SNAP BNI untuk live smoke test pertama
+- Convenience Store sebagai backup jalur pembayaran
+- Channel SNAP belum dijadikan target launch awal sampai code mendukung notification dan signature SNAP dengan benar
+
+### D. Hardening code sebelum full launch
+
+- [x] Tambahkan tracking `provider_status` yang eksplisit pada persistence order
+- [x] Pastikan `request_id` DOKU tersimpan dan bisa diaudit per payment attempt
+- [x] Tangani `409 Conflict` dengan jalur retry / recovery yang jelas
+- [x] Samakan sanitasi payload produk dengan tiket
+- [ ] Pertimbangkan verifikasi response signature dari DOKU pada create checkout
+- [ ] Pastikan frontend dan backend tidak bisa beda mode tanpa terdeteksi
+- [x] Rapikan `.env.example` agar tidak lagi memberi contoh Midtrans sebagai source of truth
+
+### E. Sandbox verification yang masih perlu dibuktikan
+
+- [ ] Uji success notification sandbox dan pastikan order berubah final lewat webhook
+- [ ] Uji expired flow sandbox
+- [ ] Uji failed / cancelled flow sandbox
+- [ ] Uji retry notification sandbox
+- [ ] Uji idempotency create payment dengan `Request-Id` yang sama
+- [ ] Uji polling fallback bila notification terlambat
+- [ ] Uji release stok produk pada status final non-paid
+- [ ] Uji release kapasitas tiket pada status final non-paid
+- [ ] Uji voucher usage dan voucher release pada hasil akhir yang relevan
+
+### F. Smoke test production dengan uang asli kecil
+
+- [ ] Siapkan 1 tiket test harga kecil untuk transaksi live
+- [ ] Siapkan 1 produk test harga kecil untuk transaksi live
+- [ ] Pastikan item test tidak membingungkan user publik
+- [ ] Jalankan 1 transaksi live tiket nominal kecil
+- [ ] Jalankan 1 transaksi live produk nominal kecil
+- [ ] Simpan order number dari kedua transaksi
+- [ ] Verifikasi user diarahkan ke checkout page production, bukan sandbox
+- [ ] Verifikasi payment selesai di sisi DOKU
+- [ ] Verifikasi webhook masuk ke endpoint production
+- [ ] Verifikasi order DB berubah ke status final yang benar
+- [ ] Verifikasi tiket benar-benar terbit untuk transaksi tiket
+- [ ] Verifikasi pickup / order artifact benar untuk transaksi produk
+- [ ] Verifikasi stok tidak tertahan setelah transaksi final
+- [ ] Verifikasi voucher tidak rusak bila voucher ikut terlibat
+
+### G. Audit database setelah smoke test
+
+- [ ] Cek `orders` untuk transaksi tiket live test
+- [ ] Cek `order_items` dan `purchased_tickets` untuk memastikan ticket issuance berhasil
+- [ ] Cek `order_products` untuk transaksi produk live test
+- [ ] Cek `order_product_items` dan `product_variants.reserved_stock`
+- [ ] Cek `webhook_logs` untuk memastikan event terekam
+- [ ] Cek tidak ada order `paid` yang kehilangan side effect
+- [ ] Cek tidak ada order expired / cancelled yang masih menahan stock atau capacity
+
+### H. Keputusan go / no-go
+
+- [ ] Jika 2 transaksi live kecil lolos end-to-end, lanjutkan soft launch
+- [ ] Jika webhook gagal, tahan cutover publik dan perbaiki notification path dulu
+- [ ] Jika stok / kapasitas / ticket issuance tidak sinkron, tahan launch publik
+- [ ] Jika checkout page masih membuka sandbox asset, rollback env frontend dan perbaiki segera
+- [ ] Setelah stabil, baru aktifkan item / harga normal untuk user publik
+
+## Urutan Eksekusi Yang Benar
+
+Urutan kerja yang disepakati dari hasil diskusi operator vs agent:
+
+1. Operator lebih dulu menyelesaikan prasyarat dashboard / hosting / credential yang memang tidak bisa dikerjakan agent.
+2. Setelah prasyarat operator cukup, baru agent mengerjakan hardening code, config, dan test automation.
+3. Setelah perubahan agent selesai dan diverifikasi, operator menjalankan live smoke test nominal kecil.
+4. Setelah smoke test lolos, baru diputuskan go / no-go untuk soft launch.
+
+Status urutan saat ini:
+
+- tahap operator awal: sebagian besar sudah berjalan
+- tahap agent: siap dimulai sekarang
+- tahap smoke test production: belum dimulai
+
+## Backlog Agent Berikutnya
+
+Bagian ini adalah task yang memang sengaja ditahan untuk dikerjakan agent setelah prasyarat operator awal cukup.
+
+### Agent 1 - Backend Payment Hardening
+
+- [x] Tambahkan `provider_status`
+- [x] Pastikan tracking payment attempt dan `request_id` bisa diaudit
+- [x] Tangani `409 Conflict` dengan recovery yang jelas
+- [x] Samakan sanitasi payload produk dengan tiket
+- [ ] Tinjau kemungkinan verifikasi response signature DOKU
+
+### Agent 2 - Frontend / Config / Docs Consistency
+
+- [x] Rapikan `.env.example` agar source of truth sudah DOKU
+- [x] Pastikan docs menjelaskan perbedaan flag internal repo vs parameter resmi DOKU
+- [ ] Tambahkan guard / dokumentasi agar frontend dan backend tidak beda mode tanpa terdeteksi
+- [x] Rapikan runbook cutover production
+- [ ] Tinjau implementasi pembatasan payment methods dari sisi code / payload, bukan dashboard saja
+
+### Agent 3 - Tests / Verification / Audit Support
+
+- [ ] Tambahkan test success notification
+- [ ] Tambahkan test expired flow
+- [ ] Tambahkan test failed / cancelled flow
+- [ ] Tambahkan test retry notification
+- [ ] Tambahkan test idempotency `Request-Id`
+- [ ] Tambahkan test polling fallback
+- [ ] Tambahkan test release stok / kapasitas / voucher
+- [ ] Siapkan query audit DB dan checklist smoke test production
+
+## Gap Tertinggi Yang Masih Terbuka
+
+Hasil audit terbaru menunjukkan 5 gap tertinggi sebelum live smoke test:
+
+1. Pembatasan channel dari sisi payload masih belum eksplisit; `payment.payment_method_types` belum dipakai untuk memastikan user hanya melihat channel yang memang siap.
+2. Webhook success / retry / replay idempotency belum punya bukti automated test yang cukup.
+3. Sync dan reconciliation saat webhook terlambat atau tidak datang belum punya bukti test end-to-end yang cukup.
+4. Invariant side effect untuk ticket issuance, release capacity, pickup, voucher, dan reserved stock masih perlu bukti test yang lebih kuat.
+5. Dukungan SNAP masih belum siap dibuka ke publik; selama itu belum dikerjakan, scope launch awal harus tetap dibatasi ke jalur non-SNAP / channel yang benar-benar terverifikasi.
+
+### I. Setelah live stabil
+
+- [ ] Hapus atau arsipkan function Midtrans lama di remote
+- [ ] Rapikan secret Midtrans yang tidak lagi dipakai
+- [ ] Catat hasil smoke test production di dokumen ini
+- [ ] Catat payment methods yang benar-benar dibuka ke publik
+- [ ] Jika credential sempat tersebar di luar secret manager, lakukan rotation
 
 ## Phase 9 - Cleanup pasca cutover
 

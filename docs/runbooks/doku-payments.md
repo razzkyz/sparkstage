@@ -26,12 +26,44 @@ The active provider is DOKU Checkout.
 - `supabase/functions/reconcile-doku-payments/`
 - shared side-effects in `supabase/functions/_shared/payment-effects.ts`
 
-## Required Env
+## Env Ownership
+
+### Frontend Hosting Env
+
+Set these in Vercel or another frontend host:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_APP_URL`
+- `VITE_DOKU_IS_PRODUCTION`
+
+What they do:
+
+- `VITE_APP_URL` is the app origin used by frontend pages and QR-related links.
+- `VITE_DOKU_IS_PRODUCTION` is an internal repo flag only. `true` loads `https://jokul.doku.com/...`; `false` loads `https://sandbox.doku.com/...`.
+
+### Supabase Edge Function Secrets
+
+Set these in Supabase secrets:
 
 - `DOKU_CLIENT_ID`
 - `DOKU_SECRET_KEY`
 - `DOKU_IS_PRODUCTION`
-- `PUBLIC_APP_URL` or another allowed app origin so callback URLs can be generated correctly
+- `PUBLIC_APP_URL`
+- `APP_ALLOWED_ORIGINS`
+
+What they do:
+
+- `DOKU_CLIENT_ID` and `DOKU_SECRET_KEY` are the DOKU credentials used for signed backend requests.
+- `DOKU_IS_PRODUCTION` is an internal repo flag only. `true` selects `https://api.doku.com`; `false` selects `https://api-sandbox.doku.com`.
+- `PUBLIC_APP_URL` is the canonical app origin used when callback URLs are built server-side.
+- `APP_ALLOWED_ORIGINS` is a comma-separated allowlist for browser origins that may call the payment functions.
+
+### Operator Notes
+
+- `DOKU_IS_PRODUCTION` and `VITE_DOKU_IS_PRODUCTION` are not official DOKU parameters. They only control which API base URL and Jokul Checkout JS URL this repo selects.
+- Never put `DOKU_SECRET_KEY` in frontend hosting env.
+- If backend is production while frontend still loads sandbox JS, checkout will be misconfigured. Treat both production flags as a pair.
 
 ## End-To-End Flow
 
@@ -84,6 +116,18 @@ The active provider is DOKU Checkout.
 - Cashier QR expiry and pickup QR expiry are enforced by `expire-product-orders`.
 - Stale online DOKU orders are re-checked by `reconcile-doku-payments`.
 
+## Operator Checklist Before Live Smoke Test
+
+- Confirm `DOKU_CLIENT_ID` and `DOKU_SECRET_KEY` in Supabase are the official production credentials.
+- Confirm `DOKU_IS_PRODUCTION=true` in Supabase secrets.
+- Confirm `VITE_DOKU_IS_PRODUCTION=true` in frontend hosting and redeploy after the change.
+- Confirm `PUBLIC_APP_URL` in Supabase matches the real production app URL.
+- Confirm `VITE_APP_URL` in frontend hosting matches the same production URL.
+- Confirm `APP_ALLOWED_ORIGINS` includes the final production origin.
+- Confirm DOKU Back Office notification URLs are configured for the payment methods you will actually open first.
+- Confirm checkout page payment methods are restricted to channels that are already active and understood by operations.
+- Prefer a live smoke test with a low-value ticket or product before broad rollout.
+
 ## Cron Jobs
 
 - `reconcile-doku-payments-every-5-minutes`
@@ -114,6 +158,7 @@ The active provider is DOKU Checkout.
 ## Quick Checks For "Paid But UI Still Pending"
 
 - Verify DOKU notification is reaching the webhook endpoint.
+- Verify frontend is loading the correct DOKU JS host for the intended environment.
 - Verify signature calculation is correct for the received payload.
 - Check whether the order is already `paid` in the database.
 - Check whether ticket issuance or pickup generation is missing.
