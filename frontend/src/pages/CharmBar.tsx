@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useProductSummaries, type Product } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useCart } from '../contexts/cartStore';
@@ -7,10 +9,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
-import { formatCurrency } from '../utils/formatters';
 import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
 import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
+import { queryKeys } from '../lib/queryKeys';
+import { fetchProductDetail } from '../hooks/useProduct';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -20,6 +23,7 @@ const CHARM_BAR_ASSET_BASE = '/images/Charm%20Bar%20assets';
 const CHARM_BAR_CATEGORIES = [
   { slug: 'charm', name: 'Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
   { slug: 'holiday', name: 'Holiday', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
+  { slug: 'hobby', name: 'Hobby', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
   { slug: 'italian-bracket', name: 'Italian Bracket', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`] },
   { slug: 'pendant-charm', name: 'Pendant Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`] },
   { slug: 'welded-charm', name: 'Welded Charm', image: `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, images: [`${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%202.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%203.png`, `${CHARM_BAR_ASSET_BASE}/CHARM%20VISUAL%201.png`] },
@@ -38,7 +42,7 @@ const CHARM_BAR_CATEGORIES = [
 type ShopResultsProps = {
   filteredProducts: Product[];
   loading: boolean;
-  onPrefetchProduct: () => void;
+  onPrefetchProduct: (productId: number) => void;
   onAddToCart: (product: Product) => void;
 };
 
@@ -75,33 +79,55 @@ function ShopResults({ filteredProducts, loading, onPrefetchProduct, onAddToCart
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {paginatedProducts.map((product) => (
-          <div
+          <Link
             key={product.id}
+            to={`/shop/product/${product.id}`}
             className="group cursor-pointer"
-            onMouseEnter={() => onPrefetchProduct()}
+            onMouseEnter={() => onPrefetchProduct(product.id)}
           >
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
-              <img
-                src={product.image || product.placeholder}
-                alt={product.name}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
+            <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
+              <div className="relative overflow-hidden aspect-square bg-gray-50">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                    <span className="material-symbols-outlined text-5xl">{product.placeholder}</span>
+                  </div>
+                )}
+                {!product.defaultVariantId && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                    <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
+                      Out of Stock
+                    </span>
+                  </div>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onAddToCart(product);
+                  }}
+                  disabled={!product.defaultVariantId}
+                  className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+                </button>
+              </div>
+              <div className="p-3">
+                <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
+                  {product.name}
+                </h3>
+                <p className="text-sm font-semibold text-[#ff4b86]">
+                  IDR {(product.price || 0).toLocaleString('id-ID')}
+                </p>
+              </div>
             </div>
-            <div className="mt-3">
-              <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{product.name}</h3>
-              <p className="mt-1 text-sm font-semibold text-[#ff4b86]">
-                {formatCurrency(product.price)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onAddToCart(product)}
-              disabled={!product.defaultVariantId}
-              className="mt-2 w-full rounded-full bg-[#ff4b86] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#ff6a9a] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Add to Cart
-            </button>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -133,6 +159,8 @@ function ShopResults({ filteredProducts, loading, onPrefetchProduct, onAddToCart
 }
 
 export default function CharmBar() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProductSummaries();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { addItem } = useCart();
@@ -211,7 +239,8 @@ export default function CharmBar() {
 
   const handleAddToCart = (product: Product) => {
     if (!user) {
-      showToast('error', 'Please log in to add items to cart');
+      showToast('error', 'Please login to add items to cart');
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
     if (!product.defaultVariantId || !product.defaultVariantName) return;
@@ -234,8 +263,12 @@ export default function CharmBar() {
     }
   };
 
-  const prefetchProduct = () => {
-    // Prefetch disabled for now - can be implemented later if needed
+  const prefetchProduct = (productId: number) => {
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.product(productId),
+      queryFn: ({ signal }) => fetchProductDetail(productId, signal),
+      staleTime: 60000,
+    });
   };
 
   const scrollToCategory = (index: number) => {
