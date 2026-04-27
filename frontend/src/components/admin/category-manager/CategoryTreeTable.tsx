@@ -156,7 +156,8 @@ export function CategoryTreeTable({
 }: CategoryTreeTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-      <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[600px]">
         <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-600">
           <tr>
             <th className="px-4 py-3">Name</th>
@@ -241,6 +242,7 @@ export function CategoryTreeTable({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

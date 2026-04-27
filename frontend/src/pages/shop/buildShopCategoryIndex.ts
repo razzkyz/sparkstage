@@ -6,11 +6,32 @@ export type ShopCategoryIndex = {
   allowedSlugMap: Map<string, Set<string>>;
 };
 
+// Categories that should only appear in Charm Bar, not in Shop
+const CHARM_BAR_ONLY_CATEGORIES = new Set([
+  'holiday',
+  'edgy-soul',
+  'sky-dream',
+  'hobby',
+  'island-vibes',
+  'pop-icon',
+  'the-icon',
+  'love',
+  'soft-muse',
+  'foodie',
+  'zodiac',
+  'pets',
+]);
+
 export function buildShopCategoryIndex(categories: Category[]): ShopCategoryIndex {
   const parents: Category[] = [];
   const childrenByParentId = new Map<number, Category[]>();
 
   for (const category of categories) {
+    // Skip charm-bar-only categories from appearing in Shop
+    if (CHARM_BAR_ONLY_CATEGORIES.has(category.slug)) {
+      continue;
+    }
+
     if (category.parent_id === null) {
       parents.push(category);
       continue;

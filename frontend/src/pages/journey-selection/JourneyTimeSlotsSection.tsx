@@ -30,6 +30,13 @@ const PERIOD_NAMES: Record<string, string> = {
   evening: 'EVENING (18:00 - 20:30)',
 };
 
+const PERIOD_END_TIMES: Record<string, string> = {
+  morning: '11:30',
+  afternoon1: '14:30',
+  afternoon2: '17:30',
+  evening: '20:30',
+};
+
 export function JourneyTimeSlotsSection({
   copy,
   selectedDate,
@@ -42,6 +49,34 @@ export function JourneyTimeSlotsSection({
   getMinutesUntilClose,
   getSlotUrgency,
 }: JourneyTimeSlotsSectionProps) {
+  // Calculate countdown for each period
+  const getCountdown = (period: string): string => {
+    const endTime = PERIOD_END_TIMES[period];
+    if (!endTime || !selectedDate) return '2:30';
+
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    // Get current time in WIB (UTC+7)
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const wibNow = new Date(utcTime + (7 * 3600000));
+    
+    // Create end time for selected date in WIB
+    // selectedDate is at midnight WIB, add the end time
+    const endDateTime = new Date(selectedDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    
+    // Calculate difference in milliseconds
+    const diffMs = endDateTime.getTime() - wibNow.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMinutes <= 0) return '0:00';
+
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  };
+
   if (!selectedDate && hasBookableDates) return null;
 
   return (
@@ -80,9 +115,14 @@ export function JourneyTimeSlotsSection({
 
             return (
               <div key={period}>
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
-                  {PERIOD_NAMES[period] || period}
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                    {PERIOD_NAMES[period] || period}
+                  </p>
+                  <span className="text-xs font-bold bg-main-600 text-white px-3 py-1 rounded-full">
+                    {getCountdown(period)}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-3">
                   {slots.map((slot) => {
                     const isSelected = slot.time === selectedTime;
