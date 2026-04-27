@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 export function useCmsSingletonSettings<T extends { id: string }>(params: {
@@ -6,52 +6,47 @@ export function useCmsSingletonSettings<T extends { id: string }>(params: {
   defaultId: string;
   normalize: (data: Record<string, unknown>) => T;
   errorLabel: string;
+  staleTimeMs?: number;
 }) {
-  const { table, defaultId, normalize, errorLabel } = params;
-  const [settings, setSettings] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { table, defaultId, normalize, errorLabel, staleTimeMs = 30 * 60 * 1000 } = params;
+  const queryClient = useQueryClient();
+  const queryKey = ['cms-singleton-settings', table] as const;
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from(table as never)
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          setSettings(null);
-          return;
-        }
-        throw fetchError;
-      }
-
-      setSettings(normalize(data as Record<string, unknown>));
-    } catch (err: unknown) {
-      console.error(`Error fetching ${errorLabel}:`, err);
-      setError(err instanceof Error ? err : new Error(`Failed to fetch ${errorLabel}`));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [errorLabel, normalize, table]);
-
-  useEffect(() => {
-    void fetchSettings();
-  }, [fetchSettings]);
-
-  const updateSettings = useCallback(
-    async (updates: Partial<T>) => {
+  const settingsQuery = useQuery<T | null, Error>({
+    queryKey,
+    queryFn: async () => {
       try {
-        setIsLoading(true);
-        setError(null);
+        const { data, error: fetchError } = await supabase
+          .from(table as never)
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (!settings?.id || settings.id === defaultId) {
+        if (fetchError) {
+          if (fetchError.code === 'PGRST116') {
+            return null;
+          }
+          throw fetchError;
+        }
+
+        return normalize(data as Record<string, unknown>);
+      } catch (err: unknown) {
+        console.error(`Error fetching ${errorLabel}:`, err);
+        throw err instanceof Error ? err : new Error(`Failed to fetch ${errorLabel}`);
+      }
+    },
+    staleTime: staleTimeMs,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const updateMutation = useMutation<T, Error, Partial<T>>({
+    mutationFn: async (updates) => {
+      try {
+        const currentSettings = queryClient.getQueryData<T | null>(queryKey);
+
+        if (!currentSettings?.id || currentSettings.id === defaultId) {
           const { data, error: insertError } = await supabase
             .from(table as never)
             .insert([updates])
@@ -60,39 +55,46 @@ export function useCmsSingletonSettings<T extends { id: string }>(params: {
 
           if (insertError) throw insertError;
 
-          const normalized = normalize(data as Record<string, unknown>);
-          setSettings(normalized);
-          return normalized;
+          return normalize(data as Record<string, unknown>);
         }
 
         const { data, error: updateError } = await supabase
           .from(table as never)
           .update(updates)
-          .eq('id', settings.id)
+          .eq('id', currentSettings.id)
           .select()
           .single();
 
         if (updateError) throw updateError;
 
-        const normalized = normalize(data as Record<string, unknown>);
-        setSettings(normalized);
-        return normalized;
+        return normalize(data as Record<string, unknown>);
       } catch (err: unknown) {
         console.error(`Error updating ${errorLabel}:`, err);
-        setError(err instanceof Error ? err : new Error(`Failed to update ${errorLabel}`));
-        throw err;
-      } finally {
-        setIsLoading(false);
+        throw err instanceof Error ? err : new Error(`Failed to update ${errorLabel}`);
       }
     },
-    [defaultId, errorLabel, normalize, settings?.id, table]
-  );
+    onSuccess: (nextSettings) => {
+      queryClient.setQueryData(queryKey, nextSettings);
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+    },
+  });
 
   return {
-    settings,
-    isLoading,
-    error,
-    updateSettings,
-    refetch: fetchSettings,
+    settings: settingsQuery.data ?? null,
+    isLoading: settingsQuery.isLoading || updateMutation.isPending,
+    error: settingsQuery.error ?? updateMutation.error ?? null,
+    updateSettings: async (updates: Partial<T>) => {
+      const nextSettings = await updateMutation.mutateAsync(updates);
+      return nextSettings;
+    },
+    refetch: async () => {
+      const result = await settingsQuery.refetch();
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data ?? null;
+    }
   };
 }

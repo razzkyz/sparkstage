@@ -10,6 +10,7 @@ import { useDressingRoomCollection, type DressingRoomLook as DBLook } from '../h
 import { useProductSummaries } from '../hooks/useProducts';
 import { getOptimizedDressingRoomImageUrl, normalizeDressingRoomImageUrl } from '../utils/dressingRoomImageUrl';
 import { formatCurrency } from '../utils/formatters';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 const SPRING = { type: 'spring' as const, stiffness: 320, damping: 34 };
 const VISIBLE_AHEAD = 3;
@@ -57,7 +58,7 @@ async function fetchLookPhotos(lookId: number) {
     .select('image_url')
     .eq('look_id', lookId)
     .order('sort_order', { ascending: true });
-  return data?.map(p => p.image_url) || [];
+  return data?.map((p) => resolvePublicAssetUrl(p.image_url)).filter((value): value is string => Boolean(value)) || [];
 }
 
 export default function DressingRoomLandingPage() {

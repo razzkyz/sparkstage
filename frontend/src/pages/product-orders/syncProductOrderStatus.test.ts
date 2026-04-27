@@ -68,4 +68,20 @@ describe('syncProductOrderStatus', () => {
     expect(retryWithFreshToken).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ order: { payment_status: 'paid' } });
   });
+
+  it('does not retry non-auth sync failures', async () => {
+    const timeoutError = Object.assign(new Error('Request timeout'), { status: 504 });
+    vi.mocked(invokeSupabaseFunction).mockRejectedValueOnce(timeoutError);
+
+    const retryWithFreshToken = vi.fn().mockResolvedValue('token-2');
+
+    await expect(
+      syncProductOrderStatus('ORDER-2', 'token-1', {
+        retryWithFreshToken,
+      })
+    ).rejects.toThrow('Request timeout');
+
+    expect(retryWithFreshToken).not.toHaveBeenCalled();
+    expect(vi.mocked(invokeSupabaseFunction)).toHaveBeenCalledTimes(1);
+  });
 });

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCmsSingletonSettings } from './useCmsSingletonSettings';
 import { normalizeSectionFontMap, type SectionFontConfig } from '../lib/cmsTypography';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 const GLAM_ASSET_BASE = '/images/glam%20page%20assets';
 
@@ -82,99 +82,45 @@ function normalizeStarLinks(value: unknown): GlamStarLink[] {
 }
 
 export function useGlamPageSettings() {
-  const [settings, setSettings] = useState<GlamPageSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchSettings = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('glam_page_settings')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          setSettings(null);
-        } else {
-          throw error;
-        }
-      } else {
-        const raw = data as Record<string, unknown>;
-        setSettings({
-          ...(data as GlamPageSettings),
-          look_star_links: normalizeStarLinks(raw.look_star_links),
-          section_fonts: normalizeSectionFontMap(raw.section_fonts, DEFAULT_GLAM_PAGE_SETTINGS.section_fonts),
-        });
-      }
-    } catch (err: unknown) {
-      console.error('Error fetching glam page settings:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch glam page settings'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchSettings();
-  }, []);
-
-  const updateSettings = async (updates: Partial<GlamPageSettings>) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (!settings?.id || settings.id === DEFAULT_GLAM_PAGE_SETTINGS.id) {
-        const { data: newData, error: insertError } = await supabase
-          .from('glam_page_settings')
-          .insert([updates])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        const raw = newData as Record<string, unknown>;
-        setSettings({
-          ...(newData as GlamPageSettings),
-          look_star_links: normalizeStarLinks(raw.look_star_links),
-          section_fonts: normalizeSectionFontMap(raw.section_fonts, DEFAULT_GLAM_PAGE_SETTINGS.section_fonts),
-        });
-        return newData;
-      }
-
-      const { data, error } = await supabase
-        .from('glam_page_settings')
-        .update(updates)
-        .eq('id', settings.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      const raw = data as Record<string, unknown>;
-      setSettings({
-        ...(data as GlamPageSettings),
-        look_star_links: normalizeStarLinks(raw.look_star_links),
-        section_fonts: normalizeSectionFontMap(raw.section_fonts, DEFAULT_GLAM_PAGE_SETTINGS.section_fonts),
-      });
-      return data;
-    } catch (err: unknown) {
-      console.error('Error updating glam page settings:', err);
-      setError(err instanceof Error ? err : new Error('Failed to update glam page settings'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    settings,
-    isLoading,
-    error,
-    updateSettings,
-    refetch: fetchSettings,
-  };
+  return useCmsSingletonSettings<GlamPageSettings>({
+    table: 'glam_page_settings',
+    defaultId: DEFAULT_GLAM_PAGE_SETTINGS.id,
+    normalize: (data) => ({
+      id: typeof data.id === 'string' ? data.id : DEFAULT_GLAM_PAGE_SETTINGS.id,
+      hero_title:
+        typeof data.hero_title === 'string' && data.hero_title.trim() !== ''
+          ? data.hero_title
+          : DEFAULT_GLAM_PAGE_SETTINGS.hero_title,
+      hero_description:
+        typeof data.hero_description === 'string' && data.hero_description.trim() !== ''
+          ? data.hero_description
+          : DEFAULT_GLAM_PAGE_SETTINGS.hero_description,
+      hero_image_url:
+        typeof data.hero_image_url === 'string' && data.hero_image_url.trim() !== ''
+          ? (resolvePublicAssetUrl(data.hero_image_url) ?? DEFAULT_GLAM_PAGE_SETTINGS.hero_image_url)
+          : DEFAULT_GLAM_PAGE_SETTINGS.hero_image_url,
+      look_heading:
+        typeof data.look_heading === 'string' && data.look_heading.trim() !== ''
+          ? data.look_heading
+          : DEFAULT_GLAM_PAGE_SETTINGS.look_heading,
+      look_model_image_url:
+        typeof data.look_model_image_url === 'string' && data.look_model_image_url.trim() !== ''
+          ? (resolvePublicAssetUrl(data.look_model_image_url) ?? DEFAULT_GLAM_PAGE_SETTINGS.look_model_image_url)
+          : DEFAULT_GLAM_PAGE_SETTINGS.look_model_image_url,
+      look_star_links: normalizeStarLinks(data.look_star_links).map((link) => ({
+        ...link,
+        image_url: resolvePublicAssetUrl(link.image_url),
+      })),
+      product_section_title:
+        typeof data.product_section_title === 'string' && data.product_section_title.trim() !== ''
+          ? data.product_section_title
+          : DEFAULT_GLAM_PAGE_SETTINGS.product_section_title,
+      product_search_placeholder:
+        typeof data.product_search_placeholder === 'string' && data.product_search_placeholder.trim() !== ''
+          ? data.product_search_placeholder
+          : DEFAULT_GLAM_PAGE_SETTINGS.product_search_placeholder,
+      section_fonts: normalizeSectionFontMap(data.section_fonts, DEFAULT_GLAM_PAGE_SETTINGS.section_fonts),
+    }),
+    errorLabel: 'glam page settings',
+  });
 }

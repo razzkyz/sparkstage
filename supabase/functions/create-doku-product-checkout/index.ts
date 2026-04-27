@@ -1,5 +1,6 @@
 import { serve } from "../_shared/deps.ts";
 import {
+  assertDokuCheckoutModeGuard,
   buildDokuRequestHeaders,
   createDokuRequestId,
   createDokuRequestTimestamp,
@@ -18,7 +19,11 @@ import {
   jsonError,
   jsonErrorWithDetails,
 } from "../_shared/http.ts";
-import { getDokuEnv, getPublicAppUrl } from "../_shared/env.ts";
+import {
+  getAllowedAppOrigins,
+  getDokuEnv,
+  getPublicAppUrl,
+} from "../_shared/env.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
 import { toNumber } from "../_shared/payment-effects.ts";
 import { requireAuthenticatedRequest } from "../_shared/auth.ts";
@@ -265,6 +270,31 @@ serve(async (req) => {
     const appUrl = getPublicAppUrl() ?? req.headers.get("origin") ?? "";
     if (!appUrl) {
       return jsonError(req, 500, "Missing app url");
+    }
+
+    if (dokuEnv.isProduction && dokuEnv.paymentMethodTypes.length === 0) {
+      return jsonErrorWithDetails(req, 500, {
+        error: "DOKU payment method scope is not configured",
+        code: "DOKU_PAYMENT_METHOD_SCOPE_MISSING",
+        details:
+          "Set DOKU_PAYMENT_METHOD_TYPES for constrained production launch scope.",
+      });
+    }
+
+    try {
+      assertDokuCheckoutModeGuard({
+        isProduction: dokuEnv.isProduction,
+        appUrl,
+        requestOrigin: req.headers.get("origin"),
+        allowedOrigins: getAllowedAppOrigins(),
+        paymentMethodTypes: dokuEnv.paymentMethodTypes,
+      });
+    } catch (error) {
+      return jsonErrorWithDetails(req, 500, {
+        error: "DOKU environment guard failed",
+        code: "DOKU_ENVIRONMENT_GUARD_FAILED",
+        details: error instanceof Error ? error.message : String(error),
+      });
     }
 
     const now = new Date();
@@ -569,6 +599,9 @@ serve(async (req) => {
       },
       payment: {
         payment_due_date: paymentExpiryMinutes,
+        ...(dokuEnv.paymentMethodTypes.length > 0
+          ? { payment_method_types: dokuEnv.paymentMethodTypes }
+          : {}),
       },
       customer: {
         id: sanitizeDokuString(userId, 50),
@@ -591,6 +624,7 @@ serve(async (req) => {
         invoice_number: invoiceNumber,
         payment_provider_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
         payment_due_date_minutes: paymentExpiryMinutes,
+        payment_method_types: dokuEnv.paymentMethodTypes,
         payment_expired_at: paymentExpiredAt.toISOString(),
         callback_url: callbackUrl,
         callback_url_result: callbackUrl,

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { createQuerySignal } from '../lib/fetchers';
 import { queryKeys } from '../lib/queryKeys';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 export type EventScheduleCategory = 'Workshop' | 'Seminar' | 'Masterclass' | 'Exhibition' | string;
 
@@ -38,7 +39,10 @@ async function fetchEventSchedule(includeInactive: boolean, signal?: AbortSignal
 
   const { data, error } = signal ? await query.abortSignal(signal) : await query;
   if (error) throw error;
-  return (data || []) as EventScheduleItem[];
+  return ((data || []) as EventScheduleItem[]).map((item) => ({
+    ...item,
+    image_url: resolvePublicAssetUrl(item.image_url),
+  }));
 }
 
 export function useEventSchedule(options?: { includeInactive?: boolean }) {

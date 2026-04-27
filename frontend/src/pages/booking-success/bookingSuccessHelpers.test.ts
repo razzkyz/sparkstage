@@ -26,6 +26,35 @@ describe('bookingSuccessHelpers', () => {
     ).toBe(false);
   });
 
+  it('keeps syncing when the order started pending but delayed confirmation has not arrived yet', () => {
+    expect(
+      shouldAutoSyncBookingStatus({
+        orderNumber: 'ORD-2',
+        effectiveStatus: null,
+        initialIsPending: true,
+        ticketsCount: 0,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldAutoSyncBookingStatus({
+        orderNumber: 'ORD-2',
+        effectiveStatus: 'failed',
+        initialIsPending: true,
+        ticketsCount: 0,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldAutoSyncBookingStatus({
+        orderNumber: '',
+        effectiveStatus: 'pending',
+        initialIsPending: true,
+        ticketsCount: 0,
+      })
+    ).toBe(false);
+  });
+
   it('only triggers confetti when tickets are available and loading is done', () => {
     expect(
       shouldTriggerBookingConfetti({

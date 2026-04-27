@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 export interface DressingRoomLookItem {
     id: number;
@@ -140,7 +141,7 @@ async function fetchDressingRoomCollection(slug?: string) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const raw = item as any;
             const productId = raw.product_variants?.products?.id;
-            const productImageUrl = raw.product_variants?.products?.image_url;
+            const productImageUrl = resolvePublicAssetUrl(raw.product_variants?.products?.image_url);
             const primaryImage = productId ? productImageMap.get(productId) : null;
 
             lookItems.push({
@@ -159,7 +160,7 @@ async function fetchDressingRoomCollection(slug?: string) {
                         id: raw.product_variants.products.id,
                         name: raw.product_variants.products.name,
                         slug: raw.product_variants.products.slug,
-                        image_url: raw.product_variants.products.image_url,
+                        image_url: resolvePublicAssetUrl(raw.product_variants.products.image_url),
                     } : null as never,
                 } : null,
             });
@@ -171,13 +172,19 @@ async function fetchDressingRoomCollection(slug?: string) {
         id: look.id,
         collection_id: look.collection_id,
         look_number: look.look_number,
-        model_image_url: look.model_image_url,
+        model_image_url: resolvePublicAssetUrl(look.model_image_url) ?? look.model_image_url,
         model_name: look.model_name,
         sort_order: look.sort_order,
         items: itemsByLook.get(look.id) || [],
     }));
 
-    return { collection, looks: dressingRoomLooks };
+    return {
+        collection: {
+            ...collection,
+            cover_image_url: resolvePublicAssetUrl(collection.cover_image_url),
+        },
+        looks: dressingRoomLooks,
+    };
 }
 
 export function useDressingRoomCollection(slug?: string) {

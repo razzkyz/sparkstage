@@ -3,6 +3,7 @@ import {
   classifyProductOrder,
   isActivePickup,
   isHistoryOrder,
+  isPickupReady,
   isPendingPayment,
   shouldAutoSyncProductOrder,
   shouldRedirectPendingToSuccess,
@@ -76,5 +77,31 @@ describe('product order status helpers', () => {
         channel: 'cashier',
       })
     ).toBe(false);
+  });
+
+  it('only treats pickup as ready for paid online orders or cashier orders', () => {
+    expect(
+      isPickupReady({
+        pickup_code: 'PU-123',
+        payment_status: 'pending',
+        channel: 'online',
+      })
+    ).toBe(false);
+
+    expect(
+      isPickupReady({
+        pickup_code: 'PU-123',
+        payment_status: 'paid',
+        channel: 'online',
+      })
+    ).toBe(true);
+
+    expect(
+      isPickupReady({
+        pickup_code: 'CS-123',
+        payment_status: 'unpaid',
+        channel: 'cashier',
+      })
+    ).toBe(true);
   });
 });

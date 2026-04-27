@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
+import { uploadPublicAssetToImageKit } from '../../../lib/publicImagekitUpload';
 import { queryKeys } from '../../../lib/queryKeys';
 import { withTimeout } from '../../../utils/queryHelpers';
 import {
@@ -108,18 +109,15 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
 
         const fileExt = file.name.split('.').pop();
         const fileName = `banner-${Date.now()}.${fileExt}`;
-        const filePath = `banners/${fileName}`;
-
-        const { error } = await withTimeout(
-          supabase.storage.from('banners').upload(filePath, file),
+        const publicUrl = await withTimeout(
+          uploadPublicAssetToImageKit({
+            file,
+            fileName,
+            folderPath: '/public/banners',
+          }),
           UPLOAD_TIMEOUT_MS,
           'Upload gambar terlalu lama (timeout). Coba lagi saat koneksi lebih stabil.'
         );
-        if (error) throw error;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('banners').getPublicUrl(filePath);
 
         setFormData((current) => ({ ...current, image_url: publicUrl }));
         showToast('success', 'Media uploaded successfully');
@@ -153,18 +151,15 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
 
         const fileExt = file.name.split('.').pop();
         const fileName = `banner-title-${Date.now()}.${fileExt}`;
-        const filePath = `banners/${fileName}`;
-
-        const { error } = await withTimeout(
-          supabase.storage.from('banners').upload(filePath, file),
+        const publicUrl = await withTimeout(
+          uploadPublicAssetToImageKit({
+            file,
+            fileName,
+            folderPath: '/public/banners',
+          }),
           UPLOAD_TIMEOUT_MS,
           'Upload gambar terlalu lama (timeout). Coba lagi saat koneksi lebih stabil.'
         );
-        if (error) throw error;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('banners').getPublicUrl(filePath);
 
         setFormData((current) => ({ ...current, title_image_url: publicUrl }));
         showToast('success', 'Title image uploaded successfully');

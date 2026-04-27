@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadPublicAssetToImageKit } from '../lib/publicImagekitUpload';
 
 const DRESSING_ROOM_BUCKET = 'dressing-room-images';
 const LEGACY_BUCKET = 'fashion-images';
@@ -8,6 +9,7 @@ export async function uploadDressingRoomImage(
     collectionId: number | string,
     lookId?: number | string
 ): Promise<string> {
+    void collectionId;
     // Only allow PNG for transparent cutouts
     const fileName = file.name.toLowerCase();
     const hasValidExt = /\.png$/i.test(fileName);
@@ -26,35 +28,22 @@ export async function uploadDressingRoomImage(
             ? globalThis.crypto.randomUUID()
             : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    const folder = lookId ? `${collectionId}/${lookId}` : `${collectionId}`;
-    const objectPath = `${folder}/${uuid}.png`;
-
-    const { error: uploadError } = await supabase.storage
-        .from(DRESSING_ROOM_BUCKET)
-        .upload(objectPath, file, {
-            contentType: 'image/png',
-            cacheControl: '31536000',
-            upsert: false,
-        });
-
-    if (uploadError) {
-        const msg = uploadError.message || 'Gagal upload gambar';
-        if (msg.toLowerCase().includes('bucket') && msg.toLowerCase().includes('not found')) {
-            throw new Error('Storage bucket "dressing-room-images" belum ada. Buat dulu di Supabase Storage.');
-        }
-        throw new Error(msg);
+    if (!lookId) {
+        throw new Error('Look ID is required for dressing room image uploads.');
     }
 
-    const { data } = supabase.storage.from(DRESSING_ROOM_BUCKET).getPublicUrl(objectPath);
-    if (!data?.publicUrl) {
-        throw new Error('Gagal mendapatkan public URL.');
-    }
-
-    return data.publicUrl;
+    return uploadPublicAssetToImageKit({
+        file,
+        fileName: `${uuid}.png`,
+        folderPath: `/public/dressing-room/${lookId}`,
+    });
 }
 
 export async function deleteDressingRoomImage(imageUrl: string): Promise<void> {
     const url = new URL(imageUrl);
+    if (url.hostname === 'ik.imagekit.io' || url.hostname.endsWith('.imagekit.io')) {
+        return;
+    }
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/(dressing-room-images|fashion-images)\/(.+)$/);
     if (!pathMatch) return;
 

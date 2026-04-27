@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object') return null;
@@ -52,6 +53,10 @@ async function fetchBeautyPoster(slug: string) {
   if (posterError) throw posterError;
   const poster = (posters?.[0] ?? null) as BeautyPoster | null;
   if (!poster) return { poster: null, tags: [] as BeautyPosterTag[] };
+  const normalizedPoster: BeautyPoster = {
+    ...poster,
+    image_url: resolvePublicAssetUrl(poster.image_url) ?? poster.image_url,
+  };
 
   const { data: rawTags, error: tagsError } = await supabase
     .from('beauty_poster_tags')
@@ -151,7 +156,7 @@ async function fetchBeautyPoster(slug: string) {
     };
   });
 
-  return { poster, tags };
+  return { poster: normalizedPoster, tags };
 }
 
 export function useBeautyPoster(slug: string | undefined) {

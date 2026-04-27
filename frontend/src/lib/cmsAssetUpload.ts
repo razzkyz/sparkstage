@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { uploadPublicAssetToImageKit } from './publicImagekitUpload';
 import { slugify } from '../utils/merchant';
 
 export type CmsAssetKind = 'image' | 'video';
@@ -32,9 +33,21 @@ export async function uploadCmsAsset(params: {
 
   showToast?.('success', `Uploading ${kind}...`);
 
+  if (bucket === 'events-schedule') {
+    const publicUrl = await uploadPublicAssetToImageKit({
+      file,
+      fileName,
+      folderPath: `/public/events-schedule/${folder}`,
+    });
+
+    onUploaded?.(publicUrl);
+    showToast?.('success', `${kind === 'image' ? 'Image' : 'Video'} uploaded successfully`);
+    return publicUrl;
+  }
+
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(filePath, file, { upsert: true });
+    .upload(filePath, file, { upsert: true, cacheControl: '31536000' });
 
   if (uploadError) {
     throw uploadError;

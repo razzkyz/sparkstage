@@ -13,7 +13,13 @@ export function getProductImageFolder(productId: number): string {
   return `${productImagesBasePath}/${productId}`
 }
 
-export async function createImageKitUploadAuthPayload(productId: number) {
+function normalizeImageKitFolderPath(folderPath: string): string {
+  const trimmed = folderPath.trim().replace(/\\/g, '/')
+  const normalized = `/${trimmed.replace(/^\/+|\/+$/g, '')}`.replace(/\/{2,}/g, '/')
+  return normalized === '/' ? '/products' : normalized
+}
+
+async function createImageKitUploadAuthPayloadForFolder(folder: string) {
   const { publicKey, privateKey, urlEndpoint } = getImageKitEnv()
   const token = crypto.randomUUID()
   const expire = Math.floor(Date.now() / 1000) + 15 * 60
@@ -33,6 +39,14 @@ export async function createImageKitUploadAuthPayload(productId: number) {
     signature: toHex(signatureBuffer),
     folder: getProductImageFolder(productId),
   }
+}
+
+export async function createImageKitUploadAuthPayload(productId: number) {
+  return createImageKitUploadAuthPayloadForFolder(getProductImageFolder(productId))
+}
+
+export async function createImageKitFolderUploadAuthPayload(folderPath: string) {
+  return createImageKitUploadAuthPayloadForFolder(normalizeImageKitFolderPath(folderPath))
 }
 
 export async function deleteImageKitFileById(fileId: string): Promise<void> {

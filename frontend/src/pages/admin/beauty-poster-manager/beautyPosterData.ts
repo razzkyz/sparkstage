@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+import { uploadPublicAssetToImageKit } from '../../../lib/publicImagekitUpload';
 import { clampPercent } from '../../../utils/dragPosition';
 import { slugify } from '../../../utils/merchant';
 import { asRecord } from './beautyPosterHelpers';
@@ -137,15 +138,11 @@ export async function uploadBeautyPosterImage(params: {
   const ext = file.name.split('.').pop() || 'jpg';
   const safeSlug = slug.trim() ? slug.trim() : slugify(title || 'beauty-poster');
   const fileName = `beauty-${safeSlug}-${Date.now()}.${ext}`;
-  const filePath = `posters/${fileName}`;
-
-  const { error } = await supabase.storage.from('beauty-images').upload(filePath, file, { upsert: true });
-  if (error) throw error;
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('beauty-images').getPublicUrl(filePath);
-  return publicUrl;
+  return uploadPublicAssetToImageKit({
+    file,
+    fileName,
+    folderPath: '/public/beauty/posters',
+  });
 }
 
 export async function saveBeautyPoster(params: {

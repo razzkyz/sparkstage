@@ -34,6 +34,7 @@ Spark studio/
 
 - DB migrations workflow: `docs/runbooks/db-migrations.md`
 - DOKU payment workflow: `docs/runbooks/doku-payments.md`
+- Midtrans to DOKU migration status: `docs/migrasi-dari-midtrans-ke-doku.md`
 - ImageKit migration runbook: `docs/runbooks/imagekit-migration.md`
 - Admin product entry guide: `docs/runbooks/admin-product-entry.md`
 - Voucher behavior and constraints: `docs/decisions/voucher-system.md`
@@ -105,6 +106,12 @@ npm run preview
 - Deploy target: Supabase
 - Schema and RLS: `supabase/migrations/`
 - Edge Functions: `supabase/functions/`
+
+## Current Payment Status
+
+- Active payment provider: DOKU Checkout
+- Production smoke tests for ticket and product flows passed on `2026-04-25`
+- Remaining backlog is mostly hardening, test coverage, and non-blocking Midtrans cleanup
 
 ## License
 

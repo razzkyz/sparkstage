@@ -4,6 +4,7 @@ import type { ScheduleFormState } from './eventsScheduleManagerTypes';
 export const REQUEST_TIMEOUT_MS = 60000;
 export const UPLOAD_TIMEOUT_MS = 120000;
 export const SCHEDULE_BUCKET_ID = 'events-schedule';
+export const SCHEDULE_IMAGEKIT_BUCKET_ID = 'imagekit';
 
 export function buildFormState(item?: EventScheduleItem | null): ScheduleFormState {
   return {

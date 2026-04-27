@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCmsSingletonSettings } from './useCmsSingletonSettings';
 
 export interface BookingPageSettings {
   id: string;
@@ -124,86 +123,10 @@ function normalizeSettings(data: Record<string, unknown>): BookingPageSettings {
 }
 
 export function useBookingPageSettings() {
-  const [settings, setSettings] = useState<BookingPageSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchSettings = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('booking_page_settings')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          setSettings(null);
-        } else {
-          throw error;
-        }
-      } else {
-        setSettings(normalizeSettings(data as Record<string, unknown>));
-      }
-    } catch (err: unknown) {
-      console.error('Error fetching booking page settings:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch booking page settings'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchSettings();
-  }, []);
-
-  const updateSettings = async (updates: Partial<BookingPageSettings>) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (!settings?.id || settings.id === DEFAULT_BOOKING_PAGE_SETTINGS.id) {
-        const { data: newData, error: insertError } = await supabase
-          .from('booking_page_settings')
-          .insert([updates])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        const normalized = normalizeSettings(newData as Record<string, unknown>);
-        setSettings(normalized);
-        return normalized;
-      }
-
-      const { data, error } = await supabase
-        .from('booking_page_settings')
-        .update(updates)
-        .eq('id', settings.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      const normalized = normalizeSettings(data as Record<string, unknown>);
-      setSettings(normalized);
-      return normalized;
-    } catch (err: unknown) {
-      console.error('Error updating booking page settings:', err);
-      setError(err instanceof Error ? err : new Error('Failed to update booking page settings'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    settings,
-    isLoading,
-    error,
-    updateSettings,
-    refetch: fetchSettings,
-  };
+  return useCmsSingletonSettings<BookingPageSettings>({
+    table: 'booking_page_settings',
+    defaultId: DEFAULT_BOOKING_PAGE_SETTINGS.id,
+    normalize: normalizeSettings,
+    errorLabel: 'booking page settings',
+  });
 }

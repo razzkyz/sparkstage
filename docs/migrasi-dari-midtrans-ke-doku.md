@@ -35,7 +35,28 @@ Catatan status operasional per 2026-04-25:
   - channel benar-benar aktif dan selectable di dashboard merchant
   - jalur notification / konfigurasi operasionalnya jelas
   - scope launch awal memang sudah memerlukan channel tersebut
-- Cutover live tetap dianggap belum selesai sampai frontend, dashboard DOKU, dan transaksi uang asli kecil sudah tervalidasi.
+- Live smoke test tiket production pada 2026-04-25 sudah dinyatakan lolos manual:
+  - checkout production terbuka dan transaksi memakai uang asli
+  - user lain `pradawashere@gmail.com` berhasil menyelesaikan payment
+  - redirect kembali ke domain production sudah benar, tidak lagi ke `localhost`
+  - login admin berhasil memindai tiket hasil transaksi live
+- Live test produk pada 2026-04-25 juga dinyatakan lolos manual dengan akun `pradawashere@gmail.com`:
+  - checkout produk DOKU berhasil
+  - flow bayar kasir produk berhasil
+  - produk sudah bisa dibeli pada akun official DOKU
+- Bug redirect ke `http://localhost:5173/booking-success?...` sempat ditemukan pada sesi live test awal 2026-04-25.
+- Akar masalahnya sudah ditelusuri dan diperbaiki:
+  - secret production `PUBLIC_APP_URL` di Supabase sebelumnya masih mengarah ke `http://localhost:5173`
+  - helper backend untuk memilih public app URL diperketat agar memprioritaskan `PUBLIC_APP_URL` / `APP_URL`
+  - secret production dan edge functions terkait sudah dideploy ulang setelah perbaikan
+- Cutover production dasar sudah lolos untuk scope launch awal yang dibatasi.
+- Sisa backlog utama per 2026-04-25 sekarang didominasi hardening engineering, test automation, dan cleanup pasca-cutover.
+
+Catatan operasional tambahan per 2026-04-26:
+
+- seluruh monitor UptimeRobot yang sebelumnya dipakai untuk warm-up flow Midtrans sudah dicopot
+- tidak ada lagi traffic internal yang sengaja "menghangatkan Midtrans" edge functions
+- dokumentasi repo tidak lagi memperlakukan UptimeRobot warm-up sebagai komponen aktif dari arsitektur payment
 
 Asumsi dokumen ini:
 
@@ -394,17 +415,17 @@ Checkpoint:
 ## Phase 8 - Go-live preparation
 
 - [x] Isi credential production
-- [ ] Konfigurasi Notification URL production di dashboard DOKU
-- [ ] Verifikasi domain URL publik dan HTTPS
+- [x] Konfigurasi Notification URL production untuk channel fase awal di dashboard DOKU
+- [x] Verifikasi domain URL publik dan HTTPS pada smoke test production
 - [x] Konfigurasi payment method yang ingin diaktifkan
 - [x] Atur payment due date default
-- [ ] Siapkan manual runbook untuk retry notification dan pengecekan dashboard
+- [x] Siapkan manual runbook untuk retry notification dan pengecekan dashboard
 - [ ] Tentukan feature flag atau cutover switch Midtrans ke DOKU
 
 Checkpoint:
 
 - production env lengkap
-- notification production tervalidasi
+- notification production tervalidasi untuk channel fase awal
 - cutover plan jelas dan bisa di-revert
 
 ## Todo Super Detail - Cutover Production
@@ -417,19 +438,19 @@ Checklist ini adalah daftar kerja operasional utama untuk pindah dari sandbox ke
 - [x] Verifikasi `DOKU_SECRET_KEY` production aktif di Supabase secrets
 - [x] Verifikasi `DOKU_IS_PRODUCTION=true` aktif di Supabase secrets
 - [x] Verifikasi `VITE_DOKU_IS_PRODUCTION=true` aktif di frontend hosting
-- [ ] Verifikasi `VITE_APP_URL` mengarah ke domain production yang benar
-- [ ] Verifikasi `PUBLIC_APP_URL` di Supabase sama dengan domain app yang benar
-- [ ] Verifikasi `APP_ALLOWED_ORIGINS` mencakup domain production final
-- [ ] Verifikasi frontend memuat JS `https://jokul.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js`
-- [ ] Verifikasi backend membuat checkout ke `https://api.doku.com/checkout/v1/payment`
+- [x] Verifikasi `VITE_APP_URL` mengarah ke domain production yang benar
+- [x] Verifikasi `PUBLIC_APP_URL` di Supabase sama dengan domain app yang benar
+- [x] Verifikasi `APP_ALLOWED_ORIGINS` mencakup domain production final
+- [x] Verifikasi frontend memuat JS `https://jokul.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js`
+- [x] Verifikasi backend membuat checkout ke `https://api.doku.com/checkout/v1/payment`
 
 ### B. Dashboard DOKU Back Office
 
 - [x] Login ke DOKU Back Office production
 - [x] Buka menu pengaturan payment methods yang akan dipakai saat launch
-- [ ] Isi `Notification URL` production pada setiap channel yang aktif
+- [x] Isi `Notification URL` production pada channel fase awal yang aktif
 - [x] Pastikan URL notification memakai `https://`
-- [ ] Pastikan URL notification bisa diakses publik tanpa auth, VPN, atau port aneh
+- [x] Pastikan URL notification bisa diakses publik tanpa auth, VPN, atau port aneh
 - [ ] Jika memakai override notification URL, pastikan path sama dengan URL yang dikonfigurasi di dashboard
 - [x] Catat channel payment mana saja yang diaktifkan saat fase awal
 - [x] Nonaktifkan channel yang belum siap didukung payload repo
@@ -498,34 +519,45 @@ Channel launch awal yang diprioritaskan:
 
 ### F. Smoke test production dengan uang asli kecil
 
-- [ ] Siapkan 1 tiket test harga kecil untuk transaksi live
-- [ ] Siapkan 1 produk test harga kecil untuk transaksi live
-- [ ] Pastikan item test tidak membingungkan user publik
-- [ ] Jalankan 1 transaksi live tiket nominal kecil
-- [ ] Jalankan 1 transaksi live produk nominal kecil
+- [x] Siapkan 1 tiket test harga kecil untuk transaksi live
+- [x] Siapkan 1 produk test harga kecil untuk transaksi live
+- [x] Pastikan item test tidak membingungkan user publik
+- [x] Jalankan 1 transaksi live tiket nominal kecil
+- [x] Jalankan 1 transaksi live produk nominal kecil
 - [ ] Simpan order number dari kedua transaksi
-- [ ] Verifikasi user diarahkan ke checkout page production, bukan sandbox
-- [ ] Verifikasi payment selesai di sisi DOKU
-- [ ] Verifikasi webhook masuk ke endpoint production
-- [ ] Verifikasi order DB berubah ke status final yang benar
-- [ ] Verifikasi tiket benar-benar terbit untuk transaksi tiket
-- [ ] Verifikasi pickup / order artifact benar untuk transaksi produk
-- [ ] Verifikasi stok tidak tertahan setelah transaksi final
-- [ ] Verifikasi voucher tidak rusak bila voucher ikut terlibat
+- [x] Verifikasi user diarahkan ke checkout page production, bukan sandbox
+- [x] Verifikasi payment selesai di sisi DOKU
+- [x] Verifikasi webhook masuk ke endpoint production
+- [x] Verifikasi order DB berubah ke status final yang benar
+- [x] Verifikasi tiket benar-benar terbit untuk transaksi tiket
+- [x] Verifikasi pickup / order artifact benar untuk transaksi produk
+- [x] Verifikasi stok tidak tertahan setelah transaksi final
+- [x] Verifikasi voucher tidak rusak bila voucher ikut terlibat
+
+Catatan smoke test production 2026-04-25:
+
+- Tiket live test via akun official DOKU berhasil.
+- Produk live test via akun official DOKU berhasil.
+- Flow bayar kasir produk juga berhasil.
+- Akun yang dipakai untuk pengujian manual: `pradawashere@gmail.com`.
+- Jalur awal yang dipakai tetap dibatasi ke scope payment method fase awal.
+- Redirect `localhost` yang sempat muncul pada percobaan awal sudah diperbaiki dan percobaan berikutnya berhasil kembali ke domain production.
+- Tiket hasil transaksi live berhasil dipindai oleh admin, sehingga bukti operasional saat ini tidak hanya berhenti pada status paid.
+- Produk hasil transaksi live sudah bisa dibeli dan flow pasca-bayarnya dinyatakan lolos manual.
 
 ### G. Audit database setelah smoke test
 
-- [ ] Cek `orders` untuk transaksi tiket live test
-- [ ] Cek `order_items` dan `purchased_tickets` untuk memastikan ticket issuance berhasil
-- [ ] Cek `order_products` untuk transaksi produk live test
-- [ ] Cek `order_product_items` dan `product_variants.reserved_stock`
-- [ ] Cek `webhook_logs` untuk memastikan event terekam
-- [ ] Cek tidak ada order `paid` yang kehilangan side effect
-- [ ] Cek tidak ada order expired / cancelled yang masih menahan stock atau capacity
+- [x] Cek `orders` untuk transaksi tiket live test
+- [x] Cek `order_items` dan `purchased_tickets` untuk memastikan ticket issuance berhasil
+- [x] Cek `order_products` untuk transaksi produk live test
+- [x] Cek `order_product_items` dan `product_variants.reserved_stock`
+- [x] Cek `webhook_logs` untuk memastikan event terekam
+- [x] Cek tidak ada order `paid` yang kehilangan side effect
+- [x] Cek tidak ada order expired / cancelled yang masih menahan stock atau capacity
 
 ### H. Keputusan go / no-go
 
-- [ ] Jika 2 transaksi live kecil lolos end-to-end, lanjutkan soft launch
+- [x] Jika 2 transaksi live kecil lolos end-to-end, lanjutkan soft launch
 - [ ] Jika webhook gagal, tahan cutover publik dan perbaiki notification path dulu
 - [ ] Jika stok / kapasitas / ticket issuance tidak sinkron, tahan launch publik
 - [ ] Jika checkout page masih membuka sandbox asset, rollback env frontend dan perbaiki segera
@@ -543,8 +575,8 @@ Urutan kerja yang disepakati dari hasil diskusi operator vs agent:
 Status urutan saat ini:
 
 - tahap operator awal: sebagian besar sudah berjalan
-- tahap agent: siap dimulai sekarang
-- tahap smoke test production: belum dimulai
+- tahap agent: sudah dikerjakan dan hasil utamanya sudah di-deploy
+- tahap smoke test production: tiket dan produk sudah lolos manual
 
 ## Backlog Agent Berikutnya
 
@@ -587,6 +619,63 @@ Hasil audit terbaru menunjukkan 5 gap tertinggi sebelum live smoke test:
 4. Invariant side effect untuk ticket issuance, release capacity, pickup, voucher, dan reserved stock masih perlu bukti test yang lebih kuat.
 5. Dukungan SNAP masih belum siap dibuka ke publik; selama itu belum dikerjakan, scope launch awal harus tetap dibatasi ke jalur non-SNAP / channel yang benar-benar terverifikasi.
 
+## Prioritas Backlog Per 2026-04-25
+
+| Prioritas | Fokus | Item |
+| --- | --- | --- |
+| Urgent | Hardening sebelum pembukaan scope lebih lebar | Implementasi `payment.payment_method_types` agar channel launch awal benar-benar terkunci dari payload, tambah test webhook retry / replay idempotency, tambah test delayed webhook untuk sync dan reconciliation, tambah test invariant side effect untuk tiket, produk, voucher, stock, dan capacity |
+| Medium | Operasional awal live dan guard tambahan | Tambah guard / alert jika mode frontend-backend mismatch, dokumentasikan payment methods publik yang benar-benar dibuka, simpan order number smoke test dan bukti audit operasional, siapkan langkah retry manual yang lebih ringkas untuk operator |
+| Nice to have | Cleanup pasca-cutover | Arsipkan / hapus edge function Midtrans lama, rapikan secret Midtrans yang sudah obsolete, rotate credential yang sempat terekspos di luar secret manager, review kemungkinan verifikasi response signature DOKU pada create checkout |
+
+## Checklist Monitoring Early-Live
+
+Checklist ini dipakai operator pada 24-72 jam awal setelah soft launch terbatas.
+
+### Per transaksi awal
+
+- Pastikan user benar-benar diarahkan ke checkout production DOKU, bukan sandbox.
+- Pastikan status order final di app berubah tanpa menunggu intervensi manual yang berulang.
+- Pastikan tiket live test bisa dipindai admin.
+- Pastikan order produk live test memiliki pickup / artifact yang benar.
+- Pastikan tidak ada reserved stock atau capacity yang tertahan setelah status final non-pending.
+
+### Per 1-2 jam pada hari pertama
+
+- Cek ada atau tidak order `pending` yang lewat dari expiry lokal tetapi belum dipulihkan reconciliation.
+- Cek tidak ada order `paid` yang kehilangan ticket issuance atau pickup artifact.
+- Cek `webhook_logs` untuk memastikan event DOKU tetap masuk normal.
+- Cek cron reconciliation dan expiry masih terdaftar dan berjalan.
+
+### Query audit cepat
+
+```sql
+select order_number, status, expires_at
+from orders
+where status = 'pending'
+  and expires_at < now()
+order by expires_at asc;
+
+select order_number, status, payment_status, payment_expired_at
+from order_products
+where status not in ('completed', 'cancelled', 'expired')
+  and payment_status <> 'paid'
+  and payment_expired_at < now()
+order by payment_expired_at asc;
+
+select order_number, payment_status, pickup_code
+from order_products
+where payment_status = 'paid'
+  and pickup_code is null;
+
+select o.order_number
+from orders o
+left join order_items oi on oi.order_id = o.id
+left join purchased_tickets pt on pt.order_item_id = oi.id
+where o.status = 'paid'
+group by o.order_number
+having count(pt.id) = 0;
+```
+
 ### I. Setelah live stabil
 
 - [ ] Hapus atau arsipkan function Midtrans lama di remote
@@ -606,6 +695,24 @@ Checkpoint:
 
 - codebase tidak menyisakan flow payment ganda yang membingungkan
 - dokumentasi operasional sudah pindah ke DOKU
+
+## Cleanup Plan Non-Blocking
+
+Bagian ini sengaja ditandai non-blocking. Jalankan setelah soft launch stabil, bukan sebagai syarat smoke test atau validasi transaksi uang asli awal.
+
+### Midtrans decommissioning
+
+- [ ] Inventaris terakhir function, cron, dan secret Midtrans yang masih tersisa di remote
+- [ ] Arsipkan atau hapus edge function `midtrans-*` yang sudah tidak dipakai
+- [ ] Hapus cron atau scheduler Midtrans yang benar-benar obsolete
+- [ ] Pastikan README, runbook, dan dashboard operasional tidak lagi menyebut Midtrans sebagai jalur aktif
+
+### Credential rotation
+
+- [ ] Rotate credential DOKU yang sempat dibagikan di luar secret manager
+- [ ] Update Supabase secret setelah rotation
+- [ ] Verifikasi checkout production tetap berjalan setelah rotation
+- [ ] Catat tanggal rotation dan operator yang menjalankan
 
 ## Risiko yang Harus Dijaga
 
@@ -637,3 +744,31 @@ Checkpoint:
 - SNAP signature overview: https://developers.doku.com/get-started-with-doku-api/signature-component/snap
 - SNAP asymmetric signature: https://developers.doku.com/get-started-with-doku-api/signature-component/snap/asymmetric-signature
 - SNAP symmetric signature: https://developers.doku.com/get-started-with-doku-api/signature-component/snap/symmetric-signature
+
+## Penilaian Progress Migrasi
+
+Per 2026-04-25 setelah batch hardening dan deploy terakhir, estimasi progress migrasi Midtrans ke DOKU dinaikkan menjadi **89%**.
+
+Penjelasannya:
+
+- **Sekitar 92% untuk cutover fungsional / bisnis**
+  - tiket sudah bisa dibeli di akun official DOKU
+  - tiket hasil transaksi live sudah bisa dipindai admin
+  - produk sudah bisa dibeli di akun official DOKU
+  - flow bayar kasir produk juga sudah lolos
+  - webhook, redirect balik ke app, dan side effect utama sudah terbukti jalan pada smoke test terbatas
+
+- **Sekitar 84% untuk engineering completion / hardening penuh**
+  - pembatasan payment methods dari sisi payload / code sekarang sudah dipasang untuk scope launch awal
+  - guard mode production vs sandbox sudah ditambahkan agar mismatch lebih cepat terdeteksi
+  - automated test coverage untuk webhook replay, transition regression, dan sebagian helper sync/status sudah bertambah
+  - query audit dan runbook early-live sudah dirapikan
+  - namun test automation end-to-end untuk retry, delayed webhook, sync/reconciliation, dan invariant side effect lintas tabel masih belum lengkap
+  - channel `SNAP` tetap belum siap dibuka ke publik
+  - cleanup akhir function / secret Midtrans lama belum selesai
+
+Kesimpulan praktis:
+
+- progress memang **naik sedikit** dari 85% ke 89% karena backlog kritis untuk scope launch awal sudah berkurang
+- untuk **soft launch terbatas**, migrasi ini sudah sangat dekat selesai dan layak dipakai
+- untuk disebut **100% selesai secara engineering**, masih ada pekerjaan hardening, test automation, dan cleanup pasca-cutover

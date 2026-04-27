@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { createQuerySignal } from '../lib/fetchers';
 import { queryKeys } from '../lib/queryKeys';
+import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
 
 export interface Banner {
   id: number;
@@ -31,7 +32,11 @@ async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop
     : await query;
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((banner) => ({
+    ...banner,
+    image_url: resolvePublicAssetUrl(banner.image_url) ?? banner.image_url,
+    title_image_url: resolvePublicAssetUrl(banner.title_image_url),
+  }));
 }
 
 export function useBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map') {

@@ -1,10 +1,28 @@
 import { serve } from '../_shared/deps.ts'
 import { json, handleCors } from '../_shared/http.ts'
 import { requireAdminContext } from '../_shared/admin.ts'
-import { createImageKitUploadAuthPayload } from '../_shared/imagekit.ts'
+import { createImageKitFolderUploadAuthPayload, createImageKitUploadAuthPayload } from '../_shared/imagekit.ts'
 
 type RequestBody = {
   productId?: number | string
+  folderPath?: string
+}
+
+const ALLOWED_PUBLIC_FOLDER_PATTERNS = [
+  /^\/public\/banners$/,
+  /^\/public\/beauty\/posters$/,
+  /^\/public\/beauty\/glam$/,
+  /^\/public\/dressing-room\/[0-9]+$/,
+  /^\/public\/events-schedule\/items$/,
+]
+
+function normalizeFolderPath(value: string): string {
+  const trimmed = value.trim().replace(/\\/g, '/')
+  return `/${trimmed.replace(/^\/+|\/+$/g, '')}`.replace(/\/{2,}/g, '/')
+}
+
+function isAllowedPublicFolderPath(folderPath: string): boolean {
+  return ALLOWED_PUBLIC_FOLDER_PATTERNS.some((pattern) => pattern.test(folderPath))
 }
 
 serve(async (req) => {
@@ -21,6 +39,18 @@ serve(async (req) => {
 
   try {
     const body = (await req.json()) as RequestBody
+    const rawFolderPath = typeof body.folderPath === 'string' ? body.folderPath : ''
+    const folderPath = rawFolderPath ? normalizeFolderPath(rawFolderPath) : ''
+
+    if (folderPath) {
+      if (!isAllowedPublicFolderPath(folderPath)) {
+        return json(req, { error: 'Invalid folderPath' }, { status: 400 })
+      }
+
+      const authPayload = await createImageKitFolderUploadAuthPayload(folderPath)
+      return json(req, authPayload)
+    }
+
     const productId = Number(body.productId)
 
     if (!Number.isFinite(productId) || productId <= 0) {

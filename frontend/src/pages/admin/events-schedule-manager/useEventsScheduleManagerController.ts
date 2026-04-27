@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
+import { uploadPublicAssetToImageKit } from '../../../lib/publicImagekitUpload';
 import { queryKeys } from '../../../lib/queryKeys';
 import { withTimeout } from '../../../utils/queryHelpers';
 import { useEventSchedule, type EventScheduleItem } from '../../../hooks/useEventSchedule';
@@ -8,6 +9,7 @@ import {
   buildFormState,
   REQUEST_TIMEOUT_MS,
   SCHEDULE_BUCKET_ID,
+  SCHEDULE_IMAGEKIT_BUCKET_ID,
   toPreviewItem,
   UPLOAD_TIMEOUT_MS,
 } from './eventsScheduleManagerHelpers';
@@ -103,6 +105,7 @@ export function useEventsScheduleManagerController(showToast: ShowToast): Events
     const safeBucket = bucketId || SCHEDULE_BUCKET_ID;
     const safePath = path || '';
     if (!safePath.trim()) return;
+    if (safeBucket !== SCHEDULE_BUCKET_ID) return;
 
     const { error: removeError } = await supabase.storage.from(safeBucket).remove([safePath]);
     if (removeError) throw removeError;
@@ -114,19 +117,23 @@ export function useEventsScheduleManagerController(showToast: ShowToast): Events
         setUploading(true);
         const fileExt = file.name.split('.').pop() || 'png';
         const fileName = `evt-${Date.now()}.${fileExt}`;
-        const filePath = `items/${fileName}`;
+        const imagekitPath = `public/events-schedule/items/${fileName}`;
 
-        const { error: uploadError } = await withTimeout(
-          supabase.storage.from(SCHEDULE_BUCKET_ID).upload(filePath, file, { upsert: true }),
+        const publicUrl = await withTimeout(
+          uploadPublicAssetToImageKit({
+            file,
+            fileName,
+            folderPath: '/public/events-schedule/items',
+          }),
           UPLOAD_TIMEOUT_MS,
           'Upload gambar terlalu lama (timeout). Coba lagi saat koneksi lebih stabil.'
         );
-        if (uploadError) throw uploadError;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from(SCHEDULE_BUCKET_ID).getPublicUrl(filePath);
-        setForm((current) => ({ ...current, image_url: publicUrl, image_path: filePath, image_bucket: SCHEDULE_BUCKET_ID }));
+        setForm((current) => ({
+          ...current,
+          image_url: publicUrl,
+          image_path: imagekitPath,
+          image_bucket: SCHEDULE_IMAGEKIT_BUCKET_ID,
+        }));
         showToast('success', 'Image uploaded');
       } catch (error) {
         showToast('error', error instanceof Error ? error.message : 'Failed to upload image');

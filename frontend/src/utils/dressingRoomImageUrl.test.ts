@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getOptimizedDressingRoomImageUrl, parseDressingRoomStorageObjectPath } from './dressingRoomImageUrl';
+import { mapSupabasePublicAssetUrlToImageKit } from '../lib/publicAssetUrl';
 
 describe('dressingRoomImageUrl', () => {
   it('parses object path from public object URL', () => {
@@ -17,16 +18,30 @@ describe('dressingRoomImageUrl', () => {
     expect(getOptimizedDressingRoomImageUrl(input, { height: 1600 })).toBe(input);
   });
 
-  it('builds render URL with height for dressing-room-images object URLs', () => {
+  it('redirects known dressing-room object URLs to ImageKit delivery with height transform', () => {
     const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/dressing-room-images/1/2/abc.png';
     const output = getOptimizedDressingRoomImageUrl(input, { height: 1600 });
-    expect(output).toContain('/storage/v1/render/image/public/dressing-room-images/1/2/abc.png');
-    expect(output).toContain('height=1600');
+    expect(output).toContain('https://ik.imagekit.io/hjnuyzlt3/public/dressing-room/2/abc.png');
+    expect(output).toContain('tr=');
+    expect(output).toContain('h-1600');
   });
 
   it('handles legacy fashion-images object URLs', () => {
     const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/fashion-images/1/2/abc.png';
     const output = getOptimizedDressingRoomImageUrl(input, { height: 1200 });
     expect(output).toContain('/storage/v1/render/image/public/dressing-room-images/1/2/abc.png');
+  });
+
+  it('maps known public Supabase asset URLs to ImageKit', () => {
+    const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/beauty-images/glam/model.png';
+    expect(mapSupabasePublicAssetUrlToImageKit(input)).toBe('https://ik.imagekit.io/hjnuyzlt3/public/beauty/glam/model.png');
+  });
+
+  it('builds ImageKit transformed URL for migrated dressing room images', () => {
+    const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/dressing-room-images/1/2/abc.png';
+    const output = getOptimizedDressingRoomImageUrl(input, { height: 900 });
+    expect(output).toContain('https://ik.imagekit.io/hjnuyzlt3/public/dressing-room/2/abc.png');
+    expect(output).toContain('tr=');
+    expect(output).toContain('h-900');
   });
 });

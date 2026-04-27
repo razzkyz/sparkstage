@@ -3,7 +3,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
-import { supabase } from '../../lib/supabase';
+import { uploadPublicAssetToImageKit } from '../../lib/publicImagekitUpload';
 import { DEFAULT_GLAM_PAGE_SETTINGS, type GlamStarLink, useGlamPageSettings } from '../../hooks/useGlamPageSettings';
 import { useProductPickerOptions, type ProductPickerOption } from '../../hooks/useProducts';
 import { slugify } from '../../utils/merchant';
@@ -273,17 +273,11 @@ export default function BeautyPosterManager() {
 
         const ext = file.name.split('.').pop() || 'png';
         const fileName = `${prefix}-${slugify(file.name.replace(/\.[^.]+$/, '')) || 'glam-image'}-${Date.now()}.${ext}`;
-        const filePath = `glam/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('beauty-images')
-          .upload(filePath, file, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('beauty-images').getPublicUrl(filePath);
+        const publicUrl = await uploadPublicAssetToImageKit({
+          file,
+          fileName,
+          folderPath: '/public/beauty/glam',
+        });
 
         onComplete(publicUrl);
         showToast('success', 'Image uploaded successfully');

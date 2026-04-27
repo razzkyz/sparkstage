@@ -1,6 +1,7 @@
 const DOKU_CHECKOUT_PATH = "/checkout/v1/payment";
 const DOKU_STATUS_PATH_PREFIX = "/orders/v1/status/";
 const DOKU_SAFE_CHARS = /[^a-zA-Z0-9 .\-/+,=_:'@%]/g;
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 function toBase64(bytes: Uint8Array) {
   let binary = "";
@@ -62,6 +63,90 @@ export function getDokuCheckoutPath() {
 
 export function getDokuStatusPath(orderNumber: string) {
   return `${DOKU_STATUS_PATH_PREFIX}${encodeURIComponent(orderNumber)}`;
+}
+
+function normalizeOriginLike(value: string) {
+  try {
+    const url = new URL(value.trim());
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return value.trim().replace(/\/+$/, "");
+  }
+}
+
+function isLocalOrigin(value: string) {
+  try {
+    return LOCAL_HOSTNAMES.has(new URL(value).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+export function assertDokuCheckoutModeGuard(params: {
+  isProduction: boolean;
+  appUrl: string;
+  requestOrigin?: string | null;
+  allowedOrigins?: string[];
+  paymentMethodTypes?: string[];
+}) {
+  if (!params.isProduction) return;
+
+  const appUrl = normalizeOriginLike(params.appUrl);
+  if (!appUrl) {
+    throw new Error("PUBLIC_APP_URL is required for DOKU production checkout");
+  }
+
+  let parsedAppUrl: URL;
+  try {
+    parsedAppUrl = new URL(appUrl);
+  } catch {
+    throw new Error(
+      "PUBLIC_APP_URL must be a valid absolute URL for DOKU production checkout",
+    );
+  }
+
+  if (parsedAppUrl.protocol !== "https:") {
+    throw new Error("PUBLIC_APP_URL must use https in DOKU production mode");
+  }
+
+  if (LOCAL_HOSTNAMES.has(parsedAppUrl.hostname.toLowerCase())) {
+    throw new Error(
+      "PUBLIC_APP_URL cannot point to localhost in DOKU production mode",
+    );
+  }
+
+  const requestOrigin = normalizeOriginLike(params.requestOrigin ?? "");
+  if (requestOrigin) {
+    if (isLocalOrigin(requestOrigin)) {
+      throw new Error(
+        "Production DOKU checkout cannot be created from localhost origin",
+      );
+    }
+
+    const allowedOrigins = Array.from(
+      new Set(
+        (params.allowedOrigins ?? []).map((origin) =>
+          normalizeOriginLike(origin)
+        ).filter(Boolean),
+      ),
+    );
+    if (allowedOrigins.length > 0 && !allowedOrigins.includes(requestOrigin)) {
+      throw new Error(
+        `Origin ${requestOrigin} is not allowed for DOKU production checkout`,
+      );
+    }
+  }
+
+  const snapScopedTypes = (params.paymentMethodTypes ?? []).filter((value) =>
+    value.toUpperCase().includes("SNAP")
+  );
+  if (snapScopedTypes.length > 0) {
+    throw new Error(
+      `SNAP payment methods are outside the current launch scope: ${
+        snapScopedTypes.join(", ")
+      }`,
+    );
+  }
 }
 
 export function sanitizeDokuString(value: string, maxLength?: number) {
