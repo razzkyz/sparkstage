@@ -21,7 +21,7 @@ describe('dressingRoomImageUrl', () => {
   it('redirects known dressing-room object URLs to ImageKit delivery with height transform', () => {
     const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/dressing-room-images/1/2/abc.png';
     const output = getOptimizedDressingRoomImageUrl(input, { height: 1600 });
-    expect(output).toContain('https://ik.imagekit.io/hjnuyzlt3/public/dressing-room/2/abc.png');
+    expect(output).toContain('https://ik.imagekit.io/hjnuyz1t3/public/dressing-room/2/abc.png');
     expect(output).toContain('tr=');
     expect(output).toContain('h-1600');
   });
@@ -34,13 +34,13 @@ describe('dressingRoomImageUrl', () => {
 
   it('maps known public Supabase asset URLs to ImageKit', () => {
     const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/beauty-images/glam/model.png';
-    expect(mapSupabasePublicAssetUrlToImageKit(input)).toBe('https://ik.imagekit.io/hjnuyzlt3/public/beauty/glam/model.png');
+    expect(mapSupabasePublicAssetUrlToImageKit(input)).toBe('https://ik.imagekit.io/hjnuyz1t3/public/beauty/glam/model.png');
   });
 
   it('builds ImageKit transformed URL for migrated dressing room images', () => {
     const input = 'https://hogzjapnkvsihvvbgcdb.supabase.co/storage/v1/object/public/dressing-room-images/1/2/abc.png';
     const output = getOptimizedDressingRoomImageUrl(input, { height: 900 });
-    expect(output).toContain('https://ik.imagekit.io/hjnuyzlt3/public/dressing-room/2/abc.png');
+    expect(output).toContain('https://ik.imagekit.io/hjnuyz1t3/public/dressing-room/2/abc.png');
     expect(output).toContain('tr=');
     expect(output).toContain('h-900');
   });

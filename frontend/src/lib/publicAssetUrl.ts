@@ -1,4 +1,4 @@
-const IMAGEKIT_PUBLIC_BASE_URL = 'https://ik.imagekit.io/hjnuyzlt3/public';
+const IMAGEKIT_PUBLIC_BASE_URL = 'https://ik.imagekit.io/hjnuyz1t3/public';
 
 const PUBLIC_ASSET_RULES = [
   { sourcePrefix: 'banners/banners/', targetPrefix: 'banners/' },
@@ -35,4 +35,3 @@ export function resolvePublicAssetUrl(inputUrl: string | null | undefined): stri
   if (typeof inputUrl !== 'string' || inputUrl.trim() === '') return null;
   return mapSupabasePublicAssetUrlToImageKit(inputUrl);
 }
-

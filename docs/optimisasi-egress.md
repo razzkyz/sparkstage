@@ -350,7 +350,7 @@ Progress `27 April 2026`:
   - `dressing-room`: `11` file
   - `events-schedule/items`: `0` file
 - total size upload-ready yang sudah masuk ke ImageKit sekitar `128.7224 MB`
-- endpoint default ImageKit yang dipakai tetap `https://ik.imagekit.io/hjnuyzlt3`
+- endpoint default ImageKit yang dipakai tetap `https://ik.imagekit.io/hjnuyz1t3`
 - manifest cutover URL sudah digenerate:
   - total URL aktif yang perlu dipindah: `30`
   - `banners`: `14`
