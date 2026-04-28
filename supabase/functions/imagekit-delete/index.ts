@@ -1,11 +1,29 @@
 import { serve } from '../_shared/deps.ts'
 import { json, handleCors } from '../_shared/http.ts'
 import { requireAdminContext } from '../_shared/admin.ts'
-import { deleteImageKitFileById } from '../_shared/imagekit.ts'
+import { deleteImageKitFileById, findImageKitFileIdByPath } from '../_shared/imagekit.ts'
 
 type RequestBody = {
   fileId?: string
   productImageId?: number | string
+  filePath?: string
+}
+
+const ALLOWED_PUBLIC_FILE_PATH_PATTERNS = [
+  /^\/public\/banners\/[^/]+$/,
+  /^\/public\/beauty\/posters\/[^/]+$/,
+  /^\/public\/beauty\/glam\/[^/]+$/,
+  /^\/public\/dressing-room\/[0-9]+\/[^/]+$/,
+  /^\/public\/events-schedule\/[a-z0-9-]+\/[^/]+$/,
+]
+
+function normalizeFilePath(value: string): string {
+  const trimmed = value.trim().replace(/\\/g, '/')
+  return `/${trimmed.replace(/^\/+|\/+$/g, '')}`.replace(/\/{2,}/g, '/')
+}
+
+function isAllowedPublicFilePath(filePath: string): boolean {
+  return ALLOWED_PUBLIC_FILE_PATH_PATTERNS.some((pattern) => pattern.test(filePath))
 }
 
 serve(async (req) => {
@@ -23,10 +41,26 @@ serve(async (req) => {
   try {
     const body = (await req.json()) as RequestBody
     const fileId = String(body.fileId ?? '').trim()
+    const rawFilePath = typeof body.filePath === 'string' ? body.filePath : ''
+    const filePath = rawFilePath ? normalizeFilePath(rawFilePath) : ''
     const productImageId = Number(body.productImageId)
 
+    if (filePath) {
+      if (!isAllowedPublicFilePath(filePath)) {
+        return json(req, { error: 'Invalid filePath' }, { status: 400 })
+      }
+
+      const resolvedFileId = await findImageKitFileIdByPath(filePath)
+      if (!resolvedFileId) {
+        return json(req, { error: 'ImageKit file not found for filePath' }, { status: 404 })
+      }
+
+      await deleteImageKitFileById(resolvedFileId)
+      return json(req, { ok: true, fileId: resolvedFileId, filePath })
+    }
+
     if (!fileId) {
-      return json(req, { error: 'Missing fileId' }, { status: 400 })
+      return json(req, { error: 'Missing fileId or filePath' }, { status: 400 })
     }
 
     let productImageQuery = context.supabaseService

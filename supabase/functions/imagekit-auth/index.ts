@@ -13,7 +13,7 @@ const ALLOWED_PUBLIC_FOLDER_PATTERNS = [
   /^\/public\/beauty\/posters$/,
   /^\/public\/beauty\/glam$/,
   /^\/public\/dressing-room\/[0-9]+$/,
-  /^\/public\/events-schedule\/items$/,
+  /^\/public\/events-schedule\/[a-z0-9-]+$/,
 ]
 
 function normalizeFolderPath(value: string): string {

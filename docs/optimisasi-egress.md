@@ -334,10 +334,12 @@ Fokus jalur ini adalah menurunkan `Cached Egress` Supabase dengan memindahkan de
 - [x] Siapkan helper upload ImageKit untuk asset non-produk
 - [x] Ubah helper upload yang masih menulis ke Supabase Storage
 - [x] Ubah URL delivery asset agar keluar lewat `ik.imagekit.io/...`
-- [ ] Ubah flow delete asset bila provider file dipindahkan
+- [x] Ubah flow delete asset bila provider file dipindahkan
 - [ ] Pastikan fallback lama tidak lagi dipakai oleh route publik setelah cutover
 - [ ] Verifikasi bahwa asset publik terbesar tidak lagi keluar lewat `supabase.co/storage/...`
 - [x] Pantau bandwidth dan storage ImageKit setelah cutover awal
+- [x] Deploy ulang `imagekit-auth` setelah koreksi endpoint dan folder auth payload
+- [x] Deploy ulang `imagekit-delete` untuk cleanup asset non-produk berbasis `filePath`
 - [ ] Simpan bucket Supabase lama sebagai rollback buffer sementara sebelum cleanup final
 
 Progress `27 April 2026`:
@@ -371,18 +373,133 @@ Progress `27 April 2026`:
   - `events-schedule/items`
   - `dressing-room/<lookId>`
   - jalur CMS generik yang sebelumnya masih menulis ke bucket `events-schedule`
+- validasi production path untuk `banners` sudah terbukti:
+  - request asset banner sekarang keluar ke `https://ik.imagekit.io/hjnuyz1t3/public/banners/...`
+  - status response `200 OK`
+  - `Content-Type` yang diterima browser sudah `image/webp`
+  - `Cache-Control` panjang (`max-age=31536000`) aktif
+- ini berarti read-path `banners` sudah benar-benar tidak lagi bergantung pada delivery `supabase.co/storage/...`
+- function `imagekit-auth` sudah dideploy ulang via `supabase` CLI setelah:
+  - koreksi typo endpoint ImageKit
+  - perbaikan helper auth payload folder
+  - perluasan allowlist folder `events-schedule/<folder>` untuk jalur CMS Event/News
+- function `imagekit-delete` sudah dideploy ulang via `supabase` CLI untuk mendukung cleanup asset non-produk berbasis `filePath`
+- verifikasi admin upload untuk `Event Page CMS` sudah berhasil:
+  - upload manual pada `Hero Image 3` berhasil
+  - toast `Image uploaded successfully` muncul
+  - URL hasil upload mengarah ke `https://ik.imagekit.io/hjnuyz1t3/public/events-schedule/settings/...`
+  - ini membuktikan jalur CMS generik `events-schedule/settings` sekarang sudah lolos auth upload dan tersimpan ke ImageKit
+- cleanup replace/delete flow berikut sekarang sudah tertutup dari sisi coding:
+  - `events-schedule/items`
+  - `beauty/posters`
+  - `banners`
+  - `beauty/glam`
+  - `dressing-room`
+- pendekatan cleanup memakai lookup `fileId` ImageKit dari `filePath`, sehingga belum perlu perubahan schema baru
+- `dressing-room` sekarang juga ditutup dari sisi lifecycle asset:
+  - replace foto akan ikut menyinkronkan `model_image_url` bila sebelumnya menunjuk file lama
+  - delete foto akan menggeser `model_image_url` ke foto berikutnya atau string kosong bila tidak ada sisa foto
+  - delete look akan cleanup `model_image_url` + seluruh `look_photos`
+  - delete collection akan cleanup `cover_image_url` + seluruh asset looks/photos turunannya
+- testing kolaboratif putaran `27 April 2026` untuk jalur admin non-produk dinyatakan lanjut/berjalan:
+  - `Event Page CMS` sudah terbukti berhasil upload ke ImageKit
+  - `News Page`, `GLAM`, dan `Dressing Room` masuk batch pengecekan partner/admin
+  - untuk catatan internal, jalur-jalur ini diperlakukan sebagai `assumed working pending final exception report`
 - next step yang tersisa:
-  - tambah cleanup delete ImageKit supaya file orphan tidak menumpuk
-  - patch database agar source data ikut bersih dari URL Supabase lama
+  - eksekusi one-off cleanup URL lama Supabase -> ImageKit di database
+  - pantau usage/log Supabase pasca-cutover
+  - verifikasi exception report bila partner/admin menemukan error minor pada `News Page`, `GLAM`, atau `Dressing Room`
 
 Checkpoint:
 
 - minimal satu bucket publik terbesar sudah keluar dari Supabase
-- URL public asset terbesar tidak lagi lewat `supabase.co/storage/...`
+- `banners` sebagai kandidat bucket publik terbesar sudah tervalidasi keluar lewat `ik.imagekit.io/...`, bukan `supabase.co/storage/...`
 - penggunaan cached egress Supabase turun nyata
 - penggunaan bandwidth ImageKit masih aman terhadap free tier
 - manifest cutover tidak punya URL aktif yang unresolved
-- runtime publik utama tidak lagi bergantung pada URL delivery `supabase.co/storage/...`
+- runtime publik utama untuk jalur `banners` tidak lagi bergantung pada URL delivery `supabase.co/storage/...`
+- jalur admin `Event Page CMS` untuk bucket logis `events-schedule/settings` sudah tervalidasi upload ke ImageKit
+
+Estimasi progres keseluruhan `27 April 2026`:
+
+- optimisasi egress tahap ini berada di kisaran `70% - 75%` selesai
+- estimasi kerja internal yang paling realistis saat ini: sekitar `72%`
+- yang sudah berat dan paling penting:
+  - migrasi upload asset non-produk ke ImageKit
+  - remap read-path publik ke ImageKit
+  - validasi live `banners` sudah `200 OK` dari ImageKit
+  - optimisasi awal PostgREST/public settings
+- yang belum selesai:
+  - cleanup delete flow provider ImageKit agar tidak meninggalkan orphan file
+  - verifikasi live semua jalur admin non-produk
+  - cleanup source data/database dari URL Supabase lama
+  - observasi usage Supabase pasca-cutover selama beberapa hari
+
+Estimasi progres terkini `28 April 2026`:
+
+- setelah validasi `Event Page CMS`, deploy `imagekit-auth`, deploy `imagekit-delete`, dan implementasi cleanup awal `events-schedule`, progres realistis naik ke kisaran `75% - 80%`
+- angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `78%`
+
+Update pengerjaan lanjutan `28 April 2026`:
+
+- cleanup replace/delete `beauty/posters`, `banners`, dan `beauty/glam` sudah ikut selesai dari sisi coding
+- cleanup `dressing-room` sekarang juga selesai dari sisi coding
+- script manual untuk one-off DB cleanup URL lama sudah disiapkan di:
+  - `supabase/manual/imagekit_public_asset_url_cutover.sql`
+- `npm run build` lulus setelah patch cleanup tambahan
+- area tersisa yang paling nyata sekarang:
+  - one-off cleanup URL lama Supabase -> ImageKit di database
+  - monitoring usage Supabase pasca-cutover
+
+Dengan status ini, progres realistis naik ke kisaran `85% - 90%`.
+Angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `87%`.
+
+Final pass refactor `28 April 2026`:
+
+- dilakukan double-check struktur kode pada scope optimisasi egress dan dirapikan pada jalur `dressing-room` agar tidak ada failure misleading setelah mutasi DB sukses
+- cleanup provider untuk `dressing-room` sekarang memakai `best effort` agar tidak membatalkan operasi utama (delete/replace) bila provider cleanup gagal
+- sumber URL foto lama saat replace/delete sekarang diambil dari DB (`photo.image_url`) agar tidak bergantung asumsi parameter UI
+- hardening ditambahkan pada `deleteDressingRoomImage` agar URL invalid tidak memecahkan flow cleanup
+- build dan test util terkait dressing room tetap lulus setelah refactor
+
+Status AI agent setelah final pass:
+
+- task substantif sisi coding untuk scope optimisasi egress sudah tertutup
+- remaining tasks didorong ke kategori operasional/minor:
+  - one-off eksekusi SQL cleanup URL lama
+  - smoke test ringan admin (`News Page`, `Dressing Room`)
+  - monitoring usage/log Supabase pasca-cutover
+
+### Task Table `28 April 2026`
+
+| Area | Task | Status | Owner utama | Perlu bantuan teknis human |
+|---|---|---|---|---|
+| ImageKit read-path | Remap URL publik Supabase ke ImageKit | Selesai | Coding | Tidak |
+| ImageKit write-path | Upload admin `banners` | Selesai | Coding | Tidak |
+| ImageKit write-path | Upload admin `beauty/posters` | Selesai | Coding | Tidak |
+| ImageKit write-path | Upload admin `beauty/glam` | Selesai | Coding | Tidak |
+| ImageKit write-path | Upload admin `events-schedule` / CMS Event | Selesai | Coding + validasi live | Sudah tervalidasi |
+| ImageKit write-path | Upload admin `News Page` | Hampir selesai | Human smoke test | Ya, 1 smoke test singkat |
+| Cleanup provider | Replace/delete `events-schedule` | Selesai | Coding | Tidak |
+| Cleanup provider | Replace/delete `beauty/posters` | Selesai | Coding | Tidak |
+| Cleanup provider | Replace/delete `banners` | Selesai | Coding | Tidak |
+| Cleanup provider | Replace/delete `beauty/glam` | Selesai | Coding | Tidak |
+| Cleanup provider | Replace/delete `dressing-room` | Selesai | Coding | Smoke test hanya validasi minor |
+| Database cleanup | Ganti URL lama Supabase ke URL ImageKit | Siap eksekusi | Coding + review | Ya, saat eksekusi live |
+| Observability | Pantau Usage dan Logs Supabase pasca-cutover | Belum selesai | Human operator | Ya |
+
+### Todo List Finishing Phase
+
+- [x] Tutup cleanup replace/delete `events-schedule`
+- [x] Tutup cleanup replace/delete `beauty/posters`
+- [x] Tutup cleanup replace/delete `banners`
+- [x] Tutup cleanup replace/delete `beauty/glam`
+- [x] Tutup cleanup replace/delete `dressing-room`
+- [ ] Smoke test singkat `News Page`
+- [ ] Smoke test singkat `Dressing Room`
+- [ ] Jalankan one-off cleanup URL lama Supabase -> ImageKit di database
+- [ ] Pantau Usage Supabase `1 - 3 hari` setelah cutover utama
+- [ ] Putuskan kapan bucket lama Supabase aman dibersihkan final
 
 ### C. Todo List Optimisasi PostgREST Egress
 

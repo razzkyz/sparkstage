@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
+import { deletePublicImageKitAsset } from '../../../lib/publicImagekitDelete';
 import { uploadPublicAssetToImageKit } from '../../../lib/publicImagekitUpload';
 import { queryKeys } from '../../../lib/queryKeys';
 import { withTimeout } from '../../../utils/queryHelpers';
@@ -105,6 +106,10 @@ export function useEventsScheduleManagerController(showToast: ShowToast): Events
     const safeBucket = bucketId || SCHEDULE_BUCKET_ID;
     const safePath = path || '';
     if (!safePath.trim()) return;
+    if (safeBucket === SCHEDULE_IMAGEKIT_BUCKET_ID) {
+      await deletePublicImageKitAsset(safePath);
+      return;
+    }
     if (safeBucket !== SCHEDULE_BUCKET_ID) return;
 
     const { error: removeError } = await supabase.storage.from(safeBucket).remove([safePath]);

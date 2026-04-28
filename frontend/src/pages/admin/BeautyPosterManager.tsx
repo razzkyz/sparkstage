@@ -3,6 +3,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { deletePublicImageKitAssetByUrl } from '../../lib/publicImagekitDelete';
 import { uploadPublicAssetToImageKit } from '../../lib/publicImagekitUpload';
 import { DEFAULT_GLAM_PAGE_SETTINGS, type GlamStarLink, useGlamPageSettings } from '../../hooks/useGlamPageSettings';
 import { useProductPickerOptions, type ProductPickerOption } from '../../hooks/useProducts';
@@ -17,6 +18,16 @@ const STAR_SLOT_LABELS: Record<string, string> = {
   bronze: 'Bronze star',
   'aura-pop': 'Aura Pop mini star',
 };
+
+async function cleanupImageKitUrls(urls: Array<string | null | undefined>): Promise<void> {
+  const uniqueUrls = Array.from(
+    new Set(urls.filter((value): value is string => typeof value === 'string' && value.trim() !== ''))
+  );
+
+  for (const url of uniqueUrls) {
+    await deletePublicImageKitAssetByUrl(url);
+  }
+}
 
 function StarProductPicker({
   title,
@@ -258,7 +269,13 @@ export default function BeautyPosterManager() {
   }, [settings]);
 
   const handleUploadImage = useCallback(
-    async (file: File, onComplete: (url: string) => void, prefix: string) => {
+    async (
+      file: File,
+      onComplete: (url: string) => void,
+      prefix: string,
+      previousDraftUrl?: string | null,
+      previousPersistedUrl?: string | null
+    ) => {
       try {
         if (!file.type.startsWith('image/')) {
           showToast('error', 'Please upload an image file');
@@ -280,6 +297,20 @@ export default function BeautyPosterManager() {
         });
 
         onComplete(publicUrl);
+
+        if (previousDraftUrl && previousDraftUrl !== previousPersistedUrl) {
+          try {
+            await deletePublicImageKitAssetByUrl(previousDraftUrl);
+          } catch (cleanupError) {
+            showToast(
+              'warning',
+              cleanupError instanceof Error
+                ? `Image uploaded, but failed to cleanup previous draft asset: ${cleanupError.message}`
+                : 'Image uploaded, but failed to cleanup previous draft asset'
+            );
+          }
+        }
+
         showToast('success', 'Image uploaded successfully');
       } catch (err: unknown) {
         showToast('error', err instanceof Error ? err.message : 'Failed to upload image');
@@ -290,6 +321,12 @@ export default function BeautyPosterManager() {
 
   const handleSave = async () => {
     setSaving(true);
+    const previousHeroImageUrl = settings?.hero_image_url ?? DEFAULT_GLAM_PAGE_SETTINGS.hero_image_url;
+    const previousLookModelImageUrl = settings?.look_model_image_url ?? DEFAULT_GLAM_PAGE_SETTINGS.look_model_image_url;
+    const previousStarLinkMap = new Map(
+      (settings?.look_star_links ?? DEFAULT_GLAM_PAGE_SETTINGS.look_star_links).map((link) => [link.slot, link.image_url ?? null])
+    );
+
     try {
       await updateSettings({
         hero_title: heroTitle,
@@ -302,6 +339,31 @@ export default function BeautyPosterManager() {
         product_search_placeholder: productSearchPlaceholder,
         section_fonts: sectionFonts,
       });
+
+      const changedUrls: Array<string | null> = [];
+      if (previousHeroImageUrl !== heroImageUrl) changedUrls.push(previousHeroImageUrl);
+      if (previousLookModelImageUrl !== lookModelImageUrl) changedUrls.push(previousLookModelImageUrl);
+
+      for (const link of lookStarLinks) {
+        const previousImageUrl = previousStarLinkMap.get(link.slot) ?? null;
+        const nextImageUrl = link.image_url ?? null;
+        if (previousImageUrl !== nextImageUrl) {
+          changedUrls.push(previousImageUrl);
+        }
+      }
+
+      if (changedUrls.some(Boolean)) {
+        try {
+          await cleanupImageKitUrls(changedUrls);
+        } catch (cleanupError) {
+          showToast(
+            'warning',
+            cleanupError instanceof Error
+              ? `GLAM settings saved, but failed to cleanup previous asset: ${cleanupError.message}`
+              : 'GLAM settings saved, but failed to cleanup previous asset'
+          );
+        }
+      }
 
       showToast('success', 'GLAM page settings saved successfully');
     } catch (err: unknown) {
@@ -369,7 +431,15 @@ export default function BeautyPosterManager() {
               label="Hero image"
               value={heroImageUrl}
               onChange={setHeroImageUrl}
-              onUpload={(file) => void handleUploadImage(file, setHeroImageUrl, 'glam-hero')}
+              onUpload={(file) =>
+                void handleUploadImage(
+                  file,
+                  setHeroImageUrl,
+                  'glam-hero',
+                  heroImageUrl,
+                  settings?.hero_image_url ?? DEFAULT_GLAM_PAGE_SETTINGS.hero_image_url
+                )
+              }
             />
 
             <div className="space-y-4">
@@ -417,7 +487,15 @@ export default function BeautyPosterManager() {
               label="Model image"
               value={lookModelImageUrl}
               onChange={setLookModelImageUrl}
-              onUpload={(file) => void handleUploadImage(file, setLookModelImageUrl, 'glam-look')}
+              onUpload={(file) =>
+                void handleUploadImage(
+                  file,
+                  setLookModelImageUrl,
+                  'glam-look',
+                  lookModelImageUrl,
+                  settings?.look_model_image_url ?? DEFAULT_GLAM_PAGE_SETTINGS.look_model_image_url
+                )
+              }
             />
 
             <div>
@@ -451,7 +529,15 @@ export default function BeautyPosterManager() {
                   onSelect={(productId) => updateStarProduct(link.slot, productId)}
                   onChangeImage={(value) => updateStarImage(link.slot, value.trim() ? value : null)}
                   onUploadImage={(file) =>
-                    void handleUploadImage(file, (url) => updateStarImage(link.slot, url), `glam-star-${link.slot}`)
+                    void handleUploadImage(
+                      file,
+                      (url) => updateStarImage(link.slot, url),
+                      `glam-star-${link.slot}`,
+                      link.image_url,
+                      (settings?.look_star_links ?? DEFAULT_GLAM_PAGE_SETTINGS.look_star_links).find(
+                        (candidate) => candidate.slot === link.slot
+                      )?.image_url ?? null
+                    )
                   }
                 />
               ))}
