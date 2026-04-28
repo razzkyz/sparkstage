@@ -37,7 +37,7 @@ async function createImageKitUploadAuthPayloadForFolder(folder: string) {
     token,
     expire,
     signature: toHex(signatureBuffer),
-    folder: getProductImageFolder(productId),
+    folder,
   }
 }
 
@@ -62,4 +62,57 @@ export async function deleteImageKitFileById(fileId: string): Promise<void> {
     const body = await response.text()
     throw new Error(`ImageKit delete failed (${response.status}): ${body || response.statusText}`)
   }
+}
+
+type ImageKitListFileItem = {
+  fileId?: string
+  name?: string
+  filePath?: string
+  type?: string
+}
+
+function createImageKitBasicAuthHeader(): string {
+  const { privateKey } = getImageKitEnv()
+  return `Basic ${btoa(`${privateKey}:`)}`
+}
+
+export async function findImageKitFileIdByPath(filePath: string): Promise<string | null> {
+  const normalizedPath = `/${filePath.trim().replace(/^\/+/, '')}`
+  const lastSlashIndex = normalizedPath.lastIndexOf('/')
+  if (lastSlashIndex <= 0 || lastSlashIndex === normalizedPath.length - 1) {
+    throw new Error('Invalid ImageKit file path')
+  }
+
+  const folderPath = normalizedPath.slice(0, lastSlashIndex)
+  const fileName = normalizedPath.slice(lastSlashIndex + 1)
+  const response = await fetch(
+    `https://api.imagekit.io/v1/files?${new URLSearchParams({
+      path: folderPath,
+      limit: '1000',
+      skip: '0',
+      type: 'file',
+    }).toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: createImageKitBasicAuthHeader(),
+      },
+    }
+  )
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`ImageKit list files failed (${response.status}): ${body || response.statusText}`)
+  }
+
+  const payload = (await response.json()) as ImageKitListFileItem[]
+  const file = payload.find((item) =>
+    item?.type === 'file' &&
+    item?.name === fileName &&
+    item?.filePath === normalizedPath &&
+    typeof item?.fileId === 'string' &&
+    item.fileId.trim() !== ''
+  )
+
+  return file?.fileId ?? null
 }

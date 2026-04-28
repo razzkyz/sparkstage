@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { deletePublicImageKitAssetByUrl } from '../../../lib/publicImagekitDelete';
 import { supabase } from '../../../lib/supabase';
 import { uploadPublicAssetToImageKit } from '../../../lib/publicImagekitUpload';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -16,6 +17,16 @@ import {
 import type { Banner, BannerManagerController } from './bannerManagerTypes';
 
 type ShowToast = (type: 'success' | 'error' | 'warning' | 'info', message: string) => void;
+
+async function cleanupImageKitUrls(urls: Array<string | null | undefined>): Promise<void> {
+  const uniqueUrls = Array.from(
+    new Set(urls.filter((value): value is string => typeof value === 'string' && value.trim() !== ''))
+  );
+
+  for (const url of uniqueUrls) {
+    await deletePublicImageKitAssetByUrl(url);
+  }
+}
 
 export function useBannerManagerController(showToast: ShowToast): BannerManagerController {
   const queryClient = useQueryClient();
@@ -88,6 +99,7 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
     async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
+      const previousDraftImageUrl = formData.image_url;
 
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
         showToast('error', 'Please upload an image or video file');
@@ -120,6 +132,20 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         );
 
         setFormData((current) => ({ ...current, image_url: publicUrl }));
+
+        if (previousDraftImageUrl && previousDraftImageUrl !== editingBanner?.image_url) {
+          try {
+            await deletePublicImageKitAssetByUrl(previousDraftImageUrl);
+          } catch (cleanupError) {
+            showToast(
+              'warning',
+              cleanupError instanceof Error
+                ? `Media uploaded, but failed to cleanup previous draft asset: ${cleanupError.message}`
+                : 'Media uploaded, but failed to cleanup previous draft asset'
+            );
+          }
+        }
+
         showToast('success', 'Media uploaded successfully');
       } catch (error) {
         showToast('error', error instanceof Error ? error.message : 'Failed to upload media');
@@ -128,13 +154,14 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         event.target.value = '';
       }
     },
-    [showToast]
+    [editingBanner?.image_url, formData.image_url, showToast]
   );
 
   const handleTitleImageUpload = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
+      const previousDraftTitleImageUrl = formData.title_image_url;
 
       if (!file.type.startsWith('image/')) {
         showToast('error', 'Please upload an image file for the title');
@@ -162,6 +189,20 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         );
 
         setFormData((current) => ({ ...current, title_image_url: publicUrl }));
+
+        if (previousDraftTitleImageUrl && previousDraftTitleImageUrl !== editingBanner?.title_image_url) {
+          try {
+            await deletePublicImageKitAssetByUrl(previousDraftTitleImageUrl);
+          } catch (cleanupError) {
+            showToast(
+              'warning',
+              cleanupError instanceof Error
+                ? `Title image uploaded, but failed to cleanup previous draft asset: ${cleanupError.message}`
+                : 'Title image uploaded, but failed to cleanup previous draft asset'
+            );
+          }
+        }
+
         showToast('success', 'Title image uploaded successfully');
       } catch (error) {
         showToast('error', error instanceof Error ? error.message : 'Failed to upload title image');
@@ -170,7 +211,7 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         event.target.value = '';
       }
     },
-    [showToast]
+    [editingBanner?.title_image_url, formData.title_image_url, showToast]
   );
 
   const handleSubmit = useCallback(
@@ -184,6 +225,8 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
 
       try {
         setSaving(true);
+        const previousImageUrl = editingBanner?.image_url ?? null;
+        const previousTitleImageUrl = editingBanner?.title_image_url ?? null;
 
         if (editingBanner) {
           const { error } = await withTimeout(
@@ -205,6 +248,25 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
             'Request timeout. Please try again.'
           );
           if (error) throw error;
+
+          const changedUrls = [
+            previousImageUrl !== formData.image_url ? previousImageUrl : null,
+            previousTitleImageUrl !== (formData.title_image_url || null) ? previousTitleImageUrl : null,
+          ];
+
+          if (changedUrls.some(Boolean)) {
+            try {
+              await cleanupImageKitUrls(changedUrls);
+            } catch (cleanupError) {
+              showToast(
+                'warning',
+                cleanupError instanceof Error
+                  ? `Banner updated, but failed to cleanup previous asset: ${cleanupError.message}`
+                  : 'Banner updated, but failed to cleanup previous asset'
+              );
+            }
+          }
+
           showToast('success', 'Banner updated successfully');
         } else {
           const { error } = await withTimeout(
@@ -246,6 +308,7 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
   const handleDelete = useCallback(
     async (id: number) => {
       if (!confirm('Are you sure you want to delete this banner?')) return;
+      const bannerToDelete = banners.find((banner) => banner.id === id) ?? null;
 
       try {
         const { error } = await withTimeout(
@@ -255,6 +318,19 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         );
         if (error) throw error;
 
+        if (bannerToDelete) {
+          try {
+            await cleanupImageKitUrls([bannerToDelete.image_url, bannerToDelete.title_image_url]);
+          } catch (cleanupError) {
+            showToast(
+              'warning',
+              cleanupError instanceof Error
+                ? `Banner deleted, but failed to cleanup previous asset: ${cleanupError.message}`
+                : 'Banner deleted, but failed to cleanup previous asset'
+            );
+          }
+        }
+
         showToast('success', 'Banner deleted successfully');
         await queryClient.invalidateQueries({ queryKey: queryKeys.banners() });
         await fetchBanners();
@@ -262,7 +338,7 @@ export function useBannerManagerController(showToast: ShowToast): BannerManagerC
         showToast('error', error instanceof Error ? error.message : 'Failed to delete banner');
       }
     },
-    [fetchBanners, queryClient, showToast]
+    [banners, fetchBanners, queryClient, showToast]
   );
 
   const handleToggleActive = useCallback(

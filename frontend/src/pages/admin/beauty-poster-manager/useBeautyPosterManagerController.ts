@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { deletePublicImageKitAssetByUrl } from '../../../lib/publicImagekitDelete';
 import { searchProductVariants, type ProductVariantSearchResult } from '../../../utils/productVariantSearch';
 import {
   createBeautyPosterSnapshot,
@@ -124,16 +125,32 @@ export function useBeautyPosterManagerController(showToast: ShowToast): BeautyPo
 
   const handleUploadImage = useCallback(
     async (file: File) => {
+      const previousDraftImageUrl = imageUrl;
       try {
         if (!file.type.startsWith('image/')) throw new Error('Please upload an image file');
         if (file.size > 5 * 1024 * 1024) throw new Error('Image size must be less than 5MB');
-        setImageUrl(await uploadBeautyPosterImage({ file, slug, title }));
+        const nextImageUrl = await uploadBeautyPosterImage({ file, slug, title });
+        setImageUrl(nextImageUrl);
+
+        if (previousDraftImageUrl && previousDraftImageUrl !== selectedPoster?.image_url) {
+          try {
+            await deletePublicImageKitAssetByUrl(previousDraftImageUrl);
+          } catch (cleanupError) {
+            showToast(
+              'warning',
+              cleanupError instanceof Error
+                ? `Image uploaded, but failed to cleanup previous draft image: ${cleanupError.message}`
+                : 'Image uploaded, but failed to cleanup previous draft image'
+            );
+          }
+        }
+
         showToast('success', 'Image uploaded');
       } catch (error) {
         showToast('error', error instanceof Error ? error.message : 'Failed to upload image');
       }
     },
-    [showToast, slug, title]
+    [imageUrl, selectedPoster?.image_url, showToast, slug, title]
   );
 
   const currentSnapshot = useMemo(
@@ -170,6 +187,7 @@ export function useBeautyPosterManagerController(showToast: ShowToast): BeautyPo
     }
 
     setSaving(true);
+    const previousPersistedImageUrl = selectedPoster?.image_url ?? null;
     try {
       const updatedPoster = await saveBeautyPoster({
         selectedPosterId: selectedPoster?.id ?? null,
@@ -180,6 +198,20 @@ export function useBeautyPosterManagerController(showToast: ShowToast): BeautyPo
         postersLength: posters.length,
         tags,
       });
+
+      if (previousPersistedImageUrl && previousPersistedImageUrl !== updatedPoster.image_url) {
+        try {
+          await deletePublicImageKitAssetByUrl(previousPersistedImageUrl);
+        } catch (cleanupError) {
+          showToast(
+            'warning',
+            cleanupError instanceof Error
+              ? `Poster saved, but failed to cleanup previous image: ${cleanupError.message}`
+              : 'Poster saved, but failed to cleanup previous image'
+          );
+        }
+      }
+
       setSelectedPoster(updatedPoster);
       try {
         const parsed = JSON.parse(currentSnapshot) as { posterId: number | null };

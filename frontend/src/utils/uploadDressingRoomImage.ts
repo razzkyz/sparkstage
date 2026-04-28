@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { deletePublicImageKitAssetByUrl } from '../lib/publicImagekitDelete';
 import { uploadPublicAssetToImageKit } from '../lib/publicImagekitUpload';
 
 const DRESSING_ROOM_BUCKET = 'dressing-room-images';
@@ -40,8 +41,17 @@ export async function uploadDressingRoomImage(
 }
 
 export async function deleteDressingRoomImage(imageUrl: string): Promise<void> {
-    const url = new URL(imageUrl);
+    if (typeof imageUrl !== 'string' || imageUrl.trim() === '') return;
+
+    let url: URL;
+    try {
+        url = new URL(imageUrl);
+    } catch {
+        return;
+    }
+
     if (url.hostname === 'ik.imagekit.io' || url.hostname.endsWith('.imagekit.io')) {
+        await deletePublicImageKitAssetByUrl(imageUrl);
         return;
     }
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/(dressing-room-images|fashion-images)\/(.+)$/);
