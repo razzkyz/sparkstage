@@ -56,6 +56,17 @@ export default function RentalSummaryStep({
         const itemTotalRentalCost = itemDailyFee * rentalData.durationDays;
         const itemTotal = price + itemDeposit + itemTotalRentalCost; // product price + deposit + rental cost
 
+        console.log('[RentalSummaryStep] Item calculation:', {
+          variantId: item.product_variant.id,
+          variantName: item.product_variant.name,
+          price,
+          itemDailyFee,
+          rentalDurationDays: rentalData.durationDays,
+          itemTotalRentalCost,
+          itemDeposit,
+          itemTotal,
+        });
+
         addItem(
           {
             productId: item.product_variant.product?.id || 0,

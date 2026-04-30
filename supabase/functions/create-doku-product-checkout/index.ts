@@ -188,30 +188,16 @@ serve(async (req) => {
     }
 
     const aggregatedItemsByVariant = new Map<
-      number,
+      string,
       { productVariantId: number; name: string; quantity: number; sentPrice: number }
     >();
     for (const item of normalizedItems) {
-      const existing = aggregatedItemsByVariant.get(item.productVariantId);
+      const key = `${item.productVariantId}_${item.price}`;
+      const existing = aggregatedItemsByVariant.get(key);
       if (existing) {
-        // If same variant has different price (e.g., rental with different duration), keep them separate
-        if (existing.sentPrice !== item.price) {
-          console.warn(
-            `[create-doku-product-checkout] Variant ${item.productVariantId} has different prices: ${existing.sentPrice} vs ${item.price}. Keeping separate.`
-          );
-          // Generate a unique key by appending price to variant ID
-          const uniqueKey = Number(`${item.productVariantId}${item.price}`);
-          aggregatedItemsByVariant.set(uniqueKey, {
-            productVariantId: item.productVariantId,
-            name: item.name,
-            quantity: item.quantity,
-            sentPrice: item.price,
-          });
-        } else {
-          existing.quantity += item.quantity;
-        }
+        existing.quantity += item.quantity;
       } else {
-        aggregatedItemsByVariant.set(item.productVariantId, {
+        aggregatedItemsByVariant.set(key, {
           productVariantId: item.productVariantId,
           name: item.name,
           quantity: item.quantity,
