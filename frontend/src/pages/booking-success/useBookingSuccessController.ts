@@ -7,7 +7,13 @@ import {
   fetchBookingSuccessData,
   fetchPurchasedTicketsForOrderNumber,
 } from './bookingSuccessData';
-import { MAX_SKELETON_MS, shouldAutoSyncBookingStatus, shouldTriggerBookingConfetti } from './bookingSuccessHelpers';
+import {
+  AUTO_SYNC_RECOVERY_DELAY_MS,
+  MANUAL_STATUS_CHECK_DELAY_MS,
+  MAX_SKELETON_MS,
+  shouldAutoSyncBookingStatus,
+  shouldTriggerBookingConfetti,
+} from './bookingSuccessHelpers';
 import { getBookingSuccessAccessToken, syncBookingSuccessStatus } from './bookingSuccessSync';
 import type { OrderRow, OrderState, PurchasedTicket } from './bookingSuccessTypes';
 
@@ -41,6 +47,8 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [showManualButton, setShowManualButton] = useState(false);
   const [autoSyncInProgress, setAutoSyncInProgress] = useState(false);
+  const autoSyncInProgressRef = useRef(false);
+  const autoSyncAttemptedOrderRef = useRef<string | null>(null);
   const confettiTriggeredRef = useRef(false);
 
   const showSkeleton = loading && !loadingTimedOut && !orderData && tickets.length === 0;
@@ -198,12 +206,13 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
     async (isAutoSync = false, retryCount = 0) => {
       if (!orderNumber) return;
 
-      if (isAutoSync && autoSyncInProgress) {
+      if (isAutoSync && autoSyncInProgressRef.current) {
         console.log('[Auto-Sync] Skipping - sync already in progress');
         return;
       }
 
       if (isAutoSync) {
+        autoSyncInProgressRef.current = true;
         setAutoSyncInProgress(true);
         console.log('[Auto-Sync] Checking payment status...');
       } else {
@@ -249,13 +258,14 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
         setSyncError(errorMsg);
       } finally {
         if (isAutoSync) {
+          autoSyncInProgressRef.current = false;
           setAutoSyncInProgress(false);
         } else {
           setSyncing(false);
         }
       }
     },
-    [orderNumber, autoSyncInProgress, resolveAccessToken, retryWithFreshToken]
+    [orderNumber, resolveAccessToken, retryWithFreshToken]
   );
 
   const handleRetryLoad = useCallback(() => {
@@ -275,43 +285,29 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
       effectiveStatus,
       initialIsPending,
       ticketsCount: tickets.length,
+      autoSyncAttempted: autoSyncAttemptedOrderRef.current === orderNumber,
     });
 
     if (!shouldSync) return;
 
-    const delays = [0, 5000, 15000, 35000];
-    let attempt = 0;
     let cancelled = false;
-    const timeouts: NodeJS.Timeout[] = [];
 
-    const runSync = async () => {
-      if (cancelled || attempt >= delays.length) return;
-
-      const delay = delays[attempt];
-      const timeout = setTimeout(async () => {
-        if (cancelled) return;
-        await handleSyncStatus(true);
-        attempt += 1;
-        if (!cancelled && tickets.length === 0) {
-          void runSync();
-        }
-      }, delay);
-
-      timeouts.push(timeout);
-    };
-
-    void runSync();
+    const autoSyncTimer = setTimeout(() => {
+      if (cancelled) return;
+      autoSyncAttemptedOrderRef.current = orderNumber;
+      void handleSyncStatus(true);
+    }, AUTO_SYNC_RECOVERY_DELAY_MS);
 
     const showButtonTimer = setTimeout(() => {
       if (!cancelled) {
         setShowManualButton(true);
       }
-    }, 8000);
-    timeouts.push(showButtonTimer);
+    }, MANUAL_STATUS_CHECK_DELAY_MS);
 
     return () => {
       cancelled = true;
-      timeouts.forEach((timeout) => clearTimeout(timeout));
+      clearTimeout(autoSyncTimer);
+      clearTimeout(showButtonTimer);
     };
   }, [initialized, orderNumber, effectiveStatus, initialIsPending, tickets.length, handleSyncStatus]);
 

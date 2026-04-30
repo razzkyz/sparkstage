@@ -3,6 +3,7 @@ type AutoSyncParams = {
   effectiveStatus: string | null;
   initialIsPending: boolean;
   ticketsCount: number;
+  autoSyncAttempted: boolean;
 };
 
 type ConfettiParams = {
@@ -12,15 +13,19 @@ type ConfettiParams = {
 };
 
 export const MAX_SKELETON_MS = 20000;
+export const AUTO_SYNC_RECOVERY_DELAY_MS = 15000;
+export const MANUAL_STATUS_CHECK_DELAY_MS = 8000;
 
 export function shouldAutoSyncBookingStatus({
   orderNumber,
   effectiveStatus,
   initialIsPending,
   ticketsCount,
+  autoSyncAttempted,
 }: AutoSyncParams) {
   return Boolean(
     orderNumber &&
+      !autoSyncAttempted &&
       (effectiveStatus === 'pending' || effectiveStatus === 'paid' || (effectiveStatus === null && initialIsPending)) &&
       ticketsCount === 0
   );

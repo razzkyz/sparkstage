@@ -70,7 +70,7 @@ export function PaymentCustomerForm({
             className="w-full rounded-lg border border-rose-100 text-sm py-3 px-4 bg-gray-50"
             disabled
           />
-          <p className="text-xs text-rose-700">Ticket will be sent to this email</p>
+          <p className="text-xs text-rose-700">Used to identify your booking.</p>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export function PaymentCustomerForm({
           <div>
             <p className="text-sm font-medium text-blue-800">Secure Payment via DOKU Checkout</p>
             <p className="text-xs text-blue-600 mt-1">
-              The DOKU payment popup will open after you continue. Complete payment there and this page will keep syncing your order.
+              The DOKU payment popup will open after you continue. Complete payment there, then return here to view your order status.
             </p>
           </div>
         </div>

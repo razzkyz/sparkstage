@@ -147,6 +147,60 @@ describe('payment-processors', () => {
     expect(releaseTicketCapacityIfNeeded).not.toHaveBeenCalled()
   })
 
+  it('applies ticket paid status after a local expiry and issues tickets', async () => {
+    const supabase = createSupabaseMock({
+      order: {
+        id: 11,
+        order_number: 'TICKET-EXPIRED',
+        status: 'expired',
+        user_id: 'user-11',
+        tickets_issued_at: null,
+        capacity_released_at: '2026-04-25T10:30:00.000Z',
+      },
+    })
+
+    const result = await processTicketOrderTransition({
+      supabase: supabase as never,
+      order: {
+        id: 11,
+        order_number: 'TICKET-EXPIRED',
+        status: 'expired',
+        user_id: 'user-11',
+        tickets_issued_at: null,
+        capacity_released_at: '2026-04-25T10:30:00.000Z',
+      },
+      nextStatus: 'paid',
+      paymentData: {
+        source: 'provider_notification',
+        order: { status: 'ORDER_PAID' },
+        transaction: { status: 'SUCCESS' },
+      },
+      nowIso: '2026-04-25T11:00:00.000Z',
+      orderItems: [
+        {
+          id: 100,
+          ticket_id: 3,
+          selected_date: '2026-05-01',
+          selected_time_slots: ['10:00'],
+          quantity: 1,
+        },
+      ],
+    })
+
+    expect(result.applied).toBe(true)
+    expect(result.skippedReason).toBeNull()
+    expect(result.order).toMatchObject({ status: 'paid' })
+    expect(issueTicketsIfNeeded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: expect.objectContaining({
+          id: 11,
+          status: 'paid',
+        }),
+      })
+    )
+    expect(releaseTicketCapacityIfNeeded).not.toHaveBeenCalled()
+  })
+
   it('blocks product replay from paid to expired', async () => {
     const paidOrder: ProductOrderTransitionOrder = {
       id: 22,
@@ -182,6 +236,62 @@ describe('payment-processors', () => {
     expect(result.applied).toBe(false)
     expect(result.skippedReason).toBe('blocked_expired_after_paid')
     expect(ensureProductPaidSideEffects).not.toHaveBeenCalled()
+    expect(releaseProductReservedStockIfNeeded).not.toHaveBeenCalled()
+    expect(releaseVoucherQuotaIfNeeded).not.toHaveBeenCalled()
+  })
+
+  it('applies product paid status after a local expiry and repairs paid artifacts', async () => {
+    const expiredOrder: ProductOrderTransitionOrder = {
+      id: 23,
+      user_id: 'user-23',
+      order_number: 'PROD-EXPIRED',
+      status: 'expired',
+      payment_status: 'failed',
+      pickup_code: null,
+      pickup_status: null,
+      pickup_expires_at: null,
+      paid_at: null,
+      total: 1000,
+      stock_released_at: '2026-04-25T10:30:00.000Z',
+      voucher_id: null,
+      voucher_code: null,
+      discount_amount: 0,
+      payment_data: { provider_status: 'expired' },
+    }
+
+    const supabase = createSupabaseMock({
+      productOrder: { ...expiredOrder },
+    })
+
+    const result = await processProductOrderTransition({
+      supabase: supabase as never,
+      order: expiredOrder,
+      nextStatus: 'paid',
+      paymentData: {
+        source: 'reconcile_status_check',
+        order: { status: 'ORDER_PAID', amount: 1000 },
+        transaction: { status: 'SUCCESS' },
+      },
+      nowIso: '2026-04-25T11:00:00.000Z',
+      grossAmount: 1000,
+    })
+
+    expect(result.applied).toBe(true)
+    expect(result.skippedReason).toBeNull()
+    expect(result.order).toMatchObject({
+      status: 'processing',
+      payment_status: 'paid',
+    })
+    expect(ensureProductPaidSideEffects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: expect.objectContaining({
+          id: 23,
+          status: 'processing',
+          payment_status: 'paid',
+        }),
+        defaultStatus: 'processing',
+      })
+    )
     expect(releaseProductReservedStockIfNeeded).not.toHaveBeenCalled()
     expect(releaseVoucherQuotaIfNeeded).not.toHaveBeenCalled()
   })

@@ -73,13 +73,6 @@ function getTicketTransitionSkipReason(
   }
 
   if (
-    (currentStatus === "expired" || currentStatus === "failed") &&
-    nextStatus === "paid"
-  ) {
-    return `blocked_${nextStatus}_after_${currentStatus}`;
-  }
-
-  if (
     nextStatus === "pending" &&
     (currentStatus === "paid" || currentStatus === "expired" ||
       currentStatus === "failed" || currentStatus === "refunded")
@@ -115,15 +108,19 @@ function getProductTransitionSkipReason(
 
   if (
     currentPaymentStatus === "failed" &&
-    (nextStatus === "pending" || nextStatus === "paid")
+    nextStatus === "pending"
   ) {
     return `blocked_${nextStatus}_after_failed`;
   }
 
   if (
-    (currentStatus === "cancelled" || currentStatus === "expired") &&
+    currentStatus === "cancelled" &&
     (nextStatus === "pending" || nextStatus === "paid")
   ) {
+    return `blocked_${nextStatus}_after_${currentStatus}`;
+  }
+
+  if (currentStatus === "expired" && nextStatus === "pending") {
     return `blocked_${nextStatus}_after_${currentStatus}`;
   }
 
@@ -332,7 +329,7 @@ export async function processTicketOrderTransition(params: {
       "(paid,expired,failed,refunded)",
     );
   } else if (nextStatus === "paid") {
-    updateQuery = updateQuery.not("status", "in", "(expired,failed,refunded)");
+    updateQuery = updateQuery.not("status", "eq", "refunded");
   } else if (nextStatus === "expired" || nextStatus === "failed") {
     updateQuery = updateQuery.not("status", "in", "(paid,refunded)");
   } else if (nextStatus === "refunded") {
@@ -523,8 +520,8 @@ export async function processProductOrderTransition(params: {
       .not("status", "in", "(cancelled,expired,completed)");
   } else if (nextStatus === "paid") {
     updateQuery = updateQuery
-      .not("payment_status", "in", "(failed,refunded)")
-      .not("status", "in", "(cancelled,expired,completed)");
+      .not("payment_status", "eq", "refunded")
+      .not("status", "in", "(cancelled,completed)");
   } else if (nextStatus === "expired" || nextStatus === "failed") {
     updateQuery = updateQuery
       .not("payment_status", "in", "(paid,refunded)")

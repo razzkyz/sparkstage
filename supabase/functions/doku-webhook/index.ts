@@ -13,6 +13,188 @@ function readHeader(headers: Headers, name: string) {
   return headers.get(name) ?? headers.get(name.toLowerCase()) ?? ''
 }
 
+type SignatureRequestTargetCandidate = {
+  source: string
+  requestTarget: string
+}
+
+function readOptionalEnv(name: string) {
+  const maybeDeno = (globalThis as {
+    Deno?: { env?: { get?: (key: string) => string | undefined } }
+  }).Deno
+  return maybeDeno?.env?.get?.(name) ?? ''
+}
+
+function parseRequestTargetCandidate(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  try {
+    const url = new URL(trimmed)
+    return url.pathname || '/'
+  } catch {
+    const path = trimmed.split('?')[0]?.trim() ?? ''
+    return path.startsWith('/') ? path || '/' : null
+  }
+}
+
+function addSignatureTargetCandidate(
+  candidates: SignatureRequestTargetCandidate[],
+  seen: Set<string>,
+  source: string,
+  value: string | null
+) {
+  if (!value) return
+  const requestTarget = parseRequestTargetCandidate(value)
+  if (!requestTarget || seen.has(requestTarget)) return
+
+  seen.add(requestTarget)
+  candidates.push({ source, requestTarget })
+}
+
+function buildSignatureRequestTargetCandidates(reqUrl: string) {
+  const actualRequestPathname = new URL(reqUrl).pathname || '/'
+  const candidates: SignatureRequestTargetCandidate[] = []
+  const seen = new Set<string>()
+
+  addSignatureTargetCandidate(candidates, seen, 'actual_request_pathname', actualRequestPathname)
+
+  for (const envName of [
+    'DOKU_WEBHOOK_REQUEST_TARGET',
+    'DOKU_NOTIFICATION_REQUEST_TARGET',
+    'DOKU_WEBHOOK_PATH',
+  ]) {
+    addSignatureTargetCandidate(candidates, seen, `env:${envName}`, readOptionalEnv(envName))
+  }
+
+  for (const envName of [
+    'DOKU_WEBHOOK_REQUEST_TARGETS',
+    'DOKU_NOTIFICATION_REQUEST_TARGETS',
+  ]) {
+    for (const value of readOptionalEnv(envName).split(',')) {
+      addSignatureTargetCandidate(candidates, seen, `env:${envName}`, value)
+    }
+  }
+
+  for (const envName of [
+    'DOKU_NOTIFICATION_URL',
+    'DOKU_WEBHOOK_URL',
+    'DOKU_NOTIFY_URL',
+  ]) {
+    addSignatureTargetCandidate(candidates, seen, `env:${envName}`, readOptionalEnv(envName))
+  }
+
+  const functionRouteMatch = actualRequestPathname.match(/^\/functions\/v1\/([^/]+)\/?$/)
+  if (functionRouteMatch?.[1]) {
+    addSignatureTargetCandidate(
+      candidates,
+      seen,
+      'supabase_function_slug_path',
+      `/${functionRouteMatch[1]}`
+    )
+  }
+
+  return { actualRequestPathname, candidates }
+}
+
+async function verifyDokuSignatureCandidates(params: {
+  clientId: string
+  requestId: string
+  requestTimestamp: string
+  requestTargets: SignatureRequestTargetCandidate[]
+  secretKey: string
+  rawBody: string
+  providedSignature: string
+}) {
+  for (const candidate of params.requestTargets) {
+    const isValid = await verifyDokuSignature({
+      clientId: params.clientId,
+      requestId: params.requestId,
+      requestTimestamp: params.requestTimestamp,
+      requestTarget: candidate.requestTarget,
+      secretKey: params.secretKey,
+      rawBody: params.rawBody,
+      providedSignature: params.providedSignature,
+    })
+
+    if (isValid) {
+      return candidate
+    }
+  }
+
+  return null
+}
+
+function maskHeaderValue(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.length <= 8) return `${trimmed.slice(0, 2)}...${trimmed.slice(-2)}`
+  return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`
+}
+
+function readSafeHeaderDiagnostics(headers: Headers) {
+  const signature = readHeader(headers, 'Signature').trim()
+  const signatureScheme = signature.includes('=')
+    ? signature.split('=')[0]
+    : signature
+      ? 'unknown'
+      : null
+
+  return {
+    client_id: maskHeaderValue(readHeader(headers, 'Client-Id')),
+    request_id: readHeader(headers, 'Request-Id') || null,
+    request_timestamp: readHeader(headers, 'Request-Timestamp') || null,
+    signature_present: Boolean(signature),
+    signature_scheme: signatureScheme,
+    signature_length: signature ? signature.length : 0,
+    content_type: readHeader(headers, 'Content-Type') || null,
+    content_length: readHeader(headers, 'Content-Length') || null,
+    host: readHeader(headers, 'Host') || null,
+    forwarded_host: readHeader(headers, 'X-Forwarded-Host') || null,
+    forwarded_proto: readHeader(headers, 'X-Forwarded-Proto') || null,
+  }
+}
+
+function readRecord(value: unknown) {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}
+}
+
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    const text = String(value || '').trim()
+    if (text) return text
+  }
+  return null
+}
+
+function buildNotificationDiagnostics(params: {
+  payload: Record<string, unknown>
+  orderPayload: Record<string, unknown>
+  transactionPayload: Record<string, unknown>
+}) {
+  const paymentPayload = readRecord(params.payload.payment)
+  const channelPayload = readRecord(params.payload.channel)
+  const servicePayload = readRecord(params.payload.service)
+  const paymentServicePayload = readRecord(paymentPayload.service)
+
+  return {
+    invoice_number: firstString(params.orderPayload.invoice_number),
+    order_status: firstString(params.orderPayload.status),
+    transaction_status: firstString(params.transactionPayload.status),
+    payment_channel: firstString(
+      channelPayload.id,
+      channelPayload.name,
+      paymentPayload.channel,
+      paymentPayload.payment_channel,
+      paymentPayload.payment_method,
+      paymentPayload.payment_method_type
+    ),
+    service_id: firstString(paymentPayload.service_id, servicePayload.id, paymentServicePayload.id),
+    service_name: firstString(paymentPayload.service_name, servicePayload.name, paymentServicePayload.name),
+    service_type: firstString(paymentPayload.service_type, servicePayload.type, paymentServicePayload.type),
+  }
+}
+
 serve(async (req) => {
   const corsResponse = handleCors(req, { allowAllOrigins: true })
   if (corsResponse) return corsResponse
@@ -63,6 +245,8 @@ serve(async (req) => {
     const requestId = readHeader(req.headers, 'Request-Id')
     const requestTimestamp = readHeader(req.headers, 'Request-Timestamp')
     const providedSignature = readHeader(req.headers, 'Signature')
+    const { actualRequestPathname, candidates: requestTargetCandidates } =
+      buildSignatureRequestTargetCandidates(req.url)
 
     if (!orderNumber) {
       return new Response(JSON.stringify({ error: 'Missing invoice_number' }), {
@@ -86,21 +270,41 @@ serve(async (req) => {
       })
     }
 
-    const isValidSignature = await verifyDokuSignature({
-      clientId,
-      requestId,
-      requestTimestamp,
-      requestTarget: new URL(req.url).pathname,
-      secretKey: dokuEnv.secretKey,
-      rawBody,
-      providedSignature,
-    })
+    const matchedSignatureTarget =
+      requestId && requestTimestamp && providedSignature
+        ? await verifyDokuSignatureCandidates({
+            clientId,
+            requestId,
+            requestTimestamp,
+            requestTargets: requestTargetCandidates,
+            secretKey: dokuEnv.secretKey,
+            rawBody,
+            providedSignature,
+          })
+        : null
 
-    if (!requestId || !requestTimestamp || !providedSignature || !isValidSignature) {
+    if (!requestId || !requestTimestamp || !providedSignature || !matchedSignatureTarget) {
       await logWebhookEvent(supabase, {
         orderNumber,
         eventType: 'invalid_signature',
-        payload: notification,
+        payload: {
+          notification,
+          diagnostics: {
+            reason:
+              !requestId || !requestTimestamp || !providedSignature
+                ? 'missing_signature_headers'
+                : 'signature_mismatch',
+            actual_request_pathname: actualRequestPathname,
+            candidate_request_targets: requestTargetCandidates,
+            headers: readSafeHeaderDiagnostics(req.headers),
+            body_length: rawBody.length,
+            doku: buildNotificationDiagnostics({
+              payload,
+              orderPayload,
+              transactionPayload,
+            }),
+          },
+        },
         success: false,
         errorMessage: 'Invalid signature',
         processedAt: nowIso,

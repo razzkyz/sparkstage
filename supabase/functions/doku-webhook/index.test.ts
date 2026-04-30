@@ -254,4 +254,180 @@ describe('doku-webhook', () => {
       })
     )
   })
+
+  it('logs safe diagnostics when signature verification fails', async () => {
+    verifyDokuSignature.mockResolvedValue(false)
+    createServiceClient.mockReturnValue(createSupabaseWebhookClient({}))
+
+    const handler = await loadHandler()
+    const response = await handler(
+      new Request('https://example.supabase.co/functions/v1/doku-webhook', {
+        method: 'POST',
+        headers: {
+          'Client-Id': 'client-id',
+          'Request-Id': 'qris-req-1',
+          'Request-Timestamp': '2026-04-25T12:00:00Z',
+          Signature: 'HMACSHA256=bad-signature-value',
+          'Content-Type': 'application/json',
+          Host: 'example.supabase.co',
+          'X-Forwarded-Host': 'payments.example.com',
+          'X-Forwarded-Proto': 'https',
+        },
+        body: JSON.stringify({
+          order: {
+            invoice_number: 'QRIS-1',
+            status: 'ORDER_PAID',
+          },
+          channel: {
+            id: 'QRIS_DOKU',
+          },
+          service: {
+            id: 'QRIS',
+          },
+          transaction: {
+            status: 'SUCCESS',
+          },
+        }),
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(await readJson(response)).toEqual({ error: 'Invalid signature' })
+    expect(processProductOrderTransition).not.toHaveBeenCalled()
+    expect(processTicketOrderTransition).not.toHaveBeenCalled()
+
+    expect(logWebhookEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        orderNumber: 'QRIS-1',
+        eventType: 'invalid_signature',
+        success: false,
+        payload: expect.objectContaining({
+          notification: expect.objectContaining({
+            order: expect.objectContaining({
+              invoice_number: 'QRIS-1',
+            }),
+          }),
+          diagnostics: expect.objectContaining({
+            reason: 'signature_mismatch',
+            actual_request_pathname: '/functions/v1/doku-webhook',
+            candidate_request_targets: expect.arrayContaining([
+              {
+                source: 'actual_request_pathname',
+                requestTarget: '/functions/v1/doku-webhook',
+              },
+              {
+                source: 'supabase_function_slug_path',
+                requestTarget: '/doku-webhook',
+              },
+            ]),
+            headers: expect.objectContaining({
+              client_id: 'clie...t-id',
+              request_id: 'qris-req-1',
+              request_timestamp: '2026-04-25T12:00:00Z',
+              signature_present: true,
+              signature_scheme: 'HMACSHA256',
+              signature_length: 'HMACSHA256=bad-signature-value'.length,
+              host: 'example.supabase.co',
+              forwarded_host: 'payments.example.com',
+              forwarded_proto: 'https',
+            }),
+            doku: expect.objectContaining({
+              invoice_number: 'QRIS-1',
+              order_status: 'ORDER_PAID',
+              transaction_status: 'SUCCESS',
+              payment_channel: 'QRIS_DOKU',
+              service_id: 'QRIS',
+            }),
+          }),
+        }),
+      })
+    )
+    const invalidSignatureLog = logWebhookEvent.mock.calls.find(
+      ([, event]) => (event as { eventType?: string }).eventType === 'invalid_signature'
+    )?.[1] as { payload?: { diagnostics?: { headers?: Record<string, unknown> } } }
+    expect(invalidSignatureLog.payload?.diagnostics?.headers).not.toHaveProperty('signature')
+  })
+
+  it('accepts a valid signature against the Supabase function slug request target candidate', async () => {
+    verifyDokuSignature.mockImplementation(async (params: { requestTarget?: string }) =>
+      params.requestTarget === '/doku-webhook'
+    )
+    createServiceClient.mockReturnValue(
+      createSupabaseWebhookClient({
+        existingWebhook: [],
+        productOrder: {
+          id: 45,
+          user_id: 'user-45',
+          order_number: 'QRIS-45',
+          status: 'awaiting_payment',
+          payment_status: 'pending',
+          pickup_code: null,
+          pickup_status: null,
+          pickup_expires_at: null,
+          total: 1500,
+          stock_released_at: null,
+          voucher_id: null,
+          voucher_code: null,
+          discount_amount: 0,
+        },
+      })
+    )
+
+    const handler = await loadHandler()
+    const response = await handler(
+      new Request('https://example.supabase.co/functions/v1/doku-webhook', {
+        method: 'POST',
+        headers: {
+          'Client-Id': 'client-id',
+          'Request-Id': 'qris-req-2',
+          'Request-Timestamp': '2026-04-25T12:00:00Z',
+          Signature: 'valid-signature-for-slug-path',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          order: {
+            invoice_number: 'QRIS-45',
+            amount: 1500,
+            status: 'ORDER_PAID',
+          },
+          payment: {
+            channel: 'QRIS',
+          },
+          transaction: {
+            status: 'SUCCESS',
+          },
+        }),
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(verifyDokuSignature).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        requestTarget: '/functions/v1/doku-webhook',
+      })
+    )
+    expect(verifyDokuSignature).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        requestTarget: '/doku-webhook',
+      })
+    )
+    expect(logWebhookEvent).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        eventType: 'invalid_signature',
+      })
+    )
+    expect(processProductOrderTransition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nextStatus: 'paid',
+        grossAmount: 1500,
+        order: expect.objectContaining({
+          order_number: 'QRIS-45',
+        }),
+      })
+    )
+  })
 })

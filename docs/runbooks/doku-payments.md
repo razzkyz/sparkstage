@@ -64,7 +64,7 @@ What they do:
   `payment.payment_method_types` so launch scope is constrained from payload as
   well as dashboard.
   Example early-live value:
-  `VIRTUAL_ACCOUNT_BNI,ONLINE_TO_OFFLINE_INDOMARET,ONLINE_TO_OFFLINE_ALFA`
+  `VIRTUAL_ACCOUNT_BNI,ONLINE_TO_OFFLINE_INDOMARET,ONLINE_TO_OFFLINE_ALFA,QRIS`
 - `PUBLIC_APP_URL` is the canonical app origin used when callback URLs are built
   server-side.
 - `APP_ALLOWED_ORIGINS` is a comma-separated allowlist for browser origins that
@@ -171,6 +171,9 @@ What they do:
   methods you will actually open first.
 - Confirm checkout page payment methods are restricted to channels that are
   already active and understood by operations.
+- Confirm `DOKU_PAYMENT_METHOD_TYPES` includes `QRIS` when QRIS should be
+  visible on DOKU Checkout. Dashboard activation alone is not enough when this
+  payload whitelist is set.
 - Prefer a live smoke test with a low-value ticket or product before broad
   rollout.
 

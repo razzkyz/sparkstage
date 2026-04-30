@@ -318,7 +318,7 @@ serve(async (req) => {
     const { data: staleTicketOrders } = await supabase
       .from('orders')
       .select('id, user_id, order_number, status, tickets_issued_at, capacity_released_at')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'expired', 'failed'])
       .is('tickets_issued_at', null)
       .lt('expires_at', nowIso)
 
@@ -342,8 +342,8 @@ serve(async (req) => {
         'id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, total, stock_released_at, voucher_id, voucher_code, discount_amount'
       )
       .neq('channel', 'cashier')
-      .in('payment_status', ['unpaid', 'pending'])
-      .not('status', 'in', '(cancelled,expired,completed)')
+      .in('payment_status', ['unpaid', 'pending', 'failed'])
+      .not('status', 'in', '(cancelled,completed)')
       .lt('payment_expired_at', nowIso)
 
     if (Array.isArray(staleProductOrders)) {

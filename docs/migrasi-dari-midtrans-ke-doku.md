@@ -72,6 +72,14 @@ Catatan operasional tambahan per 2026-04-29:
 - dengan hasil ini, `QRIS` sudah dianggap tervalidasi untuk flow pembelian tiket real
 - produk via QRIS tetap perlu dianggap belum terbukti terpisah sampai ada smoke test produk khusus QRIS bila scope operasional membutuhkannya
 
+Catatan debugging QRIS per 2026-04-30:
+
+- QRIS sempat tidak muncul di checkout DOKU walaupun channel dan notify URL sudah `Active` di dashboard merchant.
+- Akar masalahnya bukan aktivasi DOKU, tetapi whitelist payload dari edge function: `payment.payment_method_types` hanya berisi `VIRTUAL_ACCOUNT_BNI`, `ONLINE_TO_OFFLINE_INDOMARET`, dan `ONLINE_TO_OFFLINE_ALFA`.
+- Order live yang menguatkan temuan ini: `SPK-1777534667578-KFSQD` menyimpan `payment_data.payment_method_types` tanpa `QRIS`.
+- Secret production Supabase `DOKU_PAYMENT_METHOD_TYPES` sudah dikoreksi menjadi `VIRTUAL_ACCOUNT_BNI,ONLINE_TO_OFFLINE_INDOMARET,ONLINE_TO_OFFLINE_ALFA,QRIS`.
+- Jika `payment.payment_method_types` dikirim, dashboard ON saja tidak cukup; QRIS harus ikut ada di whitelist payload agar tampil di DOKU Checkout.
+
 Asumsi dokumen ini:
 
 - Akun DOKU sudah terverifikasi dan siap dipakai
