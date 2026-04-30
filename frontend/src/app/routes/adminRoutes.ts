@@ -19,6 +19,7 @@ const CharmBarPageManager = lazy(() => import('../../pages/admin/CharmBarPageMan
 const BookingPageManager = lazy(() => import('../../pages/admin/BookingPageManager'));
 const EntranceBookingManager = lazy(() => import('../../pages/admin/EntranceBookingManager'));
 const DressingRoomManager = lazy(() => import('../../pages/admin/DressingRoomManager'));
+const RentalOrders = lazy(() => import('../../pages/admin/RentalOrders'));
 const BeautyPosterManager = lazy(() => import('../../pages/admin/BeautyPosterManager'));
 
 export const adminRouteConfigs: AppRouteConfig[] = [
@@ -39,5 +40,6 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/news-page', Page: NewsPageManager },
   { path: '/admin/charm-bar-page', Page: CharmBarPageManager },
   { path: '/admin/dressing-room', Page: DressingRoomManager },
+  { path: '/admin/rental-orders', Page: RentalOrders },
   { path: '/admin/glam-page', Page: BeautyPosterManager },
 ];

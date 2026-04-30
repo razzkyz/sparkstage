@@ -77,7 +77,7 @@ async function fetchDressingRoomCollection(slug?: string) {
         return { collection, looks: [] };
     }
 
-    // Fetch look items with product variant + product info
+    // Fetch look items without nested joins to avoid PostgREST 400 error
     const lookIds = looks.map((l) => l.id);
     const { data: items, error: itemsError } = await supabase
         .from('dressing_room_look_items')
@@ -86,40 +86,69 @@ async function fetchDressingRoomCollection(slug?: string) {
       look_id,
       product_variant_id,
       label,
-      sort_order,
-      product_variants!inner (
-        id,
-        name,
-        sku,
-        price,
-        deposit_amount,
-        products!inner (
-          id,
-          name,
-          slug,
-          image_url
-        )
-      )
+      sort_order
     `)
         .in('look_id', lookIds)
         .order('sort_order', { ascending: true });
 
     if (itemsError) throw itemsError;
 
-    // Build look items map
-    const itemsByLook = new Map<number, DressingRoomLookItem[]>();
-
-    // Collect all product IDs to fetch primary images from product_images table
-    const allProductIds = new Set<number>();
+    // Collect all product variant IDs to fetch variants and products separately
+    const variantIds = new Set<number>();
     if (items) {
         for (const item of items) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const raw = item as any;
-            if (raw.product_variants?.products?.id) {
-                allProductIds.add(raw.product_variants.products.id);
+            if (item.product_variant_id) {
+                variantIds.add(item.product_variant_id);
             }
         }
     }
+
+    // Fetch product variants with products separately
+    const variantMap = new Map<number, {
+        id: number;
+        name: string;
+        sku: string;
+        price: number | null;
+        deposit_amount: number | null;
+        products: {
+            id: number;
+            name: string;
+            slug: string;
+            image_url: string | null;
+        }[];
+    }>();
+    if (variantIds.size > 0) {
+        const { data: variants } = await supabase
+            .from('product_variants')
+            .select(`
+          id,
+          name,
+          sku,
+          price,
+          deposit_amount,
+          products (
+            id,
+            name,
+            slug,
+            image_url
+          )
+        `)
+            .in('id', Array.from(variantIds));
+
+        if (variants) {
+            for (const variant of variants) {
+                variantMap.set(variant.id, variant);
+            }
+        }
+    }
+
+    // Collect all product IDs to fetch primary images from product_images table
+    const allProductIds = new Set<number>();
+    variantMap.forEach((variant) => {
+        if (variant.products && variant.products.length > 0) {
+            allProductIds.add(variant.products[0].id);
+        }
+    });
 
     // Fetch primary images for all products in one query
     const productImageMap = new Map<number, string>();
@@ -137,33 +166,36 @@ async function fetchDressingRoomCollection(slug?: string) {
         }
     }
 
+    // Build look items map
+    const itemsByLook = new Map<number, DressingRoomLookItem[]>();
+
     if (items) {
         for (const item of items) {
             const lookItems = itemsByLook.get(item.look_id) || [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const raw = item as any;
-            const productId = raw.product_variants?.products?.id;
-            const productImageUrl = resolvePublicAssetUrl(raw.product_variants?.products?.image_url);
+            const variant = variantMap.get(item.product_variant_id);
+            const product = variant?.products && variant.products.length > 0 ? variant.products[0] : null;
+            const productId = product?.id;
+            const productImageUrl = resolvePublicAssetUrl(product?.image_url);
             const primaryImage = productId ? productImageMap.get(productId) : null;
 
             lookItems.push({
-                id: raw.id,
-                look_id: raw.look_id,
-                product_variant_id: raw.product_variant_id,
-                label: raw.label,
-                sort_order: raw.sort_order,
+                id: item.id,
+                look_id: item.look_id,
+                product_variant_id: item.product_variant_id,
+                label: item.label,
+                sort_order: item.sort_order,
                 resolved_image_url: primaryImage || productImageUrl || null,
-                product_variant: raw.product_variants ? {
-                    id: raw.product_variants.id,
-                    name: raw.product_variants.name,
-                    sku: raw.product_variants.sku,
-                    price: raw.product_variants.price,
-                    deposit_amount: raw.product_variants.deposit_amount,
-                    product: raw.product_variants.products ? {
-                        id: raw.product_variants.products.id,
-                        name: raw.product_variants.products.name,
-                        slug: raw.product_variants.products.slug,
-                        image_url: resolvePublicAssetUrl(raw.product_variants.products.image_url),
+                product_variant: variant ? {
+                    id: variant.id,
+                    name: variant.name,
+                    sku: variant.sku,
+                    price: variant.price,
+                    deposit_amount: variant.deposit_amount,
+                    product: product ? {
+                        id: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        image_url: resolvePublicAssetUrl(product.image_url),
                     } : null as never,
                 } : null,
             });

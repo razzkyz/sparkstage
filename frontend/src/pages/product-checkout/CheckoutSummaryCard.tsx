@@ -38,6 +38,17 @@ export function CheckoutSummaryCard({
               <p className="text-xs text-gray-500 mt-1">
                 {item.quantity} x {formatCurrency(item.unit_price)}
               </p>
+              {item.is_rental && item.deposit_amount && item.rental_daily_rate && item.rental_duration_days ? (
+                <div className="text-xs mt-1 space-y-0.5">
+                  <p className="text-gray-500">Harga: {formatCurrency((item.unit_price - item.deposit_amount - (item.rental_daily_rate * item.rental_duration_days)) * item.quantity)}</p>
+                  <p className="text-gray-500">Sewa: {formatCurrency(item.rental_daily_rate * item.rental_duration_days * item.quantity)}</p>
+                  <p className="text-yellow-700">Deposit: {formatCurrency(item.deposit_amount * item.quantity)}</p>
+                </div>
+              ) : item.is_rental && item.deposit_amount ? (
+                <div className="text-xs mt-1 space-y-0.5">
+                  <p className="text-yellow-700">Deposit: {formatCurrency(item.deposit_amount * item.quantity)}</p>
+                </div>
+              ) : null}
             </div>
             <p className="font-semibold">{formatCurrency(item.subtotal)}</p>
           </div>

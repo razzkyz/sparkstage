@@ -31,9 +31,11 @@ export function RentalProductGallery({ look, showPricing = false, durationDays =
     ? [product.image_url]
     : [];
 
-  const rentalPrice = selectedItem?.product_variant?.price || 0;
-  const depositPrice = Math.ceil(rentalPrice * 0.75);
-  const totalForDuration = rentalPrice * durationDays;
+  const DAILY_FEE_PER_ITEM = 15000; // 15k per day per item
+  const productPrice = selectedItem?.product_variant?.price || 0;
+  const depositPrice = Math.ceil(productPrice * 0.75);
+  const rentalCostForDuration = DAILY_FEE_PER_ITEM * durationDays;
+  const totalForDuration = productPrice + depositPrice + rentalCostForDuration;
 
   return (
     <div className="space-y-6">
@@ -65,6 +67,9 @@ export function RentalProductGallery({ look, showPricing = false, durationDays =
             <h3 className="mt-2 font-bold text-lg text-gray-900">
               {product?.name}
             </h3>
+            <p className="mt-1 text-sm font-semibold text-main-600">
+              {selectedItem.product_variant?.name}
+            </p>
             {selectedItem.label && (
               <p className="mt-1 text-sm text-gray-600 italic">
                 {selectedItem.label}
@@ -75,11 +80,15 @@ export function RentalProductGallery({ look, showPricing = false, durationDays =
           {showPricing && (
             <div className="space-y-3 rounded-lg bg-gray-50 p-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Harga / hari</span>
-                <span className="font-bold text-gray-900">{formatCurrency(rentalPrice)}</span>
+                <span className="text-sm text-gray-600">Harga Produk</span>
+                <span className="font-bold text-gray-900">{formatCurrency(productPrice)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Deposit</span>
+                <span className="text-sm text-gray-600">Sewa / hari</span>
+                <span className="font-bold text-gray-900">{formatCurrency(DAILY_FEE_PER_ITEM)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Deposit (75%)</span>
                 <span className="font-bold text-gray-900">{formatCurrency(depositPrice)}</span>
               </div>
               {durationDays > 1 && (

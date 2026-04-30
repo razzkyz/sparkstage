@@ -19,6 +19,7 @@ import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
 import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
 import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -289,6 +290,10 @@ const Shop = () => {
       staleTime: 60000,
     });
   };
+
+  if (loading) {
+    return <AppLoadingScreen />;
+  }
 
   return (
     <PageTransition>

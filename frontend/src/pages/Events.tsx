@@ -1,15 +1,12 @@
 import { DEFAULT_EVENT_PAGE_SETTINGS, useEventSettings } from '../hooks/useEventSettings';
 import { getCmsFontStyle } from '../lib/cmsTypography';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 const Events = () => {
   const { settings, isLoading: settingsLoading } = useEventSettings();
 
   if (settingsLoading) {
-    return (
-      <div className="bg-background-light min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   const content = settings ?? DEFAULT_EVENT_PAGE_SETTINGS;

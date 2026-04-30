@@ -43,7 +43,13 @@ export default function CartPage() {
   const selectedSubtotal = useMemo(() => {
     return items
       .filter((i) => selectedItems.has(i.variantId))
-      .reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      .reduce((sum, i) => {
+        if (i.isRental) {
+          // For rentals, unitPrice is total rental cost
+          return sum + i.unitPrice * i.quantity;
+        }
+        return sum + i.unitPrice * i.quantity;
+      }, 0);
   }, [items, selectedItems]);
 
   const selectedCount = selectedItems.size;
@@ -153,12 +159,22 @@ export default function CartPage() {
                     <div className="flex-1 flex flex-col justify-between py-0.5">
                       <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0">
+                          {item.isRental && (
+                            <span className="inline-block px-2 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-bold uppercase tracking-wider rounded mb-1">
+                              Rental
+                            </span>
+                          )}
                           <h3 className="font-serif text-base sm:text-xl text-gray-900 leading-tight mb-1 truncate pr-1">
                             {item.productName}
                           </h3>
                           <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">
                             {item.variantName}
                           </p>
+                          {item.isRental && item.rentalDailyRate && item.rentalDurationDays && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatCurrency(item.rentalDailyRate)} × {item.rentalDurationDays} hari
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => removeItem(item.variantId)}
@@ -191,9 +207,26 @@ export default function CartPage() {
                         {/* Price */}
                         <div className="text-right">
                           <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5 hidden sm:block">Total</p>
-                          <p className="font-serif text-sm sm:text-lg text-[#e63d75] font-medium">
-                            {formatCurrency(item.unitPrice * item.quantity)}
-                          </p>
+                          {item.isRental && item.depositAmount && item.rentalDailyRate && item.rentalDurationDays ? (
+                            <div className="text-right">
+                              <p className="font-serif text-sm sm:text-lg text-[#e63d75] font-medium">
+                                {formatCurrency(item.unitPrice * item.quantity)}
+                              </p>
+                              <p className="text-[10px] text-gray-500">
+                                Harga: {formatCurrency((item.unitPrice - item.depositAmount - (item.rentalDailyRate * item.rentalDurationDays)) * item.quantity)}
+                              </p>
+                              <p className="text-[10px] text-gray-500">
+                                Sewa: {formatCurrency(item.rentalDailyRate * item.rentalDurationDays * item.quantity)}
+                              </p>
+                              <p className="text-[10px] text-yellow-700">
+                                Deposit: {formatCurrency(item.depositAmount * item.quantity)}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="font-serif text-sm sm:text-lg text-[#e63d75] font-medium">
+                              {formatCurrency(item.unitPrice * item.quantity)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

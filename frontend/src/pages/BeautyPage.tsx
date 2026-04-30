@@ -7,6 +7,7 @@ import { DEFAULT_GLAM_PAGE_SETTINGS, useGlamPageSettings } from '../hooks/useGla
 import { useProductSummaries } from '../hooks/useProducts';
 import { formatCurrency } from '../utils/formatters';
 import { getCmsFontStyle } from '../lib/cmsTypography';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 const GLAM_ASSET_BASE = '/images/glam%20page%20assets';
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
@@ -89,6 +90,10 @@ export default function BeautyPage() {
 
   const hasProductsError = productsError instanceof Error;
   const hasSettingsError = settingsError instanceof Error;
+
+  if (productsLoading) {
+    return <AppLoadingScreen />;
+  }
 
   return (
     <PageTransition>

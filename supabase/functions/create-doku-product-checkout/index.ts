@@ -173,25 +173,35 @@ serve(async (req) => {
       quantity: Math.max(1, Math.floor(toNumber(i.quantity, 1))),
     }));
 
+    console.log("[create-doku-product-checkout] Normalized items:", JSON.stringify(normalizedItems));
+
     if (
       normalizedItems.some((i) => !i.productVariantId || !i.name || i.price < 0)
     ) {
       return jsonError(req, 400, "Invalid items");
     }
 
+    // Log items with price 0 to debug rental pricing issues
+    const zeroPriceItems = normalizedItems.filter((i) => i.price === 0);
+    if (zeroPriceItems.length > 0) {
+      console.warn("[create-doku-product-checkout] Items with price 0:", JSON.stringify(zeroPriceItems));
+    }
+
     const aggregatedItemsByVariant = new Map<
-      number,
-      { productVariantId: number; name: string; quantity: number }
+      string,
+      { productVariantId: number; name: string; quantity: number; sentPrice: number }
     >();
     for (const item of normalizedItems) {
-      const existing = aggregatedItemsByVariant.get(item.productVariantId);
+      const key = `${item.productVariantId}_${item.price}`;
+      const existing = aggregatedItemsByVariant.get(key);
       if (existing) {
         existing.quantity += item.quantity;
       } else {
-        aggregatedItemsByVariant.set(item.productVariantId, {
+        aggregatedItemsByVariant.set(key, {
           productVariantId: item.productVariantId,
           name: item.name,
           quantity: item.quantity,
+          sentPrice: item.price,
         });
       }
     }
@@ -207,6 +217,8 @@ serve(async (req) => {
     if (variantsError || !Array.isArray(variantRows)) {
       return jsonError(req, 500, "Failed to load product variants");
     }
+
+    console.log("[create-doku-product-checkout] Variant rows from DB:", JSON.stringify(variantRows));
 
     const variantMap = new Map<
       number,
@@ -249,7 +261,22 @@ serve(async (req) => {
           `Variant not found: ${item.productVariantId}`,
         );
       }
-      const unitPrice = toNumber((variant as { price: unknown }).price, 0);
+      
+      // Use the price sent from frontend if provided (for rental items with custom pricing)
+      // Otherwise fall back to database price for regular items
+      const dbPrice = toNumber((variant as { price: unknown }).price, 0);
+      const unitPrice = item.sentPrice > 0 ? item.sentPrice : dbPrice;
+
+      console.log(
+        `[create-doku-product-checkout] Variant ${item.productVariantId}: sentPrice=${item.sentPrice}, dbPrice=${dbPrice}, unitPrice=${unitPrice}`
+      );
+
+      if (item.sentPrice === 0) {
+        console.warn(
+          `[create-doku-product-checkout] Variant ${item.productVariantId} sentPrice is 0, falling back to dbPrice: ${dbPrice}`
+        );
+      }
+
       if (unitPrice <= 0) {
         return jsonError(
           req,
@@ -264,6 +291,23 @@ serve(async (req) => {
       (sum, item) => sum + item.unitPrice * item.quantity,
       0,
     );
+
+    console.log("[create-doku-product-checkout] Resolved items:", JSON.stringify(resolvedItems));
+    console.log("[create-doku-product-checkout] Total amount:", totalAmount);
+
+    // Debug: return resolved items in response for frontend debugging
+    const debugInfo = {
+      normalizedItems: normalizedItems.map((i) => ({
+        productVariantId: i.productVariantId,
+        price: i.price,
+      })),
+      resolvedItems: resolvedItems.map((i) => ({
+        productVariantId: i.productVariantId,
+        unitPrice: i.unitPrice,
+      })),
+      totalAmount,
+    };
+    console.log("[create-doku-product-checkout] Debug info:", JSON.stringify(debugInfo));
     const orderNumber = `PRD-${Date.now()}-${
       Math.random().toString(36).substring(2, 7).toUpperCase()
     }`;
@@ -469,6 +513,9 @@ serve(async (req) => {
 
     const finalTotal = totalAmount - discountAmount;
 
+    console.log("[create-doku-product-checkout] Discount amount:", discountAmount);
+    console.log("[create-doku-product-checkout] Final total for DOKU:", finalTotal);
+
     const { data: order, error: orderError } = await supabase
       .from("order_products")
       .insert({
@@ -573,6 +620,9 @@ serve(async (req) => {
       category: "beauty",
       type: "PHYSICAL",
     }));
+
+    console.log("[create-doku-product-checkout] DOKU line items:", JSON.stringify(lineItems));
+    console.log("[create-doku-product-checkout] DOKU total amount:", finalTotal);
 
     if (discountAmount > 0) {
       lineItems.push({
@@ -977,6 +1027,18 @@ serve(async (req) => {
       order_number: orderNumber,
       order_id: orderId,
       discount_amount: discountAmount, // Include discount for frontend display
+      _debug: {
+        normalizedItems: normalizedItems.map((i) => ({
+          productVariantId: i.productVariantId,
+          price: i.price,
+        })),
+        resolvedItems: resolvedItems.map((i) => ({
+          productVariantId: i.productVariantId,
+          unitPrice: i.unitPrice,
+        })),
+        totalAmount,
+        finalTotal,
+      },
     });
   } catch (error) {
     if (supabase && createdOrderId) {

@@ -264,17 +264,21 @@ export function useProductCheckoutController({
       return null;
     }
 
-    const invoke = async (accessToken: string) =>
-      withTimeout(
+    const invoke = async (accessToken: string) => {
+      const itemsPayload = orderItems.map((item) => ({
+        productVariantId: item.product_variant_id,
+        name: `${item.product_name} - ${item.variant_name}`.slice(0, 50),
+        price: item.unit_price,
+        quantity: item.quantity,
+      }));
+      console.log('[useProductCheckoutController] Sending items to backend:', JSON.stringify(itemsPayload));
+      console.log('[useProductCheckoutController] Rental items:', orderItems.filter(i => i.is_rental));
+
+      return withTimeout(
         invokeSupabaseFunction<CreateProductTokenResponse | CreateCashierOrderResponse>({
           functionName,
           body: {
-            items: orderItems.map((item) => ({
-              productVariantId: item.product_variant_id,
-              name: `${item.product_name} - ${item.variant_name}`.slice(0, 50),
-              price: item.unit_price,
-              quantity: item.quantity,
-            })),
+            items: itemsPayload,
             customerName: customerName.trim(),
             customerEmail: user.email,
             customerPhone: customerPhone.trim() || undefined,
@@ -286,9 +290,15 @@ export function useProductCheckoutController({
         15000,
         'Request timeout. Please try again.'
       );
+    };
 
     try {
-      return await invoke(token);
+      const response = await invoke(token);
+      console.log('[useProductCheckoutController] Backend response:', response);
+      if (response && '_debug' in response) {
+        console.log('[useProductCheckoutController] Debug info:', response._debug);
+      }
+      return response;
     } catch (error) {
       if (getSupabaseFunctionStatus(error) === 401) {
         await refreshSession();

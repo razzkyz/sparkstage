@@ -10,7 +10,10 @@ export function selectCheckoutItems(allItems: CartItem[], selectedVariantIds?: n
 }
 
 export function calculateSubtotal(items: CartItem[]) {
-  return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  return items.reduce((sum, item) => {
+    const unitPrice = item.unitPrice * item.quantity;
+    return sum + unitPrice;
+  }, 0);
 }
 
 export function mapCheckoutOrderItems(items: CartItem[]): CheckoutOrderItem[] {
@@ -21,6 +24,10 @@ export function mapCheckoutOrderItems(items: CartItem[]): CheckoutOrderItem[] {
     quantity: item.quantity,
     unit_price: item.unitPrice,
     subtotal: item.unitPrice * item.quantity,
+    is_rental: item.isRental,
+    deposit_amount: item.depositAmount,
+    rental_daily_rate: item.rentalDailyRate,
+    rental_duration_days: item.rentalDurationDays,
   }));
 }
 

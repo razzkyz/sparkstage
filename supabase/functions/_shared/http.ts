@@ -20,15 +20,14 @@ function resolveAllowedOrigin(req: Request, options?: CorsOptions): string {
   const configuredOrigins = getAllowedAppOrigins()
 
   if (!origin) return configuredOrigins[0] ?? '*'
+  
+  // Always allow localhost and 127.0.0.1 for development
+  if (isLocalOrigin(origin)) return origin
+  
+  // For remote origins, check if explicitly configured
   if (configuredOrigins.includes(origin)) return origin
 
-  const hasOnlyLocalConfiguredOrigins =
-    configuredOrigins.length > 0 && configuredOrigins.every((configuredOrigin) => isLocalOrigin(configuredOrigin))
-
-  if (configuredOrigins.length === 0 || hasOnlyLocalConfiguredOrigins) {
-    return origin
-  }
-
+  // Reject unknown origins
   return 'null'
 }
 

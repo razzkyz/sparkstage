@@ -8,6 +8,10 @@ export type CartItem = {
   variantName: string;
   unitPrice: number;
   quantity: number;
+  isRental?: boolean;
+  rentalDailyRate?: number;
+  rentalDurationDays?: number;
+  depositAmount?: number;
 };
 
 export type CartContextValue = {

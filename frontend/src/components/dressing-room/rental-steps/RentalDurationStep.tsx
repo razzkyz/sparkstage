@@ -25,10 +25,16 @@ export default function RentalDurationStep({
   const rentalEndTime = new Date(rentalStartTime);
   rentalEndTime.setDate(rentalEndTime.getDate() + durationDays);
 
-  // Calculate total rental cost
-  const totalRentalCost = look.items.reduce((sum, item) => {
-    const dailyRate = item.product_variant?.price || 0;
-    return sum + dailyRate * durationDays;
+  // Daily rental fee per item
+  const DAILY_FEE_PER_ITEM = 15000; // 15k per day per item
+
+  // Calculate total rental cost (daily rate × number of items × duration)
+  const totalRentalCost = look.items.length * DAILY_FEE_PER_ITEM * durationDays;
+
+  // Calculate total product price + deposit
+  const totalProductPrice = look.items.reduce((sum, item) => {
+    const price = item.product_variant?.price || 0;
+    return sum + price;
   }, 0);
 
   // Calculate total deposit (per item, different per item)
@@ -39,7 +45,7 @@ export default function RentalDurationStep({
     return sum + deposit;
   }, 0);
 
-  const totalAmount = totalRentalCost + totalDeposit;
+  const totalAmount = totalProductPrice + totalRentalCost + totalDeposit;
 
   const handleNext = () => {
     onNext({
@@ -124,9 +130,11 @@ export default function RentalDurationStep({
         </h4>
         <div className="max-h-64 space-y-2 overflow-y-auto">
           {look.items.map((item) => {
-            const dailyRate = item.product_variant?.price || 0;
-            const deposit = item.product_variant?.deposit_amount || Math.ceil(dailyRate * 0.75);
-            const totalItemCost = dailyRate * durationDays;
+            const price = item.product_variant?.price || 0;
+            const dailyFee = DAILY_FEE_PER_ITEM;
+            const deposit = item.product_variant?.deposit_amount || Math.ceil(price * 0.75);
+            const rentalCost = dailyFee * durationDays;
+            const itemTotal = price + deposit + rentalCost;
 
             return (
               <div key={item.id} className="rounded-lg border border-gray-200 p-3 text-sm">
@@ -142,16 +150,24 @@ export default function RentalDurationStep({
                 </div>
                 <div className="space-y-1 text-xs text-gray-600 border-t border-gray-100 pt-2">
                   <div className="flex justify-between">
-                    <span>Harga sewa/hari:</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(dailyRate)}</span>
+                    <span>Harga:</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(price)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sewa/hari:</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(dailyFee)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total sewa ({durationDays} hari):</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(totalItemCost)}</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(rentalCost)}</span>
                   </div>
                   <div className="flex justify-between bg-yellow-50 px-2 py-1 rounded">
-                    <span>Deposit:</span>
+                    <span>Deposit (75%):</span>
                     <span className="font-semibold text-yellow-700">{formatCurrency(deposit)}</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-1 mt-1 flex justify-between font-bold">
+                    <span>Total Item:</span>
+                    <span className="text-main-600">{formatCurrency(itemTotal)}</span>
                   </div>
                 </div>
               </div>
@@ -164,8 +180,12 @@ export default function RentalDurationStep({
       <div className="rounded-lg bg-main-50 p-4 border border-main-200">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">Total Harga Sewa:</span>
-            <span className="font-bold text-gray-900">{formatCurrency(totalRentalCost)}</span>
+            <span className="text-gray-600">Total Harga Produk:</span>
+            <span className="font-semibold text-gray-900">{formatCurrency(totalProductPrice)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total Sewa ({durationDays} hari):</span>
+            <span className="font-semibold text-gray-900">{formatCurrency(totalRentalCost)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Total Deposit:</span>

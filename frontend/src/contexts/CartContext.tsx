@@ -95,15 +95,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const normalized: CartItem[] = items
             .map((i) => i as Partial<CartItem>)
             .filter((i) => typeof i.variantId === 'number' && typeof i.productId === 'number')
-            .map((i) => ({
-              productId: Number(i.productId),
-              productName: String(i.productName ?? ''),
-              productImageUrl: typeof i.productImageUrl === 'string' ? i.productImageUrl : undefined,
-              variantId: Number(i.variantId),
-              variantName: String(i.variantName ?? ''),
-              unitPrice: Number(i.unitPrice ?? 0),
-              quantity: clampQuantity(Number(i.quantity ?? 1)),
-            }))
+            .map((i) => {
+              const item = {
+                productId: Number(i.productId),
+                productName: String(i.productName ?? ''),
+                productImageUrl: typeof i.productImageUrl === 'string' ? i.productImageUrl : undefined,
+                variantId: Number(i.variantId),
+                variantName: String(i.variantName ?? ''),
+                unitPrice: Number(i.unitPrice ?? 0),
+                quantity: clampQuantity(Number(i.quantity ?? 1)),
+                isRental: Boolean(i.isRental),
+                rentalDailyRate: typeof i.rentalDailyRate === 'number' ? i.rentalDailyRate : undefined,
+                rentalDurationDays: typeof i.rentalDurationDays === 'number' ? i.rentalDurationDays : undefined,
+                depositAmount: typeof i.depositAmount === 'number' ? i.depositAmount : undefined,
+              };
+              // Log if rental item is missing rental fields
+              if (item.isRental && (!item.rentalDailyRate || !item.rentalDurationDays || !item.depositAmount)) {
+                console.warn('[CartContext] Rental item missing rental fields:', item);
+              }
+              return item;
+            })
             .filter((i) => i.productName && i.variantName && Number.isFinite(i.unitPrice) && i.unitPrice >= 0);
 
           dispatch({ type: 'replace', items: normalized });

@@ -4,7 +4,8 @@ import { Check, FileText, Loader2 } from 'lucide-react';
 import { formatCurrency } from '../../../utils/formatters';
 import type { RentalFormData } from '../RentalFlowModal';
 import { RentalProductGallery } from '../RentalProductGallery';
-import { invokeSupabaseFunction } from '../../../lib/supabaseFunctionInvoke';
+import { useCart } from '../../../contexts/cartStore';
+import { useNavigate } from 'react-router-dom';
 
 interface RentalSummaryStepProps {
   rentalData: RentalFormData;
@@ -17,63 +18,77 @@ export default function RentalSummaryStep({
 }: RentalSummaryStepProps) {
   const [agreedToTC, setAgreedToTC] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { addItem } = useCart();
+  const navigate = useNavigate();
 
-  // Calculate costs
-  const totalRentalCost = rentalData.look.items.reduce((sum, item) => {
-    const dailyRate = item.product_variant?.price || 0;
-    return sum + dailyRate * rentalData.durationDays;
-  }, 0);
+  // Calculate costs - new pricing model
+  const DAILY_FEE_PER_ITEM = 15000; // 15k per day per item
 
+  // Calculate deposit (75% of product price) and product price
   const totalDeposit = rentalData.look.items.reduce((sum, item) => {
     const price = item.product_variant?.price || 0;
-    const deposit = item.product_variant?.deposit_amount || Math.ceil(price * 0.75);
+    const deposit = price * 0.75; // 75% of product price
     return sum + deposit;
   }, 0);
 
-  const totalAmount = totalRentalCost + totalDeposit;
+  const totalProductPrice = rentalData.look.items.reduce((sum, item) => {
+    const price = item.product_variant?.price || 0;
+    return sum + price;
+  }, 0);
+
+  const totalRentalCost = rentalData.look.items.length * DAILY_FEE_PER_ITEM * rentalData.durationDays;
+  const totalAmount = totalProductPrice + totalDeposit + totalRentalCost;
 
   const handleConfirm = async () => {
     setIsProcessing(true);
     try {
-      const items = rentalData.look.items.map((item) => ({
-        productVariantId: item.product_variant_id,
-        productName: item.product_variant?.name || item.label || 'Unknown',
-        dailyRate: item.product_variant?.price || 0,
-        depositAmount: item.product_variant?.deposit_amount || Math.ceil((item.product_variant?.price || 0) * 0.75),
-        quantity: 1,
-        initialCondition: rentalData.initialCondition?.[item.id],
-      }));
+      // Add all items to cart
+      console.log('Rental data items:', rentalData.look.items);
+      for (const item of rentalData.look.items) {
+        console.log('Adding item to cart:', item);
+        console.log('Product variant:', item.product_variant);
+        console.log('Product:', item.product_variant?.product);
+        if (!item.product_variant?.id || !item.product_variant?.name) continue;
 
-      const data = await invokeSupabaseFunction<{
-        payment_provider: string;
-        payment_url: string;
-        payment_sdk_url: string;
-        payment_due_date: string;
-        order_number: string;
-        order_id: number;
-      }>({
-        functionName: 'create-doku-rental-checkout',
-        body: {
-          items,
-          durationDays: rentalData.durationDays,
-          rentalStartTime: rentalData.rentalStartTime.toISOString(),
-          rentalEndTime: rentalData.rentalEndTime.toISOString(),
-          customerName: rentalData.customerData.fullName,
-          customerEmail: rentalData.customerData.email,
-          customerPhone: rentalData.customerData.phone,
-          customerAddress: rentalData.customerData.address,
-          initialCondition: rentalData.initialCondition,
-        },
-        fallbackMessage: 'Failed to create payment checkout',
-      });
-      
-      // Redirect to DOKU payment page
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
+        const price = item.product_variant.price || 0;
+        const itemDailyFee = DAILY_FEE_PER_ITEM;
+        const itemDeposit = price * 0.75; // 75% of product price
+        const itemTotalRentalCost = itemDailyFee * rentalData.durationDays;
+        const itemTotal = price + itemDeposit + itemTotalRentalCost; // product price + deposit + rental cost
+
+        console.log('[RentalSummaryStep] Item calculation:', {
+          variantId: item.product_variant.id,
+          variantName: item.product_variant.name,
+          price,
+          itemDailyFee,
+          rentalDurationDays: rentalData.durationDays,
+          itemTotalRentalCost,
+          itemDeposit,
+          itemTotal,
+        });
+
+        addItem(
+          {
+            productId: item.product_variant.product?.id || 0,
+            productName: item.product_variant.product?.name || item.label || 'Unknown',
+            productImageUrl: item.product_variant.product?.image_url || undefined,
+            variantId: item.product_variant.id,
+            variantName: item.product_variant.name,
+            unitPrice: itemTotal, // Total: product price + deposit + rental cost
+            isRental: true,
+            rentalDailyRate: itemDailyFee,
+            rentalDurationDays: rentalData.durationDays,
+            depositAmount: itemDeposit,
+          },
+          1
+        );
       }
+
+      // Navigate to cart page
+      navigate('/cart');
     } catch (error) {
-      console.error('Payment checkout error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to create payment checkout');
+      console.error('Failed to add to cart:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add items to cart');
     } finally {
       setIsProcessing(false);
     }
@@ -143,9 +158,11 @@ export default function RentalSummaryStep({
           </h4>
           <div className="space-y-2">
             {rentalData.look.items.map((item) => {
-              const dailyRate = item.product_variant?.price || 0;
-              const deposit = item.product_variant?.deposit_amount || Math.ceil(dailyRate * 0.75);
-              const totalItemCost = dailyRate * rentalData.durationDays;
+              const price = item.product_variant?.price || 0;
+              const itemDailyFee = DAILY_FEE_PER_ITEM;
+              const itemDeposit = price * 0.75; // 75% of product price
+              const itemRentalCost = itemDailyFee * rentalData.durationDays;
+              const itemTotal = price + itemDeposit + itemRentalCost; // product price + deposit + rental cost
 
               return (
                 <div key={item.id} className="rounded-lg bg-gray-50 p-3 text-sm space-y-1">
@@ -153,12 +170,20 @@ export default function RentalSummaryStep({
                     {item.label || item.product_variant?.name}
                   </p>
                   <div className="flex justify-between text-xs text-gray-600">
-                    <span>Sewa:</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(totalItemCost)}</span>
+                    <span>Harga:</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(price)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Sewa ({itemDailyFee.toLocaleString()} × {rentalData.durationDays} hari):</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(itemRentalCost)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
-                    <span>Deposit:</span>
-                    <span className="font-semibold">{formatCurrency(deposit)}</span>
+                    <span>Deposit (75%):</span>
+                    <span className="font-semibold">{formatCurrency(itemDeposit)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-main-600 border-t border-gray-200 pt-1 mt-1">
+                    <span>Total:</span>
+                    <span>{formatCurrency(itemTotal)}</span>
                   </div>
                 </div>
               );

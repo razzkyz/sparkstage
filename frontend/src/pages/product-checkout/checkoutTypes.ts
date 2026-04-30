@@ -45,4 +45,8 @@ export type CheckoutOrderItem = {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  is_rental?: boolean;
+  deposit_amount?: number;
+  rental_daily_rate?: number;
+  rental_duration_days?: number;
 };
