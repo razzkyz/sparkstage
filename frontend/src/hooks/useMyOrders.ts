@@ -31,6 +31,7 @@ type OrderItemRow = {
   price: number;
   subtotal: number;
   product_variants?: {
+    id?: number | null;
     name?: string | null;
     product_id?: number | null;
     products?: {
@@ -95,6 +96,7 @@ export function useMyOrders(userId: string | null | undefined) {
               price,
               subtotal,
               product_variants (
+                id,
                 name,
                 product_id,
                 products (
@@ -127,6 +129,8 @@ export function useMyOrders(userId: string | null | undefined) {
 
           const mappedItem: ProductOrderItem = {
             id: item.id,
+            productId: item.product_variants?.product_id ?? undefined,
+            productVariantId: item.product_variants?.id ?? undefined,
             quantity: item.quantity,
             price: item.price,
             subtotal: item.subtotal,

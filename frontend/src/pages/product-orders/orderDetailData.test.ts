@@ -10,8 +10,11 @@ describe('mapProductOrderItemRows', () => {
         price: '50000',
         subtotal: '100000',
         product_variants: {
+          id: '10',
           name: 'XL',
+          product_id: '77',
           products: {
+            id: '77',
             name: 'Spark Tee',
             image_url: null,
             product_images: [
@@ -26,6 +29,8 @@ describe('mapProductOrderItemRows', () => {
     expect(result).toEqual([
       {
         id: 1,
+        productId: 77,
+        productVariantId: 10,
         quantity: 2,
         price: 50000,
         subtotal: 100000,

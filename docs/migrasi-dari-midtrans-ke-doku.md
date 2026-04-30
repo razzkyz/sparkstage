@@ -58,6 +58,20 @@ Catatan operasional tambahan per 2026-04-26:
 - tidak ada lagi traffic internal yang sengaja "menghangatkan Midtrans" edge functions
 - dokumentasi repo tidak lagi memperlakukan UptimeRobot warm-up sebagai komponen aktif dari arsitektur payment
 
+Catatan operasional tambahan per 2026-04-28:
+
+- channel `QRIS` di dashboard merchant DOKU sudah terlihat `Active`
+- halaman `QRIS Notify URL` di merchant DOKU juga sudah menampilkan status `Active`
+- artinya dari sisi aktivasi channel merchant, `QRIS` tidak lagi diperlakukan sebagai channel yang masih menunggu approval
+
+Catatan operasional tambahan per 2026-04-29:
+
+- smoke test QRIS production untuk pembelian tiket sudah berhasil memakai QRIS via ShopeePay
+- transaksi QRIS tersebut memakai flow real / akun official, bukan sandbox
+- bukti dokumentasi smoke test sudah disimpan operator dalam bentuk foto
+- dengan hasil ini, `QRIS` sudah dianggap tervalidasi untuk flow pembelian tiket real
+- produk via QRIS tetap perlu dianggap belum terbukti terpisah sampai ada smoke test produk khusus QRIS bila scope operasional membutuhkannya
+
 Asumsi dokumen ini:
 
 - Akun DOKU sudah terverifikasi dan siap dipakai
@@ -461,6 +475,8 @@ Catatan operator saat ini:
 - `Virtual Account` merchant banyak yang aktif sebagai SNAP, tetapi repo belum dianggap siap membuka SNAP ke user publik.
 - `Virtual Account` Non-SNAP sudah dikonfigurasi manual untuk notification URL.
 - `Convenience Store` aktif sudah dikonfigurasi manual untuk notification URL.
+- `QRIS` per 2026-04-28 sudah terlihat `Active` dari sisi channel dan notify URL merchant.
+- Smoke test tiket via `QRIS` pada 2026-04-29 berhasil memakai ShopeePay, sehingga QRIS sudah tervalidasi untuk flow tiket real.
 - `PayLater` seperti Akulaku sengaja tidak dibuka dulu.
 - `e-Wallet` tidak menyediakan pola konfigurasi yang sama seperti `Virtual Account`; menu tersebut cenderung membawa operator ke halaman aktivasi service, bukan halaman configure notification.
 - Pada sesi 2026-04-25, `DOKU e-Wallet` terlihat aktif, tetapi channel pihak ketiga seperti DANA / OVO / LinkAja masih disabled / tidak selectable.
@@ -493,6 +509,7 @@ Channel launch awal yang diprioritaskan:
 
 - Virtual Account Non-SNAP BNI untuk live smoke test pertama
 - Convenience Store sebagai backup jalur pembayaran
+- QRIS sudah aktif dan sudah lolos smoke test tiket production via ShopeePay pada 2026-04-29
 - Channel SNAP belum dijadikan target launch awal sampai code mendukung notification dan signature SNAP dengan benar
 
 ### D. Hardening code sebelum full launch
@@ -524,6 +541,7 @@ Channel launch awal yang diprioritaskan:
 - [x] Pastikan item test tidak membingungkan user publik
 - [x] Jalankan 1 transaksi live tiket nominal kecil
 - [x] Jalankan 1 transaksi live produk nominal kecil
+- [x] Jalankan 1 transaksi live tiket via QRIS
 - [ ] Simpan order number dari kedua transaksi
 - [x] Verifikasi user diarahkan ke checkout page production, bukan sandbox
 - [x] Verifikasi payment selesai di sisi DOKU
@@ -544,6 +562,13 @@ Catatan smoke test production 2026-04-25:
 - Redirect `localhost` yang sempat muncul pada percobaan awal sudah diperbaiki dan percobaan berikutnya berhasil kembali ke domain production.
 - Tiket hasil transaksi live berhasil dipindai oleh admin, sehingga bukti operasional saat ini tidak hanya berhenti pada status paid.
 - Produk hasil transaksi live sudah bisa dibeli dan flow pasca-bayarnya dinyatakan lolos manual.
+
+Catatan smoke test QRIS production 2026-04-29:
+
+- Pembelian tiket via QRIS berhasil menggunakan ShopeePay.
+- Transaksi dilakukan pada flow real / akun official DOKU.
+- Dokumentasi hasil smoke test sudah disimpan operator dalam bentuk foto.
+- Status QRIS sekarang sudah tervalidasi untuk flow tiket real, tetapi belum otomatis mengklaim flow produk via QRIS sampai dilakukan test produk khusus QRIS.
 
 ### G. Audit database setelah smoke test
 
@@ -748,6 +773,11 @@ Bagian ini sengaja ditandai non-blocking. Jalankan setelah soft launch stabil, b
 ## Penilaian Progress Migrasi
 
 Per 2026-04-25 setelah batch hardening dan deploy terakhir, estimasi progress migrasi Midtrans ke DOKU dinaikkan menjadi **89%**.
+
+Tambahan per 2026-04-29:
+
+- QRIS sudah aktif di merchant DOKU dan smoke test tiket production via QRIS ShopeePay sudah berhasil.
+- Progress fungsional payment naik karena channel QRIS tidak lagi hanya aktif di dashboard, tetapi sudah punya bukti transaksi tiket real.
 
 Penjelasannya:
 

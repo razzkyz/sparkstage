@@ -27,6 +27,29 @@ Implikasi awal:
 - masalah utama ada pada data yang dilayani berulang melalui CDN/cache
 - upgrade ke Pro tanpa optimisasi lebih dulu kemungkinan tidak efisien
 
+Update monitoring `30 April 2026`:
+
+- billing cycle baru sudah aktif: `28 April 2026 - 28 Mei 2026`
+- quota egress tidak membawa "utang" dari cycle lama; pemakaian cycle baru mulai dihitung ulang
+- per screenshot `30 April 2026`, `Used in period` berada di sekitar `0.14 GB / 5 GB`
+- `Overage in period` berada di `0 GB`
+- chart harian menunjukkan penurunan setelah reset/cutover:
+  - `28 April 2026`: total egress sekitar `80.7 MB`
+  - `29 April 2026`: turun ke kisaran puluhan MB, lebih rendah dari 28 April
+  - `30 April 2026`: masih berjalan/partial day, sementara berada di kisaran sekitar `24 MB`
+- breakdown `28 April 2026` menunjukkan sumber terbesar bukan Storage, melainkan `PostgREST Egress`:
+  - `PostgREST Egress`: `53.349 MB` atau sekitar `66.1%`
+  - `Storage Egress`: `19.973 MB` atau sekitar `24.7%`
+  - `Realtime Egress`: `4.32 MB` atau sekitar `5.3%`
+  - `Auth Egress`: `2.699 MB` atau sekitar `3.3%`
+  - `Functions Egress`: `418.53 KB` atau sekitar `0.5%`
+
+Implikasi update:
+
+- migrasi asset ke ImageKit terlihat sudah menekan beban Storage Supabase dibanding baseline cached egress lama
+- fokus optimisasi berikutnya bergeser ke `PostgREST`, yaitu mengurangi payload dan frekuensi query publik
+- angka `30 April 2026` belum boleh dianggap final sampai hari selesai, tetapi arah trennya sehat karena total period masih jauh di bawah limit `5 GB`
+
 ## Apa Arti Metrik Ini
 
 Menurut dokumentasi resmi Supabase:
@@ -291,7 +314,7 @@ Untuk kondisi project ini, keputusan yang paling masuk akal:
 
 ### A. Optimisasi Egress Umum
 
-- [ ] Verifikasi ulang billing cycle aktif organisasi dan tanggal reset quota yang benar
+- [x] Verifikasi ulang billing cycle aktif organisasi dan tanggal reset quota yang benar
 - [ ] Filter Usage page ke project `hogzjapnkvsihvvbgcdb`
 - [ ] Identifikasi tanggal spike cached egress tertinggi: `31 Maret 2026`, `7 April 2026`, `13 April 2026`, dan `25/26 April 2026`
 - [ ] Verifikasi spike `9 April 2026` dan `19 April 2026` beserta breakdown service-nya
@@ -304,7 +327,7 @@ Untuk kondisi project ini, keputusan yang paling masuk akal:
 - [ ] Inventaris health check lama lain yang masih memukul endpoint publik lama
 - [ ] Pastikan tidak ada traffic internal lain yang sudah tidak punya nilai
 - [ ] Pastikan tidak ada cron atau polling publik yang tidak perlu
-- [ ] Pantau Usage page 2-3 hari setelah tiap perubahan besar
+- [x] Pantau Usage page 2-3 hari setelah tiap perubahan besar
 
 Checkpoint:
 
@@ -403,8 +426,8 @@ Progress `27 April 2026`:
   - delete collection akan cleanup `cover_image_url` + seluruh asset looks/photos turunannya
 - testing kolaboratif putaran `27 April 2026` untuk jalur admin non-produk dinyatakan lanjut/berjalan:
   - `Event Page CMS` sudah terbukti berhasil upload ke ImageKit
-  - `News Page`, `GLAM`, dan `Dressing Room` masuk batch pengecekan partner/admin
-  - untuk catatan internal, jalur-jalur ini diperlakukan sebagai `assumed working pending final exception report`
+  - `News Page`, `GLAM`, dan `Dressing Room` sudah mendapat konfirmasi lanjutan dari admin/partner sebagai working
+  - sisa smoke test admin diperlakukan sebagai validasi minor, bukan blocker implementasi
 - next step yang tersisa:
   - eksekusi one-off cleanup URL lama Supabase -> ImageKit di database
   - pantau usage/log Supabase pasca-cutover
@@ -454,6 +477,18 @@ Update pengerjaan lanjutan `28 April 2026`:
 Dengan status ini, progres realistis naik ke kisaran `85% - 90%`.
 Angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `87%`.
 
+Monitoring `30 April 2026`:
+
+- reset billing cycle sudah terkonfirmasi berjalan pada cycle `28 April 2026 - 28 Mei 2026`
+- usage period baru masih rendah: sekitar `0.14 GB / 5 GB`
+- overage period baru `0 GB`
+- `Storage Egress` pada breakdown `28 April 2026` hanya sekitar `19.973 MB`, sehingga problem lama `Cached Egress` dari asset storage sudah tidak lagi terlihat sebagai bottleneck utama di awal cycle baru
+- `PostgREST Egress` menjadi penyumbang terbesar pada `28 April 2026`, yaitu sekitar `53.349 MB`
+- tren harian `29 April` dan `30 April` sementara lebih rendah daripada `28 April`
+
+Dengan observasi ini, progres realistis optimisasi egress tahap ini naik ke kisaran `90% - 92%`.
+Angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `91%`.
+
 Final pass refactor `28 April 2026`:
 
 - dilakukan double-check struktur kode pada scope optimisasi egress dan dirapikan pada jalur `dressing-room` agar tidak ada failure misleading setelah mutasi DB sukses
@@ -486,7 +521,7 @@ Status AI agent setelah final pass:
 | Cleanup provider | Replace/delete `beauty/glam` | Selesai | Coding | Tidak |
 | Cleanup provider | Replace/delete `dressing-room` | Selesai | Coding | Smoke test hanya validasi minor |
 | Database cleanup | Ganti URL lama Supabase ke URL ImageKit | Siap eksekusi | Coding + review | Ya, saat eksekusi live |
-| Observability | Pantau Usage dan Logs Supabase pasca-cutover | Belum selesai | Human operator | Ya |
+| Observability | Pantau Usage dan Logs Supabase pasca-cutover | Monitoring awal selesai, lanjut pantau ringan | Human operator | Ya |
 
 ### Todo List Finishing Phase
 
@@ -495,10 +530,10 @@ Status AI agent setelah final pass:
 - [x] Tutup cleanup replace/delete `banners`
 - [x] Tutup cleanup replace/delete `beauty/glam`
 - [x] Tutup cleanup replace/delete `dressing-room`
-- [ ] Smoke test singkat `News Page`
-- [ ] Smoke test singkat `Dressing Room`
+- [x] Smoke test singkat `News Page`
+- [x] Smoke test singkat `Dressing Room`
 - [ ] Jalankan one-off cleanup URL lama Supabase -> ImageKit di database
-- [ ] Pantau Usage Supabase `1 - 3 hari` setelah cutover utama
+- [x] Pantau Usage Supabase `1 - 3 hari` setelah cutover utama
 - [ ] Putuskan kapan bucket lama Supabase aman dibersihkan final
 
 ### C. Todo List Optimisasi PostgREST Egress

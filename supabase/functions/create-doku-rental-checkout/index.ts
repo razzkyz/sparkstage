@@ -49,6 +49,15 @@ type CreateRentalCheckoutRequest = {
   initialCondition?: Record<number, Record<string, unknown>>;
 };
 
+type RentalVariantRow = {
+  id: number;
+  price: unknown;
+  stock: unknown;
+  reserved_stock: unknown;
+  is_active: unknown;
+  deposit_amount: unknown;
+};
+
 async function persistRentalPaymentData(params: {
   supabase: ReturnType<typeof createServiceClient>;
   orderId: number;
@@ -157,27 +166,9 @@ serve(async (req) => {
 
     const variantMap = new Map<
       number,
-      {
-        id: number;
-        price: unknown;
-        stock: unknown;
-        reserved_stock: unknown;
-        is_active: unknown;
-        deposit_amount: unknown;
-      }
+      RentalVariantRow
     >();
-    for (
-      const row of variantRows as Array<
-        {
-          id: number;
-          price: unknown;
-          stock: unknown;
-          reserved_stock: unknown;
-          is_active: unknown;
-          deposit_amount: unknown;
-        }
-      >
-    ) {
+    for (const row of variantRows as unknown as RentalVariantRow[]) {
       variantMap.set(Number(row.id), row);
     }
 
@@ -210,8 +201,10 @@ serve(async (req) => {
       }
 
       // Use deposit_amount from DB if available, otherwise use provided value
-      const dbDepositAmount = toNumber((variant as { deposit_amount: unknown }).deposit_amount, 0);
-      const itemDepositAmount = dbDepositAmount > 0 ? dbDepositAmount : item.depositAmount;
+      const dbDepositAmount = toNumber(variant.deposit_amount, 0);
+      const itemDepositAmount = dbDepositAmount > 0
+        ? dbDepositAmount
+        : item.depositAmount;
 
       const totalRentalCost = item.dailyRate * payload.durationDays * item.quantity;
 

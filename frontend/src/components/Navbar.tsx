@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound } from 'lucide-react';
@@ -26,10 +26,13 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [desktopStarPosition, setDesktopStarPosition] = useState(0);
+  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
+  const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
+  const desktopSearchInputRef = useRef<HTMLInputElement | null>(null);
   const hasCenteredMobileItemRef = useRef(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -116,8 +119,38 @@ const Navbar = () => {
     return () => window.removeEventListener('resize', onResize);
   }, [centerMobileActiveItem, updateDesktopStarPosition]);
 
+  useEffect(() => {
+    if (!isDesktopSearchOpen) return;
+    requestAnimationFrame(() => desktopSearchInputRef.current?.focus());
+  }, [isDesktopSearchOpen]);
+
   const handleMobileLanguageToggle = () => {
     void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
+  };
+
+  const handleDesktopSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isDesktopSearchOpen) {
+      setIsDesktopSearchOpen(true);
+      return;
+    }
+
+    const query = desktopSearchQuery.trim();
+    setIsDesktopSearchOpen(false);
+
+    if (query) {
+      navigate(`/shop?q=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    navigate('/shop');
+  };
+
+  const handleDesktopSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Escape') return;
+    setIsDesktopSearchOpen(false);
+    setDesktopSearchQuery('');
   };
 
   const handleSignOutClick = () => {
@@ -230,9 +263,33 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                <button aria-label={t('nav.search')} className="text-gray-500 hover:text-main-600 transition-colors" type="button">
-                  <Search className="h-5 w-5" />
-                </button>
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={handleDesktopSearchSubmit}
+                  role="search"
+                >
+                  {isDesktopSearchOpen && (
+                    <input
+                      ref={desktopSearchInputRef}
+                      type="search"
+                      value={desktopSearchQuery}
+                      onChange={(event) => setDesktopSearchQuery(event.target.value)}
+                      onKeyDown={handleDesktopSearchKeyDown}
+                      placeholder="Search products"
+                      className="w-44 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition focus:border-main-600 focus:ring-2 focus:ring-main-600/20"
+                    />
+                  )}
+                  <button
+                    aria-label={t('nav.search')}
+                    className="text-gray-500 hover:text-main-600 transition-colors"
+                    type={isDesktopSearchOpen ? 'submit' : 'button'}
+                    onClick={() => {
+                      if (!isDesktopSearchOpen) setIsDesktopSearchOpen(true);
+                    }}
+                  >
+                    <Search className="h-5 w-5" />
+                  </button>
+                </form>
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-4">
@@ -253,9 +310,33 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                <button aria-label={t('nav.search')} className="p-2 text-gray-700 hover:text-main-600 transition-colors" type="button">
-                  <Search className="h-5 w-5" />
-                </button>
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={handleDesktopSearchSubmit}
+                  role="search"
+                >
+                  {isDesktopSearchOpen && (
+                    <input
+                      ref={desktopSearchInputRef}
+                      type="search"
+                      value={desktopSearchQuery}
+                      onChange={(event) => setDesktopSearchQuery(event.target.value)}
+                      onKeyDown={handleDesktopSearchKeyDown}
+                      placeholder="Search products"
+                      className="w-44 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition focus:border-main-600 focus:ring-2 focus:ring-main-600/20"
+                    />
+                  )}
+                  <button
+                    aria-label={t('nav.search')}
+                    className="p-2 text-gray-700 hover:text-main-600 transition-colors"
+                    type={isDesktopSearchOpen ? 'submit' : 'button'}
+                    onClick={() => {
+                      if (!isDesktopSearchOpen) setIsDesktopSearchOpen(true);
+                    }}
+                  >
+                    <Search className="h-5 w-5" />
+                  </button>
+                </form>
               </div>
             )}
 

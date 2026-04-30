@@ -9,8 +9,11 @@ type ProductOrderItemRow = {
   price: number | string;
   subtotal: number | string;
   product_variants?: {
+    id?: number | string;
     name?: string;
+    product_id?: number | string;
     products?: {
+      id?: number | string;
       name?: string;
       image_url?: string | null;
       product_images?: { image_url?: string | null; is_primary?: boolean }[] | null;
@@ -31,6 +34,8 @@ export function mapProductOrderItemRows(rows: ProductOrderItemRow[] | null | und
 
     return {
       id: Number(row.id),
+      productId: Number(product?.id ?? variant?.product_id) || undefined,
+      productVariantId: Number(variant?.id) || undefined,
       quantity: Number(row.quantity),
       price: Number(row.price),
       subtotal: Number(row.subtotal),
@@ -86,7 +91,7 @@ export async function fetchProductOrderDetail(orderNumber: string) {
       supabase
         .from('order_product_items')
         .select(
-          'id, quantity, price, subtotal, product_variants(name, product_id, products(name, image_url, product_images(image_url, is_primary)))'
+          'id, quantity, price, subtotal, product_variants(id, name, product_id, products(id, name, image_url, product_images(image_url, is_primary)))'
         )
         .eq('order_product_id', orderId)
         .abortSignal(timeoutSignal),

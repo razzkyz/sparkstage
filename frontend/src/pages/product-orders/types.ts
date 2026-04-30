@@ -2,6 +2,8 @@ export type ProductOrderStatusGroup = 'pending' | 'active' | 'history';
 
 export interface ProductOrderItem {
   id: number;
+  productId?: number;
+  productVariantId?: number;
   quantity: number;
   price: number;
   subtotal: number;

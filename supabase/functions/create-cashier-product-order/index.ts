@@ -147,7 +147,9 @@ serve(async (req) => {
         return jsonError(req, 500, 'Failed to load product categories')
       }
 
-      const productIds = variantCategories.map((v: { product_id: number }) => v.product_id)
+      const productIds = variantCategories
+        .map((v: { product_id?: number | null }) => v.product_id)
+        .filter((id): id is number => typeof id === 'number')
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select('category_id')
@@ -157,7 +159,9 @@ serve(async (req) => {
         return jsonError(req, 500, 'Failed to load product categories')
       }
 
-      const categoryIds = products.map((p: { category_id: number }) => p.category_id).filter((id: number) => id != null)
+      const categoryIds = products
+        .map((p: { category_id?: number | null }) => p.category_id)
+        .filter((id): id is number => typeof id === 'number')
 
       // Call validate_and_reserve_voucher RPC
       const { data: voucherResult, error: voucherError } = await supabase.rpc('validate_and_reserve_voucher', {
