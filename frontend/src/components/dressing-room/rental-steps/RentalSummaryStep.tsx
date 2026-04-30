@@ -5,6 +5,7 @@ import { formatCurrency } from '../../../utils/formatters';
 import type { RentalFormData } from '../RentalFlowModal';
 import { RentalProductGallery } from '../RentalProductGallery';
 import { invokeSupabaseFunction } from '../../../lib/supabaseFunctionInvoke';
+import { supabase } from '../../../lib/supabase';
 
 interface RentalSummaryStepProps {
   rentalData: RentalFormData;
@@ -35,6 +36,11 @@ export default function RentalSummaryStep({
   const handleConfirm = async () => {
     setIsProcessing(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
       const items = rentalData.look.items.map((item) => ({
         productVariantId: item.product_variant_id,
         productName: item.product_variant?.name || item.label || 'Unknown',
@@ -64,9 +70,10 @@ export default function RentalSummaryStep({
           customerAddress: rentalData.customerData.address,
           initialCondition: rentalData.initialCondition,
         },
+        headers: { Authorization: `Bearer ${session.access_token}` },
         fallbackMessage: 'Failed to create payment checkout',
       });
-      
+
       // Redirect to DOKU payment page
       if (data.payment_url) {
         window.location.href = data.payment_url;
