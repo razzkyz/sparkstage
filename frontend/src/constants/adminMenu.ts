@@ -42,6 +42,7 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
     label: 'Dressing Room',
     items: [
       { id: 'dressing-room', label: 'Dressing Room Manager', icon: 'styler', path: '/admin/dressing-room' },
+      { id: 'rental-orders', label: 'Sewa Dressing Room', icon: 'checkroom', path: '/admin/rental-orders', highlight: true },
     ],
   },
   {

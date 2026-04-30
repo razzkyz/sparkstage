@@ -11,9 +11,8 @@ export function selectCheckoutItems(allItems: CartItem[], selectedVariantIds?: n
 
 export function calculateSubtotal(items: CartItem[]) {
   return items.reduce((sum, item) => {
-    const rentalCost = item.unitPrice * item.quantity;
-    const deposit = item.isRental && item.depositAmount ? item.depositAmount * item.quantity : 0;
-    return sum + rentalCost + deposit;
+    const unitPrice = item.unitPrice * item.quantity;
+    return sum + unitPrice;
   }, 0);
 }
 
