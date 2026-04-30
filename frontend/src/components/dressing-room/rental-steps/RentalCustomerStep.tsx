@@ -15,6 +15,7 @@ export default function RentalCustomerStep({
 }: RentalCustomerStepProps) {
   const [formData, setFormData] = useState(defaultData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPickup, setIsPickup] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -30,7 +31,8 @@ export default function RentalCustomerStep({
     if (!formData.email.trim()) newErrors.email = 'Email wajib diisi';
     if (!formData.email.includes('@')) newErrors.email = 'Email tidak valid';
     if (!formData.phone.trim()) newErrors.phone = 'No HP/WA wajib diisi';
-    if (!formData.address.trim()) newErrors.address = 'Alamat wajib diisi';
+    if (!formData.phone.startsWith('08')) newErrors.phone = 'No HP harus dimulai dengan 08';
+    if (!isPickup && !formData.address.trim()) newErrors.address = 'Alamat wajib diisi';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -75,13 +77,16 @@ export default function RentalCustomerStep({
           const value = formData[fieldKey] || '';
           const error = errors[key];
 
+          // Skip address field if pickup is selected
+          if (key === 'address' && isPickup) return null;
+
           return (
             <div key={key}>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
               </label>
-              
+
               {type === 'textarea' ? (
                 <textarea
                   value={value}
@@ -114,6 +119,20 @@ export default function RentalCustomerStep({
             </div>
           );
         })}
+
+        {/* Pickup Checkbox */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="pickup"
+            checked={isPickup}
+            onChange={(e) => setIsPickup(e.target.checked)}
+            className="w-4 h-4 text-main-600 border-gray-300 rounded focus:ring-main-500"
+          />
+          <label htmlFor="pickup" className="text-sm text-gray-700">
+            Ambil di tempat (tidak perlu isi alamat)
+          </label>
+        </div>
       </div>
 
       {/* T&C */}

@@ -21,19 +21,19 @@ export default function RentalSummaryStep({
   const { addItem } = useCart();
   const navigate = useNavigate();
 
-  // Calculate costs
-  const totalRentalCost = rentalData.look.items.reduce((sum, item) => {
-    const dailyRate = item.product_variant?.price || 0;
-    return sum + dailyRate * rentalData.durationDays;
-  }, 0);
+  // Calculate costs - new pricing model
+  const DAILY_FEE_PER_ITEM = 15000; // 15k per day per item
 
+  // Calculate deposit based on product price
   const totalDeposit = rentalData.look.items.reduce((sum, item) => {
     const price = item.product_variant?.price || 0;
-    const deposit = item.product_variant?.deposit_amount || Math.ceil(price * 0.75);
+    // Deposit formula: 100k + (price - 150k) * 0.4, minimum 100k
+    const deposit = 100000 + Math.max(0, (price - 150000) * 0.4);
     return sum + deposit;
   }, 0);
 
-  const totalAmount = totalRentalCost + totalDeposit;
+  const totalRentalCost = rentalData.look.items.length * DAILY_FEE_PER_ITEM * rentalData.durationDays;
+  const totalAmount = totalDeposit + totalRentalCost;
 
   const handleConfirm = async () => {
     setIsProcessing(true);
@@ -46,8 +46,10 @@ export default function RentalSummaryStep({
         console.log('Product:', item.product_variant?.product);
         if (!item.product_variant?.id || !item.product_variant?.name) continue;
 
-        const dailyRate = item.product_variant.price || 0;
-        const deposit = item.product_variant.deposit_amount || Math.ceil(dailyRate * 0.75);
+        const price = item.product_variant.price || 0;
+        const itemDailyFee = DAILY_FEE_PER_ITEM;
+        const itemDeposit = 100000 + Math.max(0, (price - 150000) * 0.4);
+        const itemTotalRentalCost = itemDailyFee * rentalData.durationDays;
 
         addItem(
           {
@@ -56,11 +58,11 @@ export default function RentalSummaryStep({
             productImageUrl: item.product_variant.product?.image_url || undefined,
             variantId: item.product_variant.id,
             variantName: item.product_variant.name,
-            unitPrice: dailyRate * rentalData.durationDays, // Total rental cost
+            unitPrice: itemTotalRentalCost, // Total rental cost (daily fee × duration)
             isRental: true,
-            rentalDailyRate: dailyRate,
+            rentalDailyRate: itemDailyFee,
             rentalDurationDays: rentalData.durationDays,
-            depositAmount: deposit,
+            depositAmount: itemDeposit,
           },
           1
         );
@@ -140,9 +142,10 @@ export default function RentalSummaryStep({
           </h4>
           <div className="space-y-2">
             {rentalData.look.items.map((item) => {
-              const dailyRate = item.product_variant?.price || 0;
-              const deposit = item.product_variant?.deposit_amount || Math.ceil(dailyRate * 0.75);
-              const totalItemCost = dailyRate * rentalData.durationDays;
+              const price = item.product_variant?.price || 0;
+              const itemDailyFee = DAILY_FEE_PER_ITEM;
+              const itemDeposit = 100000 + Math.max(0, (price - 150000) * 0.4);
+              const totalItemCost = itemDailyFee * rentalData.durationDays;
 
               return (
                 <div key={item.id} className="rounded-lg bg-gray-50 p-3 text-sm space-y-1">
@@ -150,12 +153,12 @@ export default function RentalSummaryStep({
                     {item.label || item.product_variant?.name}
                   </p>
                   <div className="flex justify-between text-xs text-gray-600">
-                    <span>Sewa:</span>
+                    <span>Sewa ({itemDailyFee.toLocaleString()} × {rentalData.durationDays} hari):</span>
                     <span className="font-semibold text-gray-900">{formatCurrency(totalItemCost)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
                     <span>Deposit:</span>
-                    <span className="font-semibold">{formatCurrency(deposit)}</span>
+                    <span className="font-semibold">{formatCurrency(itemDeposit)}</span>
                   </div>
                 </div>
               );

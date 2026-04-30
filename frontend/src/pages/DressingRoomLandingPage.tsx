@@ -9,6 +9,7 @@ import { useDressingRoomCollection, type DressingRoomLook as DBLook } from '../h
 import { useProductSummaries, type ProductSummary } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../contexts/AuthContext';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { formatCurrency } from '../utils/formatters';
 import RentalFlowModal from '../components/dressing-room/RentalFlowModal';
 import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
@@ -113,16 +114,7 @@ export default function DressingRoomLandingPage() {
 
 
   if (looksLoading || productsLoading || categoriesLoading) {
-    return (
-      <PageTransition>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-gray-900 border-r-transparent"></div>
-            <p className="mt-4 text-sm text-gray-500">Loading collection...</p>
-          </div>
-        </div>
-      </PageTransition>
-    );
+    return <AppLoadingScreen />;
   }
 
   return (
