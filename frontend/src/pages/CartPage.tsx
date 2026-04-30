@@ -43,7 +43,24 @@ export default function CartPage() {
   const selectedSubtotal = useMemo(() => {
     return items
       .filter((i) => selectedItems.has(i.variantId))
-      .reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      .reduce((sum, i) => {
+        if (i.isRental) {
+          // For rentals, unitPrice is total rental cost
+          return sum + i.unitPrice * i.quantity;
+        }
+        return sum + i.unitPrice * i.quantity;
+      }, 0);
+  }, [items, selectedItems]);
+
+  const selectedDeposit = useMemo(() => {
+    return items
+      .filter((i) => selectedItems.has(i.variantId))
+      .reduce((sum, i) => {
+        if (i.isRental && i.depositAmount) {
+          return sum + i.depositAmount * i.quantity;
+        }
+        return sum;
+      }, 0);
   }, [items, selectedItems]);
 
   const selectedCount = selectedItems.size;
@@ -153,12 +170,22 @@ export default function CartPage() {
                     <div className="flex-1 flex flex-col justify-between py-0.5">
                       <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0">
+                          {item.isRental && (
+                            <span className="inline-block px-2 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-bold uppercase tracking-wider rounded mb-1">
+                              Rental
+                            </span>
+                          )}
                           <h3 className="font-serif text-base sm:text-xl text-gray-900 leading-tight mb-1 truncate pr-1">
                             {item.productName}
                           </h3>
                           <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">
                             {item.variantName}
                           </p>
+                          {item.isRental && item.rentalDailyRate && item.rentalDurationDays && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatCurrency(item.rentalDailyRate)} × {item.rentalDurationDays} hari
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => removeItem(item.variantId)}
@@ -221,13 +248,19 @@ export default function CartPage() {
                     <span>Subtotal</span>
                     <span className="font-medium text-gray-900">{formatCurrency(selectedSubtotal)}</span>
                   </div>
+                  {selectedDeposit > 0 && (
+                    <div className="flex justify-between text-yellow-700">
+                      <span>Deposit</span>
+                      <span className="font-medium text-gray-900">{formatCurrency(selectedDeposit)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>Tax (Included)</span>
                     <span className="font-medium text-gray-900">-</span>
                   </div>
                   <div className="border-t border-dashed border-gray-200 pt-4 mt-6 flex justify-between items-baseline">
                     <span className="font-medium text-lg text-gray-900">Total</span>
-                    <span className="font-serif text-2xl text-[#e63d75]">{formatCurrency(selectedSubtotal)}</span>
+                    <span className="font-serif text-2xl text-[#e63d75]">{formatCurrency(selectedSubtotal + selectedDeposit)}</span>
                   </div>
                 </div>
 

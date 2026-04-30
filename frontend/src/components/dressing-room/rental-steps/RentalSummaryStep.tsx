@@ -42,6 +42,9 @@ export default function RentalSummaryStep({
       for (const item of rentalData.look.items) {
         if (!item.product_variant?.id || !item.product_variant?.name) continue;
 
+        const dailyRate = item.product_variant.price || 0;
+        const deposit = item.product_variant.deposit_amount || Math.ceil(dailyRate * 0.75);
+
         addItem(
           {
             productId: item.product_variant.product?.id || 0,
@@ -49,7 +52,11 @@ export default function RentalSummaryStep({
             productImageUrl: item.product_variant.product?.image_url || undefined,
             variantId: item.product_variant.id,
             variantName: item.product_variant.name,
-            unitPrice: item.product_variant.price || 0,
+            unitPrice: dailyRate * rentalData.durationDays, // Total rental cost
+            isRental: true,
+            rentalDailyRate: dailyRate,
+            rentalDurationDays: rentalData.durationDays,
+            depositAmount: deposit,
           },
           1
         );
