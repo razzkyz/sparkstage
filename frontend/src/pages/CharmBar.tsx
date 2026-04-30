@@ -14,6 +14,7 @@ import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
 import { queryKeys } from '../lib/queryKeys';
 import { fetchProductDetail } from '../hooks/useProduct';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -280,6 +281,10 @@ export default function CharmBar() {
       }
     }
   };
+
+  if (loading) {
+    return <AppLoadingScreen />;
+  }
 
   return (
     <PageTransition>

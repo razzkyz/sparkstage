@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
+import AdminLayout from '../../components/AdminLayout';
+import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { useAuth } from '../../contexts/AuthContext';
 
 type RentalOrderStatus = 'active' | 'due_soon' | 'overdue' | 'returned' | 'refund_process' | 'completed';
 
@@ -43,6 +46,7 @@ interface RentalOrderItem {
 }
 
 export default function RentalOrders() {
+  const { signOut } = useAuth();
   const [orders, setOrders] = useState<RentalOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<RentalOrder | null>(null);
   const [orderItems, setOrderItems] = useState<RentalOrderItem[]>([]);
@@ -247,14 +251,29 @@ export default function RentalOrders() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-main-600"></div>
-      </div>
+      <AdminLayout
+        menuItems={ADMIN_MENU_ITEMS}
+        menuSections={ADMIN_MENU_SECTIONS}
+        defaultActiveMenuId="rental-orders"
+        title="Sewa Dressing Room"
+        onLogout={signOut}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-main-600"></div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <AdminLayout
+      menuItems={ADMIN_MENU_ITEMS}
+      menuSections={ADMIN_MENU_SECTIONS}
+      defaultActiveMenuId="rental-orders"
+      title="Sewa Dressing Room"
+      onLogout={signOut}
+    >
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -542,7 +561,8 @@ export default function RentalOrders() {
           onSubmit={handleRefund}
         />
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
 

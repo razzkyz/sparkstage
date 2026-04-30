@@ -10,6 +10,7 @@ import { JourneyCalendarSection } from './journey-selection/JourneyCalendarSecti
 import { JourneySummaryCard } from './journey-selection/JourneySummaryCard';
 import { JourneyTimeSlotsSection } from './journey-selection/JourneyTimeSlotsSection';
 import { useJourneySelectionController } from './journey-selection/useJourneySelectionController';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 const OnStage = () => {
   const navigate = useNavigate();
@@ -103,11 +104,7 @@ const OnStage = () => {
   }, [processBanners.length]);
 
   if (loading) {
-    return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-main-600"></div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   if (error && !hasData) {

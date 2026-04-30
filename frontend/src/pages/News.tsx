@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageTransition } from '../components/PageTransition';
 import { DEFAULT_NEWS_PAGE_SETTINGS, useNewsSettings } from '../hooks/useNewsSettings';
 import { getCmsFontStyle } from '../lib/cmsTypography';
+import { AppLoadingScreen } from '../app/AppLoadingScreen';
 
 export default function News() {
   const { settings, isLoading } = useNewsSettings();
@@ -12,15 +13,7 @@ export default function News() {
   }, []);
 
   if (isLoading) {
-    return (
-      <PageTransition>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="animate-pulse flex items-center justify-center w-full h-96 bg-gray-50">
-             <span className="text-gray-400 font-bold tracking-widest">LOADING...</span>
-          </div>
-        </div>
-      </PageTransition>
-    );
+    return <AppLoadingScreen />;
   }
 
   const s = settings ?? DEFAULT_NEWS_PAGE_SETTINGS;
