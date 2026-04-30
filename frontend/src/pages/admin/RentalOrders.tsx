@@ -7,7 +7,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
 
-type RentalOrderStatus = 'active' | 'due_soon' | 'overdue' | 'returned' | 'refund_process' | 'completed';
+type RentalOrderStatus = 'awaiting_payment' | 'paid' | 'active' | 'overdue' | 'returned' | 'cancelled' | 'refunded';
 
 interface RentalOrder {
   id: number;
@@ -16,33 +16,33 @@ interface RentalOrder {
   customer_email: string;
   customer_phone: string;
   customer_address: string | null;
-  start_time: string;
-  end_time: string;
+  rental_start_time: string;
+  rental_end_time: string;
   duration_days: number;
-  total_rental_cost: number;
-  total_deposit: number;
-  total_amount: number;
+  subtotal: number;
+  deposit_amount: number;
+  total: number;
   status: RentalOrderStatus;
+  payment_status: string;
   return_time: string | null;
-  late_fee: number;
-  damage_deduction: number;
+  late_fee_amount: number;
+  damage_fee_amount: number;
   refund_amount: number | null;
   refund_processed: boolean;
-  refund_proof_url: string | null;
+  payment_url: string | null;
+  payment_expired_at: string | null;
   created_at: string;
 }
 
 interface RentalOrderItem {
   id: number;
   product_name: string;
-  variant_name: string | null;
-  product_price: number;
-  deposit_amount: number;
-  rental_cost: number;
-  total_item_cost: number;
-  return_condition: string | null;
-  damage_deduction: number;
-  deposit_refunded: number;
+  quantity: number;
+  daily_rate: number;
+  item_deposit_amount: number;
+  total_rental_cost: number;
+  initial_condition: Record<string, unknown>;
+  return_condition: Record<string, unknown>;
 }
 
 export default function RentalOrders() {
@@ -101,14 +101,14 @@ export default function RentalOrders() {
 
     try {
       // Calculate late fee
-      const lateFee = await calculateLateFee(selectedOrder.end_time, returnTime.toISOString());
+      const lateFee = await calculateLateFee(selectedOrder.rental_end_time, returnTime.toISOString());
 
       // Update order
       const { error: orderError } = await supabase
         .from('rental_orders')
         .update({
           return_time: returnTime.toISOString(),
-          late_fee: lateFee,
+          late_fee_amount: lateFee,
           status: 'returned',
         })
         .eq('id', selectedOrder.id);
@@ -117,12 +117,10 @@ export default function RentalOrders() {
 
       // Update items with conditions
       for (const [itemId, condition] of Object.entries(conditions)) {
-        const damageDeduction = getDamageDeduction(condition);
         await supabase
           .from('rental_order_items')
           .update({
-            return_condition: condition,
-            damage_deduction: damageDeduction,
+            return_condition: { condition },
           })
           .eq('id', parseInt(itemId));
       }
@@ -137,7 +135,7 @@ export default function RentalOrders() {
       await supabase
         .from('rental_orders')
         .update({
-          damage_deduction: totalDamageDeduction,
+          damage_fee_amount: totalDamageDeduction,
         })
         .eq('id', selectedOrder.id);
 
@@ -150,7 +148,7 @@ export default function RentalOrders() {
     }
   };
 
-  const handleRefund = async (refundProofUrl: string) => {
+  const handleRefund = async () => {
     if (!selectedOrder) return;
 
     try {
@@ -158,9 +156,8 @@ export default function RentalOrders() {
         .from('rental_orders')
         .update({
           refund_processed: true,
-          refund_processed_at: new Date().toISOString(),
-          refund_proof_url: refundProofUrl,
-          status: 'completed',
+          refund_amount: selectedOrder.deposit_amount - selectedOrder.late_fee_amount - selectedOrder.damage_fee_amount,
+          status: 'refunded',
         })
         .eq('id', selectedOrder.id);
 
@@ -204,18 +201,20 @@ export default function RentalOrders() {
 
   const getStatusColor = (status: RentalOrderStatus) => {
     switch (status) {
+      case 'awaiting_payment':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'paid':
+        return 'bg-blue-100 text-blue-800';
       case 'active':
         return 'bg-green-100 text-green-800';
-      case 'due_soon':
-        return 'bg-yellow-100 text-yellow-800';
       case 'overdue':
         return 'bg-red-100 text-red-800';
       case 'returned':
-        return 'bg-blue-100 text-blue-800';
-      case 'refund_process':
         return 'bg-purple-100 text-purple-800';
-      case 'completed':
+      case 'cancelled':
         return 'bg-gray-100 text-gray-800';
+      case 'refunded':
+        return 'bg-teal-100 text-teal-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -223,18 +222,20 @@ export default function RentalOrders() {
 
   const getStatusLabel = (status: RentalOrderStatus) => {
     switch (status) {
+      case 'awaiting_payment':
+        return 'Menunggu Pembayaran';
+      case 'paid':
+        return 'Sudah Bayar';
       case 'active':
         return 'Aktif';
-      case 'due_soon':
-        return 'Segera Kembali';
       case 'overdue':
         return 'Telat';
       case 'returned':
         return 'Dikembalikan';
-      case 'refund_process':
-        return 'Proses Refund';
-      case 'completed':
-        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan';
+      case 'refunded':
+        return 'Refund';
       default:
         return status;
     }
@@ -325,12 +326,13 @@ export default function RentalOrders() {
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
         >
           <option value="all">Semua Status</option>
+          <option value="awaiting_payment">Menunggu Pembayaran</option>
+          <option value="paid">Sudah Bayar</option>
           <option value="active">Aktif</option>
-          <option value="due_soon">Segera Kembali</option>
           <option value="overdue">Telat</option>
           <option value="returned">Dikembalikan</option>
-          <option value="refund_process">Proses Refund</option>
-          <option value="completed">Selesai</option>
+          <option value="cancelled">Dibatalkan</option>
+          <option value="refunded">Refund</option>
         </select>
       </div>
 
@@ -361,7 +363,7 @@ export default function RentalOrders() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Calendar className="w-3 h-3" />
-                    {new Date(order.start_time).toLocaleDateString('id-ID')}
+                    {new Date(order.rental_start_time).toLocaleDateString('id-ID')}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Clock className="w-3 h-3" />
@@ -369,7 +371,7 @@ export default function RentalOrders() {
                   </div>
                 </td>
                 <td className="px-4 py-3 font-semibold text-gray-900">
-                  {formatCurrency(order.total_amount)}
+                  {formatCurrency(order.total)}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -442,11 +444,11 @@ export default function RentalOrders() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
-                    <span>Mulai: {new Date(selectedOrder.start_time).toLocaleString('id-ID')}</span>
+                    <span>Mulai: {new Date(selectedOrder.rental_start_time).toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="w-4 h-4" />
-                    <span>Kembali: {new Date(selectedOrder.end_time).toLocaleString('id-ID')}</span>
+                    <span>Kembali: {new Date(selectedOrder.rental_end_time).toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <FileText className="w-4 h-4" />
@@ -463,11 +465,11 @@ export default function RentalOrders() {
                     <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{item.product_name}</p>
-                        <p className="text-xs text-gray-600">{item.variant_name}</p>
+                        <p className="text-xs text-gray-600">Qty: {item.quantity} x {formatCurrency(item.daily_rate)}/hari</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">{formatCurrency(item.total_item_cost)}</p>
-                        <p className="text-xs text-gray-600">Deposit: {formatCurrency(item.deposit_amount)}</p>
+                        <p className="font-semibold text-gray-900">{formatCurrency(item.total_rental_cost)}</p>
+                        <p className="text-xs text-gray-600">Deposit: {formatCurrency(item.item_deposit_amount)}</p>
                       </div>
                     </div>
                   ))}
@@ -477,16 +479,16 @@ export default function RentalOrders() {
               {/* Pricing Summary */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Sewa</span>
-                  <span className="font-semibold">{formatCurrency(selectedOrder.total_rental_cost)}</span>
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-semibold">{formatCurrency(selectedOrder.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total Deposit</span>
-                  <span className="font-semibold">{formatCurrency(selectedOrder.total_deposit)}</span>
+                  <span className="font-semibold">{formatCurrency(selectedOrder.deposit_amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total Bayar</span>
-                  <span className="font-bold text-lg">{formatCurrency(selectedOrder.total_amount)}</span>
+                  <span className="font-bold text-lg">{formatCurrency(selectedOrder.total)}</span>
                 </div>
               </div>
 
@@ -503,11 +505,11 @@ export default function RentalOrders() {
                     </div>
                     <div className="flex justify-between">
                       <span>Denda Telat:</span>
-                      <span className="font-semibold">{formatCurrency(selectedOrder.late_fee)}</span>
+                      <span className="font-semibold">{formatCurrency(selectedOrder.late_fee_amount)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Potongan Kerusakan:</span>
-                      <span className="font-semibold">{formatCurrency(selectedOrder.damage_deduction)}</span>
+                      <span className="font-semibold">{formatCurrency(selectedOrder.damage_fee_amount)}</span>
                     </div>
                     <div className="flex justify-between border-t border-yellow-300 pt-2">
                       <span className="font-semibold">Refund:</span>
@@ -521,6 +523,33 @@ export default function RentalOrders() {
 
               {/* Actions */}
               <div className="flex gap-3">
+                {selectedOrder.status === 'awaiting_payment' && selectedOrder.payment_url ? (
+                  <a
+                    href={selectedOrder.payment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+                  >
+                    Link Pembayaran
+                  </a>
+                ) : null}
+                {selectedOrder.status === 'paid' ? (
+                  <button
+                    onClick={() => {
+                      supabase
+                        .from('rental_orders')
+                        .update({ status: 'active' })
+                        .eq('id', selectedOrder.id)
+                        .then(() => {
+                          fetchOrders();
+                          setSelectedOrder(null);
+                        });
+                    }}
+                    className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    Mulai Sewa
+                  </button>
+                ) : null}
                 {selectedOrder.status === 'active' || selectedOrder.status === 'overdue' ? (
                   <button
                     onClick={() => setShowReturnModal(true)}
@@ -667,13 +696,9 @@ function RefundModal({
 }: {
   order: RentalOrder;
   onClose: () => void;
-  onSubmit: (refundProofUrl: string) => void;
+  onSubmit: () => void;
 }) {
-  const [refundProofUrl, setRefundProofUrl] = useState('');
-
-  const handleSubmit = () => {
-    onSubmit(refundProofUrl);
-  };
+  const refundAmount = order.deposit_amount - order.late_fee_amount - order.damage_fee_amount;
 
   return (
     <motion.div
@@ -699,21 +724,12 @@ function RefundModal({
             <div className="flex justify-between items-center">
               <span className="text-green-900 font-semibold">Total Refund</span>
               <span className="text-green-900 font-bold text-2xl">
-                {formatCurrency(order.refund_amount || 0)}
+                {formatCurrency(refundAmount)}
               </span>
             </div>
-          </div>
-
-          {/* Proof URL */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">URL Bukti Transfer</label>
-            <input
-              type="url"
-              value={refundProofUrl}
-              onChange={(e) => setRefundProofUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
-            />
+            <div className="mt-2 text-xs text-green-700">
+              Deposit: {formatCurrency(order.deposit_amount)} - Denda: {formatCurrency(order.late_fee_amount)} - Kerusakan: {formatCurrency(order.damage_fee_amount)}
+            </div>
           </div>
 
           {/* Actions */}
@@ -725,7 +741,7 @@ function RefundModal({
               Batal
             </button>
             <button
-              onClick={handleSubmit}
+              onClick={onSubmit}
               className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
             >
               Konfirmasi Refund
