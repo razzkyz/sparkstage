@@ -1,5 +1,6 @@
--- Fix RLS policies for dressing_room tables to use correct table names
--- The rename migration only renamed the policies but didn't update their definitions
+-- Fix RLS policy column scoping issues
+-- The previous policies used unqualified column references in EXISTS subqueries,
+-- causing "400 Bad Request" errors from PostgREST API
 
 DROP POLICY IF EXISTS "dressing_room_look_items_public_read" ON public.dressing_room_look_items;
 DROP POLICY IF EXISTS "dressing_room_looks_public_read" ON public.dressing_room_looks;
