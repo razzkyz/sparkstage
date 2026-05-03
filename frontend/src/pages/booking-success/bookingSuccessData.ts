@@ -69,7 +69,12 @@ async function fetchPurchasedTicketByCode(ticketCode: string) {
 
 async function fetchOrderByNumber(orderNumber: string) {
   const { data, error } = await runBookingSuccessQueryWithTimeout((signal) =>
-    supabase.from('orders').select('*').eq('order_number', orderNumber).abortSignal(signal).single()
+    supabase
+      .from('orders')
+      .select('*, profiles(name)')
+      .eq('order_number', orderNumber)
+      .abortSignal(signal)
+      .single()
   );
 
   if (error || !data) {

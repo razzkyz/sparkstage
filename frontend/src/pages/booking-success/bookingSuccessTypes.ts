@@ -51,7 +51,10 @@ export interface OrderRow {
   order_number: string;
   status: string;
   expires_at?: string | null;
+  profiles?: {
+    name?: string | null;
+  } | null;
 }
 
 export type OrderData = OrderRow & { order_items: OrderItem[] };
-export type OrderState = OrderData | OrderRow | { status?: string | null; expires_at?: string | null };
+export type OrderState = OrderData | OrderRow | { status?: string | null; expires_at?: string | null; profiles?: { name?: string | null } | null };
