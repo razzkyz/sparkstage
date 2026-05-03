@@ -160,9 +160,10 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
         if (order?.status && order.status !== 'pending') {
           setOrderData((prev) => ({ ...(prev || {}), status: order.status }));
           if (order.status === 'paid') {
+            // Keep polling active until tickets are actually loaded
+            // This prevents premature polling stop before tickets appear in DB
             await fetchOrderAndTickets(false);
           }
-          if (pollInterval) clearInterval(pollInterval);
         }
       }, 5000);
     }
