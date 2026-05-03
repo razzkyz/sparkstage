@@ -155,12 +155,8 @@ export function useBookingSuccessController(params: UseBookingSuccessControllerP
           return;
         }
 
-        if (order?.expires_at && new Date(order.expires_at) <= new Date() && order.status === 'pending') {
-          setOrderData((prev) => ({ ...(prev || {}), status: 'expired' }));
-          if (pollInterval) clearInterval(pollInterval);
-          return;
-        }
-
+        // Update status from DB (webhook or backend reconciliation will set it to 'expired')
+        // Never override backend status with frontend expiry logic to prevent race conditions
         if (order?.status && order.status !== 'pending') {
           setOrderData((prev) => ({ ...(prev || {}), status: order.status }));
           if (order.status === 'paid') {
