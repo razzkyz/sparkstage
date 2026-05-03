@@ -44,17 +44,13 @@ export function useEntranceTicket(scope: 'public' | 'admin' = 'public') {
     queryFn: async ({ signal }) => {
       const { signal: timeoutSignal, cleanup, didTimeout } = createQuerySignal(signal);
       try {
-        let query = supabase
+        const query = supabase
           .from('tickets')
           .select('*')
           .abortSignal(timeoutSignal)
           .eq('type', 'entrance')
           .order('id', { ascending: true })
           .limit(1);
-
-        if (scope === 'public') {
-          query = query.eq('is_active', true);
-        }
 
         const { data, error } = await query.maybeSingle();
 

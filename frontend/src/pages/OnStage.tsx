@@ -41,6 +41,15 @@ const OnStage = () => {
     getSlotUrgency,
   } = useJourneySelectionController();
 
+  // Check if ticket is currently available based on available_from/available_until
+  const isTicketAvailable = ticket?.is_active && (() => {
+    if (!ticket) return false;
+    const now = new Date();
+    const availableFrom = new Date(ticket.available_from);
+    const availableUntil = new Date(ticket.available_until);
+    return now >= availableFrom && now <= availableUntil;
+  })();
+
   const handleProceedToPayment = () => {
     if (!ticket || !selectedDate) {
       alert('Please select a date');
@@ -301,6 +310,17 @@ const OnStage = () => {
               ) : journeyError || !ticket ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-8 text-sm text-amber-900">
                   {journeyError?.message || 'Entrance booking is unavailable right now.'}
+                </div>
+              ) : !isTicketAvailable ? (
+                <div className="rounded-xl border border-purple-200 bg-purple-50 px-6 py-12 text-center">
+                  <div className="flex justify-center mb-4">
+                    <span className="material-symbols-outlined text-5xl text-purple-600">event_busy</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-purple-900 mb-2">Coming Soon</h3>
+                  <p className="text-purple-700">
+                    Tiket akan tersedia kembali pada tanggal{' '}
+                    {new Date(ticket.available_until).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
                 </div>
               ) : (
                 <>
