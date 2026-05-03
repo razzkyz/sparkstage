@@ -29,7 +29,6 @@ export default function EventBookings() {
   const [bookings, setBookings] = useState<EventBooking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<EventBooking | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<EventBookingStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,8 +96,7 @@ export default function EventBookings() {
       booking.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (booking.customer_phone && booking.customer_phone.includes(searchQuery));
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const stats = {
@@ -177,17 +175,6 @@ export default function EventBookings() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as EventBookingStatus | 'all')}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
-          >
-            <option value="all">Semua Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="scanned">Scanned</option>
-          </select>
         </div>
 
         {/* Bookings Table */}
