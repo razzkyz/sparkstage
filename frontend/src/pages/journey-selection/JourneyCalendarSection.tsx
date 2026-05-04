@@ -22,17 +22,17 @@ export function JourneyCalendarSection({
   onSelectDate,
 }: JourneyCalendarSectionProps) {
   return (
-    <div className="bg-gray-50 rounded-xl p-8 border border-gray-200">
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xl font-bold uppercase tracking-wider text-gray-400">{monthName}</h3>
-        <div className="flex items-center gap-3">
+    <div className="bg-gray-50 rounded-xl p-4 md:p-8 border border-gray-200">
+      <div className="flex items-center justify-between mb-4 md:mb-8">
+        <h3 className="text-lg md:text-xl font-bold uppercase tracking-wider text-gray-400">{monthName}</h3>
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={onPrevMonth}
             disabled={!canGoPrevMonth}
             className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Previous month"
           >
-            <span className="material-symbols-outlined text-gray-700">chevron_left</span>
+            <span className="material-symbols-outlined text-gray-700 text-xl md:text-2xl">chevron_left</span>
           </button>
           <button
             onClick={onNextMonth}
@@ -40,21 +40,21 @@ export function JourneyCalendarSection({
             className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Next month"
           >
-            <span className="material-symbols-outlined text-gray-700">chevron_right</span>
+            <span className="material-symbols-outlined text-gray-700 text-xl md:text-2xl">chevron_right</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 md:gap-2">
         {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-          <div key={day} className="text-gray-500 text-xs font-bold uppercase flex h-10 items-center justify-center">
+          <div key={day} className="text-gray-500 text-xs md:text-xs font-bold uppercase flex h-8 md:h-10 items-center justify-center">
             {day}
           </div>
         ))}
 
         {calendarDays.map((dayData, index) => {
           if (!dayData) {
-            return <div key={`empty-${index}`} className="h-14 w-full"></div>;
+            return <div key={`empty-${index}`} className="h-10 md:h-14 w-full"></div>;
           }
 
           const isSelected = selectedDate?.toDateString() === dayData.date.toDateString();
@@ -66,7 +66,7 @@ export function JourneyCalendarSection({
                 if (!dayData.isDisabled) onSelectDate(dayData.date);
               }}
               disabled={dayData.isDisabled}
-              className={`h-14 w-full text-2xl font-bold rounded-lg flex items-center justify-center transition-all
+              className={`h-10 md:h-14 w-full text-xl md:text-2xl font-bold rounded-lg flex items-center justify-center transition-all
                 ${isSelected ? 'bg-main-600 text-white shadow-lg' : ''}
                 ${dayData.isDisabled ? 'opacity-20 cursor-not-allowed' : 'hover:bg-gray-200'}
               `}

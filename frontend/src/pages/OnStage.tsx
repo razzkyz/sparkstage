@@ -11,6 +11,7 @@ import { JourneySummaryCard } from './journey-selection/JourneySummaryCard';
 import { JourneyTimeSlotsSection } from './journey-selection/JourneyTimeSlotsSection';
 import { useJourneySelectionController } from './journey-selection/useJourneySelectionController';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const OnStage = () => {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ const OnStage = () => {
     if (processBanners.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentProcessSlide((p) => (p + 1) % processBanners.length);
-    }, 5000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [processBanners.length]);
 
@@ -131,6 +132,11 @@ const OnStage = () => {
     <div className="bg-white min-h-screen">
       {/* Hero Section with Slider */}
       <section className="relative w-full h-[50vh] md:h-[600px] overflow-hidden bg-black">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageSwitcher />
+        </div>
+
         {heroBanners.length > 0 ? (
           <HeroBannerCarousel
             slides={heroBanners}

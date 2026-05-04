@@ -282,15 +282,13 @@ export default function CharmBar() {
   return (
     <PageTransition>
       <div className="min-h-screen bg-white">
-        <section className="overflow-hidden border-b border-black/10 bg-white">
-          <div className="mx-auto max-w-[1680px]">
-            <div className="relative bg-[linear-gradient(180deg,#efe6e4_0%,#f4eeeb_100%)]">
-              <img
-                src={charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`}
-                alt="Charm bar hero"
-                className="aspect-[16/8.6] w-full object-cover object-center"
-              />
-            </div>
+        <section className="relative w-full h-[50vh] md:h-[600px] overflow-hidden bg-black">
+          <div className="mx-auto max-w-[1680px] h-full">
+            <img
+              src={charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`}
+              alt="Charm bar hero"
+              className="w-full h-full object-cover object-top md:object-center"
+            />
           </div>
         </section>
 
