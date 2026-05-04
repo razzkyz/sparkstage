@@ -12,7 +12,7 @@ type ConfettiParams = {
   loading: boolean;
 };
 
-export const MAX_SKELETON_MS = 20000;
+export const MAX_SKELETON_MS = 10000;
 export const AUTO_SYNC_RECOVERY_DELAY_MS = 15000;
 export const MANUAL_STATUS_CHECK_DELAY_MS = 8000;
 

@@ -550,6 +550,9 @@ serve(async (req) => {
       .insert({
         order_number: orderNumber,
         user_id: userId,
+        customer_name: customerName.trim(),
+        customer_email: customerEmail.trim(),
+        customer_phone: (customerPhone && customerPhone.trim()) || null,
         total_amount: totalAmount,
         status: "pending",
         expires_at: expiresAt.toISOString(),

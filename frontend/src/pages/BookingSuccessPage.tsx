@@ -42,7 +42,7 @@ export default function BookingSuccessPage() {
     refreshSession,
   });
 
-  const customerName = orderData?.profiles?.name || state?.customerName || 'Guest';
+  const customerName = orderData?.customer_name || orderData?.profiles?.name || state?.customerName || 'Guest';
 
   const handlePrint = () => {
     window.print();
@@ -68,6 +68,7 @@ export default function BookingSuccessPage() {
             statusIcon={statusIcon}
             statusTitle={statusTitle}
             statusDescription={statusDescription}
+            isInitialPending={initialIsPending}
           />
 
           {orderData && <BookingOrderInfo orderNumber={orderNumber} />}

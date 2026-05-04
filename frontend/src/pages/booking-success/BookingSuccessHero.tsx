@@ -3,16 +3,22 @@ type BookingSuccessHeroProps = {
   statusIcon: string;
   statusTitle: string;
   statusDescription: string;
+  isInitialPending?: boolean;
 };
 
 export function BookingSuccessHero(props: BookingSuccessHeroProps) {
-  const { effectiveStatus, statusIcon, statusTitle, statusDescription } = props;
+  const { effectiveStatus, statusIcon, statusTitle, statusDescription, isInitialPending } = props;
+
+  // Show immediate payment success on initial page load
+  const showPaymentSuccess = isInitialPending && effectiveStatus === 'pending';
 
   return (
     <div className="text-center mb-8">
-      {effectiveStatus === 'paid' ? (
+      {effectiveStatus === 'paid' || showPaymentSuccess ? (
         <>
-          <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-3">Booking Confirmed</p>
+          <p className="text-xs uppercase tracking-widest text-green-600 font-semibold mb-3">
+            {showPaymentSuccess ? 'Payment Successful' : 'Booking Confirmed'}
+          </p>
           <div className="flex justify-center mb-2">
             <img
               src="/images/landing/READY%20TO%20BE%20A%20STAR.PNG"
@@ -20,6 +26,11 @@ export function BookingSuccessHero(props: BookingSuccessHeroProps) {
               className="h-auto w-full max-w-xl object-contain"
             />
           </div>
+          {showPaymentSuccess && (
+            <p className="text-[#9c4949] text-sm font-normal mt-4">
+              Your tickets are being generated. You'll see them here momentarily.
+            </p>
+          )}
         </>
       ) : (
         <>

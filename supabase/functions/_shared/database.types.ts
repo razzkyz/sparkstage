@@ -24,6 +24,9 @@ type OrdersRow = {
   id: number
   order_number: string
   user_id: string | null
+  customer_name?: string | null
+  customer_email?: string | null
+  customer_phone?: string | null
   status?: string | null
   total_amount?: number | null
   expires_at?: string | null
