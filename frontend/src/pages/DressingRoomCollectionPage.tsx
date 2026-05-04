@@ -78,11 +78,8 @@ export default function DressingRoomCollectionPage() {
             <PageTransition>
                 <div className="min-h-[calc(100vh-64px)] h-[calc(100dvh-64px)] bg-[#f5f3f0] flex items-center justify-center">
                     <div className="text-center space-y-4 px-4">
-                        <h1 className="text-3xl md:text-5xl font-display tracking-wider text-gray-800">
-                            COMING SOON
-                        </h1>
                         <p className="text-gray-500 max-w-md mx-auto">
-                            Our dressing room lookbook is being curated. Stay tuned for the latest collection.
+                            Collection not found.
                         </p>
                     </div>
                 </div>
@@ -266,14 +263,10 @@ export default function DressingRoomCollectionPage() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.8 }}
-                            className="pt-2"
+                            transition={{ duration: 0.6, delay: 0.8 }}
+                            className="mt-2"
                         >
-                            <div className="inline-flex items-center gap-2 text-gray-400 text-xs tracking-widest uppercase">
-                                <span className="w-8 h-px bg-gray-300"></span>
-                                <span>Coming Soon</span>
-                                <span className="w-8 h-px bg-gray-300"></span>
-                            </div>
+                            <div className="w-8 h-[1px] bg-gray-300 mx-auto" />
                         </motion.div>
                     </div>
                 </motion.div>

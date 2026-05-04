@@ -13,12 +13,6 @@ const SparkClub = () => {
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 uppercase tracking-tight">
             Spark Club
           </h1>
-          <p className="text-xl md:text-2xl font-light text-gray-600 uppercase tracking-widest">
-            Coming Soon
-          </p>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            We're working on something special. Stay tuned for exclusive membership benefits and community features.
-          </p>
         </div>
       </div>
     </PageTransition>

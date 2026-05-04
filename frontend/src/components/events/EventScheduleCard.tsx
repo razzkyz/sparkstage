@@ -41,11 +41,6 @@ export function EventScheduleCard({ item, onClick }: EventScheduleCardProps) {
         onClick ? 'cursor-pointer' : ''
       }`}
     >
-      {item.is_coming_soon ? (
-        <div className="absolute top-4 right-4 z-10 bg-yellow-500 text-black text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
-          Coming Soon
-        </div>
-      ) : null}
 
       <div className="relative h-64 overflow-hidden">
         {item.image_url ? (
