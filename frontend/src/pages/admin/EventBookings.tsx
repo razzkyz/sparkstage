@@ -179,7 +179,7 @@ export default function EventBookings() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ticket Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valid Date</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time Slot</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Queue</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nomor Antrian</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Used At</th>
                 </tr>
@@ -264,7 +264,7 @@ export default function EventBookings() {
                     <p className="font-semibold text-gray-900">{selectedBooking.time_slot || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Queue Number</p>
+                    <p className="text-sm text-gray-500">Nomor Antrian</p>
                     <p className="font-semibold text-gray-900">{selectedBooking.queue_number || '-'}</p>
                   </div>
                   <div>

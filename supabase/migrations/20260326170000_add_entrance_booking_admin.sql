@@ -220,7 +220,7 @@ AS $$
     CASE
       WHEN COALESCE(so.is_closed, dlo.is_closed, false) THEN 0
       ELSE GREATEST(
-        COALESCE(so.capacity_override, dlo.capacity_override, ta.total_capacity) - ta.reserved_capacity - ta.sold_capacity,
+        COALESCE(so.capacity_override, dlo.capacity_override, ta.total_capacity) - ta.sold_capacity,
         0
       )
     END AS available_capacity,

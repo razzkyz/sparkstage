@@ -76,7 +76,7 @@ export function useTicketAvailability(ticketId: number | null) {
 
         return ((data as RawAvailability[] | null) || []).map((avail) => ({
           ...avail,
-          available_capacity: avail.total_capacity - avail.reserved_capacity - avail.sold_capacity,
+          available_capacity: avail.total_capacity - avail.sold_capacity,
         }));
       } catch (error) {
         if (didTimeout()) {
