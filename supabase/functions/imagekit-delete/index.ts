@@ -13,8 +13,10 @@ const ALLOWED_PUBLIC_FILE_PATH_PATTERNS = [
   /^\/public\/banners\/[^/]+$/,
   /^\/public\/beauty\/posters\/[^/]+$/,
   /^\/public\/beauty\/glam\/[^/]+$/,
+  /^\/public\/charm-bar-assets\/[a-z0-9-]+\/[^/]+$/,
   /^\/public\/dressing-room\/[0-9]+\/[^/]+$/,
   /^\/public\/events-schedule\/[a-z0-9-]+\/[^/]+$/,
+  /^\/public\/stage-gallery\/[^/]+$/,
 ]
 
 function normalizeFilePath(value: string): string {

@@ -1,4 +1,5 @@
 import { normalizeSectionFontMap, type SectionFontConfig } from '../lib/cmsTypography';
+import { resolvePublicAssetString } from '../lib/publicAssetUrl';
 import { useCmsSingletonSettings } from './useCmsSingletonSettings';
 
 export interface NewsProduct {
@@ -64,7 +65,7 @@ function normalizeProducts(value: unknown): NewsProduct[] {
       if (!entry || typeof entry !== 'object') return null;
       const record = entry as Record<string, unknown>;
       return {
-        image: typeof record.image === 'string' ? record.image : '',
+        image: typeof record.image === 'string' ? resolvePublicAssetString(record.image) : '',
         brand: typeof record.brand === 'string' ? record.brand : '',
         name: typeof record.name === 'string' ? record.name : '',
         price: typeof record.price === 'string' ? record.price : '',
@@ -97,7 +98,7 @@ function normalizeSettings(data: Record<string, unknown>): NewsPageSettings {
       typeof data.section_1_author === 'string' && data.section_1_author.trim() !== ''
         ? data.section_1_author
         : DEFAULT_NEWS_PAGE_SETTINGS.section_1_author,
-    section_1_image: typeof data.section_1_image === 'string' ? data.section_1_image : DEFAULT_NEWS_PAGE_SETTINGS.section_1_image,
+    section_1_image: typeof data.section_1_image === 'string' ? resolvePublicAssetString(data.section_1_image) : DEFAULT_NEWS_PAGE_SETTINGS.section_1_image,
     section_2_title:
       typeof data.section_2_title === 'string' && data.section_2_title.trim() !== ''
         ? data.section_2_title
@@ -114,7 +115,7 @@ function normalizeSettings(data: Record<string, unknown>): NewsPageSettings {
       typeof data.section_2_quotes === 'string' && data.section_2_quotes.trim() !== ''
         ? data.section_2_quotes
         : DEFAULT_NEWS_PAGE_SETTINGS.section_2_quotes,
-    section_2_image: typeof data.section_2_image === 'string' ? data.section_2_image : DEFAULT_NEWS_PAGE_SETTINGS.section_2_image,
+    section_2_image: typeof data.section_2_image === 'string' ? resolvePublicAssetString(data.section_2_image) : DEFAULT_NEWS_PAGE_SETTINGS.section_2_image,
     section_3_title:
       typeof data.section_3_title === 'string' && data.section_3_title.trim() !== ''
         ? data.section_3_title

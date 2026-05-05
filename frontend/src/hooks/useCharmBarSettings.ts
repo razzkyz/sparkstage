@@ -1,4 +1,5 @@
 import { normalizeSectionFontMap, type SectionFontConfig } from '../lib/cmsTypography';
+import { resolvePublicAssetString, resolvePublicAssetStringArray } from '../lib/publicAssetUrl';
 import { useCmsSingletonSettings } from './useCmsSingletonSettings';
 
 const CHARM_BAR_ASSET_BASE = '/images/Charm%20Bar%20assets';
@@ -242,8 +243,8 @@ function normalizeQuickLinks(value: unknown): CharmBarQuickLink[] {
       return {
         title,
         description,
-        image_url: imageUrls[0] || imageUrl || '',
-        image_urls: imageUrls.slice(0, 3), // max 3 images
+        image_url: resolvePublicAssetString(imageUrls[0] || imageUrl || ''),
+        image_urls: resolvePublicAssetStringArray(imageUrls.slice(0, 3)), // max 3 images
         href,
       };
     })
@@ -269,7 +270,7 @@ function normalizeSteps(value: unknown): CharmBarStep[] {
       return {
         title,
         body,
-        image_url: imageUrl,
+        image_url: resolvePublicAssetString(imageUrl),
         cta_label: ctaLabel,
         cta_href: ctaHref,
       };
@@ -292,7 +293,7 @@ function normalizeVideoCards(value: unknown): CharmBarVideoCard[] {
       if (!title.trim()) return null;
       return {
         title,
-        video_url: videoUrl,
+        video_url: resolvePublicAssetString(videoUrl),
       };
     })
     .filter((entry): entry is CharmBarVideoCard => entry !== null);
@@ -314,14 +315,15 @@ function normalizeSettings(data: Record<string, unknown>): CharmBarPageSettings 
   const categoryImages = Array.isArray(data.category_images)
     ? data.category_images.filter((u): u is string => typeof u === 'string').filter(u => u.trim() !== '').slice(0, 12)
     : DEFAULT_CHARM_BAR_PAGE_SETTINGS.category_images;
+  const resolvedCategoryImages = resolvePublicAssetStringArray(categoryImages);
 
   return {
     id: typeof data.id === 'string' ? data.id : DEFAULT_CHARM_BAR_PAGE_SETTINGS.id,
     hero_image_url:
       typeof data.hero_image_url === 'string' && data.hero_image_url.trim() !== ''
-        ? data.hero_image_url
+        ? resolvePublicAssetString(data.hero_image_url)
         : DEFAULT_CHARM_BAR_PAGE_SETTINGS.hero_image_url,
-    category_images: categoryImages.length > 0 ? categoryImages : DEFAULT_CHARM_BAR_PAGE_SETTINGS.category_images,
+    category_images: resolvedCategoryImages.length > 0 ? resolvedCategoryImages : DEFAULT_CHARM_BAR_PAGE_SETTINGS.category_images,
     quick_links: normalizeQuickLinks(data.quick_links),
     customize_title:
       typeof data.customize_title === 'string' && data.customize_title.trim() !== ''
@@ -344,7 +346,7 @@ function normalizeSettings(data: Record<string, unknown>): CharmBarPageSettings 
     how_it_works_steps: normalizeStepsText(data.how_it_works_steps),
     how_it_works_video_url:
       typeof data.how_it_works_video_url === 'string' && data.how_it_works_video_url.trim() !== ''
-        ? data.how_it_works_video_url
+        ? resolvePublicAssetString(data.how_it_works_video_url)
         : DEFAULT_CHARM_BAR_PAGE_SETTINGS.how_it_works_video_url,
     how_it_works_cta_label:
       typeof data.how_it_works_cta_label === 'string' && data.how_it_works_cta_label.trim() !== ''

@@ -1,934 +1,270 @@
-# Optimisasi Egress
+# Optimisasi Egress Supabase
 
-## Tujuan
+## Ringkasan Status
 
-Dokumen ini merangkum analisis awal terhadap lonjakan egress pada project Supabase `hogzjapnkvsihvvbgcdb`, lalu menerjemahkannya menjadi daftar optimisasi yang realistis untuk kondisi project saat ini.
+Tanggal status: `5 May 2026`.
 
-Fokus dokumen ini:
+Tujuan utama optimisasi ini adalah menurunkan `Cached Egress` Supabase dengan
+memastikan media publik/CMS tidak lagi dilayani dari Supabase Storage, tetapi
+dari ImageKit.
 
-- memahami sumber egress yang paling mungkin
-- membedakan mana yang layak dioptimisasi dulu
-- menghindari keputusan yang terlalu mahal seperti upgrade plan sebelum akar masalahnya jelas
+Status saat ini:
 
-## Kondisi Saat Ini
+- strategi ImageKit tidak gagal, tetapi scope awal belum mencakup semua jalur
+  CMS
+- jalur yang bocor sudah ditemukan dan ditutup untuk runtime DB utama
+- backfill target sudah selesai untuk asset CMS lama yang sudah terlanjur
+  masuk Supabase
+- DB runtime public/CMS sekarang sudah tidak menyimpan URL
+  `supabase.co/storage` untuk area utama
+- object lama di Supabase Storage belum dihapus/privatize, sengaja ditahan
+  sebagai rollback buffer sampai monitoring 24-48 jam
 
-Berdasarkan screenshot usage yang dianalisis:
+Angka monitoring yang memicu sesi lanjutan:
 
-- organisasi berada pada `Free Plan`
-- billing cycle yang aktif adalah `28 Mar 2026 - 28 Apr 2026`
-- project mengalami grace period karena `Cached Egress Exceeded`
-- cached egress berada di sekitar `6.72 GB / 5 GB`
-- uncached egress hanya sekitar `0.82 GB / 5 GB`
-- ada spike harian cached egress yang mencapai sekitar `487 MB`
+| Tanggal | Cached egress/day | Catatan |
+|---|---:|---|
+| `4 May 2026` | sekitar `1.2 GB` | Spike baru mulai terlihat |
+| `5 May 2026` | sekitar `1.4 GB` saat screenshot | Cached egress period sekitar `3.14 GB / 5 GB` |
 
-Implikasi awal:
+Interpretasi:
 
-- masalah utama bukan compute, MAU, database size, atau realtime
-- masalah utama ada pada data yang dilayani berulang melalui CDN/cache
-- upgrade ke Pro tanpa optimisasi lebih dulu kemungkinan tidak efisien
+- masalah utama tetap `Cached Egress`, bukan egress umum
+- penyebab paling masuk akal adalah asset public Storage yang masih di-hit dari
+  route publik/CMS
+- ImageKit baru efektif penuh setelah tiga hal selesai: upload path baru,
+  backfill file lama, dan DB URL cutover
 
-Update monitoring `30 April 2026`:
-
-- billing cycle baru sudah aktif: `28 April 2026 - 28 Mei 2026`
-- quota egress tidak membawa "utang" dari cycle lama; pemakaian cycle baru mulai dihitung ulang
-- per screenshot `30 April 2026`, `Used in period` berada di sekitar `0.14 GB / 5 GB`
-- `Overage in period` berada di `0 GB`
-- chart harian menunjukkan penurunan setelah reset/cutover:
-  - `28 April 2026`: total egress sekitar `80.7 MB`
-  - `29 April 2026`: turun ke kisaran puluhan MB, lebih rendah dari 28 April
-  - `30 April 2026`: masih berjalan/partial day, sementara berada di kisaran sekitar `24 MB`
-- breakdown `28 April 2026` menunjukkan sumber terbesar bukan Storage, melainkan `PostgREST Egress`:
-  - `PostgREST Egress`: `53.349 MB` atau sekitar `66.1%`
-  - `Storage Egress`: `19.973 MB` atau sekitar `24.7%`
-  - `Realtime Egress`: `4.32 MB` atau sekitar `5.3%`
-  - `Auth Egress`: `2.699 MB` atau sekitar `3.3%`
-  - `Functions Egress`: `418.53 KB` atau sekitar `0.5%`
-
-Implikasi update:
-
-- migrasi asset ke ImageKit terlihat sudah menekan beban Storage Supabase dibanding baseline cached egress lama
-- fokus optimisasi berikutnya bergeser ke `PostgREST`, yaitu mengurangi payload dan frekuensi query publik
-- angka `30 April 2026` belum boleh dianggap final sampai hari selesai, tetapi arah trennya sehat karena total period masih jauh di bawah limit `5 GB`
-
-## Apa Arti Metrik Ini
-
-Menurut dokumentasi resmi Supabase:
-
-- `Cached Egress` adalah traffic yang served dari cache CDN
-- cached egress biasanya paling banyak datang dari `Storage` melalui Smart CDN
-- `Egress` biasa mencakup Database, Auth, Storage, Edge Functions, Realtime, dan lain-lain
-
-Referensi:
+Referensi resmi:
 
 - https://supabase.com/docs/guides/platform/manage-your-usage/egress
 - https://supabase.com/docs/guides/storage/serving/bandwidth
 - https://supabase.com/docs/guides/storage/cdn/metrics
+- https://supabase.com/docs/guides/telemetry/logs
 
-## Temuan Utama
+## Hasil Kerja `5 May 2026`
 
-### 1. Dugaan bahwa penyebab utama adalah UptimeRobot kemungkinan salah
+### Code Patch
 
-Awalnya UptimeRobot dipakai untuk "menghangatkan" Midtrans lewat request ke edge function.
+Perubahan repo yang sudah dibuat:
 
-Status terbaru per `26 April 2026`:
+- `frontend/src/lib/cmsAssetUpload.ts`
+  - `charm-bar-assets` sekarang diarahkan ke ImageKit folder
+    `/public/charm-bar-assets/{folder}`
+  - `events-schedule` tetap diarahkan ke ImageKit
+- `frontend/src/components/admin/StageGalleryModal.tsx`
+  - upload baru `stage-gallery` sekarang memakai ImageKit folder
+    `/public/stage-gallery`
+  - preview admin resolve URL legacy ke ImageKit
+  - delete melakukan best-effort cleanup ImageKit
+- `frontend/src/lib/publicAssetUrl.ts`
+  - mapping tambahan:
+    - `charm-bar-assets/` -> `/public/charm-bar-assets/`
+    - `stage-gallery/` -> `/public/stage-gallery/`
+    - `events-schedule/settings/` -> `/public/events-schedule/settings/`
+- `frontend/src/hooks/useCharmBarSettings.ts`
+  - `hero_image_url`, `category_images`, `quick_links`, `steps`,
+    `video_cards`, dan `how_it_works_video_url` resolve ke ImageKit
+- `frontend/src/hooks/useNewsSettings.ts`
+  - `section_1_image`, `section_2_image`, dan
+    `section_3_products[].image` resolve ke ImageKit
+- `frontend/src/hooks/useEventSettings.ts`
+  - `hero_images`, `magic_images`, dan `experience_images` resolve ke
+    ImageKit
+- `frontend/src/pages/StageDetailPage.tsx`
+  - gallery image URL resolve ke ImageKit sebelum render
+- `supabase/functions/imagekit-auth/index.ts`
+  - allowlist upload ImageKit ditambah untuk:
+    - `/public/charm-bar-assets/{folder}`
+    - `/public/stage-gallery`
+- `supabase/functions/imagekit-delete/index.ts`
+  - allowlist delete ImageKit ditambah untuk:
+    - `/public/charm-bar-assets/{folder}/{file}`
+    - `/public/stage-gallery/{file}`
+- `frontend/src/lib/publicAssetUrl.test.ts`
+  - guardrail test untuk mapping `charm-bar-assets`, `stage-gallery`,
+    `events-schedule/settings`, dan nested CMS JSON
+- `supabase/manual/imagekit_public_asset_url_cutover_20260505_dry_run.sql`
+  - SQL dry-run default `ROLLBACK` untuk cutover URL runtime
 
-- monitor UptimeRobot untuk warm-up Midtrans sudah dicopot
-- tidak ada lagi komponen yang secara sengaja "menghangatkan Midtrans" edge functions
+### Production Changes
 
-Namun dari data yang ada:
+Production action yang sudah dilakukan:
 
-- overage justru datang dari `Cached Egress`
-- kalau sumber utamanya hanya ping monitor ke edge function, pola yang lebih masuk akal adalah kenaikan kecil di uncached edge egress
-- spike harian hingga sekitar `487 MB` terlalu besar untuk dijelaskan oleh health check sederhana, kecuali endpoint yang dipanggil mengembalikan payload besar secara sangat sering
+| Area | Status |
+|---|---|
+| Deploy `imagekit-auth` | Selesai, version `42`, updated `2026-05-05 13:43:55 UTC` |
+| Deploy `imagekit-delete` | Selesai, version `42`, updated `2026-05-05 13:31:00 UTC` |
+| Temporary `imagekit-public-backfill` | Dibuat hanya untuk operasi backfill |
+| Backfill ImageKit | Selesai `120/120` object |
+| Temporary backfill function | Sudah dihapus dari production |
+| Temporary backfill token | Sudah di-unset |
+| DB URL cutover | Selesai untuk runtime public/CMS utama |
+| Delete/privatize Supabase object lama | Belum dilakukan, sengaja ditunda |
 
-Kesimpulan:
+Backfill yang sudah selesai:
 
-- warm-up Midtrans sudah tidak lagi menjadi sumber traffic aktif internal
-- namun dari pola metrik, UptimeRobot memang kemungkinan besar bukan sumber utama pemborosan cached egress sejak awal
-
-### 2. Sumber paling mungkin adalah asset publik yang masih served dari Supabase Storage
-
-Produk sudah dipindahkan ke ImageKit, tetapi bucket publik lain masih aktif di codebase.
-
-Temuan di repo:
-
-- upload CMS generik masih ke Supabase Storage di `frontend/src/lib/cmsAssetUpload.ts`
-- banner manager masih upload ke bucket `banners`
-- beauty poster masih upload ke bucket `beauty-images`
-- dressing room masih upload ke bucket `dressing-room-images`
-- events schedule masih upload ke bucket `events-schedule`
-
-Referensi file:
-
-- [frontend/src/lib/cmsAssetUpload.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/lib/cmsAssetUpload.ts:35)
-- [frontend/src/pages/admin/banner-manager/useBannerManagerController.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/banner-manager/useBannerManagerController.ts:113)
-- [frontend/src/pages/admin/beauty-poster-manager/beautyPosterData.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/beauty-poster-manager/beautyPosterData.ts:142)
-- [frontend/src/utils/uploadDressingRoomImage.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/utils/uploadDressingRoomImage.ts:32)
-- [frontend/src/pages/admin/events-schedule-manager/useEventsScheduleManagerController.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/events-schedule-manager/useEventsScheduleManagerController.ts:119)
-
-Tambahan penting:
-
-runbook migrasi ImageKit memang secara eksplisit tidak memigrasikan bucket non-produk seperti:
-
-- `banners`
-- `beauty-images`
-- `dressing-room-images`
-- aset non-produk lain
-
-Referensi:
-
-- [docs/runbooks/imagekit-migration.md](/C:/Users/prada/Documents/sparkstage/docs/runbooks/imagekit-migration.md:18)
-
-### 3. Dressing room kemungkinan kandidat besar
-
-`dressing-room-images` patut dicurigai karena:
-
-- gambar tetap dilayani dari Supabase Storage
-- util frontend masih membentuk URL `storage/v1/render/image/...`
-- artinya selain object public biasa, ada penggunaan image render endpoint Supabase
-
-Referensi:
-
-- [frontend/src/utils/dressingRoomImageUrl.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/utils/dressingRoomImageUrl.ts:1)
-
-Jika halaman publik atau bot sering membuka page yang menampilkan gambar dressing room, egress cached dapat cepat naik.
-
-### 4. Banner/CMS assets juga sangat mungkin menyumbang besar
-
-Banner dan CMS image biasanya:
-
-- public
-- dipakai di halaman landing/public
-- mudah di-hit oleh crawler, bot, preview unfurl, atau kunjungan manual
-
-Karena banner manager masih menyimpan file di bucket `banners`, bucket ini adalah kandidat prioritas tinggi untuk dievaluasi dan dipindahkan.
-
-### 5. Hijau PostgREST tinggi berarti fetch API publik juga perlu dioptimalkan
-
-Chart usage menunjukkan PostgREST egress juga cukup besar.
-
-Dari codebase, beberapa singleton CMS/public settings masih fetch langsung ke Supabase setiap mount dan belum memakai React Query dengan cache panjang.
-
-Contoh:
-
-- `useCmsSingletonSettings`
-- `useBookingPageSettings`
-- `useGlamPageSettings`
-
-Referensi:
-
-- [frontend/src/hooks/useCmsSingletonSettings.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/hooks/useCmsSingletonSettings.ts:13)
-- [frontend/src/hooks/useBookingPageSettings.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/hooks/useBookingPageSettings.ts:122)
-- [frontend/src/hooks/useGlamPageSettings.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/hooks/useGlamPageSettings.ts:80)
-
-Sementara default cache global QueryClient hanya `30 detik`.
-
-Referensi:
-
-- [frontend/src/lib/queryClient.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/lib/queryClient.ts:3)
-
-Implikasi:
-
-- setiap mount route publik bisa menghasilkan GET PostgREST baru
-- jika bot atau crawler sering mengunjungi route, response settings/CMS akan ikut memperbesar egress
-
-## Hipotesis Sumber Egress
-
-Urutan hipotesis dari yang paling mungkin:
-
-1. asset publik Supabase Storage non-produk
-2. image render endpoint Supabase untuk dressing room atau asset visual lain
-3. banner publik yang sering diakses
-4. singleton page settings yang di-fetch berulang lewat PostgREST
-5. crawler/bot yang memukul halaman publik dan memicu load image + API
-6. traffic internal lama yang sudah dinonaktifkan, termasuk warm-up Midtrans
+| Source Supabase Storage | Target ImageKit | Status |
+|---|---|---|
+| `charm-bar-assets/cms` | `/public/charm-bar-assets/cms` | `120/120` target batch terverifikasi existing setelah backfill gabungan |
+| `stage-gallery` | `/public/stage-gallery` | Masuk target backfill dan terverifikasi existing |
+| `events-schedule/settings` | `/public/events-schedule/settings` | Masuk target backfill dan terverifikasi existing |
 
 Catatan:
 
-- poin 6 tetap ada, tetapi dari pola metrik kemungkinan bukan penyumbang utama
-
-## Implikasi Terhadap Migrasi DOKU
-
-Jika payment gateway pindah dari Midtrans ke DOKU:
-
-- edge function Midtrans yang dipakai untuk flow lama kemungkinan akan dipensiunkan
-- monitor UptimeRobot yang dulu khusus memukul flow Midtrans sudah dihentikan per `26 April 2026`
-- namun penghapusan Midtrans warm-up saja memang tidak cukup menyelesaikan masalah cached egress
-
-Artinya:
-
-- migrasi DOKU tetap layak dilakukan
-- tetapi optimisasi egress perlu berjalan sebagai inisiatif terpisah
-
-## Cara Mengetahui Akar Masalah Dengan Lebih Pasti
-
-Supabase CLI biasa tidak memberi breakdown egress yang cukup untuk investigasi ini.
-
-Jalur yang paling disarankan oleh dokumentasi resmi Supabase:
-
-1. buka Usage page dan filter ke project `hogzjapnkvsihvvbgcdb`
-2. temukan hari spike tertinggi
-3. buka Observability / Logs Explorer
-4. query request ke:
-   - `storage/v1/object`
-   - `storage/v1/render`
-   - path PostgREST yang sering dipanggil
-5. kelompokkan berdasarkan path
-6. kalikan jumlah request dengan ukuran file / estimasi payload
-
-Referensi:
-
-- https://supabase.com/docs/guides/platform/manage-your-usage/egress
-- https://supabase.com/docs/guides/storage/serving/bandwidth
-- https://supabase.com/docs/guides/storage/cdn/metrics
-
-## Strategi Optimisasi yang Direkomendasikan
-
-### Strategi A - Hentikan sumber yang tidak lagi diperlukan
-
-Lakukan untuk hal-hal yang nilainya rendah:
-
-- pertahankan kondisi tanpa warm-up Midtrans karena monitor UptimeRobot terkait sudah dicopot
-- hapus monitor yang memukul endpoint payment lama
-- pastikan tidak ada cron atau script eksternal yang hit endpoint publik tanpa kebutuhan jelas
-
-### Strategi B - Kurangi asset publik di Supabase Storage
-
-Ini adalah optimisasi paling bernilai tinggi.
-
-Prioritas migrasi yang disarankan:
-
-1. `banners`
-2. `dressing-room-images`
-3. `beauty-images`
-4. `events-schedule`
-5. bucket publik lain yang ternyata muncul dominan di logs
-
-Tujuan:
-
-- memindahkan delivery image dari Supabase ke CDN/image service lain
-- mengurangi cached egress di organisasi Supabase
-
-Progress `27 April 2026`:
-
-- asset non-produk berikut sudah selesai di-upload ke ImageKit:
-  - `public/banners`
-  - `public/beauty/posters`
-  - `public/beauty/glam`
-  - `public/dressing-room`
-- `public/events-schedule/items` tetap disiapkan sebagai target path, tetapi saat ini masih kosong
-- tahap yang belum selesai bukan upload asset, melainkan `cutover URL` dari `supabase.co/storage/...` ke `ik.imagekit.io/...`
-
-### Strategi C - Naikkan cache browser untuk bucket yang belum dipindah
-
-Tidak semua upload flow saat ini mengatur `cacheControl` yang tinggi.
-
-Temuan:
-
-- `dressing-room-images` sudah memakai `cacheControl: '31536000'`
-- `cmsAssetUpload`, `banners`, `beauty-images`, dan `events-schedule` sudah diperpanjang ke `cacheControl: '31536000'` per `27 April 2026`
-
-Referensi:
-
-- [frontend/src/utils/uploadDressingRoomImage.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/utils/uploadDressingRoomImage.ts:36)
-- [frontend/src/lib/cmsAssetUpload.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/lib/cmsAssetUpload.ts:37)
-- [frontend/src/pages/admin/banner-manager/useBannerManagerController.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/banner-manager/useBannerManagerController.ts:114)
-- [frontend/src/pages/admin/beauty-poster-manager/beautyPosterData.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/beauty-poster-manager/beautyPosterData.ts:142)
-- [frontend/src/pages/admin/events-schedule-manager/useEventsScheduleManagerController.ts](/C:/Users/prada/Documents/sparkstage/frontend/src/pages/admin/events-schedule-manager/useEventsScheduleManagerController.ts:120)
-
-Ini tidak menghapus egress dari first load, tetapi bisa menurunkan redownload berulang dari browser.
-
-### Strategi D - Kurangi GET PostgREST publik yang terlalu sering
-
-Arah optimisasinya:
-
-- pindahkan singleton CMS/public settings ke React Query
-- gunakan `staleTime` yang lebih panjang untuk data yang jarang berubah
-- nonaktifkan refetch agresif bila tidak perlu
-- jika cocok, preload atau cache payload public settings di layer lain
-
-### Strategi E - Audit bot dan crawler
-
-Jika halaman publik dibuka oleh:
-
-- social preview bots
-- SEO crawler
-- bot lain yang hit image dan API
-
-maka egress tetap bisa tinggi walau user manusia sedikit.
-
-Karena itu, langkah observability wajib dilakukan sebelum keputusan final.
-
-## Rekomendasi Keputusan
-
-Untuk kondisi project ini, keputusan yang paling masuk akal:
-
-1. jangan buru-buru upgrade Supabase Pro hanya karena cached egress
-2. anggap masalah ini sebagai masalah delivery asset + public fetch pattern
-3. lakukan observability dulu
-4. anggap warm-up Midtrans sudah selesai dibersihkan dan jangan hidupkan kembali
-5. migrasikan bucket publik Supabase yang paling sering diakses
-6. optimalkan caching frontend untuk query publik
-
-## Todo List
-
-### A. Optimisasi Egress Umum
-
-- [x] Verifikasi ulang billing cycle aktif organisasi dan tanggal reset quota yang benar
-- [ ] Filter Usage page ke project `hogzjapnkvsihvvbgcdb`
-- [ ] Identifikasi tanggal spike cached egress tertinggi: `31 Maret 2026`, `7 April 2026`, `13 April 2026`, dan `25/26 April 2026`
-- [ ] Verifikasi spike `9 April 2026` dan `19 April 2026` beserta breakdown service-nya
-- [ ] Buka Observability / Logs Explorer
-- [ ] Query top path untuk `storage/v1/object`
-- [ ] Query top path untuk `storage/v1/render`
-- [ ] Query top path untuk PostgREST
-- [ ] Catat bucket/path mana yang paling sering diakses
-- [x] UptimeRobot warm-up Midtrans sudah dicopot
-- [ ] Inventaris health check lama lain yang masih memukul endpoint publik lama
-- [ ] Pastikan tidak ada traffic internal lain yang sudah tidak punya nilai
-- [ ] Pastikan tidak ada cron atau polling publik yang tidak perlu
-- [x] Pantau Usage page 2-3 hari setelah tiap perubahan besar
-
-Checkpoint:
-
-- ada daftar top 10 path storage
-- ada daftar top endpoint PostgREST
-- ada keputusan yang jelas mana masalah utama: storage, PostgREST, auth, atau bot/crawler
-- warm-up Midtrans sudah bersih dan traffic internal lain yang tidak perlu ikut dibersihkan
-
-### B. Todo List Migrasi Asset Publik ke ImageKit
-
-Fokus jalur ini adalah menurunkan `Cached Egress` Supabase dengan memindahkan delivery asset publik non-produk ke ImageKit.
-
-- [x] Audit bucket publik non-produk yang masih aktif di runtime
-- [x] Validasi prioritas bucket: `banners`, `dressing-room-images`, `beauty-images`, `events-schedule`
-- [x] Estimasi total size bucket non-produk yang akan dipindah dan cocokkan dengan `ImageKit Free`:
-  - `20 GB bandwidth / bulan`
-  - `3 GB DAM storage`
-- [x] Pilih urutan migrasi yang paling aman:
-  - `banners`
-  - `dressing-room-images`
-  - `beauty-images`
-  - `events-schedule`
-- [x] Verifikasi ulang backup bucket non-produk via `supabase` CLI dengan project yang benar
-- [x] Rapikan struktur folder target ImageKit agar upload-ready
-- [x] Upload batch asset non-produk aktif ke ImageKit
-- [x] Generate manifest cutover `old Supabase URL -> new ImageKit URL`
-- [x] Siapkan helper upload ImageKit untuk asset non-produk
-- [x] Ubah helper upload yang masih menulis ke Supabase Storage
-- [x] Ubah URL delivery asset agar keluar lewat `ik.imagekit.io/...`
-- [x] Ubah flow delete asset bila provider file dipindahkan
-- [ ] Pastikan fallback lama tidak lagi dipakai oleh route publik setelah cutover
-- [ ] Verifikasi bahwa asset publik terbesar tidak lagi keluar lewat `supabase.co/storage/...`
-- [x] Pantau bandwidth dan storage ImageKit setelah cutover awal
-- [x] Deploy ulang `imagekit-auth` setelah koreksi endpoint dan folder auth payload
-- [x] Deploy ulang `imagekit-delete` untuk cleanup asset non-produk berbasis `filePath`
-- [ ] Simpan bucket Supabase lama sebagai rollback buffer sementara sebelum cleanup final
-
-Progress `27 April 2026`:
-
-- backup bucket non-produk sudah diverifikasi ulang via `supabase` CLI, bukan via workaround runtime
-- upload ke ImageKit untuk batch berikut sudah selesai:
-  - `banners`: `90` file
-  - `beauty/posters`: `2` file
-  - `beauty/glam`: `9` file
-  - `dressing-room`: `11` file
-  - `events-schedule/items`: `0` file
-- total size upload-ready yang sudah masuk ke ImageKit sekitar `128.7224 MB`
-- endpoint default ImageKit yang dipakai tetap `https://ik.imagekit.io/hjnuyz1t3`
-- manifest cutover URL sudah digenerate:
-  - total URL aktif yang perlu dipindah: `30`
-  - `banners`: `14`
-  - `beauty_posters`: `1`
-  - `glam_page_settings`: `4`
-  - `dressing_room_look_photos`: `11`
-  - unresolved mapping: `0`
-- runtime read-path publik sekarang sudah diremap ke ImageKit pada layer frontend untuk:
-  - `banners`
-  - `beauty_posters`
-  - `glam_page_settings`
-  - `dressing_room_look_photos`
-  - `events_schedule_items`
-- write-path admin sekarang sudah dipindah ke ImageKit untuk:
-  - `banners`
-  - `beauty/posters`
-  - `beauty/glam`
-  - `events-schedule/items`
-  - `dressing-room/<lookId>`
-  - jalur CMS generik yang sebelumnya masih menulis ke bucket `events-schedule`
-- validasi production path untuk `banners` sudah terbukti:
-  - request asset banner sekarang keluar ke `https://ik.imagekit.io/hjnuyz1t3/public/banners/...`
-  - status response `200 OK`
-  - `Content-Type` yang diterima browser sudah `image/webp`
-  - `Cache-Control` panjang (`max-age=31536000`) aktif
-- ini berarti read-path `banners` sudah benar-benar tidak lagi bergantung pada delivery `supabase.co/storage/...`
-- function `imagekit-auth` sudah dideploy ulang via `supabase` CLI setelah:
-  - koreksi typo endpoint ImageKit
-  - perbaikan helper auth payload folder
-  - perluasan allowlist folder `events-schedule/<folder>` untuk jalur CMS Event/News
-- function `imagekit-delete` sudah dideploy ulang via `supabase` CLI untuk mendukung cleanup asset non-produk berbasis `filePath`
-- verifikasi admin upload untuk `Event Page CMS` sudah berhasil:
-  - upload manual pada `Hero Image 3` berhasil
-  - toast `Image uploaded successfully` muncul
-  - URL hasil upload mengarah ke `https://ik.imagekit.io/hjnuyz1t3/public/events-schedule/settings/...`
-  - ini membuktikan jalur CMS generik `events-schedule/settings` sekarang sudah lolos auth upload dan tersimpan ke ImageKit
-- cleanup replace/delete flow berikut sekarang sudah tertutup dari sisi coding:
-  - `events-schedule/items`
-  - `beauty/posters`
-  - `banners`
-  - `beauty/glam`
-  - `dressing-room`
-- pendekatan cleanup memakai lookup `fileId` ImageKit dari `filePath`, sehingga belum perlu perubahan schema baru
-- `dressing-room` sekarang juga ditutup dari sisi lifecycle asset:
-  - replace foto akan ikut menyinkronkan `model_image_url` bila sebelumnya menunjuk file lama
-  - delete foto akan menggeser `model_image_url` ke foto berikutnya atau string kosong bila tidak ada sisa foto
-  - delete look akan cleanup `model_image_url` + seluruh `look_photos`
-  - delete collection akan cleanup `cover_image_url` + seluruh asset looks/photos turunannya
-- testing kolaboratif putaran `27 April 2026` untuk jalur admin non-produk dinyatakan lanjut/berjalan:
-  - `Event Page CMS` sudah terbukti berhasil upload ke ImageKit
-  - `News Page`, `GLAM`, dan `Dressing Room` sudah mendapat konfirmasi lanjutan dari admin/partner sebagai working
-  - sisa smoke test admin diperlakukan sebagai validasi minor, bukan blocker implementasi
-- next step yang tersisa:
-  - eksekusi one-off cleanup URL lama Supabase -> ImageKit di database
-  - pantau usage/log Supabase pasca-cutover
-  - verifikasi exception report bila partner/admin menemukan error minor pada `News Page`, `GLAM`, atau `Dressing Room`
-
-Checkpoint:
-
-- minimal satu bucket publik terbesar sudah keluar dari Supabase
-- `banners` sebagai kandidat bucket publik terbesar sudah tervalidasi keluar lewat `ik.imagekit.io/...`, bukan `supabase.co/storage/...`
-- penggunaan cached egress Supabase turun nyata
-- penggunaan bandwidth ImageKit masih aman terhadap free tier
-- manifest cutover tidak punya URL aktif yang unresolved
-- runtime publik utama untuk jalur `banners` tidak lagi bergantung pada URL delivery `supabase.co/storage/...`
-- jalur admin `Event Page CMS` untuk bucket logis `events-schedule/settings` sudah tervalidasi upload ke ImageKit
-
-Estimasi progres keseluruhan `27 April 2026`:
-
-- optimisasi egress tahap ini berada di kisaran `70% - 75%` selesai
-- estimasi kerja internal yang paling realistis saat ini: sekitar `72%`
-- yang sudah berat dan paling penting:
-  - migrasi upload asset non-produk ke ImageKit
-  - remap read-path publik ke ImageKit
-  - validasi live `banners` sudah `200 OK` dari ImageKit
-  - optimisasi awal PostgREST/public settings
-- yang belum selesai:
-  - cleanup delete flow provider ImageKit agar tidak meninggalkan orphan file
-  - verifikasi live semua jalur admin non-produk
-  - cleanup source data/database dari URL Supabase lama
-  - observasi usage Supabase pasca-cutover selama beberapa hari
-
-Estimasi progres terkini `28 April 2026`:
-
-- setelah validasi `Event Page CMS`, deploy `imagekit-auth`, deploy `imagekit-delete`, dan implementasi cleanup awal `events-schedule`, progres realistis naik ke kisaran `75% - 80%`
-- angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `78%`
-
-Update pengerjaan lanjutan `28 April 2026`:
-
-- cleanup replace/delete `beauty/posters`, `banners`, dan `beauty/glam` sudah ikut selesai dari sisi coding
-- cleanup `dressing-room` sekarang juga selesai dari sisi coding
-- script manual untuk one-off DB cleanup URL lama sudah disiapkan di:
-  - `supabase/manual/imagekit_public_asset_url_cutover.sql`
-- `npm run build` lulus setelah patch cleanup tambahan
-- area tersisa yang paling nyata sekarang:
-  - one-off cleanup URL lama Supabase -> ImageKit di database
-  - monitoring usage Supabase pasca-cutover
-
-Dengan status ini, progres realistis naik ke kisaran `85% - 90%`.
-Angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `87%`.
-
-Monitoring `30 April 2026`:
-
-- reset billing cycle sudah terkonfirmasi berjalan pada cycle `28 April 2026 - 28 Mei 2026`
-- usage period baru masih rendah: sekitar `0.14 GB / 5 GB`
-- overage period baru `0 GB`
-- `Storage Egress` pada breakdown `28 April 2026` hanya sekitar `19.973 MB`, sehingga problem lama `Cached Egress` dari asset storage sudah tidak lagi terlihat sebagai bottleneck utama di awal cycle baru
-- `PostgREST Egress` menjadi penyumbang terbesar pada `28 April 2026`, yaitu sekitar `53.349 MB`
-- tren harian `29 April` dan `30 April` sementara lebih rendah daripada `28 April`
-
-Dengan observasi ini, progres realistis optimisasi egress tahap ini naik ke kisaran `90% - 92%`.
-Angka kerja yang paling aman untuk komunikasi ke client saat ini: sekitar `91%`.
-
-Final pass refactor `28 April 2026`:
-
-- dilakukan double-check struktur kode pada scope optimisasi egress dan dirapikan pada jalur `dressing-room` agar tidak ada failure misleading setelah mutasi DB sukses
-- cleanup provider untuk `dressing-room` sekarang memakai `best effort` agar tidak membatalkan operasi utama (delete/replace) bila provider cleanup gagal
-- sumber URL foto lama saat replace/delete sekarang diambil dari DB (`photo.image_url`) agar tidak bergantung asumsi parameter UI
-- hardening ditambahkan pada `deleteDressingRoomImage` agar URL invalid tidak memecahkan flow cleanup
-- build dan test util terkait dressing room tetap lulus setelah refactor
-
-Status AI agent setelah final pass:
-
-- task substantif sisi coding untuk scope optimisasi egress sudah tertutup
-- remaining tasks didorong ke kategori operasional/minor:
-  - one-off eksekusi SQL cleanup URL lama
-  - smoke test ringan admin (`News Page`, `Dressing Room`)
-  - monitoring usage/log Supabase pasca-cutover
-
-### Task Table `28 April 2026`
-
-| Area | Task | Status | Owner utama | Perlu bantuan teknis human |
-|---|---|---|---|---|
-| ImageKit read-path | Remap URL publik Supabase ke ImageKit | Selesai | Coding | Tidak |
-| ImageKit write-path | Upload admin `banners` | Selesai | Coding | Tidak |
-| ImageKit write-path | Upload admin `beauty/posters` | Selesai | Coding | Tidak |
-| ImageKit write-path | Upload admin `beauty/glam` | Selesai | Coding | Tidak |
-| ImageKit write-path | Upload admin `events-schedule` / CMS Event | Selesai | Coding + validasi live | Sudah tervalidasi |
-| ImageKit write-path | Upload admin `News Page` | Hampir selesai | Human smoke test | Ya, 1 smoke test singkat |
-| Cleanup provider | Replace/delete `events-schedule` | Selesai | Coding | Tidak |
-| Cleanup provider | Replace/delete `beauty/posters` | Selesai | Coding | Tidak |
-| Cleanup provider | Replace/delete `banners` | Selesai | Coding | Tidak |
-| Cleanup provider | Replace/delete `beauty/glam` | Selesai | Coding | Tidak |
-| Cleanup provider | Replace/delete `dressing-room` | Selesai | Coding | Smoke test hanya validasi minor |
-| Database cleanup | Ganti URL lama Supabase ke URL ImageKit | Siap eksekusi | Coding + review | Ya, saat eksekusi live |
-| Observability | Pantau Usage dan Logs Supabase pasca-cutover | Monitoring awal selesai, lanjut pantau ringan | Human operator | Ya |
-
-### Todo List Finishing Phase
-
-- [x] Tutup cleanup replace/delete `events-schedule`
-- [x] Tutup cleanup replace/delete `beauty/posters`
-- [x] Tutup cleanup replace/delete `banners`
-- [x] Tutup cleanup replace/delete `beauty/glam`
-- [x] Tutup cleanup replace/delete `dressing-room`
-- [x] Smoke test singkat `News Page`
-- [x] Smoke test singkat `Dressing Room`
-- [ ] Jalankan one-off cleanup URL lama Supabase -> ImageKit di database
-- [x] Pantau Usage Supabase `1 - 3 hari` setelah cutover utama
-- [ ] Putuskan kapan bucket lama Supabase aman dibersihkan final
-
-### C. Todo List Optimisasi PostgREST Egress
-
-Fokus jalur ini adalah menurunkan chart hijau `PostgREST egress` karena nilainya bukan fixed cost dan bisa ditekan dari desain fetch.
-
-- [ ] Audit hook public yang masih fetch langsung saat mount tanpa cache query yang benar
-- [x] Migrasikan singleton hooks ke TanStack Query bila belum:
-  - `useCmsSingletonSettings`
-  - `useBookingPageSettings`
-  - `useGlamPageSettings`
-- [ ] Review hook public lain yang mengambil CMS/settings serupa dengan pola fetch terpisah
-- [x] Naikkan `staleTime` untuk data publik yang jarang berubah
-- [x] Audit `refetchOnWindowFocus` dan `refetchOnReconnect` untuk route publik
-- [ ] Ganti `select('*')` dengan field minimal untuk query public yang tidak butuh seluruh row
-- [ ] Audit query yang mengambil row terlalu banyak dan tambahkan pagination/filter yang lebih sempit
-- [ ] Hilangkan fetch duplikatif antar komponen yang meminta data yang sama
-- [ ] Pastikan settings/CMS yang sama memakai query key yang sama
-- [ ] Audit beban PostgREST yang dipicu crawler/bot pada route publik
-- [ ] Verifikasi ulang hari `19 April 2026` sebagai baseline khusus PostgREST/Auth-heavy
-- [ ] Bandingkan chart PostgREST sebelum dan sesudah deploy
-
-Progress `27 April 2026`:
-
-- `useCmsSingletonSettings` sudah dipindahkan ke TanStack Query dengan query key stabil dan mutation invalidation
-- `useBookingPageSettings` dan `useGlamPageSettings` sudah diubah menjadi wrapper di atas cache singleton tersebut
-- singleton/public settings itu sekarang memakai `staleTime` default `30 menit`
-- `refetchOnWindowFocus` dan `refetchOnReconnect` untuk jalur singleton/public settings tersebut sudah dimatikan
-
-Checkpoint:
-
-- route publik tidak fetch settings berulang tanpa alasan
-- payload query public lebih kecil
-- request query public lebih jarang
-- traffic PostgREST hijau turun pada hari-hari berikutnya
-
-### D. Todo List Cache Policy Sementara
-
-Jalur ini berlaku selama sebagian bucket publik masih harus tinggal di Supabase.
-
-- [ ] Audit semua upload flow yang belum menetapkan `cacheControl`
-- [x] Tambahkan `cacheControl` tinggi untuk bucket yang belum sempat dipindah
-- [ ] Pastikan nama file cukup immutable atau unik agar cache panjang aman
-- [ ] Pastikan browser tidak redownload asset yang sama tanpa alasan
-
-Progress `27 April 2026`:
-
-- `cmsAssetUpload`
-- `banner manager`
-- `beauty poster`
-- `events schedule`
-
-semuanya sudah diubah ke `cacheControl: '31536000'`
-
-Checkpoint:
-
-- asset public bucket yang tersisa punya cache policy panjang
-- redownload berulang dari browser lebih rendah
-
-### E. Reminder Optimisasi Video Statis
-
-Jalur ini bukan prioritas utama untuk `Supabase egress`, tetapi tetap penting untuk bandwidth total website dan performa halaman publik.
-
-- [x] Audit semua video statis yang masih dilayani dari `frontend/public`
-- [x] Verifikasi apakah video besar di halaman publik benar-benar perlu autoplay sekaligus
-- [ ] Evaluasi pemindahan video statis publik ke ImageKit atau CDN video/image delivery yang sama
-- [ ] Pertimbangkan `preload=\"metadata\"`, lazy render, atau hanya play saat masuk viewport
-- [x] Audit khusus halaman `CharmBar` yang saat ini merender beberapa video autoplay pada satu halaman
-
-Temuan `27 April 2026`:
-
-- video statis `Charm Bar` saat ini tidak membebani `Supabase egress`, karena masih dilayani sebagai asset lokal frontend
-- tetapi tetap cukup berat untuk bandwidth total website:
-  - `DIY CHARM 1.mp4` sekitar `1.776 MB`
-  - `DIY CHARM 2.mp4` sekitar `3.34 MB`
-  - `DIY CHARM 3.mp4` sekitar `2.446 MB`
-- halaman `CharmBar` saat ini merender beberapa elemen `<video>` autoplay sekaligus, jadi ini layak masuk backlog optimisasi tahap berikutnya
-
-## Kandidat Perubahan Kode
-
-File yang kemungkinan disentuh pada fase optimisasi:
-
-- `frontend/src/lib/cmsAssetUpload.ts`
-- `frontend/src/lib/imagekit.ts`
-- `frontend/src/lib/publicAssetUrl.ts`
-- `frontend/src/pages/admin/banner-manager/useBannerManagerController.ts`
-- `frontend/src/pages/admin/beauty-poster-manager/beautyPosterData.ts`
-- `frontend/src/utils/uploadDressingRoomImage.ts`
-- `frontend/src/pages/admin/events-schedule-manager/useEventsScheduleManagerController.ts`
-- `frontend/src/hooks/useCmsSingletonSettings.ts`
-- `frontend/src/hooks/useBookingPageSettings.ts`
-- `frontend/src/hooks/useGlamPageSettings.ts`
-- `frontend/src/hooks/useEventSettings.ts`
-- `frontend/src/hooks/useCharmBarSettings.ts`
-- `frontend/src/hooks/useEventSchedule.ts`
-- `frontend/src/hooks/useBanners.ts`
-- `frontend/src/lib/queryClient.ts`
-
-## Penutup
-
-Masalah egress di project ini lebih masuk akal diperlakukan sebagai masalah:
-
-- asset delivery
-- fetch pattern publik
-- observability yang belum cukup detail
-
-bukan semata-mata masalah bahwa Supabase Free terlalu kecil.
-
-Optimisasi yang benar kemungkinan akan lebih murah dan lebih sehat secara arsitektur dibanding langsung menaikkan plan tanpa audit sumber trafik.
-
-## Sesi Brainstroming 26 April
-
-Catatan tambahan dari sesi tanggal `26 April 2026`.
-
-### Pembacaan spike yang sudah dicatat
-
-Dari pembacaan manual chart usage:
-
-- spike `9 April 2026` terlihat dominan di:
-  - `Storage egress` sekitar `32.193 MB` atau `63.4%`
-  - `PostgREST egress` sekitar `16.175 MB` atau `31.9%`
-- spike `19 April 2026` terlihat dominan di:
-  - `PostgREST egress` sekitar `36.727 MB` atau `63%`
-  - `Auth egress` sekitar `15 MB` atau `26%`
-  - `Storage egress` sekitar `1.6 MB` atau `2.7%`
-
-Implikasi:
-
-- ada pola spike yang memang `storage-heavy`
-- tetapi ada juga hari yang justru `PostgREST/Auth-heavy`
-- jadi masalah project ini kemungkinan bukan satu sumber tunggal
-
-Untuk `Cached Egress per day`, kandidat hari tertinggi yang sudah dicatat:
-
-- `31 Maret 2026` sekitar `478.936 MB`
-- `7 April 2026` sekitar `487.342 MB`
-- `13 April 2026` sekitar `470.481 MB`
-- `25/26 April 2026` sekitar `418.449 MB`
-
-Interpretasi sementara:
-
-- puncak cached egress tetap paling masuk akal berasal dari asset publik Supabase Storage
-- kandidat teratas tetap `banners`, `dressing-room-images`, `beauty-images`, dan `events-schedule`
-- `19 April 2026` harus diperlakukan sebagai investigasi terpisah karena dominannya bukan storage, melainkan PostgREST dan Auth
-
-### Implikasi untuk target Free Plan
-
-Tujuan utama optimisasi ini adalah menjaga organisasi tetap sehat di `Free Plan` dengan asumsi traffic user nyata masih sangat rendah.
-
-Masalah utamanya:
-
-- meskipun user manusia hampir tidak ada, asset publik dan endpoint publik tetap bisa dikonsumsi oleh:
-  - crawler
-  - social preview bots
-  - health check lama
-  - request publik yang tidak dikontrol
-
-Jadi kondisi `zero user` tidak otomatis berarti aman untuk quota egress.
-
-### Klarifikasi billing cycle dan reset quota
-
-Berdasarkan dokumentasi resmi Supabase:
-
-- quota usage berlaku per `billing cycle`, bukan otomatis per tanggal `1` setiap bulan
-- grace period diberikan saat organisasi melewati quota pada Free Plan
-- restriction karena quota usage akan terangkat saat quota terisi ulang di awal billing cycle berikutnya
-- warning grace period dapat tetap tampil walaupun usage sudah turun di bawah limit
-- jika organisasi kembali melewati limit sebelum warning itu bersih, tidak ada jaminan mendapat grace period kedua
-
-Jika billing cycle organisasi ini memang `28 Maret 2026 - 28 April 2026`, maka implikasinya:
-
-- pada `26 April 2026`, usage `Cached Egress 7.167 / 5 GB` masih dihitung ke cycle lama
-- reset quota seharusnya terjadi di sekitar `28 April 2026`, bukan `1 Mei 2026`
-- kelebihan `2.17 GB` tidak dibawa sebagai "utang pemakaian" ke cycle baru
-- cycle baru akan mulai lagi dari quota baru, tetapi sumber traffic yang sama bisa langsung menghabiskannya lagi
-
-Kesimpulan operasional:
-
-- jangan mengandalkan `1 Mei 2026` sebagai tanggal reset jika billing cycle organisasi tidak dimulai tanggal `1`
-- jangan mengandalkan reset cycle saja sebagai solusi
-- fokus utama tetap harus menurunkan sumber cached egress sebelum dan sesudah reset billing cycle berikutnya
-
-### Tambahan prioritas hasil sesi
-
-Prioritas yang makin jelas setelah sesi ini:
-
-1. verifikasi path penyumbang cached egress tertinggi pada hari-hari `31 Maret 2026`, `7 April 2026`, dan `13 April 2026`
-2. audit PostgREST/Auth pada `19 April 2026`
-3. migrasikan bucket publik non-produk terbesar lebih dulu
-4. perpanjang cache policy untuk bucket yang belum sempat dipindah
-5. refactor hook public settings agar tidak fetch berulang tanpa alasan
+- Backfill tidak menghapus object Supabase lama.
+- Backfill tidak menyentuh `photos` atau `print_orders`.
+- Function backfill sementara tidak ditinggalkan aktif di production.
+
+### Verification
+
+Automated/local:
+
+| Check | Status |
+|---|---|
+| Targeted test `publicAssetUrl` + `dressingRoomImageUrl` | Passed |
+| `npm run build` | Passed |
+| Full `npm run test` | Ada 4 failure lama di luar scope egress |
+
+Full test failure yang masih ada di luar scope ini:
+
+| Test area | Masalah |
+|---|---|
+| `inventoryData.test.ts` | RPC search expectation tidak terpanggil |
+| `bookingSuccessHelpers.test.ts` | expected skeleton timeout `20000`, actual `10000` |
+| `productOrdersHelpers.test.ts` | today/completed helper expectation kosong |
+
+Production DB verification setelah cutover:
+
+| Area | Legacy `supabase.co/storage` rows |
+|---|---:|
+| `banners` | 0 |
+| `beauty_posters` | 0 |
+| `dressing_room_look_photos` | 0 |
+| `stage_gallery` | 0 |
+| `charm_bar_page_settings` | 0 |
+| `news_page_settings` | 0 |
+| `event_page_settings` | 0 |
+| `print_orders` | 37, sengaja out-of-scope |
+
+Sample runtime URL setelah cutover:
+
+| Source | Sample |
+|---|---|
+| `charm_bar_page_settings.hero_image_url` | `https://ik.imagekit.io/hjnuyz1t3/public/charm-bar-assets/cms/...jpg` |
+| `stage_gallery.image_url` | `https://ik.imagekit.io/hjnuyz1t3/public/stage-gallery/...jpg` |
+
+## Root Cause Yang Sudah Terbukti
+
+Audit menemukan bahwa asumsi "semua media sudah pindah ke ImageKit" belum
+benar untuk seluruh CMS.
+
+Jalur yang sebelumnya masih bocor:
+
+| Area | Problem sebelum fix | Status sekarang |
+|---|---|---|
+| `charm-bar-assets` | Admin Charm Bar CMS upload ke Supabase Storage | Upload path baru dipatch ke ImageKit; file lama sudah dibackfill; DB URL sudah cutover |
+| `stage-gallery` | Admin Stage Gallery upload langsung ke bucket Supabase `stage-gallery` | Upload path baru dipatch ke ImageKit; file lama sudah dibackfill; DB URL sudah cutover |
+| `events-schedule/settings` | Sisa URL lama di Event/News settings | File sudah dibackfill; DB URL sudah cutover |
+| `dressing_room_look_photos` | Sisa legacy URL runtime | DB URL sudah cutover |
+| `banners`, `beauty_posters` | Sisa legacy URL runtime | DB URL sudah cutover |
+| `news_page_settings.section_3_products` | Menyimpan product URL lama dari `product-images` | Sudah rewrite ke URL ImageKit dari `product_images` |
+
+Yang masih sengaja tidak disentuh:
+
+| Area | Alasan |
+|---|---|
+| `print_orders.image_urls` | Terkait media/order customer; perlu keputusan produk/data retention sebelum migrasi/private bucket/delete |
+| `photos` bucket | Masih perlu desain: private bucket, signed URL, atau migrasi ImageKit |
+| Supabase Storage object lama | Belum dihapus agar masih ada rollback buffer |
+
+## Deployment Debt
+
+Ini daftar debt yang masih perlu dipahami jelas.
+
+| Prioritas | Debt | Status | Owner |
+|---|---|---|---|
+| Urgent | Deploy frontend build terbaru | Belum terkonfirmasi deploy hosting | Human/CI deploy |
+| Urgent | Smoke test admin Charm Bar upload baru | Belum manual test setelah frontend deploy | Human/admin |
+| Urgent | Smoke test admin Stage Gallery upload baru | Belum manual test setelah frontend deploy | Human/admin |
+| Urgent | Monitor Supabase cached egress 24-48 jam | Belum cukup waktu setelah cutover | Human/agent follow-up |
+| Urgent | Logs Explorer top path 4-5 May dan pasca-cutover | Perlu dashboard/export jika CLI tidak cukup | Human/agent |
+| Medium | Keputusan treatment `photos` / `print_orders` | Belum diputuskan | Product + engineering |
+| Medium | Delete/privatize Supabase object lama | Ditunda sampai monitoring aman | Human approval |
+| Medium | Fix 4 failing tests lama | Belum dikerjakan | Engineering |
+| Nice To Have | Add guardrail/lint agar public CMS URL baru tidak boleh `supabase.co/storage` | Belum | Engineering |
+| Nice To Have | PostgREST payload audit | Belum selesai penuh | Engineering |
 
 Catatan penting:
 
-- `supabase` CLI biasa tidak memberi breakdown cached egress harian yang cukup detail untuk investigasi ini
-- dashboard usage dan observability tetap menjadi sumber verifikasi utama
-- UptimeRobot warm-up Midtrans sudah dicopot, jadi investigasi berikutnya tidak boleh lagi menganggap warm-up itu sebagai traffic aktif saat ini
+- Edge functions ImageKit yang relevan sudah dideploy.
+- Frontend code patch belum otomatis berarti live di hosting; perlu deploy app
+  dari branch/worktree ini.
+- DB sudah dipindah ke URL ImageKit, jadi route publik lama pun harusnya
+  membaca ImageKit dari data sekarang. Namun future upload admin baru tetap
+  butuh frontend deploy agar tidak kembali upload ke Supabase.
+
+## Task Table
+
+### Urgent
+
+| Task | Status | Output yang diharapkan |
+|---|---|---|
+| Deploy frontend app terbaru | Pending | Admin upload baru memakai ImageKit path |
+| Smoke test Charm Bar CMS upload image | Pending | URL hasil upload `ik.imagekit.io/.../public/charm-bar-assets/cms/...` |
+| Smoke test Charm Bar CMS upload video jika fitur masih dipakai | Pending | URL hasil upload `ik.imagekit.io/.../public/charm-bar-assets/cms/...` |
+| Smoke test Stage Gallery upload | Pending | URL hasil upload `ik.imagekit.io/.../public/stage-gallery/...` |
+| Smoke test route publik `/charm-bar`, `/news`, `/events`, Stage Detail | Pending | Tidak ada request baru ke `supabase.co/storage` untuk CMS media utama |
+| Catat cached egress harian `6-7 May 2026` | Pending | Bukti tren turun atau masih ada sumber lain |
+| Export Logs Explorer pasca-cutover | Pending | Top Storage path setelah fix |
+
+### Medium
+
+| Task | Status | Output yang diharapkan |
+|---|---|---|
+| Audit `photos` bucket dan `print_orders.image_urls` | Pending | Keputusan private/signed URL/ImageKit/retention |
+| Buat daftar object Supabase lama kandidat cleanup | Pending | CSV/list object dengan ImageKit counterpart |
+| Delete/privatize object Supabase lama bertahap | Pending approval | Supabase cached egress turun lebih kuat; rollback sudah disepakati |
+| Fix failing tests lama | Pending | `npm run test` full green |
+| Audit PostgREST public payload | Pending | Field minimal dan request lebih jarang |
+
+### Nice To Have
+
+| Task | Status | Output yang diharapkan |
+|---|---|---|
+| Tambah test/lint anti `supabase.co/storage` untuk CMS runtime | Pending | Regression lebih cepat ketahuan |
+| Dokumentasi asset policy final | Pending | Semua media publik baru default ImageKit |
+| Dashboard harian sampai `21 May 2026` | Pending | Tabel trend untuk grace-period decision |
+| Evaluasi video statis Charm Bar | Pending | Bandwidth web total lebih rendah |
+
+## Monitoring Harian Sampai `21 May 2026`
+
+| Tanggal | Cached egress/day | Used in period | Top path/bucket | Perubahan terakhir | Keputusan |
+|---|---:|---:|---|---|---|
+| `6 May 2026` |  |  |  | Code + DB cutover dipantau |  |
+| `7 May 2026` |  |  |  |  |  |
+| `8 May 2026` |  |  |  |  |  |
+| `9 May 2026` |  |  |  |  |  |
+| `10 May 2026` |  |  |  |  |  |
+| `11 May 2026` |  |  |  |  |  |
+| `12 May 2026` |  |  |  |  |  |
+| `13 May 2026` |  |  |  |  |  |
+| `14 May 2026` |  |  |  |  |  |
+| `15 May 2026` |  |  |  |  |  |
+| `16 May 2026` |  |  |  |  |  |
+| `17 May 2026` |  |  |  |  |  |
+| `18 May 2026` |  |  |  |  |  |
+| `19 May 2026` |  |  |  |  |  |
+| `20 May 2026` |  |  |  |  |  |
+| `21 May 2026` |  |  |  | Grace-period checkpoint |  |
+
+## Decision Notes
+
+- Jangan delete object Supabase lama sebelum minimal 24-48 jam monitoring aman.
+- Jangan ubah `print_orders` tanpa keputusan produk/data retention.
+- Jika cached egress tetap mendekati `1 GB/day` setelah cutover, root cause
+  berikutnya harus dibuktikan dari Logs Explorer, bukan asumsi.
+- ImageKit Free Plan secara konsep masih realistis untuk user kecil-menengah
+  jika asset visual tidak terlalu berat dan video/autoplay dikontrol. Tetap
+  pantau bandwidth ImageKit karena beban dipindah dari Supabase ke ImageKit.
 
-### Konfirmasi arsitektur media: Supabase vs ImageKit
-
-Penegasan dari sesi:
-
-- asset yang masih dilayani lewat URL `supabase.co/storage/...` tetap membebani quota egress Supabase
-- jika file itu served dari cache CDN Supabase, ia masuk `Cached Egress`
-- jika file itu tidak served dari cache, ia masuk `uncached egress`
-- asset yang sudah dilayani lewat URL `ik.imagekit.io/...` tidak lagi membebani egress Supabase untuk file delivery
-
-Artinya:
-
-- `ImageKit` tidak mengubah traffic file menjadi `uncached egress` Supabase
-- untuk Supabase, delivery file dari ImageKit secara praktis bernilai `nol`
-- pembagian tanggung jawab yang lebih sehat adalah:
-  - `Supabase` untuk database, auth, PostgREST, edge functions, dan backend app
-  - `ImageKit` untuk media delivery publik
-
-Dengan kata lain, pivot yang masuk akal bukan menjadikan Supabase "auth only", melainkan mengeluarkan pekerjaan `asset delivery` dari Supabase.
-
-### Perbandingan kasar quota free tier Supabase vs ImageKit
-
-Perhitungan kasar dari sesi:
-
-- `Supabase Free` memberi:
-  - `5 GB cached egress`
-  - `5 GB uncached egress`
-  - total bandwidth kasar sekitar `10 GB`, meskipun dibagi dalam dua bucket quota yang berbeda
-- `ImageKit Free` memberi:
-  - `20 GB bandwidth`
-  - `3 GB DAM storage`
-
-Implikasi kasar:
-
-- secara total bandwidth, `ImageKit Free` sekitar `2x` lebih besar dari total bandwidth kasar `Supabase Free`
-- jika dibandingkan khusus terhadap `cached egress` Supabase yang sekarang menjadi bottleneck utama, maka `ImageKit Free` terasa sekitar `4x` lebih longgar
-
-Catatan:
-
-- perbandingan ini bersifat operasional, bukan matematis persis per produk
-- tetapi cukup akurat untuk pengambilan keputusan arsitektur delivery asset
-
-### Apakah target 1.000 user realistis?
-
-Kesimpulan sesi:
-
-- dengan arsitektur sekarang, target `1.000 user` tidak realistis karena cached egress Supabase sudah jebol saat user nyata masih sangat rendah
-- jika asset publik non-produk dipindahkan ke ImageKit dan query publik dirapikan, target `1.000 user` menjadi realistis
-
-Alasannya:
-
-- bottleneck utama saat ini bukan `MAU`, tetapi `asset delivery`
-- setelah asset delivery berat keluar dari Supabase, Supabase tinggal menanggung:
-  - database queries
-  - auth/session
-  - edge functions
-  - payment flow
-  - operasi admin
-
-Namun target `1.000 user` tetap mensyaratkan:
-
-- asset publik terbesar benar-benar keluar dari Supabase Storage
-- PostgREST publik ikut dioptimalkan
-- bot/crawler dipahami agar tidak membakar bandwidth tanpa user manusia
-
-### PostgREST bukan fixed cost, dan bisa dioptimisasi
-
-Kesimpulan penting dari sesi:
-
-- `PostgREST egress` bukan biaya tetap yang tidak bisa disentuh
-- PostgREST egress pada dasarnya adalah ukuran data API database yang dikirim dari Supabase ke client
-- jadi nilainya bisa turun jika:
-  - request lebih jarang
-  - payload lebih kecil
-  - row yang diambil lebih sedikit
-  - fetch yang duplikatif dihilangkan
-
-Untuk repo ini, area yang paling jelas perlu diaudit:
-
-- `frontend/src/hooks/useCmsSingletonSettings.ts`
-- `frontend/src/hooks/useBookingPageSettings.ts`
-- `frontend/src/hooks/useGlamPageSettings.ts`
-- hook public lain yang mem-fetch settings/CMS langsung dari Supabase
-- `frontend/src/lib/queryClient.ts`
-
-## Notes - Langkah-Langkah Realistis Untuk Optimisasi PostgREST Egress
-
-Catatan ini sengaja diletakkan di bagian paling bawah sebagai checklist praktis.
-
-### 1. Audit hook public yang masih fetch langsung saat mount
-
-Target awal:
-
-- `useCmsSingletonSettings`
-- `useBookingPageSettings`
-- `useGlamPageSettings`
-- hook public CMS lain yang belum memakai pola cache yang disiplin
-
-Tujuan:
-
-- mengurangi request berulang dari route publik
-
-### 2. Migrasikan settings publik ke TanStack Query yang benar-benar dipakai sebagai cache
-
-Langkah:
-
-- gunakan `useQuery` untuk singleton settings yang masih memakai `useEffect + useState`
-- pakai query key yang stabil
-- pastikan komponen yang berbeda memakai cache query yang sama, bukan fetch masing-masing
-
-Tujuan:
-
-- satu payload settings cukup diambil sekali lalu dipakai ulang
-
-### 3. Naikkan `staleTime` untuk data yang jarang berubah
-
-Contoh kandidat:
-
-- booking page settings
-- glam page settings
-- banner metadata
-- CMS text/image settings
-
-Prinsip:
-
-- data yang berubahnya jarang jangan dianggap stale setiap puluhan detik
-- `30 detik` sebagai default global terlalu pendek untuk banyak halaman publik static-like
-
-### 4. Kurangi refetch agresif
-
-Yang perlu dievaluasi:
-
-- `refetchOnWindowFocus`
-- `refetchOnReconnect`
-- route yang melakukan refetch walau user hanya pindah tab atau kembali fokus
-
-Tujuan:
-
-- mencegah request ulang yang tidak memberi nilai nyata bagi user
-
-### 5. Ganti `select('*')` dengan field minimal
-
-Prinsip:
-
-- jangan kirim seluruh row jika UI hanya butuh beberapa field
-- review hook public yang memakai `select('*')`
-
-Tujuan:
-
-- mengurangi ukuran payload PostgREST
-
-### 6. Kurangi jumlah row yang diambil
-
-Langkah:
-
-- paginasi katalog atau list besar
-- filter lebih sempit
-- hindari load seluruh dataset jika halaman hanya menampilkan subset
-
-Tujuan:
-
-- mengurangi total byte yang dikirim ke client
-
-### 7. Hilangkan fetch duplikatif antar komponen
-
-Pola masalah yang perlu dicari:
-
-- halaman yang terdiri dari banyak komponen, tetapi masing-masing melakukan query sendiri ke tabel/settings yang sama
-
-Tujuan:
-
-- satu sumber data dipakai bersama
-
-### 8. Anggap bot/crawler sebagai bagian dari beban PostgREST
-
-Prinsip:
-
-- route publik bukan hanya dibuka user manusia
-- crawler juga bisa memicu fetch settings, list, dan image load
-
-Tujuan:
-
-- desain cache dan payload harus tahan terhadap trafik non-human
-
-### 9. Verifikasi hasil setelah deploy
-
-Checklist:
-
-- bandingkan chart hijau PostgREST sebelum dan sesudah deploy
-- lihat apakah spike seperti `19 April 2026` menurun
-- cek apakah route publik masih melakukan request berulang tanpa alasan
-
-### 10. Prioritas implementasi paling realistis
-
-Urutan paling masuk akal untuk repo ini:
-
-1. ubah singleton settings hooks ke React Query
-2. naikkan `staleTime` data publik static-like
-3. matikan refetch agresif untuk halaman publik yang tidak butuh live freshness
-4. audit `select('*')` pada query public
-5. audit list publik yang mengambil terlalu banyak row
