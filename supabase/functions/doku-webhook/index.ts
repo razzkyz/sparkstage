@@ -492,20 +492,93 @@ serve(async (req) => {
     })
 
     if (orderError || !order) {
-      console.log('[DOKU WEBHOOK] ERROR: Order not found', {
-        orderError: orderError?.message,
-        orderNumber,
+      console.log('[DOKU WEBHOOK] Looking up print order:', orderNumber)
+      const { data: printOrder, error: printOrderError } = await supabase
+        .from('print_orders')
+        .select('*')
+        .eq('doku_order_id', orderNumber)
+        .single()
+
+      console.log('[DOKU WEBHOOK] Print order lookup result:', {
+        found: !!printOrder,
+        printOrderId: printOrder?.id,
+        currentStatus: printOrder?.status,
+        printOrderError: printOrderError?.message,
       })
+
+      if (printOrderError || !printOrder) {
+        console.log('[DOKU WEBHOOK] ERROR: Order not found in any table', {
+          orderError: orderError?.message,
+          printOrderError: printOrderError?.message,
+          orderNumber,
+        })
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'order_not_found',
+          payload: notification,
+          success: false,
+          errorMessage: 'Order not found in orders, order_products, or print_orders',
+          processedAt: nowIso,
+        })
+        return new Response(JSON.stringify({ error: 'Order not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      console.log('[DOKU WEBHOOK] Processing print order transition to:', providerStatus)
+      const updateData: Record<string, unknown> = {
+        status: providerStatus,
+        updated_at: nowIso,
+      }
+
+      if (providerStatus === 'paid' && !printOrder.paid_at) {
+        updateData.paid_at = nowIso
+      }
+
+      const { error: updateError } = await supabase
+        .from('print_orders')
+        .update(updateData)
+        .eq('id', printOrder.id)
+
+      if (updateError) {
+        console.log('[DOKU WEBHOOK] ERROR: Print order update failed', updateError)
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'print_order_update_failed',
+          payload: notification,
+          success: false,
+          errorMessage: updateError.message,
+          processedAt: nowIso,
+        })
+        return new Response(JSON.stringify({ error: 'Failed to update print order' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       await logWebhookEvent(supabase, {
         orderNumber,
-        eventType: 'order_not_found',
-        payload: notification,
-        success: false,
-        errorMessage: orderError?.message ?? 'Order not found',
+        eventType: 'print_order_processed',
+        payload: {
+          notification,
+          next_status: providerStatus,
+          previous_status: printOrder.status,
+        },
+        success: true,
         processedAt: nowIso,
       })
-      return new Response(JSON.stringify({ error: 'Order not found' }), {
-        status: 404,
+
+      await logWebhookEvent(supabase, {
+        orderNumber,
+        eventType: idempotencyEventType,
+        payload: notification,
+        success: true,
+        processedAt: nowIso,
+      })
+
+      console.log('[DOKU WEBHOOK] Print order processed successfully')
+      return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
