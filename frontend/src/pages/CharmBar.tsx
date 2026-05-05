@@ -16,6 +16,7 @@ import { queryKeys } from '../lib/queryKeys';
 import { fetchProductDetail } from '../hooks/useProduct';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { useCharmBarSettings } from '../hooks/useCharmBarSettings';
+import { buildImageKitThumbUrl } from '../lib/imagekit';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -91,7 +92,7 @@ function ShopResults({ filteredProducts, loading, onPrefetchProduct, onAddToCart
               <div className="relative overflow-hidden aspect-square bg-gray-50">
                 {product.image ? (
                   <img
-                    src={product.image}
+                    src={buildImageKitThumbUrl(product.image, { width: 480, quality: 60 })}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
@@ -284,7 +285,10 @@ export default function CharmBar() {
       <div className="min-h-screen bg-white">
         <section className="relative w-full overflow-hidden bg-black">
           <img
-            src={charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`}
+            src={buildImageKitThumbUrl(charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`, {
+              width: 1600,
+              quality: 70,
+            })}
             alt="Charm bar hero"
             className="w-full h-auto object-contain"
           />
@@ -333,9 +337,10 @@ export default function CharmBar() {
                           : 'border-gray-200 hover:border-[#ff4b86] hover:scale-105'
                       }`}>
                         <img
-                          src={categoryImage}
+                          src={buildImageKitThumbUrl(categoryImage, { width: 320, quality: 60 })}
                           alt={category.name}
                           className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
+                          loading="lazy"
                         />
                         {isActive && (
                           <div className="absolute inset-0 bg-[#ff4b86]/20 flex items-center justify-center">

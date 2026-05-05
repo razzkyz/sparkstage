@@ -20,6 +20,7 @@ import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
 import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
+import { buildImageKitThumbUrl } from '../lib/imagekit';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -85,7 +86,7 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
                     <img
                       alt={product.name}
                       className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
-                      src={product.image}
+                      src={buildImageKitThumbUrl(product.image, { width: 480, quality: 60 })}
                       loading="lazy"
                     />
                   ) : (
