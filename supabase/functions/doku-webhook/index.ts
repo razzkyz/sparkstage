@@ -209,8 +209,18 @@ serve(async (req) => {
     const dokuEnv = getDokuEnv()
     supabase = createServiceClient(supabaseUrl, supabaseServiceKey)
 
+    console.log('[DOKU WEBHOOK] Environment loaded:', {
+      clientId: dokuEnv.clientId,
+      clientIdLength: dokuEnv.clientId.length,
+      secretKeyLength: dokuEnv.secretKey.length,
+    })
+
     const rawBody = await req.text()
+    console.log('[DOKU WEBHOOK] Raw body length:', rawBody.length)
+    console.log('[DOKU WEBHOOK] Raw body (first 500 chars):', rawBody.substring(0, 500))
+
     if (!rawBody.trim()) {
+      console.log('[DOKU WEBHOOK] ERROR: Empty payload')
       return new Response(JSON.stringify({ error: 'Empty payload' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -219,7 +229,9 @@ serve(async (req) => {
 
     try {
       notification = JSON.parse(rawBody)
-    } catch {
+      console.log('[DOKU WEBHOOK] Parsed notification:', JSON.stringify(notification).substring(0, 500))
+    } catch (parseError) {
+      console.log('[DOKU WEBHOOK] ERROR: Invalid JSON payload', parseError)
       return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -248,7 +260,18 @@ serve(async (req) => {
     const { actualRequestPathname, candidates: requestTargetCandidates } =
       buildSignatureRequestTargetCandidates(req.url)
 
+    console.log('[DOKU WEBHOOK] Request details:', {
+      orderNumber,
+      clientId,
+      requestId,
+      requestTimestamp,
+      providedSignature: providedSignature ? providedSignature.substring(0, 20) + '...' : 'missing',
+      actualRequestPathname,
+      candidateCount: requestTargetCandidates.length,
+    })
+
     if (!orderNumber) {
+      console.log('[DOKU WEBHOOK] ERROR: Missing invoice_number')
       return new Response(JSON.stringify({ error: 'Missing invoice_number' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -256,6 +279,10 @@ serve(async (req) => {
     }
 
     if (clientId !== dokuEnv.clientId) {
+      console.log('[DOKU WEBHOOK] ERROR: Invalid client id', {
+        received: clientId,
+        expected: dokuEnv.clientId,
+      })
       await logWebhookEvent(supabase, {
         orderNumber,
         eventType: 'invalid_client_id',
@@ -270,6 +297,7 @@ serve(async (req) => {
       })
     }
 
+    console.log('[DOKU WEBHOOK] Starting signature verification...')
     const matchedSignatureTarget =
       requestId && requestTimestamp && providedSignature
         ? await verifyDokuSignatureCandidates({
@@ -283,17 +311,32 @@ serve(async (req) => {
           })
         : null
 
+    console.log('[DOKU WEBHOOK] Signature verification result:', {
+      hasRequestId: !!requestId,
+      hasRequestTimestamp: !!requestTimestamp,
+      hasProvidedSignature: !!providedSignature,
+      matchedTarget: matchedSignatureTarget ? matchedSignatureTarget.source : null,
+    })
+
     if (!requestId || !requestTimestamp || !providedSignature || !matchedSignatureTarget) {
+      const reason =
+        !requestId || !requestTimestamp || !providedSignature
+          ? 'missing_signature_headers'
+          : 'signature_mismatch'
+      console.log('[DOKU WEBHOOK] ERROR: Invalid signature', {
+        reason,
+        requestId,
+        requestTimestamp,
+        providedSignature: providedSignature ? providedSignature.substring(0, 20) + '...' : 'missing',
+        matchedTarget: matchedSignatureTarget ? matchedSignatureTarget.source : null,
+      })
       await logWebhookEvent(supabase, {
         orderNumber,
         eventType: 'invalid_signature',
         payload: {
           notification,
           diagnostics: {
-            reason:
-              !requestId || !requestTimestamp || !providedSignature
-                ? 'missing_signature_headers'
-                : 'signature_mismatch',
+            reason,
             actual_request_pathname: actualRequestPathname,
             candidate_request_targets: requestTargetCandidates,
             headers: readSafeHeaderDiagnostics(req.headers),
@@ -318,6 +361,13 @@ serve(async (req) => {
     const providerStatus = mapDokuStatus(transactionPayload.status, orderPayload.status)
     const idempotencyEventType = `doku_status:${providerStatus}`
 
+    console.log('[DOKU WEBHOOK] Status mapping:', {
+      transactionStatus: transactionPayload.status,
+      orderStatus: orderPayload.status,
+      providerStatus,
+      idempotencyEventType,
+    })
+
     const { data: existingWebhook } = await supabase
       .from('webhook_logs')
       .select('id')
@@ -326,19 +376,33 @@ serve(async (req) => {
       .eq('success', true)
       .limit(1)
 
+    console.log('[DOKU WEBHOOK] Idempotency check:', {
+      existingWebhookCount: Array.isArray(existingWebhook) ? existingWebhook.length : 0,
+    })
+
     if (Array.isArray(existingWebhook) && existingWebhook.length > 0) {
+      console.log('[DOKU WEBHOOK] Idempotent - returning ok')
       return new Response(JSON.stringify({ status: 'ok', idempotent: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
+    console.log('[DOKU WEBHOOK] Looking up product order:', orderNumber)
     const { data: productOrder } = await supabase
       .from('order_products')
       .select('id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, total, stock_released_at, voucher_id, voucher_code, discount_amount')
       .eq('order_number', orderNumber)
       .single()
 
+    console.log('[DOKU WEBHOOK] Product order lookup result:', {
+      found: !!productOrder,
+      orderId: productOrder?.id,
+      currentStatus: productOrder?.status,
+      paymentStatus: productOrder?.payment_status,
+    })
+
     if (productOrder) {
+      console.log('[DOKU WEBHOOK] Processing product order transition to:', providerStatus)
       const result = await processProductOrderTransition({
         supabase,
         order: productOrder as {
@@ -386,7 +450,15 @@ serve(async (req) => {
         processedAt: nowIso,
       })
 
+      console.log('[DOKU WEBHOOK] Product order transition result:', {
+        applied: result.applied,
+        skippedReason: result.skippedReason,
+        updateError: result.updateError,
+        effectError: result.effectError,
+      })
+
       if (result.updateError || result.effectError) {
+        console.log('[DOKU WEBHOOK] ERROR: Product order transition failed')
         return jsonErrorWithDetails(
           req,
           500,
@@ -399,18 +471,31 @@ serve(async (req) => {
         )
       }
 
+      console.log('[DOKU WEBHOOK] Product order processed successfully')
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
+    console.log('[DOKU WEBHOOK] Looking up ticket order:', orderNumber)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('id, user_id, order_number, status, tickets_issued_at, capacity_released_at, order_items(*)')
       .eq('order_number', orderNumber)
       .single()
 
+    console.log('[DOKU WEBHOOK] Ticket order lookup result:', {
+      found: !!order,
+      orderId: order?.id,
+      currentStatus: order?.status,
+      orderError: orderError?.message,
+    })
+
     if (orderError || !order) {
+      console.log('[DOKU WEBHOOK] ERROR: Order not found', {
+        orderError: orderError?.message,
+        orderNumber,
+      })
       await logWebhookEvent(supabase, {
         orderNumber,
         eventType: 'order_not_found',
@@ -426,6 +511,7 @@ serve(async (req) => {
     }
 
     const orderItemsRows = (order as { order_items?: unknown }).order_items
+    console.log('[DOKU WEBHOOK] Processing ticket order transition to:', providerStatus)
     const result = await processTicketOrderTransition({
       supabase,
       order: order as {
@@ -465,7 +551,15 @@ serve(async (req) => {
       processedAt: nowIso,
     })
 
+    console.log('[DOKU WEBHOOK] Ticket order transition result:', {
+      applied: result.applied,
+      skippedReason: result.skippedReason,
+      updateError: result.updateError,
+      effectError: result.effectError,
+    })
+
     if (result.updateError || result.effectError) {
+      console.log('[DOKU WEBHOOK] ERROR: Ticket order transition failed')
       return jsonErrorWithDetails(
         req,
         500,
@@ -478,11 +572,12 @@ serve(async (req) => {
       )
     }
 
+    console.log('[DOKU WEBHOOK] Ticket order processed successfully')
     return new Response(JSON.stringify({ status: 'ok' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Error processing notification:', error)
+    console.error('[DOKU WEBHOOK] ERROR: Exception caught', error)
     if (supabase) {
       const message = error instanceof Error ? error.message : 'Internal server error'
       await logWebhookEvent(supabase, {
