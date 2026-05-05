@@ -27,6 +27,7 @@ export default function EventBookings() {
   const [selectedBooking, setSelectedBooking] = useState<PurchasedTicket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [timeSlotFilter, setTimeSlotFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,7 +98,9 @@ export default function EventBookings() {
     
     const matchesDate = !dateFilter || booking.valid_date === dateFilter;
     
-    return matchesSearch && matchesDate;
+    const matchesTimeSlot = !timeSlotFilter || booking.time_slot === timeSlotFilter;
+    
+    return matchesSearch && matchesDate && matchesTimeSlot;
   });
 
   const stats = {
@@ -177,12 +180,26 @@ export default function EventBookings() {
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
           />
-          {dateFilter && (
+          <select
+            value={timeSlotFilter}
+            onChange={(e) => setTimeSlotFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+          >
+            <option value="">Semua Sesi</option>
+            <option value="09:00:00">09:00</option>
+            <option value="12:00:00">12:00</option>
+            <option value="15:00:00">15:00</option>
+            <option value="18:00:00">18:00</option>
+          </select>
+          {(dateFilter || timeSlotFilter) && (
             <button
-              onClick={() => setDateFilter('')}
+              onClick={() => {
+                setDateFilter('');
+                setTimeSlotFilter('');
+              }}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Reset Tanggal
+              Reset Filter
             </button>
           )}
         </div>
@@ -193,6 +210,7 @@ export default function EventBookings() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">No</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ticket Code</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ticket Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valid Date</th>
@@ -203,12 +221,15 @@ export default function EventBookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredBookings.map((booking) => (
+                {filteredBookings.map((booking, index) => (
                   <tr
                     key={booking.id}
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => setSelectedBooking(booking)}
                   >
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-900">{index + 1}</div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{booking.ticket_code || '-'}</div>
                     </td>

@@ -89,16 +89,29 @@ export function BookingTimeSlotPanel(props: BookingTimeSlotPanelProps) {
                     const isSelected = slot.time === selectedTime;
                     const urgency = slot.isPast ? 'none' : getSlotUrgency(slot.time);
                     const minutesLeft = slot.isPast ? null : getMinutesUntilClose(slot.time);
+                    const isFull = slot.available === 0;
+                    const isLow = slot.available > 0 && slot.available <= 10;
+                    const isMedium = slot.available > 10 && slot.available <= 30;
+
+                    const getAvailabilityColor = () => {
+                      if (slot.isPast) return 'bg-gray-400 text-white';
+                      if (isFull) return 'bg-red-500 text-white';
+                      if (isLow) return 'bg-red-500 text-white';
+                      if (isMedium) return 'bg-orange-500 text-white';
+                      return 'bg-green-500 text-white';
+                    };
 
                     return (
                       <div key={slot.time} className="relative">
                         <m.button
-                          onClick={() => !slot.isPast && onSelectTime(slot.time)}
-                          disabled={slot.isPast}
-                          whileTap={slot.isPast ? {} : { scale: 0.98 }}
+                          onClick={() => !slot.isPast && !isFull && onSelectTime(slot.time)}
+                          disabled={slot.isPast || isFull}
+                          whileTap={slot.isPast || isFull ? {} : { scale: 0.98 }}
                           className={`px-6 py-3 rounded-lg text-sm font-medium transition-all relative
                             ${slot.isPast
                               ? 'opacity-40 cursor-not-allowed bg-gray-100 border border-gray-300 line-through'
+                              : isFull
+                                ? 'opacity-50 cursor-not-allowed bg-red-50 border border-red-300 text-red-600'
                               : isSelected
                                 ? 'border-2 border-primary bg-primary/5 text-primary font-bold'
                                 : 'border border-[#e8cece]#3d2424] hover:border-primary'
@@ -106,27 +119,32 @@ export function BookingTimeSlotPanel(props: BookingTimeSlotPanelProps) {
                           `}
                         >
                           {slot.time.substring(0, 5)}
-                          <span className="text-xs ml-2 opacity-60">{slot.isPast ? '(Session ended)' : `(${slot.available} left)`}</span>
-
-                          {!slot.isPast && minutesLeft !== null && minutesLeft <= SESSION_DURATION_MINUTES && (
-                            <span
-                              className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
-                                ${urgency === 'high' ? 'bg-red-500 text-white animate-pulse' : ''}
-                                ${urgency === 'medium' ? 'bg-orange-500 text-white' : ''}
-                                ${urgency === 'low' ? 'bg-yellow-500 text-black' : ''}
-                                ${urgency === 'none' ? 'bg-green-500 text-white' : ''}
-                              `}
-                            >
-                              {minutesLeft}m
-                            </span>
-                          )}
-
-                          {slot.isPast && (
-                            <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-400 text-white">
-                              Ended
-                            </span>
-                          )}
                         </m.button>
+
+                        {!slot.isPast && (
+                          <span className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${getAvailabilityColor()}`}>
+                            {isFull ? 'Full' : slot.available}
+                          </span>
+                        )}
+
+                        {!slot.isPast && minutesLeft !== null && minutesLeft <= SESSION_DURATION_MINUTES && (
+                          <span
+                            className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                              ${urgency === 'high' ? 'bg-red-500 text-white animate-pulse' : ''}
+                              ${urgency === 'medium' ? 'bg-orange-500 text-white' : ''}
+                              ${urgency === 'low' ? 'bg-yellow-500 text-black' : ''}
+                              ${urgency === 'none' ? 'bg-green-500 text-white' : ''}
+                            `}
+                          >
+                            {minutesLeft}m
+                          </span>
+                        )}
+
+                        {slot.isPast && (
+                          <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-400 text-white">
+                            Ended
+                          </span>
+                        )}
 
                         {!slot.isPast && urgency === 'high' && minutesLeft !== null && (
                           <div className="hidden md:block absolute top-full mt-2 left-1/2 -translate-x-1/2 z-10 w-48 bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
