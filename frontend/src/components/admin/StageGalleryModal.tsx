@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { deletePublicImageKitAssetByUrl } from '../../lib/publicImagekitDelete';
+import { uploadPublicAssetToImageKit } from '../../lib/publicImagekitUpload';
+import { resolvePublicAssetString } from '../../lib/publicAssetUrl';
 import { useToast } from '../Toast';
 import { StageRow } from '../../hooks/useStages';
 
@@ -67,17 +70,11 @@ export default function StageGalleryModal({ isOpen, onClose, stage }: StageGalle
 
                 const fileExt = file.name.split('.').pop();
                 const fileName = `stage-${stage.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-                const filePath = `${fileName}`; // bucket/filename
-
-                const { error: uploadError } = await supabase.storage
-                    .from('stage-gallery')
-                    .upload(filePath, file);
-
-                if (uploadError) throw uploadError;
-
-                const { data: { publicUrl } } = supabase.storage
-                    .from('stage-gallery')
-                    .getPublicUrl(filePath);
+                const publicUrl = await uploadPublicAssetToImageKit({
+                    file,
+                    fileName,
+                    folderPath: '/public/stage-gallery',
+                });
 
                 // Insert into DB
                 const { error: dbError } = await supabase
@@ -113,7 +110,11 @@ export default function StageGalleryModal({ isOpen, onClose, stage }: StageGalle
 
             if (dbError) throw dbError;
 
-            // Optional: Delete from storage logic here
+            try {
+                await deletePublicImageKitAssetByUrl(resolvePublicAssetString(image.image_url));
+            } catch (cleanupError) {
+                console.warn('Failed to delete ImageKit stage gallery asset', cleanupError);
+            }
 
             showToast('success', 'Image deleted');
             setImages(prev => prev.filter(img => img.id !== image.id));
@@ -186,7 +187,7 @@ export default function StageGalleryModal({ isOpen, onClose, stage }: StageGalle
                             {images.map((img) => (
                                 <div key={img.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all">
                                     <img 
-                                        src={img.image_url} 
+                                        src={resolvePublicAssetString(img.image_url)} 
                                         alt="Gallery" 
                                         className="w-full h-full object-cover"
                                     />

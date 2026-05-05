@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { resolvePublicAssetString } from '../lib/publicAssetUrl';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 
@@ -68,7 +69,10 @@ const StageDetailPage = () => {
                 .order('display_order', { ascending: true })
                 .order('created_at', { ascending: false });
             if (error) throw error;
-            return data as GalleryImage[];
+            return (data as GalleryImage[]).map((image) => ({
+                ...image,
+                image_url: resolvePublicAssetString(image.image_url),
+            }));
         },
         enabled: !!stage?.id,
     });

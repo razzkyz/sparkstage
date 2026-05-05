@@ -4,6 +4,11 @@ import { slugify } from '../utils/merchant';
 
 export type CmsAssetKind = 'image' | 'video';
 
+const IMAGEKIT_CMS_BUCKET_FOLDERS: Partial<Record<string, string>> = {
+  'charm-bar-assets': 'charm-bar-assets',
+  'events-schedule': 'events-schedule',
+};
+
 export async function uploadCmsAsset(params: {
   file: File;
   bucket: string;
@@ -33,11 +38,13 @@ export async function uploadCmsAsset(params: {
 
   showToast?.('success', `Uploading ${kind}...`);
 
-  if (bucket === 'events-schedule') {
+  const imageKitBucketFolder = IMAGEKIT_CMS_BUCKET_FOLDERS[bucket];
+
+  if (imageKitBucketFolder) {
     const publicUrl = await uploadPublicAssetToImageKit({
       file,
       fileName,
-      folderPath: `/public/events-schedule/${folder}`,
+      folderPath: `/public/${imageKitBucketFolder}/${folder}`,
     });
 
     onUploaded?.(publicUrl);

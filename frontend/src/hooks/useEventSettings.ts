@@ -1,4 +1,5 @@
 import { normalizeSectionFontMap, type SectionFontConfig } from '../lib/cmsTypography';
+import { resolvePublicAssetStringArray } from '../lib/publicAssetUrl';
 import { useCmsSingletonSettings } from './useCmsSingletonSettings';
 
 export interface ExperienceLink {
@@ -65,7 +66,7 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
     .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
     .filter(Boolean);
 
-  return parsed.length > 0 ? parsed : fallback;
+  return resolvePublicAssetStringArray(parsed.length > 0 ? parsed : fallback);
 }
 
 function normalizeExperienceLinks(value: unknown): ExperienceLink[] {
