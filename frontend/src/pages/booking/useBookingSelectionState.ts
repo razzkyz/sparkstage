@@ -174,10 +174,22 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
+    
+    // Create first day of month in WIB timezone (yyyy-mm-01)
+    const monthString = String(month + 1).padStart(2, '0');
+    const firstDayDateStr = `${year}-${monthString}-01`;
+    const firstDay = createWIBDate(firstDayDateStr);
+    
+    // Get day of week for first day (0=Sunday in getDay, but we'll adjust for Indonesian calendar)
+    // In Indonesian calendar context, weeks show: Sen Sel Rab Kam Jum Sab Min (Mon-Sun)
+    // But getDay() returns 0=Sun, 1=Mon, ..., so for Indonesian display:
+    // We need to shift: Sun=6 (last), Mon=0 (first), ..., Sat=5
+    const rawDayOfWeek = firstDay.getDay(); // 0=Sun, 1=Mon, 2=Tue, etc
+    const startingDayOfWeek = rawDayOfWeek === 0 ? 6 : rawDayOfWeek - 1; // Convert to Indo: 0=Mon, 6=Sun
+    
+    // Calculate days in month
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
 
     const days: (CalendarDay | null)[] = [];
 
@@ -191,10 +203,9 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
     }
 
     for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(year, month, day);
-      date.setHours(0, 0, 0, 0);
+      const dateStr = `${year}-${monthString}-${String(day).padStart(2, '0')}`;
+      const date = createWIBDate(dateStr);
 
-      const dateStr = toLocalDateString(date);
       const isToday = dateStr === toLocalDateString(today);
       const isWithinBookingWindow = date >= today && date <= maxBookingDate;
       const isAvailable =

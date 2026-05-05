@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DEFAULT_BOOKING_PAGE_SETTINGS, useBookingPageSettings } from '../hooks/useBookingPageSettings';
-import { toLocalDateString } from '../utils/timezone';
+import { toLocalDateString, getMonthNameWIB } from '../utils/timezone';
 import { useTickets } from '../hooks/useTickets';
 import { useEffectiveTicketAvailability } from '../hooks/useEffectiveTicketAvailability';
 import { useTicketBookingSettings } from '../hooks/useTicketBookingSettings';
@@ -139,7 +139,7 @@ export default function BookingPage() {
   const price = parseFloat(ticket.price);
   const total = price * quantity;
 
-  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthName = getMonthNameWIB(currentDate);
   const selectedTimeMinutesLeft = selectedTime ? getMinutesUntilClose(selectedTime) : null;
 
   return (

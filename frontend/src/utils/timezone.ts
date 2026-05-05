@@ -240,6 +240,49 @@ export function getMinutesUntilSessionEnd(dateString: string, timeSlot: string):
 }
 
 /**
+ * Get month name in Indonesian format with WIB timezone
+ * @param date - Date object
+ * @returns Month name in format "MMMM YYYY" (e.g., "Mei 2026")
+ */
+export function getMonthNameWIB(date: Date): string {
+  return date.toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Get weekday names in Indonesian, starting with Monday (Senin)
+ * Returns array: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+ * Note: Standard calendar starts with Monday in many locales, but we adjust to match UI expectation
+ */
+export function getWeekdayNamesIndonesian(): string[] {
+  // Indonesia week starts with Senin (Monday) in calendar context
+  return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+}
+
+/**
+ * Get weekday abbreviations in Indonesian
+ * Returns array: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+ */
+export function getWeekdayAbbreviationsIndonesian(): string[] {
+  return ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+}
+
+/**
+ * Get day of week in Indonesian (0 = Sunday in JS, but we show as Minggu at end)
+ * Convert JS getDay() to Indonesian calendar display order
+ * @param jsDay - Result from Date.getDay() (0=Sun, 1=Mon, ..., 6=Sat)
+ * @returns Index in Indonesian calendar (0=Senin, ..., 6=Minggu)
+ */
+export function convertJSDayToIndonesianDay(jsDay: number): number {
+  // JS: 0=Sun, 1=Mon, 2=Tue, ..., 6=Sat
+  // Indo: 0=Sen(Mon), 1=Sel(Tue), ..., 5=Sab(Sat), 6=Min(Sun)
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+/**
  * MIGRATION HELPER: Convert existing Date usage
  * Use this to audit and fix existing code
  */

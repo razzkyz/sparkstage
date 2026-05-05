@@ -1,4 +1,5 @@
 import { m } from 'framer-motion';
+import { getWeekdayAbbreviationsIndonesian } from '../../utils/timezone';
 import type { CalendarDay } from './bookingTypes';
 
 type BookingCalendarPanelProps = {
@@ -13,7 +14,7 @@ type BookingCalendarPanelProps = {
   onSelectDate: (date: Date) => void;
 };
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = getWeekdayAbbreviationsIndonesian();
 
 export function BookingCalendarPanel(props: BookingCalendarPanelProps) {
   const {
