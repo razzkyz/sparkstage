@@ -26,6 +26,7 @@ export default function EventBookings() {
   const [bookings, setBookings] = useState<PurchasedTicket[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<PurchasedTicket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +94,10 @@ export default function EventBookings() {
       (booking.ticket_code && booking.ticket_code.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (booking.ticket_name && booking.ticket_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       booking.user_id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    
+    const matchesDate = !dateFilter || booking.valid_date === dateFilter;
+    
+    return matchesSearch && matchesDate;
   });
 
   const stats = {
@@ -167,6 +171,20 @@ export default function EventBookings() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
           />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+          />
+          {dateFilter && (
+            <button
+              onClick={() => setDateFilter('')}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Reset Tanggal
+            </button>
+          )}
         </div>
 
         {/* Bookings Table */}
