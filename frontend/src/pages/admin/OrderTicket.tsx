@@ -171,6 +171,7 @@ const OrderTicket = () => {
         title="Pindai Tiket Masuk"
         closeOnSuccess={true}
         closeOnError={false}
+        closeDelayMs={0}
         autoResumeAfterMs={3000}
         sequenceNumber={scanSequenceNumber}
         description={scanDescription}
