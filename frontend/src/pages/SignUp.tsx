@@ -34,7 +34,12 @@ const SignUp = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
+    if (!email.endsWith('.com')) {
+      setError('Email must end with .com');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError(t('auth.signup.errors.passwordsDoNotMatch'));
       return;

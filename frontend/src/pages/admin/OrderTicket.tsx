@@ -169,7 +169,7 @@ const OrderTicket = () => {
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         title="Pindai Tiket Masuk"
-        closeOnSuccess={false}
+        closeOnSuccess={true}
         closeOnError={false}
         autoResumeAfterMs={3000}
         sequenceNumber={scanSequenceNumber}
