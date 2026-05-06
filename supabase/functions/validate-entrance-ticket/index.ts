@@ -74,11 +74,20 @@ serve(async (req) => {
     if (result.userId) {
       const { data: profile } = await admin.supabaseService
         .from('profiles')
-        .select('name')
+        .select('name, email')
         .eq('id', result.userId)
         .maybeSingle()
 
-      userName = String((profile as { name?: string | null } | null)?.name || '-')
+      if (profile) {
+        const profileData = profile as { name?: string | null; email?: string | null } | null
+        if (profileData?.name) {
+          userName = String(profileData.name)
+        } else if (profileData?.email) {
+          // Fallback to email prefix if name is missing
+          const emailPrefix = String(profileData.email).split('@')[0]
+          userName = emailPrefix || '-'
+        }
+      }
     }
 
     return json(req, {

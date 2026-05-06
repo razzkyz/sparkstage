@@ -4,6 +4,18 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
   { id: 'dashboard', label: 'Dasbor', icon: 'dashboard', path: '/admin/dashboard', filled: true },
 ];
 
+export const STARGUIDE_MENU_SECTIONS: AdminMenuSection[] = [
+  {
+    id: 'tickets',
+    label: 'Tiket',
+    items: [
+      { id: 'event-bookings', label: 'Event Bookings', icon: 'event_note', path: '/admin/event-bookings' },
+      { id: 'order-ticket', label: 'Scan Tiket Masuk', icon: 'qr_code_scanner', path: '/admin/order-ticket', highlight: true },
+      { id: 'entrance-log', label: 'Log Tiket Masuk', icon: 'fact_check', path: '/admin/tickets' },
+    ],
+  },
+];
+
 export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
   {
     id: 'management',

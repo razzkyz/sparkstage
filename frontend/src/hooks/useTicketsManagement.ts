@@ -86,10 +86,17 @@ export function useTicketsManagement() {
         }
 
         const profilesMap = new Map(
-          (profilesData || []).map((profile) => [
-            String(profile.id),
-            { name: String(profile.name || '-'), email: String(profile.email || '-') },
-          ])
+          (profilesData || []).map((profile) => {
+            let displayName = String(profile.name || '').trim()
+            // Fallback to email prefix if name is missing
+            if (!displayName && profile.email) {
+              displayName = String(profile.email).split('@')[0]
+            }
+            return [
+              String(profile.id),
+              { name: displayName || '-', email: String(profile.email || '-') },
+            ]
+          })
         );
 
         const mapped: PurchasedTicket[] = rows.map((row) => {

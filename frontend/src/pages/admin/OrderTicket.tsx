@@ -1,12 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { getMenuSectionsByRole } from '../../utils/auth';
 import { validateEntranceTicket } from './order-ticket/validateEntranceTicket';
+import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const OrderTicket = () => {
-  const { signOut, session } = useAuth();
+  const { signOut, session, user } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [showValidationPopup, setShowValidationPopup] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -22,6 +24,15 @@ const OrderTicket = () => {
       validDate: string;
     };
   } | null>(null);
+  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
+
+  useEffect(() => {
+    const loadMenuSections = async () => {
+      const sections = await getMenuSectionsByRole(user?.id);
+      setMenuSections(sections);
+    };
+    loadMenuSections();
+  }, [user?.id]);
 
   const validateTicket = useCallback(
     async (rawCode: string): Promise<void> => {
@@ -71,7 +82,7 @@ const OrderTicket = () => {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="order-ticket"
       title="Pemindai Tiket Masuk"
       onLogout={signOut}

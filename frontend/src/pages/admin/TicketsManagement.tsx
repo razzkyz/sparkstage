@@ -3,19 +3,30 @@ import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import PurchasedTicketsTable from '../../components/admin/PurchasedTicketsTable';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { getMenuSectionsByRole } from '../../utils/auth';
 import { useTicketsManagement } from '../../hooks/useTicketsManagement';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
+import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const TicketsManagement = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('used'); // Default to 'used' (scanned tickets)
+  const [statusFilter, setStatusFilter] = useState('used');
   const [eventFilter, setEventFilter] = useState('');
+  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
   const { data, error, isLoading, isFetching, refetch } = useTicketsManagement();
   const tickets = data?.tickets ?? [];
   const stats = data?.stats ?? { totalValid: 0, entered: 0 };
+
+  useEffect(() => {
+    const loadMenuSections = async () => {
+      const sections = await getMenuSectionsByRole(user?.id);
+      setMenuSections(sections);
+    };
+    loadMenuSections();
+  }, [user?.id]);
 
   useEffect(() => {
     if (error) {
@@ -45,7 +56,7 @@ const TicketsManagement = () => {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="entrance-log"
       title="Log Tiket Masuk"
       onLogout={signOut}
