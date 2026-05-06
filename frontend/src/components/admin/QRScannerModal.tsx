@@ -17,7 +17,7 @@ export default function QRScannerModal(props: QrScannerModalProps) {
       onClick={controller.handleClose}
     >
       <div
-        className={`w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl transition-all duration-300 ${
+        className={`w-full max-w-[95vw] rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 shadow-2xl transition-all duration-300 ${
           controller.isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
         onClick={(event) => event.stopPropagation()}

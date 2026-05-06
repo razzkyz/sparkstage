@@ -24,7 +24,7 @@ export function QrScannerViewport({
   description,
 }: QrScannerViewportProps) {
   return (
-    <div className="relative mb-4 aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
+    <div className="relative mb-6 min-h-[60vh] md:min-h-[70vh] lg:min-h-[75vh] overflow-hidden rounded-2xl bg-gray-100 shadow-md">
       <div id={readerId} className="h-full w-full" />
 
       {status === 'starting' ? (

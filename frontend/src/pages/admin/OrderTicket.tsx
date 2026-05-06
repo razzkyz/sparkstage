@@ -158,7 +158,7 @@ const OrderTicket = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary">•</span>
-                <span>Setelah scan berhasil, scanner akan otomatis menutup</span>
+                <span>Setelah scan berhasil, scanner akan tetap terbuka untuk scan berikutnya</span>
               </li>
             </ul>
           </div>
@@ -169,11 +169,9 @@ const OrderTicket = () => {
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         title="Pindai Tiket Masuk"
-        closeOnSuccess={true}
-        closeDelayMs={2500}
-        closeOnError={true}
-        closeOnErrorDelayMs={2000}
-        autoResumeAfterMs={2500}
+        closeOnSuccess={false}
+        closeOnError={false}
+        autoResumeAfterMs={3000}
         sequenceNumber={scanSequenceNumber}
         description={scanDescription}
         onScan={async (decodedText) => {
