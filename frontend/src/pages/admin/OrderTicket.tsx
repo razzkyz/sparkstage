@@ -8,6 +8,7 @@ import { validateEntranceTicket } from './order-ticket/validateEntranceTicket';
 const OrderTicket = () => {
   const { signOut, session } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
+  const [showValidationPopup, setShowValidationPopup] = useState(false);
   const [validating, setValidating] = useState(false);
   const [scanSequenceNumber, setScanSequenceNumber] = useState<string | undefined>(undefined);
   const [scanDescription, setScanDescription] = useState<string | undefined>(undefined);
@@ -59,6 +60,8 @@ const OrderTicket = () => {
         setLastScanResult({ type: 'error', message });
         console.error('Validation error:', err);
       } finally {
+        setShowScanner(false);
+        setShowValidationPopup(true);
         setValidating(false);
       }
     },
@@ -168,9 +171,8 @@ const OrderTicket = () => {
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         title="Pindai Tiket Masuk"
-        closeOnSuccess={true}
+        closeOnSuccess={false}
         closeOnError={false}
-        closeDelayMs={1000}
         autoResumeAfterMs={3000}
         sequenceNumber={scanSequenceNumber}
         description={scanDescription}
@@ -178,6 +180,56 @@ const OrderTicket = () => {
           await validateTicket(decodedText);
         }}
       />
+
+      {/* Validation Result Popup */}
+      {showValidationPopup && lastScanResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Hasil Validasi Tiket</h3>
+              <button
+                type="button"
+                onClick={() => setShowValidationPopup(false)}
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div
+              className={`rounded-lg border px-4 py-4 mb-4 ${lastScanResult.type === 'success'
+                ? 'border-green-200 bg-green-50 text-green-800'
+                : 'border-red-200 bg-red-50 text-red-800'
+                }`}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="material-symbols-outlined text-3xl">
+                  {lastScanResult.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                <p className="font-bold text-lg">{lastScanResult.message}</p>
+              </div>
+
+              {lastScanResult.ticketInfo && (
+                <div className="text-sm space-y-2 mt-4 border-t border-gray-200 pt-4">
+                  <p><span className="font-semibold">Tiket:</span> {lastScanResult.ticketInfo.ticketName}</p>
+                  <p><span className="font-semibold">Tamu:</span> {lastScanResult.ticketInfo.userName}</p>
+                  <p><span className="font-semibold">Kode:</span> {lastScanResult.ticketInfo.code}</p>
+                  <p><span className="font-semibold">Tanggal Valid:</span> {lastScanResult.ticketInfo.validDate}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowValidationPopup(false)}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#ff4b86] text-white font-bold rounded-lg hover:bg-[#ff6a9a] transition-colors"
+            >
+              <span className="material-symbols-outlined">qr_code_scanner</span>
+              Scan Tiket Berikutnya
+            </button>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };
