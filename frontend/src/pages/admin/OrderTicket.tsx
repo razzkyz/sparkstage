@@ -58,7 +58,6 @@ const OrderTicket = () => {
         const message = err instanceof Error ? err.message : 'Gagal memvalidasi tiket';
         setLastScanResult({ type: 'error', message });
         console.error('Validation error:', err);
-        throw err;
       } finally {
         setValidating(false);
       }
@@ -171,7 +170,7 @@ const OrderTicket = () => {
         title="Pindai Tiket Masuk"
         closeOnSuccess={true}
         closeOnError={false}
-        closeDelayMs={0}
+        closeDelayMs={1000}
         autoResumeAfterMs={3000}
         sequenceNumber={scanSequenceNumber}
         description={scanDescription}
