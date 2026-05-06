@@ -66,7 +66,7 @@ export default function Footer() {
           {/* FIND YOUR STORE */}
           <div className="border-b border-gray-900 flex">
             <a 
-              href="https://www.google.com/maps/place/BiteGang/@-6.9078763,107.6183588,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e7fe9045c9d7:0xea636a5dfdf21b56!8m2!3d-6.9078763!4d107.6183588!16s%2Fg%2F11ytq8ph5m!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDMxNS4wIKXMDSoASAFQAw%3D%3D"
+              href="https://maps.app.goo.gl/pokcorVBeg5irwRQ8"
               target="_blank" rel="noopener noreferrer"
               className="w-full flex justify-between items-center py-5 text-xs md:text-sm font-semibold tracking-widest text-left hover:text-main-600 transition-colors"
             >
