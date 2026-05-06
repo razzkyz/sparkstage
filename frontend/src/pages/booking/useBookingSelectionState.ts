@@ -16,7 +16,7 @@ import type {
 } from './bookingTypes';
 
 const DEFAULT_MAX_TICKETS = 5;
-const DEFAULT_BOOKING_WINDOW_DAYS = 365;
+const DEFAULT_BOOKING_WINDOW_DAYS = 30;
 
 export function useBookingSelectionState(params: BookingSelectionStateParams) {
   const { ticket, availabilities } = params;
@@ -213,13 +213,12 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
         date >= availabilityWindow.availableFrom &&
         date <= availabilityWindow.availableUntil;
       const canBook = isAvailable && availableDateSet.has(dateStr);
-      const isMonday = date.getDay() === 1; // 1 = Monday in JavaScript
 
       days.push({
         day,
         date,
-        isAvailable: canBook && isMonday,
-        isDisabled: !(canBook && isMonday),
+        isAvailable: canBook,
+        isDisabled: !canBook,
         isToday,
       });
     }
@@ -238,19 +237,7 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
       const hasCapacity = avail.available_capacity > 0;
       const hasTimeSlot = !!avail.time_slot;
 
-      if (!matchesDate || !hasCapacity || !hasTimeSlot) return false;
-
-      // Only allow morning (9:00-11:30) and afternoon1 (12:00-14:30)
-      if (!avail.time_slot) return false;
-      const hour = parseInt(avail.time_slot.split(':')[0], 10);
-      const minute = parseInt(avail.time_slot.split(':')[1], 10);
-
-      // Morning: 9:00 - 11:30
-      const isMorning = hour === 9 || (hour === 10) || (hour === 11 && minute <= 30);
-      // Afternoon: 12:00 - 14:30
-      const isAfternoon = hour === 12 || hour === 13 || (hour === 14 && minute <= 30);
-
-      return isMorning || isAfternoon;
+      return matchesDate && hasCapacity && hasTimeSlot;
     });
 
     console.log(`[BookingPage] Available slots for ${dateString} at ${currentTime.toISOString()}:`, filtered.length);
