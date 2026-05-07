@@ -28,6 +28,7 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       { id: 'event-page', label: 'Event Page Config', icon: 'edit_document', path: '/admin/event-page' },
       { id: 'news-page', label: 'News Page Config', icon: 'article', path: '/admin/news-page' },
       { id: 'charm-bar-page', label: 'Charm Bar Config', icon: 'diamond', path: '/admin/charm-bar-page' },
+      { id: 'venue-reviews', label: 'Venue Reviews', icon: 'star', path: '/admin/venue-reviews' },
     ],
   },
   {

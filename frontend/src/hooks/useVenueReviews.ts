@@ -24,8 +24,9 @@ export const useVenueReviews = () => {
         .from('venue_reviews')
         .select('*')
         .eq('is_approved', true)
+        .eq('rating', 5)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(10);
 
       if (reviewsError) throw reviewsError;
       if (!reviewsData.length) return [];
