@@ -236,8 +236,11 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
       const matchesDate = avail.date === dateString;
       const hasCapacity = avail.available_capacity > 0;
       const hasTimeSlot = !!avail.time_slot;
+      
+      // TEMPORARY: Disable evening session (18:00+) - Session 4
+      const isNotEvening = !avail.time_slot || parseInt(avail.time_slot.split(':')[0], 10) < 18;
 
-      return matchesDate && hasCapacity && hasTimeSlot;
+      return matchesDate && hasCapacity && hasTimeSlot && isNotEvening;
     });
 
     console.log(`[BookingPage] Available slots for ${dateString} at ${currentTime.toISOString()}:`, filtered.length);
