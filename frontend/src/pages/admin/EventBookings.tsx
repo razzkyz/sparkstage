@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
 import { getMenuSectionsByRole } from '../../utils/auth';
 import { createClient } from '@supabase/supabase-js';
+import { useToast } from '../../components/Toast';
 import type { AdminMenuSection } from '../../components/AdminLayout';
 
 type PurchasedTicketStatus = 'active' | 'used' | 'cancelled' | 'expired';
@@ -25,6 +26,7 @@ interface PurchasedTicket {
 
 export default function EventBookings() {
   const { signOut, user } = useAuth();
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState<PurchasedTicket[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<PurchasedTicket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,6 +121,14 @@ export default function EventBookings() {
     active: bookings.filter(b => b.status === 'active').length,
     used: bookings.filter(b => b.status === 'used').length,
   };
+
+  const copyToClipboard = useCallback((text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('success', `Kode "${text}" sudah di-copy!`);
+    }).catch(() => {
+      showToast('error', 'Gagal copy ke clipboard');
+    });
+  }, [showToast]);
 
   if (loading) {
     return (
@@ -242,7 +252,21 @@ export default function EventBookings() {
                       <div className="text-sm text-gray-900">{index + 1}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">{booking.ticket_code || '-'}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{booking.ticket_code || '-'}</span>
+                        {booking.ticket_code && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyToClipboard(booking.ticket_code!);
+                            }}
+                            className="p-1 text-gray-400 hover:text-main-600 hover:bg-gray-100 rounded transition-colors"
+                            title="Copy kode tiket"
+                          >
+                            <span className="material-symbols-outlined text-sm">content_copy</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{booking.ticket_name || '-'}</div>

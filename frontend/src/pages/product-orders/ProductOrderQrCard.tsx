@@ -18,8 +18,29 @@ export function ProductOrderQrCard({
 }: ProductOrderQrCardProps) {
   return (
     <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-6 ${className}`}>
-      <div className="bg-white p-4 rounded-xl border border-gray-100">
-        <QRCode value={pickupCode} size={size} />
+      <div 
+        className="bg-white p-6 rounded-xl border border-gray-100" 
+        style={{ 
+          colorScheme: 'light',
+          backgroundColor: '#ffffff',
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact'
+        }}
+      >
+        <div style={{ backgroundColor: '#ffffff', padding: '12px' }}>
+          <QRCode 
+            value={pickupCode} 
+            size={size} 
+            style={{
+              height: `${size}px`,
+              width: `${size}px`,
+              backgroundColor: '#ffffff',
+              display: 'block'
+            }}
+            fgColor="#000000"
+            bgColor="#ffffff"
+          />
+        </div>
       </div>
       <div className="flex-1 w-full">
         <div className="bg-slate-50 p-4 rounded-lg">

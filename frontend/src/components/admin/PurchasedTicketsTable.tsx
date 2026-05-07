@@ -26,9 +26,10 @@ interface PurchasedTicketsTableProps {
         totalValid: number;
         entered: number;
     };
+    onCopyTicket?: (code: string) => void;
 }
 
-export default function PurchasedTicketsTable({ tickets, loading, stats }: PurchasedTicketsTableProps) {
+export default function PurchasedTicketsTable({ tickets, loading, stats, onCopyTicket }: PurchasedTicketsTableProps) {
     const getStatusLabel = (status: string) => {
         const labels = {
             entered: 'Already Entered',
@@ -94,6 +95,18 @@ export default function PurchasedTicketsTable({ tickets, loading, stats }: Purch
                                             <div className="flex items-center gap-2">
                                                 <span className="material-symbols-outlined text-gray-400 text-lg">confirmation_number</span>
                                                 <span className="text-sm font-medium text-primary">{ticket.qr_code || ticket.id.slice(0, 8)}</span>
+                                                {(ticket.qr_code || ticket.id.slice(0, 8)) && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onCopyTicket?.(ticket.qr_code || ticket.id.slice(0, 8));
+                                                        }}
+                                                        className="p-1 text-gray-400 hover:text-primary hover:bg-gray-100 rounded transition-colors"
+                                                        title="Copy kode tiket"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">content_copy</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4">

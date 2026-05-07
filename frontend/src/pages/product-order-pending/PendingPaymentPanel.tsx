@@ -46,8 +46,29 @@ export function PendingPaymentPanel({ paymentInfo, instructionSteps, onCopyCode 
           <div className="rounded-2xl border border-gray-100 bg-white p-6">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">QR Payment</p>
             <div className="flex justify-center">
-              <div className="bg-white p-4 rounded-xl border border-gray-100">
-                <QRCode value={paymentInfo.qrString} size={220} />
+              <div 
+                className="bg-white p-6 rounded-xl border border-gray-100" 
+                style={{ 
+                  colorScheme: 'light',
+                  backgroundColor: '#ffffff',
+                  WebkitPrintColorAdjust: 'exact',
+                  printColorAdjust: 'exact'
+                }}
+              >
+                <div style={{ backgroundColor: '#ffffff', padding: '12px' }}>
+                  <QRCode 
+                    value={paymentInfo.qrString} 
+                    size={220} 
+                    style={{
+                      height: '220px',
+                      width: '220px',
+                      backgroundColor: '#ffffff',
+                      display: 'block'
+                    }}
+                    fgColor="#000000"
+                    bgColor="#ffffff"
+                  />
+                </div>
               </div>
             </div>
           </div>

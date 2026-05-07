@@ -130,7 +130,7 @@ const OnStage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Slider */}
-      <section className="relative w-full h-[50vh] md:h-[600px] overflow-hidden bg-black">
+      <section className="relative w-full h-[45vh] sm:h-[50vh] md:h-[600px] overflow-hidden bg-black">
 
         {heroBanners.length > 0 ? (
           <HeroBannerCarousel
@@ -164,16 +164,16 @@ const OnStage = () => {
       </section>
 
       {/* Buy Ticket Button - Fixed positioning */}
-      <div className="relative z-20 pt-8 pb-4 bg-white">
-        <div className="flex justify-center px-4">
+      <div className="relative z-20 pt-6 pb-4 bg-white px-2 sm:px-4">
+        <div className="flex justify-center">
           <a
             href="#select-journey"
-            className="inline-block transition-all duration-300 hover:scale-105 hover:-translate-y-2 hover:drop-shadow-2xl active:scale-100 active:translate-y-0 active:drop-shadow-lg"
+            className="inline-block transition-all duration-300 hover:scale-105 hover:-translate-y-2 hover:drop-shadow-2xl active:scale-100 active:translate-y-0 active:drop-shadow-lg w-full max-w-2xl sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl"
           >
             <img 
               src="/images/landing/TICKET BOARD ENTRANCE website.png"
               alt="BE A STAR Ticket" 
-              className="w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto object-contain drop-shadow-xl"
+              className="w-full h-auto object-contain drop-shadow-xl"
             />
           </a>
         </div>
@@ -274,7 +274,7 @@ const OnStage = () => {
                   key={`process-dot-${idx}`}
                   onClick={() => setCurrentProcessSlide(idx)}
                   className={`w-2.5 h-2.5 rounded-full ux-transition-color touch-manipulation ${
-                    currentProcessSlide === idx ? '#ff4b86' : 'bg-gray-300'
+                    currentProcessSlide === idx ? 'bg-[#ff4b86]' : 'bg-gray-300'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />

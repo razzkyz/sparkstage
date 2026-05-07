@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import PurchasedTicketsTable from '../../components/admin/PurchasedTicketsTable';
@@ -33,6 +33,15 @@ const TicketsManagement = () => {
       showToast('error', error instanceof Error ? error.message : 'Failed to load tickets');
     }
   }, [error, showToast]);
+
+  const copyToClipboard = useCallback((code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      showToast('success', `Kode \"${code}\" sudah di-copy!`);
+    }).catch(() => {
+      showToast('error', 'Gagal copy ke clipboard');
+    });
+  }, [showToast]);
+
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
@@ -149,7 +158,7 @@ const TicketsManagement = () => {
             </table>
           </div>
         ) : (
-          <PurchasedTicketsTable tickets={filteredTickets} loading={false} stats={stats} />
+          <PurchasedTicketsTable tickets={filteredTickets} loading={false} stats={stats} onCopyTicket={copyToClipboard} />
         )}
       </section>
     </AdminLayout>

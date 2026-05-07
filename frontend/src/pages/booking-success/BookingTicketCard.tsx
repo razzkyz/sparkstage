@@ -18,8 +18,30 @@ export function BookingTicketCard(props: BookingTicketCardProps) {
 
       <div className="p-8 md:p-12 flex flex-col md:flex-row gap-10">
         <div className="flex flex-col items-center justify-center flex-shrink-0">
-          <div className="p-4 bg-white rounded-xl border-4 border-primary/10 shadow-inner">
-            <QRCode value={ticket.ticket_code} size={192} level="H" style={{ height: 'auto', maxWidth: '100%', width: '100%' }} />
+          <div 
+            className="p-6 bg-white rounded-xl border-4 border-primary/10 shadow-inner" 
+            style={{ 
+              colorScheme: 'light',
+              backgroundColor: '#ffffff',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact'
+            }}
+          >
+            <div style={{ backgroundColor: '#ffffff', padding: '12px' }}>
+              <QRCode 
+                value={ticket.ticket_code} 
+                size={192} 
+                level="H" 
+                style={{ 
+                  height: '192px', 
+                  width: '192px',
+                  backgroundColor: '#ffffff',
+                  display: 'block'
+                }} 
+                fgColor="#000000"
+                bgColor="#ffffff"
+              />
+            </div>
           </div>
           <p className="mt-4 text-xs font-mono text-[#9c4949] tracking-widest uppercase">{ticket.ticket_code}</p>
         </div>
