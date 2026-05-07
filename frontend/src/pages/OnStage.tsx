@@ -11,6 +11,7 @@ import { JourneySummaryCard } from './journey-selection/JourneySummaryCard';
 import { JourneyTimeSlotsSection } from './journey-selection/JourneyTimeSlotsSection';
 import { useJourneySelectionController } from './journey-selection/useJourneySelectionController';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
+import { VenueReviews } from '../components/VenueReviews';
 
 const OnStage = () => {
   const navigate = useNavigate();
@@ -378,6 +379,9 @@ const OnStage = () => {
             </div>
           </div>
         </div>
+
+      {/* Venue Reviews Section */}
+      <VenueReviews />
       </section>
     </div>
   );

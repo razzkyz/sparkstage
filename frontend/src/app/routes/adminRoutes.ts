@@ -9,6 +9,7 @@ const StageManager = lazy(() => import('../../pages/admin/StageManager'));
 const StageAnalytics = lazy(() => import('../../pages/admin/StageAnalytics'));
 const StageBulkQR = lazy(() => import('../../pages/admin/StageBulkQR'));
 const OrderTicket = lazy(() => import('../../pages/admin/OrderTicket'));
+const ProductPickup = lazy(() => import('../../pages/admin/ProductPickup'));
 const ProductOrders = lazy(() => import('../../pages/admin/ProductOrders'));
 const VoucherManager = lazy(() => import('../../pages/admin/VoucherManager'));
 const BannerManager = lazy(() => import('../../pages/admin/BannerManager'));
@@ -32,7 +33,8 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/qr-bulk', Page: StageBulkQR },
   { path: '/admin/booking-page', Page: BookingPageManager },
   { path: '/admin/entrance-booking', Page: EntranceBookingManager },
-  { path: '/admin/order-ticket', Page: OrderTicket },
+  { path: '/admin/order-tipickup', Page: ProductPickup },
+  { path: '/admin/product-cket', Page: OrderTicket },
   { path: '/admin/product-orders', Page: ProductOrders },
   { path: '/admin/vouchers', Page: VoucherManager },
   { path: '/admin/banner-manager', Page: BannerManager },
