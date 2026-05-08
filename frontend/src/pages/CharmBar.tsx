@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import gsap from 'gsap';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProductSummaries, type Product } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
@@ -82,55 +83,56 @@ function ShopResults({ filteredProducts, loading, onPrefetchProduct, onAddToCart
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {paginatedProducts.map((product) => (
-          <Link
-            key={product.id}
-            to={`/shop/product/${product.id}`}
-            className="group cursor-pointer"
-            onMouseEnter={() => onPrefetchProduct(product.id)}
-          >
-            <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
-              <div className="relative overflow-hidden aspect-square bg-gray-50">
-                {product.image ? (
-                  <img
-                    src={buildImageKitThumbUrl(product.image, { width: 480, quality: 60 })}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
-                    <span className="material-symbols-outlined text-5xl">{product.placeholder}</span>
-                  </div>
-                )}
-                {!product.defaultVariantId && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                    <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
-                      Out of Stock
-                    </span>
-                  </div>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAddToCart(product);
-                  }}
-                  disabled={!product.defaultVariantId}
-                  className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
-                >
-                  <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
-                </button>
+          <div key={product.id} data-product-card>
+            <Link
+              to={`/shop/product/${product.id}`}
+              className="group cursor-pointer"
+              onMouseEnter={() => onPrefetchProduct(product.id)}
+            >
+              <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
+                <div className="relative overflow-hidden aspect-square bg-gray-50">
+                  {product.image ? (
+                    <img
+                      src={buildImageKitThumbUrl(product.image, { width: 480, quality: 60 })}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                      <span className="material-symbols-outlined text-5xl">{product.placeholder}</span>
+                    </div>
+                  )}
+                  {!product.defaultVariantId && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                      <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAddToCart(product);
+                    }}
+                    disabled={!product.defaultVariantId}
+                    className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+                  </button>
+                </div>
+                <div className="p-3">
+                  <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm font-semibold text-[#ff4b86]">
+                    IDR {(product.price || 0).toLocaleString('id-ID')}
+                  </p>
+                </div>
               </div>
-              <div className="p-3">
-                <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
-                  {product.name}
-                </h3>
-                <p className="text-sm font-semibold text-[#ff4b86]">
-                  IDR {(product.price || 0).toLocaleString('id-ID')}
-                </p>
-              </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
         ))}
       </div>
 
@@ -171,6 +173,8 @@ export default function CharmBar() {
   const { showToast } = useToast();
   const { settings: charmBarSettings } = useCharmBarSettings();
   const productsRef = useRef<HTMLDivElement>(null);
+  const categoryContainerRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLImageElement>(null);
 
   const loading = (productsLoading || categoriesLoading) && products.length === 0;
 
@@ -184,6 +188,36 @@ export default function CharmBar() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // GSAP hero fade-in animation
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, scale: 1.05 },
+        { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' }
+      );
+    }
+  }, []);
+
+  // GSAP category tabs stagger animation
+  useEffect(() => {
+    if (categoryContainerRef.current) {
+      const buttons = categoryContainerRef.current.querySelectorAll('button');
+      gsap.fromTo(
+        Array.from(buttons),
+        { opacity: 0, x: -20 },
+        { 
+          opacity: 1, 
+          x: 0, 
+          duration: 0.4, 
+          stagger: 0.05,
+          ease: 'power2.out',
+          delay: 0.2
+        }
+      );
+    }
   }, []);
 
   const categoryIndex = useMemo(
@@ -213,6 +247,24 @@ export default function CharmBar() {
       bestSellerIds: [],
     });
   }, [products, categories, categoryIndex, activeCategory, activeSubcategory, activeSubSubcategory, searchQuery]);
+
+  // GSAP product cards stagger animation
+  useEffect(() => {
+    if (productsRef.current) {
+      const productCards = productsRef.current.querySelectorAll('[data-product-card]');
+      gsap.fromTo(
+        Array.from(productCards),
+        { opacity: 0, y: 20 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.5, 
+          stagger: 0.03,
+          ease: 'back.out'
+        }
+      );
+    }
+  }, [filteredProducts.length]);
 
   // Get available categories for Charm Bar
   const availableCategories = useMemo(() => {
@@ -285,6 +337,7 @@ export default function CharmBar() {
       <div className="min-h-screen bg-white">
         <section className="relative w-full overflow-hidden bg-black">
           <img
+            ref={heroRef}
             src={buildImageKitThumbUrl(charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`, {
               width: 1600,
               quality: 70,
@@ -312,6 +365,7 @@ export default function CharmBar() {
               </button>
               
               <div
+                ref={categoryContainerRef}
                 id="category-grid-container"
                 className="flex gap-4 overflow-x-auto hide-scrollbar px-12 py-4 scroll-smooth"
               >

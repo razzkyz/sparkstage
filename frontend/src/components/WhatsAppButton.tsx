@@ -10,7 +10,7 @@ export default function WhatsAppButton() {
       aria-label="Chat Customer Service"
     >
       <img
-        src="/images/cs.png"
+        src="/images/icon.png"
         alt="Customer Service"
         className="w-16 h-16 md:w-20 md:h-20 rounded-full shadow-xl object-cover"
       />

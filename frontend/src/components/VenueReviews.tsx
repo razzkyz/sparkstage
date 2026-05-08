@@ -92,59 +92,57 @@ export const VenueReviews = () => {
   };
 
   return (
-    <section className="bg-white py-8 md:py-12 lg:py-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-8 md:mb-10">
-          <div className="inline-block mb-3 md:mb-4 animate-bounce">
-            <span className="text-4xl md:text-5xl">💖</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-3">What Our Visitors Love</h2>
-          <p className="text-gray-600 text-sm md:text-base lg:text-lg">5-star reviews from our happy visitors</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mt-3 md:mt-4">
-            <div className="flex">
+    <section className="bg-gradient-to-b from-gray-50 to-white py-16 md:py-24 lg:py-32">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-3 md:mb-4 drop-shadow-sm">What Our Visitors Love</h2>
+          <p className="text-gray-600 text-base md:text-lg lg:text-xl max-w-2xl mx-auto">Join thousands of happy visitors who gave us a 5-star experience!</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 md:mt-8 flex-wrap">
+            <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <StarIcon key={star} filled={star <= 5} />
               ))}
             </div>
-            <span className="text-base md:text-lg font-semibold text-main-600">
+            <span className="text-2xl md:text-3xl font-black text-main-600">
               {averageRating.toFixed(1)}
             </span>
-            <span className="text-gray-500 text-sm md:text-base">({totalReviews} five-star reviews)</span>
+            <span className="text-gray-600 text-base md:text-lg font-medium">({totalReviews} reviews)</span>
           </div>
         </div>
 
         {!isFormOpen && (
-          <div className="text-center mb-6 md:mb-8">
+          <div className="text-center mb-10 md:mb-12">
             <button
               onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center gap-2 bg-main-500 text-white px-6 md:px-8 py-2 md:py-3 rounded-full text-sm md:text-base font-bold hover:bg-main-400 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-main-200 animate-fade-in"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-full text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl drop-shadow-md"
             >
-              <span>✨</span>
+              <span className="text-xl">✨</span>
               Share Your Experience
             </button>
           </div>
         )}
 
         {isFormOpen && (
-          <div className="bg-white p-4 md:p-6 lg:p-8 rounded-2xl border-2 border-main-200 shadow-xl mb-6 md:mb-8 animate-fade-in-up">
-            <div className="text-center mb-4 md:mb-6">
-              <span className="text-3xl md:text-4xl">💬</span>
-              <h3 className="text-lg md:text-xl font-bold text-main-800 mt-2">Share Your Experience</h3>
+          <div className="bg-gradient-to-br from-white to-main-50 p-8 md:p-12 rounded-3xl border-2 border-main-200 shadow-2xl mb-10 md:mb-12 animate-fade-in-up backdrop-blur-sm">
+            <div className="text-center mb-8 md:mb-10">
+              <span className="text-5xl md:text-6xl">💬</span>
+              <h3 className="text-2xl md:text-3xl font-black text-main-900 mt-3">Share Your Experience</h3>
+              <p className="text-gray-600 text-sm md:text-base mt-2">Help us improve and inspire other visitors</p>
             </div>
             {user ? (
               <form onSubmit={handleSubmit}>
-                <div className="mb-4 md:mb-6">
-                  <label className="block text-xs md:text-sm font-bold text-main-700 mb-2 uppercase tracking-wide">
-                    Rating
+                <div className="mb-8">
+                  <label className="block text-sm md:text-base font-black text-main-900 mb-4 uppercase tracking-wider">
+                    ⭐ Your Rating
                   </label>
-                  <div className="flex gap-1 md:gap-2 justify-center sm:justify-start">
+                  <div className="flex gap-2 md:gap-4 justify-center sm:justify-start bg-white p-6 rounded-2xl border-2 border-main-100 shadow-sm">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
                         onClick={() => setRating(star)}
-                        className={`text-3xl md:text-4xl transition-all hover:scale-110 focus:outline-none ${
-                          star <= rating ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300 hover:text-yellow-200'
+                        className={`text-5xl md:text-6xl transition-all hover:scale-125 focus:outline-none transform ${
+                          star <= rating ? 'text-yellow-400 drop-shadow-lg' : 'text-gray-300 hover:text-yellow-200'
                         }`}
                       >
                         ★
@@ -152,52 +150,52 @@ export const VenueReviews = () => {
                     ))}
                   </div>
                 </div>
-                <div className="mb-4 md:mb-6">
-                  <label className="block text-xs md:text-sm font-bold text-main-700 mb-2 uppercase tracking-wide">
-                    Your Review
+                <div className="mb-8">
+                  <label className="block text-sm md:text-base font-black text-main-900 mb-3 uppercase tracking-wider">
+                    💭 Your Review
                   </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full rounded-xl border border-main-200 p-3 md:p-4 h-24 md:h-32 text-sm md:text-base focus:ring-2 focus:ring-main-500 focus:border-transparent text-gray-700 bg-white placeholder-gray-400 resize-none shadow-inner"
-                    placeholder="What did you think about your experience at Spark Stage?"
+                    className="w-full rounded-2xl border-2 border-main-200 focus:border-main-500 p-4 md:p-6 h-32 md:h-40 text-base md:text-lg focus:ring-2 focus:ring-main-500 focus:ring-offset-2 focus:ring-offset-white text-gray-800 bg-white placeholder-gray-400 resize-none shadow-md focus:shadow-lg transition-all"
+                    placeholder="What did you love most about Spark Stage? 🌟"
                     required
                   />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 bg-main-500 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold hover:bg-main-400 transition-colors disabled:opacity-50 shadow-md"
+                    className="flex-1 bg-gradient-to-r from-main-600 to-main-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl active:scale-95 transform"
                   >
-                    {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                    {isSubmitting ? '⏳ Submitting...' : '✅ Submit Review'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(false)}
-                    className="px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold text-main-700 hover:bg-main-100 transition-colors"
+                    className="px-6 md:px-8 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black text-main-700 hover:bg-main-100 transition-colors border-2 border-main-200"
                   >
-                    Cancel
+                    ✕ Cancel
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="text-center py-6 md:py-8">
-                <span className="text-3xl md:text-4xl text-main-300 mb-2 block">🔒</span>
-                <p className="text-main-800 mb-4 md:mb-6 font-medium text-sm md:text-base">Please log in to write a review.</p>
-                <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <div className="text-center py-10 md:py-12 bg-gradient-to-br from-main-50 to-main-100 rounded-2xl border-2 border-main-200">
+                <span className="text-6xl md:text-7xl text-main-300 mb-4 block">🔒</span>
+                <p className="text-main-900 mb-8 font-bold text-lg md:text-xl">Please log in to share your review</p>
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <Link
                     to="/login"
                     state={{ returnTo: '/on-stage' }}
-                    className="bg-main-500 text-white px-6 md:px-8 py-2 md:py-3 rounded-full text-sm md:text-base font-bold hover:bg-main-400 shadow-lg transition-transform hover:scale-105"
+                    className="bg-gradient-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
                   >
-                    Log In
+                    🔑 Log In
                   </Link>
                   <button
                     onClick={() => setIsFormOpen(false)}
-                    className="px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-base font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                    className="px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black text-gray-600 hover:bg-white transition-colors border-2 border-gray-300"
                   >
-                    Cancel
+                    ✕ Cancel
                   </button>
                 </div>
               </div>
@@ -206,15 +204,19 @@ export const VenueReviews = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-main-500" />
+          <div className="flex justify-center py-12 md:py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-main-200 border-t-main-600 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">Loading reviews...</p>
+            </div>
           </div>
         ) : reviews.length === 0 ? (
-          <div className="text-center py-8 md:py-12">
-            <div className="inline-block p-4 md:p-6 rounded-full bg-gradient-to-br from-main-100 to-main-50 mb-3 md:mb-4">
-              <span className="text-4xl md:text-5xl">💫</span>
+          <div className="text-center py-16 md:py-20 bg-gradient-to-br from-main-50 to-main-100 rounded-3xl border-2 border-main-200 shadow-md">
+            <div className="inline-block p-6 md:p-8 rounded-full bg-white mb-6 md:mb-8 shadow-lg">
+              <span className="text-6xl md:text-7xl block">💫</span>
             </div>
-            <p className="text-gray-500 font-medium text-sm md:text-base lg:text-lg">Be the first to share your 5-star experience!</p>
+            <p className="text-main-900 font-black text-xl md:text-2xl mb-4">Be the first to share your experience!</p>
+            <p className="text-gray-600 text-base md:text-lg max-w-lg mx-auto">Your 5-star review will help inspire other visitors to experience the magic of Spark Stage.</p>
           </div>
         ) : (
           <div className="relative">
@@ -222,15 +224,15 @@ export const VenueReviews = () => {
               <>
                 <button
                   onClick={handlePrev}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-4 z-20 bg-white/90 hover:bg-white text-main-600 p-2 md:p-3 rounded-full shadow-lg transition-all hover:scale-110 hidden md:flex items-center justify-center"
+                  className="absolute -left-6 md:-left-8 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
                 >
-                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                  <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-4 z-20 bg-white/90 hover:bg-white text-main-600 p-2 md:p-3 rounded-full shadow-lg transition-all hover:scale-110 hidden md:flex items-center justify-center"
+                  className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
                 >
-                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                  <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
                 </button>
               </>
             )}
@@ -249,13 +251,13 @@ export const VenueReviews = () => {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4 md:hidden">
+              <div className="flex justify-center gap-3 mt-8 md:hidden">
                 {Array.from({ length: totalPages }).map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentIndex(idx)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentIndex === idx ? 'bg-main-500' : 'bg-gray-300'
+                    className={`rounded-full transition-all duration-300 ${
+                      currentIndex === idx ? 'bg-main-600 w-8 h-3 shadow-lg' : 'bg-gray-300 w-2.5 h-2.5 hover:bg-main-400'
                     }`}
                     aria-label={`Go to page ${idx + 1}`}
                   />
@@ -264,10 +266,10 @@ export const VenueReviews = () => {
             )}
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4 text-sm text-gray-500 hidden md:flex">
-                <span>{currentIndex + 1}</span>
-                <span>/</span>
-                <span>{totalPages}</span>
+              <div className="flex justify-center items-center gap-3 mt-8 text-sm text-gray-600 font-bold hidden md:block">
+                <span className="text-lg">{currentIndex + 1}</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-lg">{totalPages}</span>
               </div>
             )}
           </div>
@@ -279,23 +281,24 @@ export const VenueReviews = () => {
 
 const ReviewCard = ({ review, index }: { review: VenueReview; index: number }) => (
   <div 
-    className="bg-gradient-to-br from-white to-main-50 rounded-xl border-2 border-main-100 p-3 md:p-4 hover:shadow-xl hover:border-main-200 transition-all duration-300 relative overflow-hidden animate-fade-in-up h-full"
+    className="bg-gradient-to-br from-white via-main-50 to-main-100 rounded-2xl border-2 border-main-200 p-5 md:p-6 hover:shadow-2xl hover:border-main-400 transition-all duration-300 relative overflow-hidden animate-fade-in-up h-full group"
     style={{
       animationDelay: `${index * 100}ms`,
       animationFillMode: 'both'
     }}
   >
-    <div className="absolute top-1 md:top-2 right-1 md:right-2 text-2xl md:text-3xl opacity-20 animate-pulse">💖</div>
+    <div className="absolute -top-8 -right-8 text-7xl md:text-8xl opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform group-hover:scale-110">💖</div>
+    <div className="absolute inset-0 bg-gradient-to-t from-main-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
     
     <div className="relative z-10 flex flex-col h-full">
-      <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
+      <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-4">
         <div className="flex-1">
-          <div className="flex flex-col gap-1 mb-1 md:mb-2">
-            <h4 className="font-bold text-gray-900 text-sm md:text-base flex items-center gap-1 md:gap-2">
-              <span className="text-lg md:text-xl">⭐</span>
-              <span className="truncate">{review.user?.name}</span>
+          <div className="flex flex-col gap-2 mb-2 md:mb-3">
+            <h4 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2 line-clamp-1">
+              <span className="text-xl md:text-2xl">⭐</span>
+              <span className="truncate">{review.user?.name || 'Guest'}</span>
             </h4>
-            <span className="text-xs text-gray-400 font-medium bg-white px-2 py-0.5 rounded-full border border-main-100 shadow-sm">
+            <span className="text-xs md:text-sm text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-main-200 shadow-sm w-fit">
               {new Date(review.created_at).toLocaleDateString(undefined, {
                 year: 'numeric',
                 month: 'short',
@@ -303,9 +306,9 @@ const ReviewCard = ({ review, index }: { review: VenueReview; index: number }) =
               })}
             </span>
           </div>
-          <div className="flex text-yellow-400 text-sm md:text-base">
+          <div className="flex text-yellow-400 text-lg md:text-xl drop-shadow-sm">
             {[1, 2, 3, 4, 5].map((star) => (
-              <span key={`${review.id}-star-${star}`} className="drop-shadow-sm">
+              <span key={`${review.id}-star-${star}`} className="">
                 ★
               </span>
             ))}
@@ -313,13 +316,13 @@ const ReviewCard = ({ review, index }: { review: VenueReview; index: number }) =
         </div>
       </div>
       {review.comment && (
-        <div className="mt-1 md:mt-2 flex-grow">
-          <p className="text-gray-700 leading-relaxed text-xs md:text-sm line-clamp-3">"{review.comment}"</p>
+        <div className="mt-2 md:mt-3 grow">
+          <p className="text-gray-800 leading-relaxed text-sm md:text-base line-clamp-4 font-medium">"{review.comment}"</p>
         </div>
       )}
-      <div className="mt-2 md:mt-3 flex items-center gap-1 md:gap-2 text-main-500">
-        <span className="text-base md:text-lg">💕</span>
-        <span className="text-xs md:text-sm font-semibold">Loved it!</span>
+      <div className="mt-4 md:mt-5 flex items-center gap-2 text-main-600 font-black text-sm md:text-base">
+        <span className="text-xl md:text-2xl animate-pulse">💕</span>
+        <span>Loved it!</span>
       </div>
     </div>
   </div>

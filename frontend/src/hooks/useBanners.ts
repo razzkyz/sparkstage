@@ -11,12 +11,12 @@ export interface Banner {
   image_url: string;
   title_image_url: string | null;
   link_url: string | null;
-  banner_type: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map';
+  banner_type: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club';
   display_order: number;
   is_active: boolean;
 }
 
-async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map', signal?: AbortSignal): Promise<Banner[]> {
+async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club', signal?: AbortSignal): Promise<Banner[]> {
   let query = supabase
     .from('banners')
     .select('*')
@@ -39,7 +39,7 @@ async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop
   }));
 }
 
-export function useBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map') {
+export function useBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club') {
   return useQuery({
     queryKey: queryKeys.banners(type),
     queryFn: async ({ signal }) => {

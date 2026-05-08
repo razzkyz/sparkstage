@@ -81,6 +81,7 @@ export function BannerFormModal({
               <option value="events">Events (Hero Slider)</option>
               <option value="shop">Shop (Hero Slider)</option>
               <option value="spark-map">Spark Map</option>
+              <option value="spark-club">Spark Club (Hero Slider)</option>
             </select>
           </div>
 

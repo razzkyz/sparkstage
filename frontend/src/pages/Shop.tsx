@@ -299,23 +299,39 @@ const Shop = () => {
   return (
     <PageTransition>
       <div className="bg-white min-h-screen">
-        <header className="relative w-full h-[50vh] min-h-[400px] overflow-hidden">
+        <header className="relative w-full overflow-hidden">
           {shopBanners.length > 0 ? (
             <HeroBannerCarousel
               slides={shopBanners}
               intervalMs={5000}
-              containerClassName="relative h-full"
-              imageClassName="w-full h-full object-cover object-center opacity-90"
+              containerClassName="relative w-full"
+              imageClassName="w-full h-auto object-contain opacity-90"
+              autoHeight={true}
               prevButtonClassName="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-gray-900 p-3 rounded-full ux-transition-color"
               nextButtonClassName="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-gray-900 p-3 rounded-full ux-transition-color"
               indicatorActiveClassName="bg-primary"
               indicatorInactiveClassName="bg-white/50 hover:bg-white/70"
+              overlayClassName="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"
+              renderOverlay={(slide) => (
+                <>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 sm:px-6 md:px-8">
+                    <div className="max-w-full md:max-w-4xl mx-auto">
+                      {slide.title && (
+                        <h1 className="text-white text-xl sm:text-3xl md:text-5xl lg:text-6xl font-black mb-2 sm:mb-3 md:mb-4 drop-shadow-lg line-clamp-3">{slide.title}</h1>
+                      )}
+                      {slide.subtitle ? (
+                        <p className="text-white/95 text-xs sm:text-sm md:text-lg lg:text-xl drop-shadow-md line-clamp-2">{slide.subtitle}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              )}
             />
           ) : (
             <>
               <img
                 alt="Soft artistic studio setting"
-                className="w-full h-full object-cover object-center opacity-90"
+                className="w-full h-full object-contain opacity-90"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXsDj0az3zzKzPuGWFNVkv93Z05vEWEttTgUqh4SS7iW-kLSNN2_0jvc-v4pho8kz2OqrqnpiQWh4vBzn87isw1yCP1VE1HXsHHOHubRuhCY6LmQpM3KdjfATKhPb2413xZu1naHDWVkwgWTK9sWUI-jwpMrYUO-6Uad1Qcq7NStqNGjpzbzTLH7nXSLD8e_CIiD6qurTg-eVxRwpK34LWyWrNCYPlMJqhFEbs2rUPPUn2uOz-B8JOZCi3FsjDK7b_ExLsUFMJyrA"
               />
             </>

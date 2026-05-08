@@ -28,7 +28,11 @@ export function BannerCard({
     <div style={style} className={className ?? 'rounded-lg border border-gray-200 overflow-hidden bg-white'}>
       {dragHandle}
       <div className="relative aspect-video bg-gray-100">
-        <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" />
+        {banner.image_url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) ? (
+          <video src={banner.image_url} className="h-full w-full object-cover" muted playsInline />
+        ) : (
+          <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" />
+        )}
         {!banner.is_active ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <span className={`${inactiveTextClassName} font-bold text-sm`}>INACTIVE</span>
