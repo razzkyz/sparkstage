@@ -151,12 +151,17 @@ export default function EventBookings() {
 
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+      console.log('Rescheduling ticket:', rescheduleBooking.id, 'to time_slot:', newTimeSlot);
+
       const { error } = await supabase
         .from('purchased_tickets')
         .update({ time_slot: newTimeSlot })
         .eq('id', rescheduleBooking.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       showToast('success', 'Jadwal sesi berhasil diubah');
       setRescheduleModalOpen(false);
@@ -165,7 +170,8 @@ export default function EventBookings() {
       fetchBookings();
     } catch (error) {
       console.error('Failed to reschedule:', error);
-      showToast('error', 'Gagal mengubah jadwal sesi');
+      const errorMessage = error instanceof Error ? error.message : 'Gagal mengubah jadwal sesi';
+      showToast('error', errorMessage);
     } finally {
       setRescheduling(false);
     }
