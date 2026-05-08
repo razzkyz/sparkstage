@@ -25,7 +25,7 @@ interface PurchasedTicket {
 }
 
 export default function EventBookings() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, isAdmin } = useAuth();
   const { showToast } = useToast();
   const [bookings, setBookings] = useState<PurchasedTicket[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<PurchasedTicket | null>(null);
@@ -42,6 +42,10 @@ export default function EventBookings() {
   }, [user?.id]);
   const [timeSlotFilter, setTimeSlotFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [rescheduleBooking, setRescheduleBooking] = useState<PurchasedTicket | null>(null);
+  const [newTimeSlot, setNewTimeSlot] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -129,6 +133,55 @@ export default function EventBookings() {
       showToast('error', 'Gagal copy ke clipboard');
     });
   }, [showToast]);
+
+  const handleReschedule = async () => {
+    if (!rescheduleBooking || !newTimeSlot) {
+      showToast('error', 'Pilih sesi baru terlebih dahulu');
+      return;
+    }
+
+    setRescheduling(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing Supabase configuration');
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+      const { error } = await supabase
+        .from('purchased_tickets')
+        .update({ time_slot: newTimeSlot })
+        .eq('id', rescheduleBooking.id);
+
+      if (error) throw error;
+
+      showToast('success', 'Jadwal sesi berhasil diubah');
+      setRescheduleModalOpen(false);
+      setRescheduleBooking(null);
+      setNewTimeSlot('');
+      fetchBookings();
+    } catch (error) {
+      console.error('Failed to reschedule:', error);
+      showToast('error', 'Gagal mengubah jadwal sesi');
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
+  const openRescheduleModal = (booking: PurchasedTicket) => {
+    setRescheduleBooking(booking);
+    setNewTimeSlot(booking.time_slot || '');
+    setRescheduleModalOpen(true);
+  };
+
+  const closeRescheduleModal = () => {
+    setRescheduleModalOpen(false);
+    setRescheduleBooking(null);
+    setNewTimeSlot('');
+  };
 
   if (loading) {
     return (
@@ -239,6 +292,7 @@ export default function EventBookings() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nomor Antrian</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Used At</th>
+                  {isAdmin && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -290,6 +344,20 @@ export default function EventBookings() {
                         {booking.used_at ? new Date(booking.used_at).toLocaleString('id-ID') : '-'}
                       </div>
                     </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openRescheduleModal(booking);
+                          }}
+                          className="px-3 py-1.5 bg-main-600 text-white text-sm rounded-lg hover:bg-main-700 transition-colors"
+                          disabled={booking.status !== 'active'}
+                        >
+                          Reschedule
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -354,6 +422,72 @@ export default function EventBookings() {
                   <div>
                     <p className="text-sm text-gray-500">Created At</p>
                     <p className="font-semibold text-gray-900">{new Date(selectedBooking.created_at).toLocaleString('id-ID')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reschedule Modal */}
+        {rescheduleModalOpen && rescheduleBooking && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Reschedule Sesi</h2>
+                  <button
+                    onClick={closeRescheduleModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Ticket Code</p>
+                    <p className="font-semibold text-gray-900">{rescheduleBooking.ticket_code || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Ticket Name</p>
+                    <p className="font-semibold text-gray-900">{rescheduleBooking.ticket_name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Valid Date</p>
+                    <p className="font-semibold text-gray-900">{new Date(rescheduleBooking.valid_date).toLocaleDateString('id-ID')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Sesi Saat Ini</p>
+                    <p className="font-semibold text-gray-900">{rescheduleBooking.time_slot || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Sesi Baru</label>
+                    <select
+                      value={newTimeSlot}
+                      onChange={(e) => setNewTimeSlot(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+                    >
+                      <option value="">Pilih sesi</option>
+                      <option value="09:00:00">09:00</option>
+                      <option value="12:00:00">12:00</option>
+                      <option value="15:00:00">15:00</option>
+                      <option value="18:00:00">18:00</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={closeRescheduleModal}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleReschedule}
+                      disabled={!newTimeSlot || newTimeSlot === rescheduleBooking.time_slot || rescheduling}
+                      className="flex-1 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {rescheduling ? 'Menyimpan...' : 'Simpan'}
+                    </button>
                   </div>
                 </div>
               </div>
