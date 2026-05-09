@@ -1,92 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useBanners } from '../hooks/useBanners';
-import { DEFAULT_BOOKING_PAGE_SETTINGS, useBookingPageSettings } from '../hooks/useBookingPageSettings';
 import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
-import { useAuth } from '../contexts/AuthContext';
-import { toLocalDateString } from '../utils/timezone';
-import { JourneyCalendarSection } from './journey-selection/JourneyCalendarSection';
-import { JourneySummaryCard } from './journey-selection/JourneySummaryCard';
-import { JourneyTimeSlotsSection } from './journey-selection/JourneyTimeSlotsSection';
-import { useJourneySelectionController } from './journey-selection/useJourneySelectionController';
-import { AppLoadingScreen } from '../app/AppLoadingScreen';
-import { VenueReviews } from '../components/VenueReviews';
 import Logo from '@/logo/logo black spark with tagline.png';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
 const OnStage = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { settings: bookingSettings } = useBookingPageSettings();
-  const bookingCopy = bookingSettings ?? DEFAULT_BOOKING_PAGE_SETTINGS;
   const [currentProcessSlide, setCurrentProcessSlide] = useState(0);
   const [showWelcomePopup, setShowWelcomePopup] = useState(true);
 
   // GSAP animation refs
   const ticketButtonRef = useRef<HTMLDivElement>(null);
   const processTitleRef = useRef<HTMLDivElement>(null);
-  const journeyTitleRef = useRef<HTMLHeadingElement>(null);
-  const journeyDescRef = useRef<HTMLParagraphElement>(null);
-  const heroSectionRef = useRef<HTMLDivElement>(null);
   const processCarouselRef = useRef<HTMLDivElement>(null);
-  const sparkMapRef = useRef<HTMLDivElement>(null);
-  const summaryCardRef = useRef<HTMLDivElement>(null);
-  const reviewSectionRef = useRef<HTMLDivElement>(null);
+  const heroSectionRef = useRef<HTMLDivElement>(null);
   const welcomePopupRef = useRef<HTMLDivElement>(null);
-
-  const {
-    ticket,
-    loading: journeyLoading,
-    error: journeyError,
-    selectedDate,
-    selectedTime,
-    calendarDays,
-    availableTimeSlots,
-    groupedSlots,
-    hasBookableDates,
-    isAllDayTicket,
-    canGoPrevMonth,
-    canGoNextMonth,
-    monthName,
-    setSelectedDate,
-    setSelectedTime,
-    handlePrevMonth,
-    handleNextMonth,
-    getMinutesUntilClose,
-    getSlotUrgency,
-  } = useJourneySelectionController();
-
-  const handleProceedToPayment = () => {
-    if (!ticket || !selectedDate) {
-      alert('Please select a date');
-      return;
-    }
-    const isAllDay = isAllDayTicket && !selectedTime;
-    if (!isAllDay && !selectedTime) {
-      alert('Please select a time slot');
-      return;
-    }
-    if (!user) {
-      alert('Please log in to continue');
-      navigate('/login', { state: { returnTo: '/on-stage' } });
-      return;
-    }
-    navigate('/payment', {
-      state: {
-        ticketId: ticket.id,
-        ticketName: ticket.name,
-        ticketType: ticket.type,
-        price: parseFloat(ticket.price),
-        date: toLocalDateString(selectedDate),
-        time: selectedTime || 'all-day',
-      },
-    });
-  };
 
   const processTouchStartX = useRef(0);
   const processTouchEndX = useRef(0);
@@ -102,13 +35,6 @@ const OnStage = () => {
     error: processError,
     refetch: refetchProcess,
   } = useBanners('process');
-  const {
-    data: sparkMapBanners = [],
-    isLoading: sparkMapLoading,
-    refetch: refetchSparkMap,
-  } = useBanners('spark-map');
-
-  const sparkMap = sparkMapBanners[0];
 
   const hasData = heroBanners.length > 0 || processBanners.length > 0;
   const loading = (heroLoading || processLoading) && !hasData;
@@ -191,82 +117,17 @@ const OnStage = () => {
     };
   }, [showWelcomePopup]);
 
-  // Journey section stagger animation
-  useEffect(() => {
-    if (!journeyLoading && journeyTitleRef.current) {
-      gsap.fromTo(
-        [journeyTitleRef.current, journeyDescRef.current],
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }
-      );
-    }
-  }, [journeyLoading]);
-
-  // Scroll-triggered animations for right column (Spark Map & Summary)
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    const elements = [sparkMapRef.current, summaryCardRef.current].filter(Boolean);
-    if (elements.length === 0) return;
-
-    elements.forEach((element) => {
-      if (!element) return;
-      gsap.fromTo(
-        element,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: element,
-            start: 'top 80%',
-            end: 'top 20%',
-            toggleActions: 'play none none none',
-          },
-        }
-      );
-    });
-
-    return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-    };
-  }, []);
-
-  // Review section scroll animation
-  useEffect(() => {
-    if (!reviewSectionRef.current) return;
-    gsap.fromTo(
-      reviewSectionRef.current,
-      { opacity: 0 },
-      {
-        opacity: 1,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: reviewSectionRef.current,
-          start: 'top 80%',
-          end: 'top 20%',
-          toggleActions: 'play none none none',
-        },
-      }
-    );
-
-    return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-    };
-  }, []);
-
   if (loading) {
-    return <AppLoadingScreen />;
+    return (
+      <div className="bg-linear-to-br from-white to-gray-50 min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-main-600" />
+      </div>
+    );
   }
 
   if (error && !hasData) {
     return (
-      <div className="bg-gradient-to-br from-white to-gray-50 min-h-screen flex items-center justify-center">
+      <div className="bg-linear-to-br from-white to-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center px-6 py-12 bg-white rounded-2xl shadow-lg border border-gray-200">
           <div className="mb-4 text-4xl">⚠️</div>
           <p className="text-lg text-gray-700 mb-6 font-medium">Gagal memuat konten. Coba lagi.</p>
@@ -274,7 +135,6 @@ const OnStage = () => {
             type="button"
             onClick={() => {
               refetchProcess();
-              refetchSparkMap();
             }}
             className="inline-flex items-center justify-center rounded-lg bg-main-600 hover:bg-main-700 active:bg-main-800 px-8 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
           >
@@ -353,19 +213,19 @@ const OnStage = () => {
       {/* Buy Ticket Button - Fixed positioning */}
       <div ref={ticketButtonRef} className="relative z-20 pt-8 pb-6 bg-gradient-to-b from-white via-white to-gray-50 px-2 sm:px-4 border-b border-gray-100 shadow-sm">
         <div className="flex justify-center">
-          <a
-            href="#select-journey"
+          <Link
+            to="/booking"
             className="inline-block transition-all duration-300 hover:scale-110 hover:-translate-y-3 hover:drop-shadow-2xl active:scale-100 active:translate-y-0 active:drop-shadow-lg w-full max-w-2xl sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl group"
           >
             <div className="relative">
-              <img 
+              <img
                 src="/images/landing/TICKET BOARD ENTRANCE website.png"
-                alt="BE A STAR Ticket" 
+                alt="BE A STAR Ticket"
                 className="w-full h-auto object-contain drop-shadow-2xl group-hover:drop-shadow-[0_20px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
             </div>
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -475,114 +335,6 @@ const OnStage = () => {
           )}
         </section>
       )}
-
-      {/* Select Your Journey Section */}
-      <section id="select-journey" className="bg-gradient-to-b from-white to-gray-50 py-16 md:py-24 scroll-mt-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="mb-12 md:mb-16">
-            <h2 ref={journeyTitleRef} className="text-4xl md:text-6xl font-black leading-tight tracking-tight mb-4 text-gray-900">{bookingCopy.journey_title}</h2>
-            <p ref={journeyDescRef} className="text-gray-600 text-lg md:text-xl max-w-2xl">{bookingCopy.journey_description}</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-            {/* Left Column: Calendar & Time Slots */}
-            <div className="lg:col-span-2 flex flex-col gap-8 md:gap-10">
-              {journeyLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-main-600" />
-                </div>
-              ) : journeyError || !ticket ? (
-                <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 px-8 py-12 text-center text-amber-900 shadow-md">
-                  <div className="text-4xl mb-4">⚠️</div>
-                  <p className="text-lg font-medium">
-                    {journeyError?.message || 'Entrance booking is unavailable right now.'}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <JourneyCalendarSection
-                    monthName={monthName}
-                    canGoPrevMonth={canGoPrevMonth}
-                    canGoNextMonth={canGoNextMonth}
-                    calendarDays={calendarDays}
-                    selectedDate={selectedDate}
-                    onPrevMonth={handlePrevMonth}
-                    onNextMonth={handleNextMonth}
-                    onSelectDate={(date) => {
-                      setSelectedDate(date);
-                      setSelectedTime(null);
-                    }}
-                  />
-
-                  <JourneyTimeSlotsSection
-                    copy={bookingCopy}
-                    selectedDate={selectedDate}
-                    hasBookableDates={hasBookableDates}
-                    isAllDayTicket={isAllDayTicket}
-                    selectedTime={selectedTime}
-                    availableSlotsCount={availableTimeSlots.length}
-                    groupedSlots={groupedSlots}
-                    onSelectTime={setSelectedTime}
-                    getMinutesUntilClose={getMinutesUntilClose}
-                    getSlotUrgency={getSlotUrgency}
-                  />
-                </>
-              )}
-            </div>
-
-            {/* Right Column: Spark Map + Booking Summary */}
-            <div className="flex flex-col gap-6">
-              {/* Spark Map */}
-              {sparkMapLoading ? (
-                <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-lg border border-gray-200 p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-main-200 border-t-main-600" />
-                </div>
-              ) : sparkMap ? (
-                <div ref={sparkMapRef} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 lg:p-8 group hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl md:text-3xl font-black mb-6 italic text-gray-900">{sparkMap.title || 'Spark Map'}</h3>
-                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-gray-100 to-gray-200">
-                    {sparkMap.image_url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) ? (
-                      <video
-                        src={sparkMap.image_url}
-                        className="w-full rounded-lg object-contain transition-transform duration-500 group-hover:scale-110"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <img
-                        src={sparkMap.image_url}
-                        alt={sparkMap.title || 'Spark Stage 55 Map'}
-                        className="w-full rounded-lg object-contain transition-transform duration-500 group-hover:scale-110"
-                      />
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Booking Summary */}
-              {ticket && (
-                <div ref={summaryCardRef}>
-                  <JourneySummaryCard
-                    copy={bookingCopy}
-                    ticket={ticket}
-                    selectedDate={selectedDate}
-                    selectedTime={selectedTime}
-                    isAllDayTicket={isAllDayTicket}
-                    onProceed={handleProceedToPayment}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-      {/* Venue Reviews Section */}
-      <div ref={reviewSectionRef}>
-        <VenueReviews />
-      </div>
-      </section>
     </div>
   );
 };

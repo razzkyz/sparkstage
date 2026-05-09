@@ -8,6 +8,21 @@ import TicketCardSkeleton from '../components/skeletons/TicketCardSkeleton';
 import { PageTransition } from '../components/PageTransition';
 import { useToast } from '../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
+// import { createClient } from '@supabase/supabase-js'; // Disabled - reschedule functionality
+
+// Reschedule types - DISABLED
+/*
+type PurchasedTicketStatus = 'active' | 'used' | 'cancelled' | 'expired';
+
+interface RescheduleTicket {
+  id: number;
+  ticket_code: string | null;
+  ticket_name: string | null;
+  valid_date: string;
+  time_slot: string | null;
+  status: PurchasedTicketStatus;
+}
+*/
 
 export default function MyTicketsPage() {
   const navigate = useNavigate();
@@ -16,6 +31,17 @@ export default function MyTicketsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
   const { data: tickets = [], error, isLoading: loading, isFetching } = useMyTickets(user?.id);
+
+  // Reschedule functionality disabled for users
+  // const RESCHEDULE_ENABLED = false;
+
+  // Reschedule state - DISABLED
+  /*
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [rescheduleTicket, setRescheduleTicket] = useState<RescheduleTicket | null>(null);
+  const [newTimeSlot, setNewTimeSlot] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
+  */
 
   useEffect(() => {
     if (error) {
@@ -333,11 +359,12 @@ export default function MyTicketsPage() {
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="w-full md:w-auto flex justify-end">
+                  {/* Action Buttons */}
+                  <div className="w-full md:w-auto flex gap-2 justify-end">
+                    {/* View QR Button */}
                     <button
                       onClick={() => handleViewQR(ticket.ticket_code)}
-                      className={`w-full md:w-auto text-sm font-bold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm ${
+                      className={`flex-1 md:flex-none text-sm font-bold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm ${
                         ticket.status === 'active' && !sessionEnded
                           ? 'bg-[#ff4b86] text-white hover:bg-[#e63d75] shadow-primary/20'
                           : 'bg-gray-300 text-gray-600 cursor-not-allowed'
@@ -347,6 +374,21 @@ export default function MyTicketsPage() {
                       <span className="material-symbols-outlined text-lg">qr_code_scanner</span>
                       {ticket.status === 'active' && !sessionEnded ? t('myTickets.viewQR') : t('myTickets.ticketInactive')}
                     </button>
+
+                    {/* Reschedule Button - DISABLED */}
+                    {/* <button
+                      onClick={() => openRescheduleModal(ticket)}
+                      className={`flex-1 md:flex-none text-sm font-bold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm ${
+                        ticket.status === 'active'
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'
+                          : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      }`}
+                      disabled={ticket.status !== 'active'}
+                      title={ticket.status === 'active' ? 'Reschedule ticket' : `Cannot reschedule ${ticket.status} ticket`}
+                    >
+                      <span className="material-symbols-outlined text-lg">edit_calendar</span>
+                      Reschedule
+                    </button> */}
                   </div>
                 </m.div>
               );
@@ -369,6 +411,72 @@ export default function MyTicketsPage() {
         </div>
         </LazyMotion>
         </main>
+
+        {/* Reschedule Modal - DISABLED */}
+        {/* {rescheduleModalOpen && rescheduleTicket && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Reschedule Sesi</h2>
+                  <button
+                    onClick={closeRescheduleModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Ticket Code</p>
+                    <p className="font-semibold text-gray-900">{rescheduleTicket.ticket_code || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Ticket Name</p>
+                    <p className="font-semibold text-gray-900">{rescheduleTicket.ticket_name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Valid Date</p>
+                    <p className="font-semibold text-gray-900">{new Date(rescheduleTicket.valid_date).toLocaleDateString('id-ID')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Sesi Saat Ini</p>
+                    <p className="font-semibold text-gray-900">{rescheduleTicket.time_slot || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Sesi Baru</label>
+                    <select
+                      value={newTimeSlot}
+                      onChange={(e) => setNewTimeSlot(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Pilih sesi</option>
+                      <option value="09:00:00">09:00</option>
+                      <option value="12:00:00">12:00</option>
+                      <option value="15:00:00">15:00</option>
+                      <option value="18:00:00">18:00</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={closeRescheduleModal}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleReschedule}
+                      disabled={!newTimeSlot || newTimeSlot === rescheduleTicket.time_slot || rescheduling}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {rescheduling ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )} */}
       </div>
     </PageTransition>
   );

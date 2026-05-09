@@ -11,6 +11,7 @@ export const STARGUIDE_MENU_SECTIONS: AdminMenuSection[] = [
     items: [
       { id: 'event-bookings', label: 'Event Bookings', icon: 'event_note', path: '/admin/event-bookings' },
       { id: 'order-ticket', label: 'Scan Tiket Masuk', icon: 'qr_code_scanner', path: '/admin/order-ticket', highlight: true },
+      { id: 'tablet-qr-scanner', label: 'Scan QR Tablet', icon: 'tablet_android', path: '/admin/tablet-qr-scanner', highlight: true },
       { id: 'entrance-log', label: 'Log Tiket Masuk', icon: 'fact_check', path: '/admin/tickets' },
     ],
   },
@@ -39,6 +40,7 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       { id: 'entrance-booking', label: 'Entrance Booking Manager', icon: 'event_available', path: '/admin/entrance-booking' },
       { id: 'event-bookings', label: 'Event Bookings', icon: 'event_note', path: '/admin/event-bookings' },
       { id: 'order-ticket', label: 'Scan Tiket Masuk', icon: 'qr_code_scanner', path: '/admin/order-ticket', highlight: true },
+      { id: 'tablet-qr-scanner', label: 'Scan QR Tablet', icon: 'tablet_android', path: '/admin/tablet-qr-scanner', highlight: true },
       { id: 'entrance-log', label: 'Log Tiket Masuk', icon: 'fact_check', path: '/admin/tickets' },
     ],
   },

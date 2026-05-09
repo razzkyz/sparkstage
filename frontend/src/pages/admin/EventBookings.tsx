@@ -357,8 +357,13 @@ export default function EventBookings() {
                             e.stopPropagation();
                             openRescheduleModal(booking);
                           }}
-                          className="px-3 py-1.5 bg-main-600 text-white text-sm rounded-lg hover:bg-main-700 transition-colors"
+                          className={`px-3 py-1.5 text-sm rounded-lg transition-colors font-medium ${
+                            booking.status === 'active'
+                              ? 'bg-main-600 text-white hover:bg-main-700'
+                              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          }`}
                           disabled={booking.status !== 'active'}
+                          title={booking.status === 'active' ? 'Reschedule ticket' : `Cannot reschedule ${booking.status} ticket`}
                         >
                           Reschedule
                         </button>

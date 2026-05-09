@@ -49,8 +49,16 @@ vi.mock('../../hooks/useBookingPageSettings', () => ({
     total_label: 'Total',
     proceed_button_label: 'Proceed to Payment',
     secure_checkout_label: 'Secure Encrypted Checkout',
-    important_info_title: 'Important Info',
-    important_info_items: ['Please arrive 15 minutes before your slot.'],
+    important_info_title: 'Ketentuan & Keterangan Booking',
+    important_info_items: [
+      'Harap tiba 15 menit sebelum sesi Anda dimulai.',
+      'Booking hanya berlaku untuk tanggal dan waktu yang dipilih.',
+      'Setiap tiket berlaku untuk satu orang.',
+      'Ini adalah pengalaman sesi bersama dengan peserta lain.',
+      'Durasi pengalaman adalah 2,5 jam termasuk 15 tahap.',
+      'Tidak diizinkan membawa makanan atau minuman dari luar.',
+      'Semua pembayaran tidak dapat dikembalikan.',
+    ],
   },
   useBookingPageSettings: () => ({
     settings: null,
@@ -87,7 +95,7 @@ describe('BookingPageManager', () => {
         expect.objectContaining({
           journey_title: 'Pick Your Spark Journey',
           important_info_items: expect.arrayContaining([
-            'Please arrive 15 minutes before your slot.',
+            'Harap tiba 15 menit sebelum sesi Anda dimulai.',
             'Bring your booking confirmation.',
           ]),
         })

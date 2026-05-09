@@ -24,11 +24,15 @@ CREATE TABLE IF NOT EXISTS public.booking_page_settings (
   total_label TEXT NOT NULL DEFAULT 'Total',
   proceed_button_label TEXT NOT NULL DEFAULT 'Proceed to Payment',
   secure_checkout_label TEXT NOT NULL DEFAULT 'Secure Encrypted Checkout',
-  important_info_title TEXT NOT NULL DEFAULT 'Important Info',
+  important_info_title TEXT NOT NULL DEFAULT 'Ketentuan & Keterangan Booking',
   important_info_items JSONB NOT NULL DEFAULT '[
-    "Please arrive 15 minutes before your slot.",
-    "Ticket is valid only for selected date and time.",
-    "Tiket tidak dapat di-refund atau di-reschedule."
+    "Harap tiba 15 menit sebelum sesi Anda dimulai.",
+    "Booking hanya berlaku untuk tanggal dan waktu yang dipilih.",
+    "Setiap tiket berlaku untuk satu orang.",
+    "Ini adalah pengalaman sesi bersama dengan peserta lain.",
+    "Durasi pengalaman adalah 2,5 jam termasuk 15 tahap.",
+    "Tidak diizinkan membawa makanan atau minuman dari luar.",
+    "Semua pembayaran tidak dapat dikembalikan."
   ]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

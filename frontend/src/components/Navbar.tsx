@@ -1,8 +1,16 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound } from 'lucide-react';
+import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
+
+type NavItem = {
+  key: string;
+  label: string;
+  to: string;
+  isPink?: boolean;
+  icon?: LucideIcon;
+};
 import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../contexts/AuthContext';
 import { useTicketCount } from '../hooks/useTicketCount';
@@ -51,18 +59,20 @@ const Navbar = () => {
     if (path.startsWith('/beauty') || path.startsWith('/glam')) return 'glam';
     if (path.startsWith('/charm-bar') || path.startsWith('/chamr-bar')) return 'charm-bar';
     if (path.startsWith('/news')) return 'news';
+    if (path.startsWith('/booking')) return 'booking';
     return '';
   })();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { key: 'on-stage', label: 'ON STAGE', to: '/on-stage' },
+    { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
     { key: 'glam', label: 'GLAM', to: '/glam' },
     // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
     { key: 'charm-bar', label: 'CHARM BAR', to: '/charm-bar' },
     { key: 'shop', label: 'SPARK CLUB', to: '/shop' },
     { key: 'event', label: 'CELEBRATE', to: '/events' },
     { key: 'news', label: 'NEWS', to: '/news' },
-  ] as const;
+];
 
   const activeIndex = Math.max(0, navItems.findIndex((item) => item.key === activeNavKey));
   const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();
@@ -395,15 +405,22 @@ const Navbar = () => {
             <div className="flex justify-evenly items-center relative z-10">
               {navItems.map((item, idx) => {
                 const isActive = idx === activeIndex;
+                const Icon = item.icon;
 
                 return (
                   <Link
                     key={item.key}
                     ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                     to={item.to}
-                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors ${isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center gap-2 ${
+                      isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
+                    }`}
                   >
+                    {Icon && (
+                      <div className="bg-main-500 rounded-full p-1">
+                        <Icon className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                     {item.label}
                   </Link>
                 );
@@ -447,16 +464,23 @@ const Navbar = () => {
             />
             {navItems.map((item, idx) => {
               const isActive = idx === activeIndex;
+              const Icon = item.icon;
 
               return (
                 <Link
                   key={item.key}
                   ref={(el) => (mobileNavItemsRef.current[idx] = el)}
                   to={item.to}
-                  className={`relative z-10 shrink-0 snap-center min-w-[106px] md:min-w-[120px] text-center text-xs md:text-sm font-semibold uppercase px-3 md:px-4 py-2 mx-0.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu ${isActive ? 'text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]' : 'text-gray-600 active:text-gray-900'
-                    }`}
+                  className={`relative z-10 shrink-0 snap-center min-w-[106px] md:min-w-[120px] text-center text-xs md:text-sm font-semibold uppercase px-3 md:px-4 py-2 mx-0.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu ${
+                    isActive ? 'text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]' : 'text-gray-600 active:text-gray-900'
+                  }`}
                 >
-                  <span className="relative z-10 block">
+                  <span className="relative z-10 flex items-center justify-center gap-1">
+                    {Icon && (
+                      <div className="bg-main-500 rounded-full p-0.5">
+                        <Icon className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                     {item.label}
                   </span>
                 </Link>

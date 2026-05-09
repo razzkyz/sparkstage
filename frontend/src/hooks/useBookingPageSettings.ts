@@ -56,11 +56,15 @@ export const DEFAULT_BOOKING_PAGE_SETTINGS: BookingPageSettings = {
   total_label: 'Total',
   proceed_button_label: 'Proceed to Payment',
   secure_checkout_label: 'Secure Encrypted Checkout',
-  important_info_title: 'Important Info',
+  important_info_title: 'Ketentuan & Keterangan Booking',
   important_info_items: [
-    'Please arrive 15 minutes before your slot.',
-    'Ticket is valid only for selected date and time.',
-    'Tiket tidak dapat di-refund atau di-reschedule.',
+    'Harap tiba 15 menit sebelum sesi Anda dimulai.',
+    'Booking hanya berlaku untuk tanggal dan waktu yang dipilih.',
+    'Setiap tiket berlaku untuk satu orang.',
+    'Ini adalah pengalaman sesi bersama dengan peserta lain.',
+    'Durasi pengalaman adalah 2,5 jam termasuk 15 tahap.',
+    'Tidak diizinkan membawa makanan atau minuman dari luar.',
+    'Semua pembayaran tidak dapat dikembalikan.',
   ],
 };
 

@@ -13,6 +13,7 @@ const DressingRoomLandingPage = lazy(() => import('../../pages/DressingRoomLandi
 const DressingRoomLookPage = lazy(() => import('../../pages/DressingRoomLookPage'));
 const DressingRoomCollectionPage = lazy(() => import('../../pages/DressingRoomCollectionPage'));
 const BeautyPage = lazy(() => import('../../pages/BeautyPage'));
+const Booking = lazy(() => import('../../pages/Booking'));
 
 export const publicRouteConfigs: AppRouteConfig[] = [
   { path: 'shop', Page: Shop },
@@ -26,4 +27,5 @@ export const publicRouteConfigs: AppRouteConfig[] = [
   { path: 'charm-bar', Page: CharmBar },
   { path: 'news', Page: News },
   { path: 'journey', Page: JourneySelectionPage },
+  { path: 'booking', Page: Booking },
 ];
