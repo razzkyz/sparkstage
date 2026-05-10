@@ -15,6 +15,19 @@ import { isAdmin } from '../utils/auth';
 import { supabase } from '../lib/supabase';
 import { withTimeout } from '../utils/queryHelpers';
 
+const translateAuthError = (errorMessage: string): string => {
+  if (errorMessage.includes('Invalid login credentials')) {
+    return 'Email atau password salah';
+  }
+  if (errorMessage.includes('Email not confirmed')) {
+    return 'Email belum dikonfirmasi';
+  }
+  if (errorMessage.includes('Invalid email')) {
+    return 'Email tidak valid';
+  }
+  return errorMessage;
+};
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,9 +60,9 @@ const Login = () => {
     setLoading(true);
 
     const { error } = await signIn(email, password);
-    
+
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setLoading(false);
     } else {
       try {
@@ -92,7 +105,7 @@ const Login = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setLoading(false);
     }
   };

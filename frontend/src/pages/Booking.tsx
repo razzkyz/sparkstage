@@ -9,12 +9,14 @@ import { useJourneySelectionController } from './journey-selection/useJourneySel
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { useBanners } from '../hooks/useBanners';
 import { VenueReviews } from '../components/VenueReviews';
+import { useToast } from '../components/Toast';
 
 const Booking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { settings: bookingSettings } = useBookingPageSettings();
   const bookingCopy = bookingSettings ?? DEFAULT_BOOKING_PAGE_SETTINGS;
+  const { showToast } = useToast();
 
   const {
     ticket,
@@ -43,16 +45,16 @@ const Booking = () => {
 
   const handleProceedToPayment = () => {
     if (!ticket || !selectedDate) {
-      alert('Please select a date');
+      showToast('pink', 'Silakan pilih tanggal terlebih dahulu');
       return;
     }
     const isAllDay = isAllDayTicket && !selectedTime;
     if (!isAllDay && !selectedTime) {
-      alert('Please select a time slot');
+      showToast('pink', 'Silakan pilih sesi terlebih dahulu');
       return;
     }
     if (!user) {
-      alert('Please log in to continue');
+      showToast('pink', 'Silakan login terlebih dahulu');
       navigate('/login', { state: { returnTo: '/booking' } });
       return;
     }

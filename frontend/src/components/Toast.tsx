@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { LazyMotion, m, AnimatePresence } from 'framer-motion';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+type ToastType = 'success' | 'error' | 'warning' | 'info' | 'pink';
 
 interface Toast {
   id: string;
@@ -48,6 +48,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
         return 'bg-yellow-500';
       case 'info':
         return 'bg-blue-500';
+      case 'pink':
+        return 'bg-[#ff4b86]';
       default:
         return 'bg-gray-500';
     }
@@ -64,6 +66,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
         return 'warning';
       case 'info':
         return 'info';
+      case 'pink':
+        return 'notifications';
       default:
         return 'notifications';
     }
