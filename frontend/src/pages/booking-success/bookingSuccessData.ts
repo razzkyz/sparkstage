@@ -71,7 +71,7 @@ async function fetchOrderByNumber(orderNumber: string) {
   const { data, error } = await runBookingSuccessQueryWithTimeout((signal) =>
     supabase
       .from('orders')
-      .select('*, profiles(name)')
+      .select('*')
       .eq('order_number', orderNumber)
       .abortSignal(signal)
       .single()

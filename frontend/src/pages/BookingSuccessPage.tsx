@@ -42,7 +42,7 @@ export default function BookingSuccessPage() {
     refreshSession,
   });
 
-  const customerName = orderData?.customer_name || orderData?.profiles?.name || state?.customerName || 'Guest';
+  const customerName = orderData?.customer_name || state?.customerName || 'Guest';
 
   const handlePrint = () => {
     window.print();
