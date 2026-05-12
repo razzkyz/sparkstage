@@ -38,7 +38,7 @@ function productToLook(product: ProductSummary): DBLook {
           name: product.defaultVariantName || product.name,
           sku: '',
           price: product.price,
-          deposit_amount: null, // Will be calculated as 75% of price
+          deposit_amount: 50000, // Fixed 50k deposit per item
           product: {
             id: product.id,
             name: product.name,
@@ -302,7 +302,7 @@ export default function DressingRoomLandingPage() {
                 Transparansi Harga
               </p>
               <h2 className="mt-4 font-serif text-4xl italic text-gray-900 sm:text-5xl">
-                Cara Perhitungan Biaya
+                Cara Perhitungan Biaya Baru
               </h2>
             </div>
 
@@ -320,22 +320,30 @@ export default function DressingRoomLandingPage() {
                   <div className="flex justify-between items-start pb-3 border-b border-main-200">
                     <div>
                       <p className="font-semibold text-gray-900">Baju A</p>
-                      <p className="text-sm text-gray-600">Sewa: 50.000/hari × 3 hari</p>
+                      <p className="text-sm text-gray-600">Harga produk: Rp 100.000</p>
                     </div>
-                    <p className="font-bold text-gray-900">Rp 150.000</p>
+                    <p className="font-bold text-gray-900">Rp 100.000</p>
                   </div>
 
                   <div className="flex justify-between items-start pb-3 border-b border-main-200">
                     <div>
-                      <p className="font-semibold text-gray-900">Deposit (75%)</p>
-                      <p className="text-sm text-gray-600">Jaminan kondisi barang</p>
+                      <p className="font-semibold text-gray-900">Sewa (35.000/hari × 3 hari)</p>
+                      <p className="text-sm text-gray-600">Biaya rental per item</p>
                     </div>
-                    <p className="font-bold text-yellow-700">Rp 112.500</p>
+                    <p className="font-bold text-gray-900">Rp 105.000</p>
+                  </div>
+
+                  <div className="flex justify-between items-start pb-3 border-b border-main-200">
+                    <div>
+                      <p className="font-semibold text-gray-900">Deposit</p>
+                      <p className="text-sm text-gray-600">Jaminan kondisi barang (fixed per item)</p>
+                    </div>
+                    <p className="font-bold text-yellow-700">Rp 50.000</p>
                   </div>
 
                   <div className="flex justify-between items-start pt-3">
                     <p className="font-black text-gray-900">TOTAL</p>
-                    <p className="text-2xl font-black text-main-600">Rp 262.500</p>
+                    <p className="text-2xl font-black text-main-600">Rp 255.000</p>
                   </div>
                 </div>
 
@@ -363,7 +371,7 @@ export default function DressingRoomLandingPage() {
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <h4 className="font-bold text-yellow-900 text-sm mb-2">⚠️ Keterlambatan</h4>
-                  <p className="text-sm text-yellow-800">Telat Rp 5.000/jam. Contoh: kembali 2 jam telat = Rp 10.000 dari deposit.</p>
+                  <p className="text-sm text-yellow-800">Telat Rp 10.000/jam. Contoh: kembali 2 jam telat = Rp 20.000 dari deposit.</p>
                 </div>
 
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">

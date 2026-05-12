@@ -22,14 +22,10 @@ export default function RentalSummaryStep({
   const navigate = useNavigate();
 
   // Calculate costs - new pricing model
-  const DAILY_FEE_PER_ITEM = 15000; // 15k per day per item
+  const DAILY_FEE_PER_ITEM = 35000; // 35k per day per item
 
-  // Calculate deposit (75% of product price) and product price
-  const totalDeposit = rentalData.look.items.reduce((sum, item) => {
-    const price = item.product_variant?.price || 0;
-    const deposit = price * 0.75; // 75% of product price
-    return sum + deposit;
-  }, 0);
+  // Calculate deposit - fixed 50k per item
+  const totalDeposit = rentalData.look.items.length * 50000; // Fixed 50k per item
 
   const totalProductPrice = rentalData.look.items.reduce((sum, item) => {
     const price = item.product_variant?.price || 0;
@@ -52,7 +48,7 @@ export default function RentalSummaryStep({
 
         const price = item.product_variant.price || 0;
         const itemDailyFee = DAILY_FEE_PER_ITEM;
-        const itemDeposit = price * 0.75; // 75% of product price
+        const itemDeposit = 50000; // Fixed 50k deposit per item
         const itemTotalRentalCost = itemDailyFee * rentalData.durationDays;
         const itemTotal = price + itemDeposit + itemTotalRentalCost; // product price + deposit + rental cost
 
@@ -160,7 +156,7 @@ export default function RentalSummaryStep({
             {rentalData.look.items.map((item) => {
               const price = item.product_variant?.price || 0;
               const itemDailyFee = DAILY_FEE_PER_ITEM;
-              const itemDeposit = price * 0.75; // 75% of product price
+              const itemDeposit = 50000; // Fixed 50k deposit per item
               const itemRentalCost = itemDailyFee * rentalData.durationDays;
               const itemTotal = price + itemDeposit + itemRentalCost; // product price + deposit + rental cost
 
@@ -178,7 +174,7 @@ export default function RentalSummaryStep({
                     <span className="font-semibold text-gray-900">{formatCurrency(itemRentalCost)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
-                    <span>Deposit (75%):</span>
+                    <span>Deposit:</span>
                     <span className="font-semibold">{formatCurrency(itemDeposit)}</span>
                   </div>
                   <div className="flex justify-between text-xs font-bold text-main-600 border-t border-gray-200 pt-1 mt-1">

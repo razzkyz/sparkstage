@@ -161,13 +161,9 @@ const OnStage = () => {
                 <img src={Logo} alt="SPARK" className="h-14 w-auto md:h-16" />
               </div>
               
-              <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 tracking-wider">
-                WELCOME STAR!
-              </h1>
-              
-              <p className="text-sm md:text-base text-gray-700 font-semibold">
-                Get Ready to Be Star ✨
-              </p>
+              <div className="flex justify-center">
+                <img src="/images/ready.png" alt="Ready" className="w-64 h-auto md:w-80" />
+              </div>
             </div>
           </div>
         </div>

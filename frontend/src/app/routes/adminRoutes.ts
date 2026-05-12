@@ -21,6 +21,7 @@ const BookingPageManager = lazy(() => import('../../pages/admin/BookingPageManag
 const EntranceBookingManager = lazy(() => import('../../pages/admin/EntranceBookingManager'));
 const DressingRoomManager = lazy(() => import('../../pages/admin/DressingRoomManager'));
 const RentalOrders = lazy(() => import('../../pages/admin/RentalOrders'));
+const DressingRoomScan = lazy(() => import('../../pages/admin/DressingRoomScanPage'));
 const BeautyPosterManager = lazy(() => import('../../pages/admin/BeautyPosterManager'));
 const EventBookings = lazy(() => import('../../pages/admin/EventBookings'));
 const VenueReviewsAdmin = lazy(() => import('../../pages/admin/VenueReviewsAdmin'));
@@ -46,6 +47,7 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/charm-bar-page', Page: CharmBarPageManager },
   { path: '/admin/dressing-room', Page: DressingRoomManager },
   { path: '/admin/rental-orders', Page: RentalOrders },
+  { path: '/admin/dressing-room-scan', Page: DressingRoomScan },
   { path: '/admin/glam-page', Page: BeautyPosterManager },
   { path: '/admin/event-bookings', Page: EventBookings },
   { path: '/admin/tablet-qr-scanner', Page: TabletQRScanner },

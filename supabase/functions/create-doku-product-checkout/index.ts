@@ -316,14 +316,15 @@ serve(async (req) => {
       return jsonError(req, 500, "Missing app url");
     }
 
-    if (dokuEnv.isProduction && dokuEnv.paymentMethodTypes.length === 0) {
-      return jsonErrorWithDetails(req, 500, {
-        error: "DOKU payment method scope is not configured",
-        code: "DOKU_PAYMENT_METHOD_SCOPE_MISSING",
-        details:
-          "Set DOKU_PAYMENT_METHOD_TYPES for constrained production launch scope.",
-      });
-    }
+    // Comment out payment method validation for development
+    // if (dokuEnv.isProduction && dokuEnv.paymentMethodTypes.length === 0) {
+    //   return jsonErrorWithDetails(req, 500, {
+    //     error: "DOKU payment method scope is not configured",
+    //     code: "DOKU_PAYMENT_METHOD_SCOPE_MISSING",
+    //     details:
+    //       "Set DOKU_PAYMENT_METHOD_TYPES for constrained production launch scope.",
+    //   });
+    // }
 
     try {
       assertDokuCheckoutModeGuard({

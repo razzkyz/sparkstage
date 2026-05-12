@@ -60,6 +60,7 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
     items: [
       { id: 'dressing-room', label: 'Dressing Room Manager', icon: 'styler', path: '/admin/dressing-room' },
       { id: 'rental-orders', label: 'Sewa Dressing Room', icon: 'checkroom', path: '/admin/rental-orders', highlight: true },
+      { id: 'dressing-room-scan', label: 'Scan QR Customer', icon: 'qr_code_scanner', path: '/admin/dressing-room-scan', highlight: true },
     ],
   },
   {
