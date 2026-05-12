@@ -5,21 +5,18 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useBanners } from '../hooks/useBanners';
 import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
-import Logo from '@/logo/logo black spark with tagline.png';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
 const OnStage = () => {
   const [currentProcessSlide, setCurrentProcessSlide] = useState(0);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(true);
 
   // GSAP animation refs
   const ticketButtonRef = useRef<HTMLDivElement>(null);
   const processTitleRef = useRef<HTMLDivElement>(null);
   const processCarouselRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
-  const welcomePopupRef = useRef<HTMLDivElement>(null);
 
   const processTouchStartX = useRef(0);
   const processTouchEndX = useRef(0);
@@ -81,42 +78,6 @@ const OnStage = () => {
     }
   }, []);
 
-  // Welcome popup animation
-  useEffect(() => {
-    if (!welcomePopupRef.current || !showWelcomePopup) return;
-
-    const timeline = gsap.timeline();
-    
-    // Pop-in animation
-    timeline.fromTo(
-      welcomePopupRef.current,
-      { opacity: 0, scale: 0.5, y: 30 },
-      { 
-        opacity: 1, 
-        scale: 1, 
-        y: 0, 
-        duration: 0.6, 
-        ease: 'back.out',
-        delay: 0.8 
-      }
-    );
-
-    // Show for 3 seconds then fade out suddenly
-    timeline.to(
-      welcomePopupRef.current,
-      { opacity: 0, scale: 0.8, y: -20, duration: 0.1, ease: 'none' },
-      '+=3'
-    );
-
-    timeline.add(() => {
-      setShowWelcomePopup(false);
-    });
-
-    return () => {
-      timeline.kill();
-    };
-  }, [showWelcomePopup]);
-
   if (loading) {
     return (
       <div className="bg-linear-to-br from-white to-gray-50 min-h-screen flex items-center justify-center">
@@ -147,28 +108,6 @@ const OnStage = () => {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Welcome Popup */}
-      {showWelcomePopup && (
-        <div 
-          ref={welcomePopupRef}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm cursor-pointer"
-          onClick={() => setShowWelcomePopup(false)}
-        >
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            {/* Main popup content */}
-            <div className="relative px-6 md:px-8 py-8 md:py-10 bg-white rounded-2xl shadow-2xl border-3 border-main-400 text-center max-w-sm mx-4">
-              <div className="flex justify-center mb-4">
-                <img src={Logo} alt="SPARK" className="h-14 w-auto md:h-16" />
-              </div>
-              
-              <div className="flex justify-center">
-                <img src="/images/ready.png" alt="Ready" className="w-64 h-auto md:w-80" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section with Slider */}
       <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black">
 
