@@ -4,6 +4,7 @@ import {
   ensureProductPaidSideEffects,
   ensureVoucherUsageIfNeeded,
   issueTicketsIfNeeded,
+  sendTicketNotificationsIfNeeded,
   logWebhookEvent,
   type ProductOrder,
   releaseProductReservedStockIfNeeded,
@@ -394,6 +395,13 @@ export async function processTicketOrderTransition(params: {
         supabase,
         order: updatedOrder as TicketOrder,
         orderItems,
+        nowIso,
+      });
+
+      // Send notifications and award loyalty points after tickets are issued
+      await sendTicketNotificationsIfNeeded({
+        supabase,
+        order: updatedOrder as TicketOrder,
         nowIso,
       });
     }

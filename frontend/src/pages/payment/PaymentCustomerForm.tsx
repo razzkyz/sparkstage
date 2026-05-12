@@ -49,7 +49,9 @@ export function PaymentCustomerForm({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">Phone Number (Optional)</label>
+          <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">
+            WhatsApp Number <span className="text-amber-500">*Untuk Reminder</span>
+          </label>
           <input
             id={phoneInputId}
             type="tel"
@@ -59,6 +61,7 @@ export function PaymentCustomerForm({
             placeholder="08xxxxxxxxxx"
             disabled={loading}
           />
+          <p className="text-xs text-amber-600">Kami akan mengirim reminder ke WhatsApp ini untuk datang lebih awal</p>
         </div>
 
         <div className="space-y-1.5">

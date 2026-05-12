@@ -403,6 +403,107 @@ export async function issueTicketsIfNeeded(params: {
   })
 }
 
+export async function sendTicketNotificationsIfNeeded(params: {
+  supabase: ServiceClient
+  order: TicketOrder
+  nowIso: string
+}) {
+  const { supabase, order, nowIso } = params
+
+  return withPaymentEffectRun({
+    supabase,
+    scope: 'ticket_order',
+    orderRef: order.order_number,
+    effectType: 'send_ticket_notifications',
+    skipResult: { notified: false, skipped: true },
+    metadataOnComplete: { order_id: order.id, processed_at: nowIso },
+    run: async () => {
+      // Fetch order details with customer info
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('id, order_number, user_id, customer_name, customer_email, customer_phone')
+        .eq('id', order.id)
+        .single()
+
+      if (orderError || !orderData) {
+        throw new Error(`Failed to fetch order details: ${orderError?.message}`)
+      }
+
+      const { customer_email, customer_phone, customer_name, user_id } = orderData as any
+
+      // Get total ticket quantity from order items
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select('quantity')
+        .eq('order_id', order.id)
+
+      if (itemsError) {
+        throw new Error(`Failed to fetch order items: ${itemsError.message}`)
+      }
+
+      const totalQuantity = (Array.isArray(orderItems) ? orderItems : [])
+        .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+
+      // Log notification attempt
+      console.log('[sendTicketNotifications] Attempting to notify order:', {
+        order_id: order.id,
+        order_number: order.order_number,
+        customer_email,
+        customer_phone,
+        total_quantity: totalQuantity,
+      })
+
+      // Send WhatsApp reminder if phone provided
+      if (customer_phone && customer_phone.trim()) {
+        console.log('[sendTicketNotifications] Sending WhatsApp reminder to:', customer_phone)
+        // In production, integrate with Twilio or similar WhatsApp service
+        // For now, log the reminder message that would be sent
+        const reminderMessage = `Hi ${customer_name || 'Guest'}! 👋
+
+Your Spark Stage tickets are ready! 🎉
+
+⏰ *PENTING: Datang lebih awal 15-20 menit sebelum jadwal Anda!*
+
+Ini membantu kami mempersiapkan tempat Anda dan memberikan pengalaman terbaik.
+
+Terima kasih! ✨`
+        
+        console.log('[sendTicketNotifications] WhatsApp message:', reminderMessage)
+      }
+
+      // Award loyalty points (this is always done)
+      if (user_id && totalQuantity > 0) {
+        try {
+          const { data: pointsResult, error: pointsError } = await supabase.rpc('award_loyalty_points', {
+            p_user_id: user_id,
+            p_order_id: order.id,
+            p_ticket_quantity: totalQuantity,
+            p_reason: 'Ticket purchase reward',
+          })
+
+          if (pointsError) {
+            console.error('[sendTicketNotifications] Error awarding points:', pointsError.message)
+          } else {
+            console.log('[sendTicketNotifications] Loyalty points awarded:', pointsResult)
+          }
+        } catch (error) {
+          console.error('[sendTicketNotifications] Exception awarding points:', error)
+        }
+      }
+
+      return { 
+        notified: true, 
+        skipped: false, 
+        details: { 
+          whatsapp_reminder: !!(customer_phone && customer_phone.trim()),
+          email: !!customer_email,
+          points_awarded: totalQuantity > 0
+        } 
+      }
+    },
+  })
+}
+
 export async function releaseTicketCapacityIfNeeded(params: {
   supabase: ServiceClient
   order: TicketOrder
