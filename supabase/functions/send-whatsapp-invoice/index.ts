@@ -52,6 +52,12 @@ interface OrderItemData {
   selected_date: string;
   selected_time_slots: unknown;
   quantity: number;
+  id?: number;
+}
+
+interface PurchasedTicketData {
+  ticket_code: string;
+  id: number;
 }
 
 interface UserData {
@@ -73,6 +79,7 @@ async function getTicketOrderDetails(
   order: TicketOrderData | null;
   profile: ProfileData | null;
   orderItem: OrderItemData | null;
+  ticketCode?: string;
   error?: string;
 }> {
   // Fetch order
@@ -109,7 +116,7 @@ async function getTicketOrderDetails(
   // Fetch first order item for date/time info
   const { data: orderItemsData, error: orderItemError } = await supabase
     .from("order_items")
-    .select("selected_date, selected_time_slots, quantity")
+    .select("id, selected_date, selected_time_slots, quantity")
     .eq("order_id", order.id)
     .limit(1);
 
@@ -121,7 +128,25 @@ async function getTicketOrderDetails(
     ? (orderItemsData[0] as OrderItemData)
     : null) || null;
 
-  return { order, profile, orderItem };
+  // Fetch first ticket code from purchased_tickets
+  let ticketCode: string | undefined;
+  if (orderItem && orderItem.id) {
+    const { data: ticketData, error: ticketError } = await supabase
+      .from("purchased_tickets")
+      .select("ticket_code")
+      .eq("order_item_id", orderItem.id)
+      .limit(1);
+
+    if (ticketError) {
+      console.error("[WhatsApp] Ticket code fetch error:", ticketError);
+    }
+
+    if (Array.isArray(ticketData) && ticketData.length > 0) {
+      ticketCode = (ticketData[0] as PurchasedTicketData).ticket_code;
+    }
+  }
+
+  return { order, profile, orderItem, ticketCode };
 }
 
 async function getProductOrderDetails(
@@ -346,6 +371,7 @@ serve(async (req) => {
 
       order = ticketDetails.order;
       profile = ticketDetails.profile;
+      ticketCode = ticketDetails.ticketCode || "";
 
       if (ticketDetails.orderItem) {
         bookingDate = formatDate(ticketDetails.orderItem.selected_date);
