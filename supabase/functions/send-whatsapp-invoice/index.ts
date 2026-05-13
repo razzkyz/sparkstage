@@ -310,9 +310,14 @@ serve(async (req) => {
     const { url: supabaseUrl, serviceRoleKey: supabaseServiceKey } = getSupabaseEnv();
     const supabase = createServiceClient(supabaseUrl, supabaseServiceKey);
 
-    const fontneToken = Deno.env.get("FONNTE_API_TOKEN");
+    // Get device token (primary) or fall back to account token
+    let fontneToken = Deno.env.get("FONNTE_DEVICE_TOKEN");
     if (!fontneToken) {
-      console.error("[WhatsApp] Missing FONNTE_API_TOKEN");
+      fontneToken = Deno.env.get("FONNTE_API_TOKEN");
+    }
+    
+    if (!fontneToken) {
+      console.error("[WhatsApp] Missing FONNTE_DEVICE_TOKEN or FONNTE_API_TOKEN");
       return jsonErrorWithDetails(
         req,
         500,

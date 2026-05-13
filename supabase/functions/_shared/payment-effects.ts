@@ -1080,10 +1080,14 @@ export async function sendWhatsAppInvoiceViaFontneIfNeeded(params: {
     skipResult: { sent: false, skipped: true },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
-      // Get Fonnte token from environment
-      const fontneToken = Deno.env.get('FONNTE_API_TOKEN')
+      // Get Fonnte token from environment (device token preferred, fallback to account token)
+      let fontneToken = Deno.env.get('FONNTE_DEVICE_TOKEN')
       if (!fontneToken) {
-        console.log('[sendWhatsAppInvoiceViaFonnte] FONNTE_API_TOKEN not configured, skipping')
+        fontneToken = Deno.env.get('FONNTE_API_TOKEN')
+      }
+      
+      if (!fontneToken) {
+        console.log('[sendWhatsAppInvoiceViaFonnte] FONNTE_DEVICE_TOKEN or FONNTE_API_TOKEN not configured, skipping')
         return { sent: false, skipped: true, reason: 'fonnte_not_configured' }
       }
 
