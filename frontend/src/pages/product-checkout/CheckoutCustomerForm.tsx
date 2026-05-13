@@ -37,7 +37,9 @@ export function CheckoutCustomerForm({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">Phone Number (Optional)</label>
+        <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">
+          Phone Number (For WhatsApp Confirmation) <span className="text-red-500">*</span>
+        </label>
         <input
           id={phoneInputId}
           type="tel"
@@ -46,6 +48,7 @@ export function CheckoutCustomerForm({
           className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 px-4 outline-none transition-all"
           placeholder="08xxxxxxxxxx"
           disabled={loading}
+          required
         />
       </div>
 
