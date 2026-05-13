@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from './Toast';
@@ -29,21 +29,19 @@ export const VenueReviews = () => {
   const endIndex = startIndex + reviewsPerPage;
   const currentReviews = reviews.slice(startIndex, endIndex);
 
-  const handleNext = () => {
-    if (currentIndex < totalPages - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      setCurrentIndex(0);
-    }
-  };
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prevIndex) => {
+      const pages = Math.ceil(reviews.length / reviewsPerPage);
+      return prevIndex < pages - 1 ? prevIndex + 1 : 0;
+    });
+  }, [reviews.length, reviewsPerPage]);
 
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else {
-      setCurrentIndex(totalPages - 1);
-    }
-  };
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((prevIndex) => {
+      const pages = Math.ceil(reviews.length / reviewsPerPage);
+      return prevIndex > 0 ? prevIndex - 1 : pages - 1;
+    });
+  }, [reviews.length, reviewsPerPage]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -71,7 +69,7 @@ export const VenueReviews = () => {
       handleNext();
     }, 5000);
     return () => clearInterval(interval);
-  }, [currentIndex, reviews.length]);
+  }, [reviews.length, reviewsPerPage, handleNext]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +90,7 @@ export const VenueReviews = () => {
   };
 
   return (
-    <section className="bg-gradient-to-b from-gray-50 to-white py-16 md:py-24 lg:py-32">
+    <section className="bg-linear-to-b from-gray-50 to-white py-16 md:py-24 lg:py-32">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-3 md:mb-4 drop-shadow-sm">What Our Visitors Love</h2>
@@ -114,7 +112,7 @@ export const VenueReviews = () => {
           <div className="text-center mb-10 md:mb-12">
             <button
               onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-full text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl drop-shadow-md"
+              className="inline-flex items-center gap-2 bg-linear-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-full text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl drop-shadow-md"
             >
               <span className="text-xl">✨</span>
               Share Your Experience
@@ -123,7 +121,7 @@ export const VenueReviews = () => {
         )}
 
         {isFormOpen && (
-          <div className="bg-gradient-to-br from-white to-main-50 p-8 md:p-12 rounded-3xl border-2 border-main-200 shadow-2xl mb-10 md:mb-12 animate-fade-in-up backdrop-blur-sm">
+          <div className="bg-linear-to-br from-white to-main-50 p-8 md:p-12 rounded-3xl border-2 border-main-200 shadow-2xl mb-10 md:mb-12 animate-fade-in-up backdrop-blur-sm">
             <div className="text-center mb-8 md:mb-10">
               <span className="text-5xl md:text-6xl">💬</span>
               <h3 className="text-2xl md:text-3xl font-black text-main-900 mt-3">Share Your Experience</h3>
@@ -166,7 +164,7 @@ export const VenueReviews = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 bg-gradient-to-r from-main-600 to-main-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl active:scale-95 transform"
+                    className="flex-1 bg-linear-to-r from-main-600 to-main-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl active:scale-95 transform"
                   >
                     {isSubmitting ? '⏳ Submitting...' : '✅ Submit Review'}
                   </button>
@@ -180,14 +178,14 @@ export const VenueReviews = () => {
                 </div>
               </form>
             ) : (
-              <div className="text-center py-10 md:py-12 bg-gradient-to-br from-main-50 to-main-100 rounded-2xl border-2 border-main-200">
+              <div className="text-center py-10 md:py-12 bg-linear-to-br from-main-50 to-main-100 rounded-2xl border-2 border-main-200">
                 <span className="text-6xl md:text-7xl text-main-300 mb-4 block">🔒</span>
                 <p className="text-main-900 mb-8 font-bold text-lg md:text-xl">Please log in to share your review</p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <Link
                     to="/login"
                     state={{ returnTo: '/on-stage' }}
-                    className="bg-gradient-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                    className="bg-linear-to-r from-main-600 to-main-500 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-black hover:from-main-700 hover:to-main-600 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
                   >
                     🔑 Log In
                   </Link>
@@ -211,7 +209,7 @@ export const VenueReviews = () => {
             </div>
           </div>
         ) : reviews.length === 0 ? (
-          <div className="text-center py-16 md:py-20 bg-gradient-to-br from-main-50 to-main-100 rounded-3xl border-2 border-main-200 shadow-md">
+          <div className="text-center py-16 md:py-20 bg-linear-to-br from-main-50 to-main-100 rounded-3xl border-2 border-main-200 shadow-md">
             <div className="inline-block p-6 md:p-8 rounded-full bg-white mb-6 md:mb-8 shadow-lg">
               <span className="text-6xl md:text-7xl block">💫</span>
             </div>
@@ -224,13 +222,13 @@ export const VenueReviews = () => {
               <>
                 <button
                   onClick={handlePrev}
-                  className="absolute -left-6 md:-left-8 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
+                  className="absolute -left-6 md:-left-8 top-1/2 -translate-y-1/2 z-20 bg-linear-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
                 >
                   <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
+                  className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 z-20 bg-linear-to-br from-white to-gray-100 hover:from-main-600 hover:to-main-500 text-main-600 hover:text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 hidden md:flex items-center justify-center"
                 >
                   <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
                 </button>
@@ -266,7 +264,7 @@ export const VenueReviews = () => {
             )}
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-3 mt-8 text-sm text-gray-600 font-bold hidden md:block">
+              <div className="hidden md:flex justify-center items-center gap-3 mt-8 text-sm text-gray-600 font-bold">
                 <span className="text-lg">{currentIndex + 1}</span>
                 <span className="text-gray-400 mx-1">/</span>
                 <span className="text-lg">{totalPages}</span>
@@ -281,14 +279,14 @@ export const VenueReviews = () => {
 
 const ReviewCard = ({ review, index }: { review: VenueReview; index: number }) => (
   <div 
-    className="bg-gradient-to-br from-white via-main-50 to-main-100 rounded-2xl border-2 border-main-200 p-5 md:p-6 hover:shadow-2xl hover:border-main-400 transition-all duration-300 relative overflow-hidden animate-fade-in-up h-full group"
+    className="bg-linear-to-br from-white via-main-50 to-main-100 rounded-2xl border-2 border-main-200 p-5 md:p-6 hover:shadow-2xl hover:border-main-400 transition-all duration-300 relative overflow-hidden animate-fade-in-up h-full group"
     style={{
       animationDelay: `${index * 100}ms`,
       animationFillMode: 'both'
     }}
   >
     <div className="absolute -top-8 -right-8 text-7xl md:text-8xl opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform group-hover:scale-110">💖</div>
-    <div className="absolute inset-0 bg-gradient-to-t from-main-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+    <div className="absolute inset-0 bg-linear-to-t from-main-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
     
     <div className="relative z-10 flex flex-col h-full">
       <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-4">

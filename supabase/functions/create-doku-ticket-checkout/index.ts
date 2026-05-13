@@ -152,7 +152,7 @@ async function persistTicketPaymentData(params: {
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -175,12 +175,15 @@ serve(async (req) => {
 
     const payload = (await req.json()) as CreateTokenRequest;
     const items = payload.items;
+    const customerName = payload.customerName;
+    const customerEmail = payload.customerEmail;
+    const customerPhone = payload.customerPhone;
 
     if (!items || items.length === 0) {
       return jsonError(req, 400, "No items provided");
     }
 
-    if (!payload.customerName?.trim() || !payload.customerEmail?.trim()) {
+    if (!customerName?.trim() || !customerEmail?.trim()) {
       return jsonError(req, 400, "Missing customer info");
     }
 

@@ -18,8 +18,8 @@
     "resolveJsonModule": true,
 
     /* Path mapping */
-    "baseUrl": ".",
     "paths": {
+      "*": ["./*"],
       "@/*": ["./frontend/src/*"]
     },
 

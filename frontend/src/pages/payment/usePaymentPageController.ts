@@ -157,7 +157,23 @@ export function usePaymentPageController({
       }
 
       console.error('Payment error:', paymentError);
-      setError(paymentError instanceof Error ? paymentError.message : 'Failed to process payment');
+      
+      // Extract detailed error message including server details if available
+      const errorMessage = paymentError instanceof Error ? paymentError.message : 'Failed to process payment';
+      const errorDetails = (paymentError as { details?: unknown }).details;
+      const detailedMessage = errorDetails 
+        ? typeof errorDetails === 'string' 
+          ? errorDetails 
+          : typeof errorDetails === 'object'
+            ? JSON.stringify(errorDetails)
+            : String(errorDetails)
+        : null;
+      
+      const userMessage = detailedMessage 
+        ? `Payment processing failed: ${errorMessage}. Details: ${detailedMessage}`
+        : errorMessage;
+      
+      setError(userMessage);
     } finally {
       setLoading(false);
     }
