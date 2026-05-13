@@ -7,7 +7,11 @@ import {
   processProductOrderTransition,
   processTicketOrderTransition,
 } from '../_shared/payment-processors.ts'
-import { logWebhookEvent, type TicketOrderItem } from '../_shared/payment-effects.ts'
+import { 
+  logWebhookEvent, 
+  sendWhatsAppInvoiceViaFontneIfNeeded,
+  type TicketOrderItem 
+} from '../_shared/payment-effects.ts'
 
 function readHeader(headers: Headers, name: string) {
   return headers.get(name) ?? headers.get(name.toLowerCase()) ?? ''
@@ -471,6 +475,49 @@ serve(async (req) => {
         )
       }
 
+      // Send WhatsApp invoice if payment is successful for product order
+      if (providerStatus === 'paid' && result.applied) {
+        console.log('[DOKU WEBHOOK] Sending WhatsApp invoice for product order:', orderNumber)
+        try {
+          // For product orders, fetch minimal order data for WhatsApp function
+          const { data: fetchedOrder } = await supabase
+            .from('order_products')
+            .select('id, order_number, user_id, status')
+            .eq('order_number', orderNumber)
+            .single()
+
+          if (fetchedOrder) {
+            await sendWhatsAppInvoiceViaFontneIfNeeded({
+              supabase,
+              order: {
+                id: fetchedOrder.id,
+                order_number: fetchedOrder.order_number,
+                user_id: fetchedOrder.user_id,
+                status: fetchedOrder.status,
+              } as any,
+              orderType: 'product',
+              nowIso,
+            })
+          }
+        } catch (whatsappError) {
+          // Log WhatsApp error but don't fail the webhook
+          const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError)
+          console.error('[DOKU WEBHOOK] WhatsApp invoice failed for product order (non-fatal):', errorMsg)
+          await logWebhookEvent(supabase, {
+            orderNumber,
+            eventType: 'whatsapp_invoice_send_error',
+            payload: {
+              error: errorMsg,
+              order_number: orderNumber,
+              order_type: 'product',
+            },
+            success: false,
+            errorMessage: errorMsg,
+            processedAt: nowIso,
+          })
+        }
+      }
+
       console.log('[DOKU WEBHOOK] Product order processed successfully')
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -643,6 +690,43 @@ serve(async (req) => {
         },
         { allowAllOrigins: true }
       )
+    }
+
+    // Send WhatsApp invoice if payment is successful
+    if (providerStatus === 'paid' && result.applied) {
+      console.log('[DOKU WEBHOOK] Sending WhatsApp invoice for ticket order:', orderNumber)
+      try {
+        const whatsappResult = await sendWhatsAppInvoiceViaFontneIfNeeded({
+          supabase,
+          order: order as {
+            id: number
+            order_number: string
+            user_id: string | null
+            status?: string | null
+            tickets_issued_at?: string | null
+            capacity_released_at?: string | null
+          },
+          orderType: 'ticket',
+          nowIso,
+        })
+
+        console.log('[DOKU WEBHOOK] WhatsApp invoice result:', whatsappResult)
+      } catch (whatsappError) {
+        // Log WhatsApp error but don't fail the webhook
+        const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError)
+        console.error('[DOKU WEBHOOK] WhatsApp invoice failed (non-fatal):', errorMsg)
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'whatsapp_invoice_send_error',
+          payload: {
+            error: errorMsg,
+            order_number: orderNumber,
+          },
+          success: false,
+          errorMessage: errorMsg,
+          processedAt: nowIso,
+        })
+      }
     }
 
     console.log('[DOKU WEBHOOK] Ticket order processed successfully')

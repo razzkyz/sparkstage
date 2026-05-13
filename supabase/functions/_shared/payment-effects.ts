@@ -2,6 +2,7 @@ import type { Json } from './database.types.ts'
 import type { ServiceClient } from './supabase.ts'
 import { normalizeAvailabilityTimeSlot, normalizeSelectedTimeSlots } from './tickets.ts'
 import { sendWhatsAppMessage, buildTicketConfirmationParams } from './whatsapp.ts'
+import { sendWhatsAppViaFonnte, buildInvoiceMessage } from './fonnte.ts'
 import { getDokuWhatsAppEnv } from './env.ts'
 
 type OrdersRow = {
@@ -1054,6 +1055,200 @@ export async function releaseProductReservedStockIfNeeded(params: {
       }
 
       return { released: true }
+    },
+  })
+}
+
+/**
+ * Send WhatsApp invoice via Fonnte API after payment success
+ * Uses Fonnte for flexible text-based invoicing (no templates required)
+ * Handles duplicate prevention and error tracking
+ */
+export async function sendWhatsAppInvoiceViaFontneIfNeeded(params: {
+  supabase: ServiceClient
+  order: TicketOrder
+  orderType?: 'ticket' | 'product'
+  nowIso: string
+}) {
+  const { supabase, order, orderType = 'ticket', nowIso } = params
+
+  return withPaymentEffectRun({
+    supabase,
+    scope: 'ticket_order',
+    orderRef: order.order_number,
+    effectType: 'send_whatsapp_invoice_fonnte',
+    skipResult: { sent: false, skipped: true },
+    metadataOnComplete: { order_id: order.id, processed_at: nowIso },
+    run: async () => {
+      // Get Fonnte token from environment
+      const fontneToken = Deno.env.get('FONNTE_API_TOKEN')
+      if (!fontneToken) {
+        console.log('[sendWhatsAppInvoiceViaFonnte] FONNTE_API_TOKEN not configured, skipping')
+        return { sent: false, skipped: true, reason: 'fonnte_not_configured' }
+      }
+
+      // Fetch order with profile and details
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('id, order_number, user_id, status')
+        .eq('id', order.id)
+        .single()
+
+      if (orderError || !orderData) {
+        throw new Error(`Failed to fetch order details: ${orderError?.message}`)
+      }
+
+      const orderId = (orderData as { id: number }).id
+      const userId = (orderData as { user_id: string | null }).user_id
+
+      // Fetch user profile for phone and name
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, phone_number')
+        .eq('id', userId)
+        .single()
+
+      if (profileError || !profileData) {
+        console.log('[sendWhatsAppInvoiceViaFonnte] Profile not found:', profileError?.message)
+        return { sent: false, skipped: true, reason: 'profile_not_found' }
+      }
+
+      const customerName = (profileData as { full_name?: string }).full_name || 'Valued Customer'
+      const customerPhone = (profileData as { phone_number?: string }).phone_number
+
+      if (!customerPhone) {
+        console.log('[sendWhatsAppInvoiceViaFonnte] Customer phone not found')
+        return { sent: false, skipped: true, reason: 'no_phone_number' }
+      }
+
+      // Check if already sent (prevent duplicates)
+      const { data: existingMessages, error: checkError } = await supabase
+        .from('whatsapp_messages')
+        .select('id, delivery_status')
+        .eq('order_number', order.order_number)
+        .neq('delivery_status', 'failed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (!checkError && Array.isArray(existingMessages) && existingMessages.length > 0) {
+        console.log('[sendWhatsAppInvoiceViaFonnte] Message already sent:', order.order_number)
+        return { sent: false, skipped: true, reason: 'already_sent' }
+      }
+
+      // Get booking date and time for ticket orders
+      let bookingDate = new Date().toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+      let sessionTime = 'TBA'
+      let quantity = 1
+
+      if (orderType === 'ticket') {
+        const { data: orderItemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select('selected_date, selected_time_slots, quantity')
+          .eq('order_id', orderId)
+          .limit(1)
+
+        if (!itemsError && Array.isArray(orderItemsData) && orderItemsData.length > 0) {
+          const firstItem = orderItemsData[0] as {
+            selected_date: string
+            selected_time_slots: unknown
+            quantity: number
+          }
+          bookingDate = new Date(firstItem.selected_date).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          })
+          quantity = firstItem.quantity
+
+          // Extract time from time slots
+          const timeSlots = Array.isArray(firstItem.selected_time_slots)
+            ? firstItem.selected_time_slots
+            : []
+          if (timeSlots.length > 0) {
+            const firstSlot = String(timeSlots[0])
+            const timeMatch = firstSlot.match(/^\d{2}:\d{2}/)
+            if (timeMatch) {
+              sessionTime = timeMatch[0]
+            }
+          }
+        }
+      }
+
+      // Build invoice message using Fonnte format
+      const invoiceMessage = buildInvoiceMessage({
+        customerName,
+        invoiceNumber: order.order_number,
+        eventDate: bookingDate,
+        eventTime: sessionTime,
+        ticketQuantity: quantity,
+        venueName: 'SPARK STAGE 55',
+      })
+
+      console.log('[sendWhatsAppInvoiceViaFonnte] Sending invoice to:', {
+        customerName,
+        phone: customerPhone.substring(0, 5) + '***',
+        orderNumber: order.order_number,
+      })
+
+      // Send via Fonnte
+      const result = await sendWhatsAppViaFonnte({
+        deviceToken: fontneToken,
+        destinationPhone: customerPhone,
+        message: invoiceMessage,
+      })
+
+      // Log to whatsapp_messages table
+      const deliveryStatus = result.success ? 'submitted' : 'failed'
+      try {
+        await supabase.from('whatsapp_messages').insert({
+          order_id: orderId,
+          order_number: order.order_number,
+          customer_phone: customerPhone,
+          customer_name: customerName,
+          template_id: 'invoice_confirmation', // Label for Fonnte
+          params: [customerName, order.order_number, bookingDate, sessionTime, quantity, 'SPARK STAGE 55'],
+          booking_date: bookingDate,
+          session_time: sessionTime,
+          ticket_count: quantity,
+          doku_message_id: result.messageId || null,
+          provider_status: 'fonnte',
+          sent_at: new Date().toISOString(),
+          delivery_status: deliveryStatus,
+          error_message: result.error || null,
+        })
+      } catch (logError) {
+        console.error('[sendWhatsAppInvoiceViaFonnte] Failed to log message:', logError)
+      }
+
+      if (!result.success) {
+        console.error('[sendWhatsAppInvoiceViaFonnte] Failed to send:', result.error)
+        // Log to webhook_logs for tracking
+        await logWebhookEvent(supabase, {
+          orderNumber: order.order_number,
+          eventType: 'whatsapp_invoice_fonnte_failed',
+          payload: {
+            phone: customerPhone.substring(0, 5) + '***',
+            error: result.error,
+            details: result.details,
+          },
+          success: false,
+          errorMessage: result.error || 'Unknown error',
+          processedAt: nowIso,
+        })
+        
+        throw new Error(`Failed to send WhatsApp invoice: ${result.error}`)
+      }
+
+      console.log('[sendWhatsAppInvoiceViaFonnte] Invoice sent successfully:', {
+        messageId: result.messageId,
+        orderNumber: order.order_number,
+      })
+
+      return { sent: true, skipped: false, messageId: result.messageId }
     },
   })
 }

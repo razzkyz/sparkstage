@@ -26,6 +26,7 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - App structure and module map: `docs/architecture.md`
 - DB change workflow: `docs/runbooks/db-migrations.md`
 - DOKU payment flow: `docs/runbooks/doku-payments.md`
+- WhatsApp invoice notifications: `docs/runbooks/WHATSAPP_README.md`
 - Voucher behavior: `docs/decisions/voucher-system.md`
 - ImageKit migration status: `docs/runbooks/imagekit-migration.md`
 - Product admin data-entry rules: `docs/runbooks/admin-product-entry.md`
@@ -54,6 +55,7 @@ npm run supabase:functions:serve
 - Ticket payment flow: `create-doku-ticket-checkout`, `doku-webhook`, `sync-doku-ticket-status`
 - Product payment flow: `create-doku-product-checkout`, `sync-doku-product-status`
 - Shared payment logic: `supabase/functions/_shared/payment-effects.ts`
+- WhatsApp invoice sending: `supabase/functions/send-whatsapp-invoice`, `supabase/functions/_shared/fonnte.ts`
 - Session and auth timing: `frontend/src/contexts/AuthContext.tsx`, `frontend/src/hooks/useSessionRefresh.ts`
 - Large route map: `frontend/src/App.tsx`
 

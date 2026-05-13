@@ -150,3 +150,20 @@ export function getDokuWhatsAppEnv() {
       (Deno.env.get("DOKU_IS_PRODUCTION") ?? "").toLowerCase() === "true",
   };
 }
+
+export function getFontneEnv() {
+  const isEnabled =
+    (Deno.env.get("FONNTE_ENABLED") ?? "").toLowerCase() === "true";
+
+  if (!isEnabled) {
+    return {
+      isEnabled: false,
+      deviceToken: "",
+    };
+  }
+
+  return {
+    isEnabled: true,
+    deviceToken: getRequiredEnv("FONNTE_DEVICE_TOKEN"),
+  };
+}
