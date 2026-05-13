@@ -109,6 +109,18 @@ export function useProductCheckoutController({
     }
   }, [items.length, navigate]);
 
+  // Auto-reset voucher when items change and it was previously applied
+  // This prevents stale discount amounts from previous item selections
+  useEffect(() => {
+    if (appliedVoucher) {
+      // Reset the applied voucher when cart items change
+      // User can re-apply if it's still valid with the new selection
+      setAppliedVoucher(null);
+      setVoucherCode('');
+      setVoucherError(null);
+    }
+  }, [items.map((i) => i.variantId).join(',')]);  // Only trigger when variant IDs change
+
   const fetchCategoryIds = async () => {
     const variantIds = items.map((item) => item.variantId);
     if (variantIds.length === 0) return [];

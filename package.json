@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "supabase:db:list": "supabase migration list",
     "supabase:db:push": "supabase db push",
+    "supabase:db:push:whatsapp": "supabase db push supabase/migrations/20260513000000_add_whatsapp_messages_table.sql",
     "supabase:db:reset": "supabase db reset",
     "supabase:types:check": "node scripts/check-supabase-types.mjs",
     "supabase:types:check:linked": "node scripts/check-supabase-types-linked.mjs",

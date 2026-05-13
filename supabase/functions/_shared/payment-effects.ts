@@ -1,6 +1,8 @@
 import type { Json } from './database.types.ts'
 import type { ServiceClient } from './supabase.ts'
 import { normalizeAvailabilityTimeSlot, normalizeSelectedTimeSlots } from './tickets.ts'
+import { sendWhatsAppMessage, buildTicketConfirmationParams } from './whatsapp.ts'
+import { getDokuWhatsAppEnv } from './env.ts'
 
 type OrdersRow = {
   id: number
@@ -418,7 +420,7 @@ export async function sendTicketNotificationsIfNeeded(params: {
     skipResult: { notified: false, skipped: true },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
-      // Fetch order details with customer info
+      // Fetch order details with customer info and first booking date
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('id, order_number, user_id, customer_name, customer_email, customer_phone')
@@ -431,47 +433,169 @@ export async function sendTicketNotificationsIfNeeded(params: {
 
       const { customer_email, customer_phone, customer_name, user_id } = orderData as any
 
-      // Get total ticket quantity from order items
+      // Get order items with dates and time slots
       const { data: orderItems, error: itemsError } = await supabase
         .from('order_items')
-        .select('quantity')
+        .select('quantity, selected_date, selected_time_slots')
         .eq('order_id', order.id)
 
       if (itemsError) {
         throw new Error(`Failed to fetch order items: ${itemsError.message}`)
       }
 
-      const totalQuantity = (Array.isArray(orderItems) ? orderItems : [])
-        .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+      const itemsArray = Array.isArray(orderItems) ? orderItems : []
+      const totalQuantity = itemsArray.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+
+      // Get first booking date and time slot for notification
+      const firstItem = itemsArray[0]
+      const firstBookingDate = firstItem?.selected_date || ''
+      const firstTimeSlots = firstItem?.selected_time_slots || []
+      const firstTimeSlot = Array.isArray(firstTimeSlots) && firstTimeSlots.length > 0 
+        ? String(firstTimeSlots[0]).split(' ')[0] // Extract time only
+        : 'TBA'
+
+      // Fetch first ticket code (TKT-...) for invoice number
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('purchased_tickets')
+        .select('ticket_code')
+        .eq('order_item_id', (firstItem as any)?.id || 0)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single()
+
+      const invoiceNumber = (ticketsData as any)?.ticket_code || order.order_number
 
       // Log notification attempt
       console.log('[sendTicketNotifications] Attempting to notify order:', {
         order_id: order.id,
         order_number: order.order_number,
+        invoice_number: invoiceNumber,
         customer_email,
         customer_phone,
         total_quantity: totalQuantity,
       })
 
-      // Send WhatsApp reminder if phone provided
+      // Send WhatsApp notification if phone provided
+      let whatsappSent = false
+      let whatsappError: string | null = null
+
       if (customer_phone && customer_phone.trim()) {
-        console.log('[sendTicketNotifications] Sending WhatsApp reminder to:', customer_phone)
-        // In production, integrate with Twilio or similar WhatsApp service
-        // For now, log the reminder message that would be sent
-        const reminderMessage = `Hi ${customer_name || 'Guest'}! 👋
+        try {
+          const whatsappEnv = getDokuWhatsAppEnv()
+          
+          if (whatsappEnv.isEnabled) {
+            console.log('[sendTicketNotifications] Sending WhatsApp notification to:', customer_phone)
+            
+            // Build template parameters for DOKU WhatsApp API
+            const templateParams = buildTicketConfirmationParams({
+              customerName: customer_name || 'Guest',
+              invoiceNumber,
+              bookingDate: firstBookingDate,
+              sessionTime: firstTimeSlot,
+              ticketCount: totalQuantity,
+              venueName: 'SPARK STAGE 55',
+            })
 
-Your Spark Stage tickets are ready! 🎉
+            // Send via DOKU WhatsApp API
+            const result = await sendWhatsAppMessage({
+              clientId: whatsappEnv.clientId,
+              secretKey: whatsappEnv.secretKey,
+              isProduction: whatsappEnv.isProduction,
+              templateId: whatsappEnv.ticketConfirmationTemplateId,
+              destinationPhone: customer_phone,
+              params: templateParams,
+            })
 
-⏰ *PENTING: Datang lebih awal 15-20 menit sebelum jadwal Anda!*
+            if (result.success) {
+              console.log('[sendTicketNotifications] WhatsApp sent successfully:', {
+                messageId: result.messageId,
+                phone: customer_phone,
+              })
+              whatsappSent = true
 
-Ini membantu kami mempersiapkan tempat Anda dan memberikan pengalaman terbaik.
+              // Log to whatsapp_messages table
+              try {
+                await supabase.from('whatsapp_messages').insert({
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  customer_phone: customer_phone.trim(),
+                  customer_name: customer_name || null,
+                  template_id: whatsappEnv.ticketConfirmationTemplateId,
+                  params: templateParams,
+                  ticket_code: invoiceNumber,
+                  booking_date: firstBookingDate,
+                  session_time: firstTimeSlot,
+                  ticket_count: totalQuantity,
+                  doku_message_id: result.messageId || null,
+                  provider_status: 'submitted',
+                  delivery_status: 'submitted',
+                  sent_at: new Date().toISOString(),
+                })
+              } catch (logError) {
+                console.error('[sendTicketNotifications] Failed to log to whatsapp_messages:', logError)
+              }
+            } else {
+              console.error('[sendTicketNotifications] WhatsApp send failed:', result.error)
+              whatsappError = result.error || 'Unknown error'
 
-Terima kasih! ✨`
-        
-        console.log('[sendTicketNotifications] WhatsApp message:', reminderMessage)
+              // Log failed attempt to whatsapp_messages table
+              try {
+                await supabase.from('whatsapp_messages').insert({
+                  order_id: order.id,
+                  order_number: order.order_number,
+                  customer_phone: customer_phone.trim(),
+                  customer_name: customer_name || null,
+                  template_id: whatsappEnv.ticketConfirmationTemplateId,
+                  params: templateParams,
+                  ticket_code: invoiceNumber,
+                  booking_date: firstBookingDate,
+                  session_time: firstTimeSlot,
+                  ticket_count: totalQuantity,
+                  provider_status: 'failed',
+                  delivery_status: 'failed',
+                  error_message: whatsappError,
+                  sent_at: new Date().toISOString(),
+                })
+              } catch (logError) {
+                console.error('[sendTicketNotifications] Failed to log failure to whatsapp_messages:', logError)
+              }
+              
+              // Log the failure but don't throw - we want other notifications to proceed
+              await logWebhookEvent(supabase, {
+                orderNumber: order.order_number,
+                eventType: 'whatsapp_notification_failed',
+                payload: {
+                  phone: customer_phone,
+                  error: whatsappError,
+                  details: result.details,
+                },
+                success: false,
+                errorMessage: whatsappError,
+                processedAt: nowIso,
+              })
+            }
+          } else {
+            console.log('[sendTicketNotifications] WhatsApp notifications disabled in environment')
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+          console.error('[sendTicketNotifications] Exception sending WhatsApp:', errorMsg)
+          whatsappError = errorMsg
+          
+          // Log exception but don't throw
+          await logWebhookEvent(supabase, {
+            orderNumber: order.order_number,
+            eventType: 'whatsapp_notification_exception',
+            payload: { phone: customer_phone, error: errorMsg },
+            success: false,
+            errorMessage: errorMsg,
+            processedAt: nowIso,
+          })
+        }
       }
 
       // Award loyalty points (this is always done)
+      let pointsAwarded = false
       if (user_id && totalQuantity > 0) {
         try {
           const { data: pointsResult, error: pointsError } = await supabase.rpc('award_loyalty_points', {
@@ -485,6 +609,7 @@ Terima kasih! ✨`
             console.error('[sendTicketNotifications] Error awarding points:', pointsError.message)
           } else {
             console.log('[sendTicketNotifications] Loyalty points awarded:', pointsResult)
+            pointsAwarded = true
           }
         } catch (error) {
           console.error('[sendTicketNotifications] Exception awarding points:', error)
@@ -495,9 +620,11 @@ Terima kasih! ✨`
         notified: true, 
         skipped: false, 
         details: { 
-          whatsapp_reminder: !!(customer_phone && customer_phone.trim()),
+          whatsapp_sent: whatsappSent,
+          whatsapp_error: whatsappError,
+          phone: customer_phone ? `${customer_phone.slice(0, 3)}***` : null,
           email: !!customer_email,
-          points_awarded: totalQuantity > 0
+          points_awarded: pointsAwarded,
         } 
       }
     },

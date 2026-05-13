@@ -120,3 +120,33 @@ export function getPublicAppUrl(): string | null {
 
   return preferred || getAllowedAppOrigins()[0] || null;
 }
+
+export function getDokuWhatsAppEnv() {
+  const isEnabled =
+    (Deno.env.get("DOKU_WHATSAPP_ENABLED") ?? "").toLowerCase() === "true";
+
+  if (!isEnabled) {
+    return {
+      isEnabled: false,
+      clientId: "",
+      secretKey: "",
+      ticketConfirmationTemplateId: "",
+      isProduction: false,
+    };
+  }
+
+  return {
+    isEnabled: true,
+    clientId: getRequiredEnv("DOKU_CLIENT_ID"),
+    secretKey:
+      Deno.env.get("DOKU_SECRET_KEY") ||
+      Deno.env.get("DOKU_CLIENT_SECRET") ||
+      Deno.env.get("DOKU_SHARED_KEY") ||
+      "",
+    ticketConfirmationTemplateId: getRequiredEnv(
+      "DOKU_WHATSAPP_TICKET_CONFIRMATION_TEMPLATE_ID",
+    ),
+    isProduction:
+      (Deno.env.get("DOKU_IS_PRODUCTION") ?? "").toLowerCase() === "true",
+  };
+}

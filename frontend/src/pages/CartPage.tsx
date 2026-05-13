@@ -12,15 +12,23 @@ export default function CartPage() {
 
   // Initialize selection with all items on load
   useEffect(() => {
-    // Only set if we haven't set it yet (to avoid resetting on every render if we didn't want to)
-    // But actually, for a simple implementation, let's just make sure we capture new items? 
-    // Or just default to all if empty and items exist.
-    // Let's use a simpler approach: If items change length, we might want to preserve selection or select new ones.
-    // For now, let's just default to ALL selected on first load.
     if (selectedItems.size === 0 && items.length > 0) {
       setSelectedItems(new Set(items.map((i) => i.variantId)));
     }
-  }, [items, selectedItems.size]); // Re-evaluate when cart contents or current selection changes.
+  }, []);
+
+  // Clean up selected items that no longer exist in cart
+  useEffect(() => {
+    const validVariantIds = new Set(items.map((i) => i.variantId));
+    const newSelection = new Set(
+      Array.from(selectedItems).filter((id) => validVariantIds.has(id))
+    );
+    
+    // Only update if there's a change to avoid unnecessary renders
+    if (newSelection.size !== selectedItems.size) {
+      setSelectedItems(newSelection);
+    }
+  }, [items]);
 
   const toggleSelection = (id: number) => {
     const newSet = new Set(selectedItems);
@@ -265,14 +273,16 @@ export default function CartPage() {
                 </div>
 
                 <div className="space-y-3 relative">
-                  <button
-                    onClick={() => navigate('/checkout/product', { state: { selectedVariantIds: Array.from(selectedItems) } })}
-                    disabled={selectedCount === 0}
-                    className="w-full bg-[#e63d75] text-white py-4 rounded-xl uppercase tracking-widest text-sm font-bold shadow-lg shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-2"
-                  >
-                    Checkout ({selectedCount})
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  <div title={selectedCount === 0 ? "Select at least one item to checkout" : ""}>
+                    <button
+                      onClick={() => navigate('/checkout/product', { state: { selectedVariantIds: Array.from(selectedItems) } })}
+                      disabled={selectedCount === 0}
+                      className="w-full bg-[#e63d75] text-white py-4 rounded-xl uppercase tracking-widest text-sm font-bold shadow-lg shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-2"
+                    >
+                      Checkout ({selectedCount})
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => navigate('/shop')}
