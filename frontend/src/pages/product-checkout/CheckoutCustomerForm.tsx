@@ -46,10 +46,11 @@ export function CheckoutCustomerForm({
           value={customerPhone}
           onChange={(event) => onChangePhone(event.target.value)}
           className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 px-4 outline-none transition-all"
-          placeholder="08xxxxxxxxxx"
+          placeholder="628XXXXXXXX"
           disabled={loading}
           required
         />
+        <p className="text-xs text-gray-500">Masukan +628xxxx (WhatsApp akan dikirim otomatis setelah pembayaran berhasil)</p>
       </div>
 
       <div className="space-y-1.5">

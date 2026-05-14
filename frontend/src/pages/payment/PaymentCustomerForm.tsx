@@ -58,10 +58,12 @@ export function PaymentCustomerForm({
             value={customerPhone}
             onChange={(event) => onChangeCustomerPhone(event.target.value)}
             className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 px-4"
-            placeholder="08xxxxxxxxxx"
+            placeholder="628XXXXXXXX"
             disabled={loading}
           />
-          <p className="text-xs text-amber-600">Kami akan mengirim reminder ke WhatsApp ini untuk datang lebih awal</p>
+          <p className="text-xs text-amber-600">
+            Masukan +628xxxx. Kami akan mengirim reminder ke WhatsApp ini untuk datang lebih awal.
+          </p>
         </div>
 
         <div className="space-y-1.5">
