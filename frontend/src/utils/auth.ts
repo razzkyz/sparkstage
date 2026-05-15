@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { lookupAdminRole, lookupUserRole } from '../auth/adminRole';
 import { readCurrentAccessToken, readCurrentSessionSnapshot } from '../auth/sessionAccess';
 import { supabase } from '../lib/supabase';
-import { ADMIN_MENU_SECTIONS, STARGUIDE_MENU_SECTIONS } from '../constants/adminMenu';
+import { ADMIN_MENU_SECTIONS, STARGUIDE_MENU_SECTIONS, CASHIER_MENU_SECTIONS } from '../constants/adminMenu';
 
 // Token refresh threshold: refresh if token expires within 5 minutes
 const TOKEN_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
@@ -81,6 +81,9 @@ export const getMenuSectionsByRole = async (userId: string | undefined) => {
   const result = await lookupUserRole(userId);
   if (result.ok && result.role === 'starguide') {
     return STARGUIDE_MENU_SECTIONS;
+  }
+  if (result.ok && result.role === 'kasir') {
+    return CASHIER_MENU_SECTIONS;
   }
   return ADMIN_MENU_SECTIONS;
 };

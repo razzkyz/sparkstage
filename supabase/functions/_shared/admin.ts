@@ -2,7 +2,7 @@ import { json } from './http.ts'
 import { createServiceClient } from './supabase.ts'
 import { requireAuthenticatedRequest } from './auth.ts'
 
-const ADMIN_ROLES = new Set(['admin', 'super_admin', 'super-admin', 'starguide'])
+const ADMIN_ROLES = new Set(['admin', 'super_admin', 'super-admin', 'starguide', 'kasir'])
 
 type AdminContext = {
   user: { id: string; email?: string | null }

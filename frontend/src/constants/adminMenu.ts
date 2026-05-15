@@ -17,6 +17,18 @@ export const STARGUIDE_MENU_SECTIONS: AdminMenuSection[] = [
   },
 ];
 
+export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
+  {
+    id: 'sales',
+    label: 'Penjualan',
+    items: [
+      { id: 'cashier-dashboard', label: 'Dashboard Penjualan', icon: 'dashboard', path: '/admin/cashier-dashboard', highlight: true },
+      { id: 'cashier-orders', label: 'Cek Pesanan', icon: 'receipt_long', path: '/admin/cashier-orders' },
+      { id: 'product-scan', label: 'Scan QR Produk', icon: 'qr_code_scanner', path: '/admin/product-pickup', highlight: true },
+    ],
+  },
+];
+
 export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
   {
     id: 'management',

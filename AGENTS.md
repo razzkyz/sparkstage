@@ -30,6 +30,7 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - Voucher behavior: `docs/decisions/voucher-system.md`
 - ImageKit migration status: `docs/runbooks/imagekit-migration.md`
 - Product admin data-entry rules: `docs/runbooks/admin-product-entry.md`
+- Kasir (Cashier) role setup: `docs/runbooks/kasir-setup.md`
 
 ## Core Commands
 
@@ -58,6 +59,16 @@ npm run supabase:functions:serve
 - WhatsApp invoice sending: `supabase/functions/send-whatsapp-invoice`, `supabase/functions/_shared/fonnte.ts`
 - Session and auth timing: `frontend/src/contexts/AuthContext.tsx`, `frontend/src/hooks/useSessionRefresh.ts`
 - Large route map: `frontend/src/App.tsx`
+- Role-based routing: `frontend/src/pages/Login.tsx` (kasir vs admin dashboard)
+
+## Auth & Roles
+
+Current roles: `admin`, `super_admin`, `starguide`, `kasir`
+- **Admin**: Full access to all admin features
+- **StarGuide**: Ticket scanning only (entrance management)
+- **Kasir**: Sales dashboard + product QR scanning (read-only)
+
+Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/adminRole.ts`
 
 ## Working Rules
 

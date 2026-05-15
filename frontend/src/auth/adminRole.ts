@@ -2,7 +2,7 @@ import { createQuerySignal } from '../lib/fetchers';
 import { supabase } from '../lib/supabase';
 
 export const ADMIN_ROLE_CHECK_TIMEOUT_MS = 10000;
-export const ADMIN_ROLES = new Set(['admin', 'super_admin', 'super-admin', 'starguide']);
+export const ADMIN_ROLES = new Set(['admin', 'super_admin', 'super-admin', 'starguide', 'kasir']);
 
 export type AdminRoleLookupResult =
   | { ok: true; isAdmin: boolean }

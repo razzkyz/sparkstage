@@ -26,6 +26,7 @@ export const queryKeys = {
   myOrders: (userId: string) => ['my-orders', userId] as const,
 
   dashboardStats: () => ['dashboard-stats'] as const,
+  cashierSalesStats: () => ['cashier-sales-stats'] as const,
   productOrders: () => ['admin-product-orders'] as const,
   productOrderDetails: () => ['admin-product-order-detail'] as const,
   productOrderDetail: (pickupCode: string) => ['admin-product-order-detail', pickupCode] as const,

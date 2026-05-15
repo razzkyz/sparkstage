@@ -12,6 +12,7 @@ import {
 } from '../auth/postAuthRedirect';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../utils/auth';
+import { lookupUserRole } from '../auth/adminRole';
 import { supabase } from '../lib/supabase';
 import { withTimeout } from '../utils/queryHelpers';
 
@@ -72,11 +73,25 @@ const Login = () => {
           'Session timeout. Please try again.'
         );
         const userId = sessionData.session?.user?.id;
-        const adminStatus = userId ? await isAdmin(userId) : false;
+        
+        if (!userId) {
+          setError('Failed to get user ID');
+          setLoading(false);
+          return;
+        }
+        
+        const adminStatus = await isAdmin(userId);
         
         if (adminStatus) {
-          clearPostAuthRedirect();
-          navigate('/admin/dashboard');
+          // Check if user is kasir
+          const roleResult = await lookupUserRole(userId);
+          if (roleResult.ok && roleResult.role === 'kasir') {
+            clearPostAuthRedirect();
+            navigate('/admin/cashier-dashboard');
+          } else {
+            clearPostAuthRedirect();
+            navigate('/admin/dashboard');
+          }
         } else {
           const redirect = postAuthRedirect ?? consumePostAuthRedirect();
           navigate(redirect?.returnTo ?? '/', redirect?.returnState ? { state: redirect.returnState } : undefined);

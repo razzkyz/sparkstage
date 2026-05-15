@@ -1,5 +1,6 @@
 import { ADMIN_MENU_SECTIONS } from '../../../constants/adminMenu';
 import type { OrderSummaryRow } from '../../../hooks/useProductOrders';
+import { formatDateTimeWIB, toLocalDateString, nowWIB } from '../../../utils/timezone';
 import type { ProductOrdersTab } from './productOrdersTypes';
 
 const EMPTY_STATE_COPY: Record<ProductOrdersTab, { icon: string; message: string }> = {
@@ -34,7 +35,7 @@ export function getPendingPaymentOrders(orders: OrderSummaryRow[]) {
 }
 
 export function getTodaysOrders(orders: OrderSummaryRow[]) {
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = toLocalDateString(nowWIB());
   return orders
     .filter((order) => order.payment_status === 'paid')
     .filter((order) => {
@@ -86,12 +87,7 @@ export function getOrderTimingLabel(order: OrderSummaryRow) {
   if (order.pickup_status === 'completed' && order.updated_at) {
     return {
       prefix: 'Terverifikasi:',
-      value: new Date(order.updated_at).toLocaleString('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      value: formatDateTimeWIB(order.updated_at),
     };
   }
 
@@ -100,12 +96,7 @@ export function getOrderTimingLabel(order: OrderSummaryRow) {
 
   return {
     prefix: order.paid_at ? 'Dibayar:' : 'Order:',
-    value: new Date(dateValue).toLocaleString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
+    value: formatDateTimeWIB(dateValue),
   };
 }
 
