@@ -123,6 +123,24 @@ const Booking = () => {
                     </p>
                   </div>
 
+                  <div
+                    className="flex gap-3 px-3 py-2.5 mb-6 rounded-lg"
+                    style={{
+                      backgroundColor: '#f0f9ff',
+                      border: '1px solid #7dd3fc',
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: '17px', color: '#0369a1', marginTop: '2px', flexShrink: 0 }}
+                    >
+                      info
+                    </span>
+                    <p style={{ fontSize: '13px', color: '#0c4a6e', margin: 0, lineHeight: '1.55' }}>
+                      <strong>🧦 WAJIB:</strong> Membawa kaos kaki pribadi untuk digunakan saat memakai costume sepatu maupun saat berada di area lepas alas kaki demi kenyamanan dan kebersihan bersama.
+                    </p>
+                  </div>
+
                   <JourneyCalendarSection
                     monthName={monthName}
                     canGoPrevMonth={canGoPrevMonth}

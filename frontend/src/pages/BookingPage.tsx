@@ -181,6 +181,24 @@ export default function BookingPage() {
               </p>
             </div>
 
+            <div
+              className="flex gap-3 px-4 py-3 mb-6 rounded-lg"
+              style={{
+                backgroundColor: '#f0f9ff',
+                border: '1px solid #7dd3fc',
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: '18px', color: '#0369a1', marginTop: '1px', flexShrink: 0 }}
+              >
+                info
+              </span>
+              <p style={{ fontSize: '13.5px', color: '#0c4a6e', margin: 0, lineHeight: '1.55' }}>
+                <strong>🧦 WAJIB:</strong> Membawa kaos kaki pribadi untuk digunakan saat memakai costume sepatu maupun saat berada di area lepas alas kaki demi kenyamanan dan kebersihan bersama.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 flex flex-col gap-10">
                 <BookingCalendarPanel
