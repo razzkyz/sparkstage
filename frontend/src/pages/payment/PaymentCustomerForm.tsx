@@ -91,6 +91,24 @@ export function PaymentCustomerForm({
         </div>
       </div>
 
+      {/* SPARK CLUB Points Info */}
+      {bookingDetails.quantity > 0 && (
+        <div
+          className="mb-4 rounded-xl px-4 py-3 flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg, #fff0f5, #ffe4ef)', border: '1px solid rgba(255,75,134,0.2)' }}
+        >
+          <span className="text-2xl flex-shrink-0">⭐</span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: '#e63d75' }}>
+              Kamu akan dapat {(bookingDetails.quantity * 20).toLocaleString()} SPARK CLUB Points!
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {bookingDetails.quantity} tiket × 20 poin — bisa ditukar jadi diskon belanja di SPARK CLUB 🎁
+            </p>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={onPay}
         disabled={loading || !bookingDetails.ticketId || !bookingDetails.price || !checkoutReady}

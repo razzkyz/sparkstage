@@ -47,7 +47,7 @@ export function CheckoutVoucherSection({
         <button
           onClick={onApplyVoucher}
           disabled={loading || applyingVoucher || !voucherCode.trim()}
-          className="rounded-lg bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed"
+          className="rounded-lg bg-[#ff4b86] px-4 py-3 text-sm font-bold text-white hover:bg-[#e63d75] disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           {applyingVoucher ? t('voucher.applying') : t('voucher.apply')}
         </button>

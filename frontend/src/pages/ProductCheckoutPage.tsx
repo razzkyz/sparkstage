@@ -153,6 +153,7 @@ export default function ProductCheckoutPage() {
                 finalTotal={finalTotal}
                 cashierCheckoutEnabled={cashierCheckoutEnabled}
                 cashierDisabled={cashierDisabled}
+                totalItems={orderItems.reduce((sum, i) => sum + i.quantity, 0)}
                 onPay={handlePay}
                 onCashierCheckout={handleCashierCheckout}
               />

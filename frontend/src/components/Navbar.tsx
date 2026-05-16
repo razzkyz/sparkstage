@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, ReceiptText, Search, ShoppingCart, Sparkles, Ticket, UserRound, type LucideIcon } from 'lucide-react';
+import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
 
 type NavItem = {
@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTicketCount } from '../hooks/useTicketCount';
 import { useOrderCount } from '../hooks/useOrderCount';
 import { useCart } from '../contexts/cartStore';
-import { useLoyaltyPoints } from '../hooks/useLoyaltyPoints';
+import { useLoyaltyPoints, getLoyaltyRank } from '../hooks/useLoyaltyPoints';
 import { getUserDisplayName } from '../utils/auth';
 
 const Navbar = () => {
@@ -31,6 +31,7 @@ const Navbar = () => {
   const { totalQuantity } = useCart();
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
   const loyaltyPoints = loyaltyData?.total_points ?? 0;
+  const loyaltyRank = getLoyaltyRank(loyaltyPoints);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -241,17 +242,31 @@ const Navbar = () => {
                   <LogOut className="h-5 w-5" />
                 </button>
 
-                {/* Loyalty Points Badge */}
+                {/* Loyalty Points Badge — Desktop */}
                 <Link
                   to="/my-points"
-                  className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all hover:shadow-sm"
-                  style={{ background: 'linear-gradient(135deg, #1a0a2e, #2d0f5e)', border: '1px solid rgba(255,75,134,0.3)' }}
-                  title="SPARK CLUB Points"
+                  className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)',
+                    boxShadow: '0 2px 10px rgba(255,75,134,0.4)',
+                  }}
+                  title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
                 >
-                  <Sparkles className="h-3.5 w-3.5" style={{ color: '#ff4b86' }} />
-                  <span className="text-xs font-bold" style={{ color: '#ff4b86' }}>
+                  {/* Rank icon */}
+                  <span className="text-sm leading-none">
+                    {loyaltyRank.icon}
+                  </span>
+                  {/* Points count */}
+                  <span className="text-xs font-black tracking-tight text-white">
                     {loyaltyPoints.toLocaleString()}
                   </span>
+                  {/* pts label */}
+                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">pts</span>
+                  {/* Shine on hover */}
+                  <span
+                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)' }}
+                  />
                 </Link>
 
                 <Link
@@ -321,7 +336,7 @@ const Navbar = () => {
               <div className="hidden lg:flex items-center gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-main-600 text-white rounded-md hover:bg-main-700 transition-colors shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
                 >
                   <UserRound className="h-4 w-4" />
                   {t('auth.signIn')}
@@ -521,7 +536,8 @@ const Navbar = () => {
           {isAdmin && (
             <Link
               to="/admin/dashboard"
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white active:scale-95 transition-transform"
+              style={{ background: '#ff4b86' }}
             >
               <span className="material-symbols-outlined text-[16px]">dashboard</span>
               Dashboard
@@ -533,11 +549,16 @@ const Navbar = () => {
               {/* Mobile: Points chip */}
               <Link
                 to="/my-points"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: 'linear-gradient(135deg, #1a0a2e, #2d0f5e)', border: '1px solid rgba(255,75,134,0.4)', color: '#ff4b86' }}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-black tracking-wide active:scale-95 transition-transform"
+                style={{
+                  background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
+                  boxShadow: '0 2px 8px rgba(255,75,134,0.4)',
+                  color: 'white',
+                }}
               >
-                <Sparkles className="h-3 w-3" />
-                {loyaltyPoints.toLocaleString()} Poin
+                <span className="text-sm">{loyaltyRank.icon}</span>
+                <span>{loyaltyPoints.toLocaleString()}</span>
+                <span className="opacity-70 font-semibold text-[10px]">pts</span>
               </Link>
 
               <Link

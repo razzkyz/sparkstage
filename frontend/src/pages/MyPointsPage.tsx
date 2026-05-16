@@ -38,52 +38,55 @@ const MyPointsPage = () => {
         {/* Header Hero */}
         <div
           className="relative overflow-hidden pb-20 pt-10 px-6"
-          style={{ background: 'linear-gradient(135deg, #0f0520 0%, #1e0845 45%, #2d0a6b 100%)' }}
+          style={{ background: '#ffffff' }}
         >
           {/* Decorative orbs */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, #ff4b86, transparent)' }} />
-          <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full opacity-8 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
+          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-5 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, #ff4b86, transparent)' }} />
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full opacity-3 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
 
           <div className="relative max-w-xl mx-auto text-center">
-            {/* Rank icon */}
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center text-5xl mx-auto mb-4 shadow-2xl"
-              style={{ background: rank.bgColor, border: `2px solid ${rank.borderColor}` }}
-            >
-              {rank.icon}
-            </div>
-
-            <p className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>SPARK CLUB</p>
-            <h1 className="text-4xl font-black text-white mb-1">
-              {loading
-                ? <span className="inline-block w-32 h-10 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                : <>{totalPoints.toLocaleString()} <span className="text-xl font-semibold" style={{ color: rank.color }}>Poin</span></>
-              }
-            </h1>
-            <p className="text-sm font-bold mb-1" style={{ color: rank.color }}>{rank.icon} {rank.label}</p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>1 tiket = 20 poin · 1 produk/rental = 20 poin · 1 poin = Rp 1 diskon</p>
-
-            {/* Progress to next rank */}
-            {nextRank && (
-              <div className="mt-5">
-                <div className="flex justify-between text-xs mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  <span>{totalPoints.toLocaleString()} poin</span>
-                  <span>{nextRank.minPoints.toLocaleString()} poin → {nextRank.icon} {nextRank.label}</span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${progress}%`,
-                      background: `linear-gradient(90deg, ${rank.gradientFrom}, ${rank.gradientTo})`,
-                    }}
-                  />
-                </div>
-                <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  Butuh {(nextRank.minPoints - totalPoints).toLocaleString()} poin lagi untuk naik ke {nextRank.label}
-                </p>
+            {/* Card Container */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg">
+              {/* Rank icon */}
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center text-5xl mx-auto mb-4 shadow-2xl"
+                style={{ background: rank.bgColor, border: `2px solid ${rank.borderColor}` }}
+              >
+                {rank.icon}
               </div>
-            )}
+
+              <p className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: '#000' }}>SPARK CLUB</p>
+              <h1 className="text-4xl font-black mb-1" style={{ color: '#000' }}>
+                {loading
+                  ? <span className="inline-block w-32 h-10 rounded-lg animate-pulse" style={{ background: 'rgba(0,0,0,0.1)' }} />
+                  : <>{totalPoints.toLocaleString()} <span className="text-xl font-semibold" style={{ color: rank.color }}>Poin</span></>
+                }
+              </h1>
+              <p className="text-sm font-bold mb-1" style={{ color: rank.color }}>{rank.icon} {rank.label}</p>
+              <p className="text-xs" style={{ color: '#666' }}>1 tiket = 20 poin · 1 produk/rental = 20 poin · 1 poin = Rp 1 diskon</p>
+
+              {/* Progress to next rank */}
+              {nextRank && (
+                <div className="mt-5">
+                  <div className="flex justify-between text-xs mb-1.5" style={{ color: '#666' }}>
+                    <span>{totalPoints.toLocaleString()} poin</span>
+                    <span>{nextRank.minPoints.toLocaleString()} poin → {nextRank.icon} {nextRank.label}</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.1)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${progress}%`,
+                        background: `linear-gradient(90deg, ${rank.gradientFrom}, ${rank.gradientTo})`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs mt-1.5" style={{ color: '#999' }}>
+                    Butuh {(nextRank.minPoints - totalPoints).toLocaleString()} poin lagi untuk naik ke {nextRank.label}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -125,14 +128,14 @@ const MyPointsPage = () => {
           <div className="grid grid-cols-2 gap-3">
             <Link
               to="/shop"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl p-4 text-sm font-semibold text-gray-700 hover:border-pink-300 hover:text-pink-600 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 bg-[#ff4b86] hover:bg-[#e63d75] rounded-xl p-4 text-sm font-semibold text-white transition-colors shadow-sm"
             >
               <span className="text-lg">🛍️</span>
               Belanja di SPARK CLUB
             </Link>
             <Link
               to="/booking"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl p-4 text-sm font-semibold text-gray-700 hover:border-pink-300 hover:text-pink-600 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 bg-[#ff4b86] hover:bg-[#e63d75] rounded-xl p-4 text-sm font-semibold text-white transition-colors shadow-sm"
             >
               <span className="text-lg">🎫</span>
               Beli Tiket

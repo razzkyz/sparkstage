@@ -31,12 +31,12 @@ export function CheckoutPointsSection({
 
   return (
     <div
-      className="mb-6 rounded-xl p-4 overflow-hidden relative"
-      style={{ background: 'linear-gradient(135deg, #0f0520, #1e0845)', border: '1px solid rgba(255,75,134,0.25)' }}
+      className="mb-6 rounded-xl p-4 overflow-hidden relative border border-gray-200"
+      style={{ background: '#ffffff' }}
     >
       {/* Subtle glow */}
       <div
-        className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10 blur-2xl pointer-events-none"
+        className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-5 blur-2xl pointer-events-none"
         style={{ background: 'radial-gradient(circle, #ff4b86, transparent)' }}
       />
 
@@ -46,8 +46,8 @@ export function CheckoutPointsSection({
           <div className="flex items-center gap-2">
             <span className="text-lg">{rank.icon}</span>
             <div>
-              <p className="text-xs font-bold text-white">SPARK CLUB Points</p>
-              <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <p className="text-xs font-bold" style={{ color: '#000' }}>SPARK CLUB Points</p>
+              <p className="text-[10px]" style={{ color: '#666' }}>
                 {userPoints.toLocaleString()} poin tersedia
                 {appliedPoints && (
                   <span style={{ color: '#22c55e' }}> · Dipakai: {appliedPoints.pointsUsed.toLocaleString()}</span>
@@ -84,9 +84,9 @@ export function CheckoutPointsSection({
           </div>
         ) : hasEnoughPoints ? (
           <div className="space-y-2">
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Maksimal bisa pakai <span className="font-bold text-white">{maxRedeemable.toLocaleString()} poin</span> = diskon <span className="font-bold" style={{ color: '#ff4b86' }}>{formatCurrency(maxRedeemable)}</span>
-              <span style={{ color: 'rgba(255,255,255,0.3)' }}> (maks. 50% dari subtotal)</span>
+            <p className="text-xs" style={{ color: '#666' }}>
+              Maksimal bisa pakai <span className="font-bold" style={{ color: '#000' }}>{maxRedeemable.toLocaleString()} poin</span> = diskon <span className="font-bold" style={{ color: '#ff4b86' }}>{formatCurrency(maxRedeemable)}</span>
+              <span style={{ color: '#999' }}> (maks. 50% dari subtotal)</span>
             </p>
             <div className="flex gap-2">
               <button
@@ -101,7 +101,7 @@ export function CheckoutPointsSection({
             </div>
           </div>
         ) : (
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="text-xs" style={{ color: '#999' }}>
             Poin kamu ({userPoints.toLocaleString()}) tidak cukup untuk diskon pada order ini.
           </p>
         )}

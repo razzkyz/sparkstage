@@ -6,6 +6,7 @@ type CheckoutPaymentSectionProps = {
   finalTotal: number;
   cashierCheckoutEnabled: boolean;
   cashierDisabled: boolean;
+  totalItems: number;
   onPay: () => void;
   onCashierCheckout: () => void;
 };
@@ -16,12 +17,15 @@ export function CheckoutPaymentSection({
   finalTotal,
   cashierCheckoutEnabled,
   cashierDisabled,
+  totalItems,
   onPay,
   onCashierCheckout,
 }: CheckoutPaymentSectionProps) {
+  const pointsToEarn = totalItems * 20;
+
   return (
     <>
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
         <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-blue-500">info</span>
           <div>
@@ -32,6 +36,24 @@ export function CheckoutPaymentSection({
           </div>
         </div>
       </div>
+
+      {/* SPARK CLUB Points Info */}
+      {pointsToEarn > 0 && (
+        <div
+          className="mb-4 rounded-xl px-4 py-3 flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg, #fff0f5, #ffe4ef)', border: '1px solid rgba(255,75,134,0.2)' }}
+        >
+          <span className="text-2xl flex-shrink-0">⭐</span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: '#e63d75' }}>
+              Kamu akan dapat {pointsToEarn.toLocaleString()} SPARK CLUB Points!
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {totalItems} item × 20 poin — bisa ditukar jadi diskon di pembelian berikutnya 🎁
+            </p>
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onPay}
@@ -55,10 +77,10 @@ export function CheckoutPaymentSection({
         <button
           onClick={onCashierCheckout}
           disabled={loading || cashierDisabled}
-          className="w-full mt-3 bg-white hover:bg-rose-50 disabled:bg-gray-100 disabled:cursor-not-allowed text-primary font-bold py-4 rounded-xl border border-rose-100 transition-all flex flex-col items-center justify-center"
+          className="w-full mt-3 bg-[#ff4b86] hover:bg-[#e63d75] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all flex flex-col items-center justify-center"
         >
           <span>Bayar di Kasir</span>
-          <span className="text-xs font-semibold text-rose-700 mt-1">Checkout at cashier</span>
+          <span className="text-xs font-semibold text-white/80 mt-1">Checkout at cashier</span>
         </button>
       )}
     </>

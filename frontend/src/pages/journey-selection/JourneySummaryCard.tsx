@@ -94,7 +94,7 @@ export function JourneySummaryCard({
       <button
         onClick={onProceed}
         disabled={!selectedDate || (!selectedTime && !isAllDayTicket)}
-        className="w-full bg-main-600 hover:bg-main-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 md:py-4 rounded-lg transition-all shadow-lg text-sm md:text-base"
+        className="w-full bg-[#ff4b86] hover:bg-[#e63d75] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 md:py-4 rounded-lg transition-all shadow-lg text-sm md:text-base"
       >
         {copy.proceed_button_label}
       </button>
