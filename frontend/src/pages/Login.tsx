@@ -83,11 +83,20 @@ const Login = () => {
         const adminStatus = await isAdmin(userId);
         
         if (adminStatus) {
-          // Check if user is kasir
+          // Route based on user role
           const roleResult = await lookupUserRole(userId);
-          if (roleResult.ok && roleResult.role === 'kasir') {
+          if (roleResult.ok) {
             clearPostAuthRedirect();
-            navigate('/admin/cashier-dashboard');
+            switch (roleResult.role) {
+              case 'kasir':
+                navigate('/admin/cashier-dashboard');
+                break;
+              case 'dressing_room_admin':
+                navigate('/admin/dashboard');
+                break;
+              default:
+                navigate('/admin/dashboard');
+            }
           } else {
             clearPostAuthRedirect();
             navigate('/admin/dashboard');

@@ -1,27 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
-import { getMenuSectionsByRole } from '../../utils/auth';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
-import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { showToast } = useToast();
   const { data: stats, error, isLoading } = useDashboardStats();
-  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
-
-  useEffect(() => {
-    const loadMenuSections = async () => {
-      const sections = await getMenuSectionsByRole(user?.id);
-      setMenuSections(sections);
-    };
-    loadMenuSections();
-  }, [user?.id]);
+  const menuSections = useAdminMenuSections();
 
   useEffect(() => {
     if (error) {

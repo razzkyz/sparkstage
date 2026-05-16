@@ -16,7 +16,7 @@ import type {
 } from './bookingTypes';
 
 const DEFAULT_MAX_TICKETS = 5;
-const DEFAULT_BOOKING_WINDOW_DAYS = 30;
+const DEFAULT_BOOKING_WINDOW_DAYS = 90;
 
 export function useBookingSelectionState(params: BookingSelectionStateParams) {
   const { ticket, availabilities } = params;

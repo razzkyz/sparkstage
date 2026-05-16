@@ -1,14 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
-import { getMenuSectionsByRole } from '../../utils/auth';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { completeProductPickup } from './product-pickup/completeProductPickup';
-import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const ProductPickup = () => {
-  const { signOut, session, user } = useAuth();
+  const { signOut, session } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [showValidationPopup, setShowValidationPopup] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -23,15 +22,7 @@ const ProductPickup = () => {
       pickupStatus: string;
     };
   } | null>(null);
-  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
-
-  useEffect(() => {
-    const loadMenuSections = async () => {
-      const sections = await getMenuSectionsByRole(user?.id);
-      setMenuSections(sections);
-    };
-    loadMenuSections();
-  }, [user?.id]);
+  const menuSections = useAdminMenuSections();
 
   const completePickup = useCallback(
     async (rawCode: string): Promise<void> => {

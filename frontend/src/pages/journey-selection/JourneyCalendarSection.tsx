@@ -46,7 +46,7 @@ export function JourneyCalendarSection({
       </div>
 
       <div className="grid grid-cols-7 gap-1 md:gap-2">
-        {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
+        {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((day) => (
           <div key={day} className="text-gray-500 text-xs md:text-xs font-bold uppercase flex h-8 md:h-10 items-center justify-center">
             {day}
           </div>

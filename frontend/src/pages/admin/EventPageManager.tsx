@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import {
   DEFAULT_EVENT_PAGE_SETTINGS,
   useEventSettings,
@@ -59,6 +60,7 @@ export default function EventPageManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
   const { settings, isLoading, updateSettings } = useEventSettings();
+  const menuSections = useAdminMenuSections();
 
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<EventPageDraft>(() => createEventDraft(DEFAULT_EVENT_PAGE_SETTINGS));
@@ -111,7 +113,7 @@ export default function EventPageManager() {
 
   if (isLoading && !settings) {
     return (
-      <AdminLayout menuItems={ADMIN_MENU_ITEMS} menuSections={ADMIN_MENU_SECTIONS} defaultActiveMenuId="event-page" title="Event Page CMS" subtitle="Loading..." onLogout={signOut}>
+      <AdminLayout menuItems={ADMIN_MENU_ITEMS} menuSections={menuSections} defaultActiveMenuId="event-page" title="Event Page CMS" subtitle="Loading..." onLogout={signOut}>
         <div className="animate-pulse bg-white p-6 rounded-2xl h-96"></div>
       </AdminLayout>
     );
@@ -120,7 +122,7 @@ export default function EventPageManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="event-page"
       title="Event Page CMS"
       subtitle="Manage portfolio layout on /events"

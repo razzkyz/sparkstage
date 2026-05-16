@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAdminMenuSections } from '../../../hooks/useAdminMenuSections';
 import type { OrderSummaryRow } from '../../../hooks/useProductOrders';
 import { queryKeys } from '../../../lib/queryKeys';
 import {
@@ -25,6 +26,7 @@ export function useProductOrdersController({
   showToast,
 }: UseProductOrdersControllerParams) {
   const queryClient = useQueryClient();
+  const baseMenuSections = useAdminMenuSections();
   const [activeTab, setActiveTab] = useState<ProductOrdersTab>('pending_pickup');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [lookupCode, setLookupCode] = useState('');
@@ -169,8 +171,8 @@ export function useProductOrdersController({
     [activeTab, completedOrders, pendingOrders, pendingPaymentOrders, todaysOrders]
   );
   const menuSections = useMemo(
-    () => buildProductOrdersMenuSections(pendingPickupCount + pendingPaymentCount),
-    [pendingPickupCount, pendingPaymentCount]
+    () => buildProductOrdersMenuSections(pendingPickupCount + pendingPaymentCount, baseMenuSections),
+    [pendingPickupCount, pendingPaymentCount, baseMenuSections]
   );
 
   return {

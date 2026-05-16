@@ -22,13 +22,13 @@ CREATE TABLE IF NOT EXISTS fonnte_whatsapp_logs (
 );
 
 -- Indexes for efficient querying
-CREATE INDEX idx_fonnte_logs_order_id ON fonnte_whatsapp_logs(order_id);
-CREATE INDEX idx_fonnte_logs_order_number ON fonnte_whatsapp_logs(order_number);
-CREATE INDEX idx_fonnte_logs_customer_phone ON fonnte_whatsapp_logs(customer_phone);
-CREATE INDEX idx_fonnte_logs_message_type ON fonnte_whatsapp_logs(message_type);
-CREATE INDEX idx_fonnte_logs_delivery_status ON fonnte_whatsapp_logs(delivery_status);
-CREATE INDEX idx_fonnte_logs_fonnte_message_id ON fonnte_whatsapp_logs(fonnte_message_id);
-CREATE INDEX idx_fonnte_logs_created_at ON fonnte_whatsapp_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_order_id ON fonnte_whatsapp_logs(order_id);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_order_number ON fonnte_whatsapp_logs(order_number);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_customer_phone ON fonnte_whatsapp_logs(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_message_type ON fonnte_whatsapp_logs(message_type);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_delivery_status ON fonnte_whatsapp_logs(delivery_status);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_fonnte_message_id ON fonnte_whatsapp_logs(fonnte_message_id);
+CREATE INDEX IF NOT EXISTS idx_fonnte_logs_created_at ON fonnte_whatsapp_logs(created_at DESC);
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_fonnte_logs_updated_at()

@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import {
   DEFAULT_NEWS_PAGE_SETTINGS,
   useNewsSettings,
@@ -130,6 +131,7 @@ export default function NewsPageManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
   const { settings, isLoading, updateSettings } = useNewsSettings();
+  const menuSections = useAdminMenuSections();
   const { data: allProducts, isLoading: isLoadingProducts } = useProductPickerOptions();
 
   const [saving, setSaving] = useState(false);
@@ -217,7 +219,7 @@ export default function NewsPageManager() {
 
   if ((isLoading && !settings) || isLoadingProducts) {
     return (
-      <AdminLayout menuItems={ADMIN_MENU_ITEMS} menuSections={ADMIN_MENU_SECTIONS} defaultActiveMenuId="news-page" title="News Page CMS" subtitle="Loading..." onLogout={signOut}>
+      <AdminLayout menuItems={ADMIN_MENU_ITEMS} menuSections={menuSections} defaultActiveMenuId="news-page" title="News Page CMS" subtitle="Loading..." onLogout={signOut}>
         <div className="animate-pulse bg-white p-6 rounded-2xl h-96"></div>
       </AdminLayout>
     );
@@ -226,7 +228,7 @@ export default function NewsPageManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="news-page"
       title="News Page CMS"
       subtitle="Manage layout and content on /news"

@@ -4,8 +4,9 @@ import { Upload, User, Phone, CreditCard, Share, FileText, CheckCircle, CameraOf
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 
 interface CustomerData {
   qrCode: string;
@@ -27,6 +28,7 @@ interface CustomerData {
 export default function DressingRoomScanPage() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showScanner, setShowScanner] = useState(false);
@@ -142,7 +144,7 @@ export default function DressingRoomScanPage() {
       title="Scan QR Customer"
       subtitle="Scan QR dan input data customer dressing room"
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="dressing-room-scan"
       onLogout={signOut}
     >

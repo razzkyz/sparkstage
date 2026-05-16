@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { clearPostAuthRedirect, consumePostAuthRedirect } from '../auth/postAuthRedirect';
 import { supabase } from '../lib/supabase';
 import { isAdmin } from '../utils/auth';
+import { lookupUserRole } from '../auth/adminRole';
 import { withTimeout } from '../utils/queryHelpers';
 
 const AuthCallback = () => {
@@ -30,8 +31,22 @@ const AuthCallback = () => {
           
           // Redirect based on role
           if (adminStatus) {
+            const roleResult = await lookupUserRole(session.user.id);
             clearPostAuthRedirect();
-            navigate('/admin/dashboard');
+            if (roleResult.ok) {
+              switch (roleResult.role) {
+                case 'kasir':
+                  navigate('/admin/cashier-dashboard');
+                  break;
+                case 'dressing_room_admin':
+                  navigate('/admin/dashboard');
+                  break;
+                default:
+                  navigate('/admin/dashboard');
+              }
+            } else {
+              navigate('/admin/dashboard');
+            }
           } else {
             const redirect = consumePostAuthRedirect();
             navigate(redirect?.returnTo ?? '/', redirect?.returnState ? { state: redirect.returnState } : undefined);

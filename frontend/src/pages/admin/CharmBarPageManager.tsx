@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import {
   DEFAULT_CHARM_BAR_PAGE_SETTINGS,
   type CharmBarPageSettings,
@@ -45,6 +46,7 @@ function createCharmBarDraft(source?: CharmBarPageSettings | null): CharmBarPage
 export default function CharmBarPageManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const { settings, isLoading, updateSettings } = useCharmBarSettings();
 
   const [saving, setSaving] = useState(false);
@@ -156,7 +158,7 @@ export default function CharmBarPageManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
         defaultActiveMenuId="charm-bar-page"
         title="Charm Bar CMS"
         subtitle="Loading..."
@@ -170,7 +172,7 @@ export default function CharmBarPageManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="charm-bar-page"
       title="Charm Bar CMS"
       subtitle="Manage editable content for /charm-bar"

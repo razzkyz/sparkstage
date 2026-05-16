@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useProductOrders } from '../../hooks/useProductOrders';
 import { useToast } from '../../components/Toast';
 import { ProductOrderDetailsModal } from './product-orders/ProductOrderDetailsModal';
@@ -91,7 +91,7 @@ export default function ProductOrders() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={menuSections.length > 0 ? menuSections : ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="product-orders"
       title="Pesanan Produk"
       subtitle="Scan pickup code untuk verifikasi barang."

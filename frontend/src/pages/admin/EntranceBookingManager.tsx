@@ -1,7 +1,8 @@
 import AdminLayout from '../../components/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useEntranceTicket } from '../../hooks/useEntranceTicket';
 import { useTicketBookingSettings } from '../../hooks/useTicketBookingSettings';
 import {
@@ -18,6 +19,7 @@ import { useEntranceOverridesManager } from './entrance-booking/useEntranceOverr
 export default function EntranceBookingManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const {
     data: ticket,
     error: ticketError,
@@ -82,7 +84,7 @@ export default function EntranceBookingManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="entrance-booking"
         title="Entrance Booking Manager"
         subtitle="Loading..."
@@ -97,7 +99,7 @@ export default function EntranceBookingManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="entrance-booking"
         title="Entrance Booking Manager"
         subtitle="Operational controls for entrance booking"
@@ -113,7 +115,7 @@ export default function EntranceBookingManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="entrance-booking"
       title="Entrance Booking Manager"
       subtitle="Operational controls for entrance booking"

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { Trash2, Edit, Plus, Star, Eye, EyeOff } from 'lucide-react';
@@ -22,6 +23,7 @@ interface VenueReview {
 const VenueReviewsAdmin = () => {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const [reviews, setReviews] = useState<VenueReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,7 +164,7 @@ const VenueReviewsAdmin = () => {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="venue-reviews"
       title="Venue Reviews"
       onLogout={signOut}

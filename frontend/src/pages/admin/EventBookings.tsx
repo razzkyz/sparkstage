@@ -1,11 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
-import { getMenuSectionsByRole } from '../../utils/auth';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { createClient } from '@supabase/supabase-js';
 import { useToast } from '../../components/Toast';
-import type { AdminMenuSection } from '../../components/AdminLayout';
 
 type PurchasedTicketStatus = 'active' | 'used' | 'cancelled' | 'expired';
 
@@ -25,21 +24,13 @@ interface PurchasedTicket {
 }
 
 export default function EventBookings() {
-  const { signOut, user, isAdmin } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const [bookings, setBookings] = useState<PurchasedTicket[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<PurchasedTicket | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
-
-  useEffect(() => {
-    const loadMenuSections = async () => {
-      const sections = await getMenuSectionsByRole(user?.id);
-      setMenuSections(sections);
-    };
-    loadMenuSections();
-  }, [user?.id]);
   const [timeSlotFilter, setTimeSlotFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
@@ -193,7 +184,7 @@ export default function EventBookings() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="event-bookings"
         title="Event Bookings"
         onLogout={signOut}

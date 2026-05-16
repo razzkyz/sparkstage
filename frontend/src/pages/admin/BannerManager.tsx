@@ -2,7 +2,8 @@ import AdminLayout from '../../components/AdminLayout';
 import BrandedLoader from '../../components/BrandedLoader';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { BannerFormModal } from './banner-manager/BannerFormModal';
 import { BannerTypeSection } from './banner-manager/BannerTypeSection';
 import { bannerTypeOrder } from './banner-manager/bannerManagerHelpers';
@@ -11,6 +12,7 @@ import { useBannerManagerController } from './banner-manager/useBannerManagerCon
 export default function BannerManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const controller = useBannerManagerController(showToast);
   const {
     loading,
@@ -40,7 +42,7 @@ export default function BannerManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="banner-manager"
       title="Banner Manager"
       subtitle="Manage hero, stage, shop, and event banners"

@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { VoucherFormModal } from './voucher-manager/VoucherFormModal';
 import { VoucherPagination } from './voucher-manager/VoucherPagination';
 import { VoucherTable } from './voucher-manager/VoucherTable';
@@ -11,6 +12,7 @@ import { useVoucherManagerController } from './voucher-manager/useVoucherManager
 export default function VoucherManager() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
+  const menuSections = useAdminMenuSections();
 
   const {
     vouchers,
@@ -44,7 +46,7 @@ export default function VoucherManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="vouchers"
       title={t('admin.vouchers.title')}
       subtitle={t('admin.vouchers.subtitle')}

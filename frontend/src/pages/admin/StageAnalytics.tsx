@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { useStageAnalytics, type StageAnalyticsTimeFilter, type StageAnalyticsData } from '../../hooks/useStageAnalytics';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
@@ -12,6 +13,7 @@ const EMPTY_STAGES: StageAnalyticsData[] = [];
 const StageAnalytics = () => {
     const { signOut, isAdmin } = useAuth();
     const { showToast } = useToast();
+    const menuSections = useAdminMenuSections();
     const [timeFilter, setTimeFilter] = useState<StageAnalyticsTimeFilter>('weekly');
     const lastToastErrorRef = useRef<string | null>(null);
 
@@ -60,7 +62,7 @@ const StageAnalytics = () => {
         return (
             <AdminLayout
                 menuItems={ADMIN_MENU_ITEMS}
-                menuSections={ADMIN_MENU_SECTIONS}
+                menuSections={menuSections}
                 defaultActiveMenuId="stage-analytics"
                 title="Stage Analytics"
                 onLogout={signOut}
@@ -79,7 +81,7 @@ const StageAnalytics = () => {
     return (
         <AdminLayout
             menuItems={ADMIN_MENU_ITEMS}
-            menuSections={ADMIN_MENU_SECTIONS}
+            menuSections={menuSections}
             defaultActiveMenuId="stage-analytics"
             title="Stage Analytics"
             onLogout={signOut}

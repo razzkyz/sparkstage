@@ -1,5 +1,5 @@
-import { ADMIN_MENU_SECTIONS } from '../../../constants/adminMenu';
 import type { OrderSummaryRow } from '../../../hooks/useProductOrders';
+import type { AdminMenuSection } from '../../../components/AdminLayout';
 import { formatDateTimeWIB, toLocalDateString, nowWIB } from '../../../utils/timezone';
 import type { ProductOrdersTab } from './productOrdersTypes';
 
@@ -104,8 +104,8 @@ export function getEmptyStateCopy(tab: ProductOrdersTab) {
   return EMPTY_STATE_COPY[tab];
 }
 
-export function buildProductOrdersMenuSections(pendingCount: number) {
-  return ADMIN_MENU_SECTIONS.map((section) => {
+export function buildProductOrdersMenuSections(pendingCount: number, baseSections: AdminMenuSection[]) {
+  return baseSections.map((section) => {
     if (section.id !== 'store') return section;
     return {
       ...section,

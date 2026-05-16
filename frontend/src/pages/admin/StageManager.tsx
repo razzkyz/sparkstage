@@ -6,7 +6,8 @@ import { supabase } from '../../lib/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 import AdminLayout from '../../components/AdminLayout';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { toLocalDateString } from '../../utils/formatters';
 import { useStages, useCreateStage, useUpdateStage, useDeleteStage, type StageWithStats, type StageRow } from '../../hooks/useStages';
@@ -17,6 +18,7 @@ import StageReviewsModal from '../../components/admin/StageReviewsModal';
 const StageManager = () => {
     const { signOut, isAdmin } = useAuth();
     const { showToast } = useToast();
+    const menuSections = useAdminMenuSections();
     const queryClient = useQueryClient();
     const { data: stages = [], error: stagesError, isLoading, refetch } = useStages({ enabled: isAdmin });
     const createStage = useCreateStage();
@@ -204,7 +206,7 @@ const StageManager = () => {
         return (
             <AdminLayout
                 menuItems={ADMIN_MENU_ITEMS}
-                menuSections={ADMIN_MENU_SECTIONS}
+                menuSections={menuSections}
                 defaultActiveMenuId="stages"
                 title="Stage Manager"
                 onLogout={signOut}
@@ -223,7 +225,7 @@ const StageManager = () => {
     return (
         <AdminLayout
             menuItems={ADMIN_MENU_ITEMS}
-            menuSections={ADMIN_MENU_SECTIONS}
+            menuSections={menuSections}
             defaultActiveMenuId="stages"
             title="Stage Manager"
             onLogout={signOut}

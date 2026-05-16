@@ -1,7 +1,8 @@
 import AdminLayout from '../../components/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { EventsScheduleEditorPanel } from './events-schedule-manager/EventsScheduleEditorPanel';
 import { EventsScheduleItemsPanel } from './events-schedule-manager/EventsScheduleItemsPanel';
 import { EventsScheduleOrderPanel } from './events-schedule-manager/EventsScheduleOrderPanel';
@@ -10,6 +11,7 @@ import { useEventsScheduleManagerController } from './events-schedule-manager/us
 export default function EventsScheduleManager() {
   const { signOut, isAdmin } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const controller = useEventsScheduleManagerController(showToast);
   const {
     isLoading,
@@ -41,7 +43,7 @@ export default function EventsScheduleManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="events-schedule"
         title="Events Schedule Manager"
         onLogout={signOut}
@@ -60,7 +62,7 @@ export default function EventsScheduleManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="events-schedule"
       title="Events Schedule Manager"
       subtitle="WYSIWYG editor for Upcoming Schedule on /events"

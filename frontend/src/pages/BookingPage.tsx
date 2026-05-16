@@ -156,6 +156,31 @@ export default function BookingPage() {
               </p>
             </div>
 
+            {/* ⚠️ Booking reminder notice */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                backgroundColor: '#fff8ed',
+                border: '1px solid #f5c97a',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                marginBottom: '24px',
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: '18px', color: '#c87f00', marginTop: '1px', flexShrink: 0 }}
+              >
+                warning
+              </span>
+              <p style={{ fontSize: '13.5px', color: '#7a4f00', margin: 0, lineHeight: '1.55' }}>
+                <strong>Perhatian!</strong> Pastikan memilih jadwal dan tanggal yang benar — jangan
+                sampai salah ya. <em>See you in stage! 🌟</em>
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 flex flex-col gap-10">
                 <BookingCalendarPanel

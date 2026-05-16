@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import {
   DEFAULT_BOOKING_PAGE_SETTINGS,
   useBookingPageSettings,
@@ -43,6 +44,7 @@ function SectionCard({
 export default function BookingPageManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const { settings, isLoading, updateSettings } = useBookingPageSettings();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<BookingPageFormState>(createDefaultFormState);
@@ -150,7 +152,7 @@ export default function BookingPageManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="booking-page"
         title="Booking Page CMS"
         subtitle="Loading..."
@@ -164,7 +166,7 @@ export default function BookingPageManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="booking-page"
       title="Booking Page CMS"
       subtitle="Manage journey selection and booking copy"

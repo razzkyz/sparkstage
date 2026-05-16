@@ -99,6 +99,30 @@ const Booking = () => {
                 </div>
               ) : (
                 <>
+                  {/* ⚠️ Booking reminder notice */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '10px',
+                      backgroundColor: '#fff8ed',
+                      border: '1px solid #f5c97a',
+                      borderRadius: '10px',
+                      padding: '11px 15px',
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: '17px', color: '#c87f00', marginTop: '2px', flexShrink: 0 }}
+                    >
+                      warning
+                    </span>
+                    <p style={{ fontSize: '13px', color: '#7a4f00', margin: 0, lineHeight: '1.55' }}>
+                      <strong>Perhatian!</strong> Pastikan memilih jadwal dan tanggal yang benar,
+                      jangan sampai salah ya. <em>See you in stage! 🌟</em>
+                    </p>
+                  </div>
+
                   <JourneyCalendarSection
                     monthName={monthName}
                     canGoPrevMonth={canGoPrevMonth}

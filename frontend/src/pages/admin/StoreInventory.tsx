@@ -6,8 +6,9 @@ import ProductFormModal, { type CategoryOption } from '../../components/admin/Pr
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useInventory } from '../../hooks/useInventory';
 import { DeleteProductDialog } from './store-inventory/DeleteProductDialog';
 import { InventoryEmptyState } from './store-inventory/InventoryEmptyState';
@@ -25,6 +26,7 @@ const normalizePickupCode = (value: string) => value.trim().toUpperCase();
 const StoreInventory = () => {
   const { signOut, session, getValidAccessToken, refreshSession } = useAuth();
   const { showToast } = useToast();
+  const menuSections = useAdminMenuSections();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -118,7 +120,7 @@ const StoreInventory = () => {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="store-inventory"
       title="Store & Inventory"
       subtitle="Manage products, stock levels, and pickup verification."

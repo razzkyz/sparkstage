@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { deletePublicImageKitAssetByUrl } from '../../lib/publicImagekitDelete';
 import { uploadPublicAssetToImageKit } from '../../lib/publicImagekitUpload';
 import { DEFAULT_GLAM_PAGE_SETTINGS, type GlamStarLink, useGlamPageSettings } from '../../hooks/useGlamPageSettings';
@@ -242,6 +243,7 @@ export default function BeautyPosterManager() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
   const { settings, isLoading, updateSettings } = useGlamPageSettings();
+  const menuSections = useAdminMenuSections();
   const { data: products = [], isLoading: productsLoading } = useProductPickerOptions();
 
   const [saving, setSaving] = useState(false);
@@ -377,7 +379,7 @@ export default function BeautyPosterManager() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
         defaultActiveMenuId="glam-page"
         title="GLAM Page CMS"
         subtitle="Loading..."
@@ -403,7 +405,7 @@ export default function BeautyPosterManager() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="glam-page"
       title="GLAM Page CMS"
       subtitle="Manage fixed-layout content for /glam"

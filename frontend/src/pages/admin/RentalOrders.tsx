@@ -4,8 +4,9 @@ import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, Refre
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 
 type RentalOrderStatus = 'awaiting_payment' | 'paid' | 'active' | 'overdue' | 'returned' | 'cancelled' | 'refunded';
 
@@ -47,6 +48,7 @@ interface RentalOrderItem {
 
 export default function RentalOrders() {
   const { signOut } = useAuth();
+  const menuSections = useAdminMenuSections();
   const [orders, setOrders] = useState<RentalOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<RentalOrder | null>(null);
   const [orderItems, setOrderItems] = useState<RentalOrderItem[]>([]);
@@ -324,7 +326,7 @@ export default function RentalOrders() {
     return (
       <AdminLayout
         menuItems={ADMIN_MENU_ITEMS}
-        menuSections={ADMIN_MENU_SECTIONS}
+        menuSections={menuSections}
         defaultActiveMenuId="rental-orders"
         title="Sewa Dressing Room"
         onLogout={signOut}
@@ -339,7 +341,7 @@ export default function RentalOrders() {
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={ADMIN_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="rental-orders"
       title="Sewa Dressing Room"
       onLogout={signOut}

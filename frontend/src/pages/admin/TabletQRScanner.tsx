@@ -2,13 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
-import { getMenuSectionsByRole } from '../../utils/auth';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { validateEntranceTicket } from './order-ticket/validateEntranceTicket';
-import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const TabletQRScanner = () => {
-  const { signOut, session, user } = useAuth();
+  const { signOut, session } = useAuth();
   const [showScanner, setShowScanner] = useState(false);
   const [validating, setValidating] = useState(false);
   const [notification, setNotification] = useState<{
@@ -20,16 +19,7 @@ const TabletQRScanner = () => {
       ticketName: string;
     };
   } | null>(null);
-  const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(ADMIN_MENU_SECTIONS);
-
-  const loadMenuSections = useCallback(async () => {
-    const sections = await getMenuSectionsByRole(user?.id);
-    setMenuSections(sections);
-  }, [user?.id]);
-
-  useEffect(() => {
-    loadMenuSections();
-  }, [loadMenuSections]);
+  const menuSections = useAdminMenuSections();
 
   // Auto-hide notification after 3 seconds
   useEffect(() => {

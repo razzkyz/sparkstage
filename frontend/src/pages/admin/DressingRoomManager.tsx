@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
+import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { DressingRoomCollectionsView } from './dressing-room-manager/DressingRoomCollectionsView';
 import { DressingRoomEditorView } from './dressing-room-manager/DressingRoomEditorView';
 import { useDressingRoomManagerController } from './dressing-room-manager/useDressingRoomManagerController';
@@ -10,6 +11,7 @@ import { useDressingRoomManagerController } from './dressing-room-manager/useDre
 // ─── Component ──────────────────────────────────────────────────────────
 export default function DressingRoomManager() {
     const { signOut } = useAuth();
+    const menuSections = useAdminMenuSections();
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const controller = useDressingRoomManagerController(showToast);
@@ -30,7 +32,7 @@ export default function DressingRoomManager() {
             title="Dressing Room"
             subtitle="Kelola koleksi dressing room"
             menuItems={ADMIN_MENU_ITEMS}
-            menuSections={ADMIN_MENU_SECTIONS}
+            menuSections={menuSections}
             defaultActiveMenuId="dressing-room"
             onLogout={signOut}
         >

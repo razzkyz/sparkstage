@@ -62,7 +62,7 @@ export function useEffectiveTicketAvailability(ticketId: number | null, bookingW
   const resolvedTicketId = ticketId ?? 0;
   const today = todayWIB();
   const startDate = toLocalDateString(today);
-  const endDate = toLocalDateString(addDays(today, Math.max(1, bookingWindowDays ?? 30)));
+  const endDate = toLocalDateString(addDays(today, Math.max(1, bookingWindowDays ?? 90)));
 
   useEffect(() => {
     if (!enabled) return;

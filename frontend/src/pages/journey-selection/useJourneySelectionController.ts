@@ -12,17 +12,20 @@ export function useJourneySelectionController(): JourneySelectionController {
     error: settingsError,
     isLoading: settingsLoading,
   } = useTicketBookingSettings(ticket?.id ?? null);
+  // Minimum 90 days so the RPC fetches the full 3-month range
+  const effectiveWindowDays = Math.max(bookingSettings?.booking_window_days ?? 90, 90);
   const {
     data: availabilities = [],
     error: availabilityError,
     isLoading: availabilityLoading,
-  } = useEffectiveTicketAvailability(ticket?.id ?? null, bookingSettings?.booking_window_days);
+  } = useEffectiveTicketAvailability(ticket?.id ?? null, effectiveWindowDays);
 
   const selection = useBookingSelectionState({
     ticket,
     availabilities,
     max_tickets_per_booking: bookingSettings?.max_tickets_per_booking,
-    booking_window_days: bookingSettings?.booking_window_days,
+    // Minimum 90 days (≈3 months) regardless of DB setting
+    booking_window_days: Math.max(bookingSettings?.booking_window_days ?? 90, 90),
   });
 
   const error = useMemo(() => {
