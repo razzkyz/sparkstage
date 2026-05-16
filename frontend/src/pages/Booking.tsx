@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toLocalDateString } from '../utils/timezone';
@@ -10,6 +11,7 @@ import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { useBanners } from '../hooks/useBanners';
 import { VenueReviews } from '../components/VenueReviews';
 import { useToast } from '../components/Toast';
+import { BookingTermsModal } from './booking/BookingTermsModal';
 
 const Booking = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const Booking = () => {
   const { settings: bookingSettings } = useBookingPageSettings();
   const bookingCopy = bookingSettings ?? DEFAULT_BOOKING_PAGE_SETTINGS;
   const { showToast } = useToast();
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const {
     ticket,
@@ -43,6 +46,22 @@ const Booking = () => {
   const { data: sparkMapBanners = [], isLoading: sparkMapLoading } = useBanners('spark-map');
   const sparkMap = sparkMapBanners[0];
 
+  // Called after terms agreed — does the actual navigation.
+  const navigateToPayment = () => {
+    if (!ticket || !selectedDate) return;
+    navigate('/payment', {
+      state: {
+        ticketId: ticket.id,
+        ticketName: ticket.name,
+        ticketType: ticket.type,
+        price: parseFloat(ticket.price),
+        date: toLocalDateString(selectedDate),
+        time: selectedTime || 'all-day',
+      },
+    });
+  };
+
+  // Validates selection then opens the terms modal.
   const handleProceedToPayment = () => {
     if (!ticket || !selectedDate) {
       showToast('pink', 'Silakan pilih tanggal terlebih dahulu');
@@ -58,16 +77,8 @@ const Booking = () => {
       navigate('/login', { state: { returnTo: '/booking' } });
       return;
     }
-    navigate('/payment', {
-      state: {
-        ticketId: ticket.id,
-        ticketName: ticket.name,
-        ticketType: ticket.type,
-        price: parseFloat(ticket.price),
-        date: toLocalDateString(selectedDate),
-        time: selectedTime || 'all-day',
-      },
-    });
+    // All checks passed — show terms & conditions modal
+    setShowTermsModal(true);
   };
 
   if (journeyLoading) {
@@ -123,23 +134,7 @@ const Booking = () => {
                     </p>
                   </div>
 
-                  <div
-                    className="flex gap-3 px-3 py-2.5 mb-6 rounded-lg"
-                    style={{
-                      backgroundColor: '#f0f9ff',
-                      border: '1px solid #7dd3fc',
-                    }}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: '17px', color: '#0369a1', marginTop: '2px', flexShrink: 0 }}
-                    >
-                      info
-                    </span>
-                    <p style={{ fontSize: '13px', color: '#0c4a6e', margin: 0, lineHeight: '1.55' }}>
-                      <strong>🧦 WAJIB:</strong> Membawa kaos kaki pribadi untuk digunakan saat memakai costume sepatu maupun saat berada di area lepas alas kaki demi kenyamanan dan kebersihan bersama.
-                    </p>
-                  </div>
+
 
                   <JourneyCalendarSection
                     monthName={monthName}
@@ -222,6 +217,14 @@ const Booking = () => {
       <section className="bg-gradient-to-b from-white to-gray-50 py-16 md:py-24">
         <VenueReviews />
       </section>
+      <BookingTermsModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAgree={() => {
+          setShowTermsModal(false);
+          navigateToPayment();
+        }}
+      />
     </div>
   );
 };

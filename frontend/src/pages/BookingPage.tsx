@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DEFAULT_BOOKING_PAGE_SETTINGS, useBookingPageSettings } from '../hooks/useBookingPageSettings';
 import { toLocalDateString, getMonthNameWIB } from '../utils/timezone';
@@ -14,12 +14,14 @@ import { BookingProgressHeader } from './booking/BookingProgressHeader';
 import { BookingSummarySidebar } from './booking/BookingSummarySidebar';
 import { BookingTimeSlotPanel } from './booking/BookingTimeSlotPanel';
 import { BookingUrgencyModal } from './booking/BookingUrgencyModal';
+import { BookingTermsModal } from './booking/BookingTermsModal';
 import { useBookingSelectionState } from './booking/useBookingSelectionState';
 
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { settings } = useBookingPageSettings();
   const bookingCopy = settings ?? DEFAULT_BOOKING_PAGE_SETTINGS;
   const { data: ticket, error: ticketError, isLoading: ticketLoading } = useTickets(slug);
@@ -67,6 +69,23 @@ export default function BookingPage() {
     }
   }, [error, showToast]);
 
+  // Called after terms are agreed — actually navigates to payment.
+  const navigateToPayment = () => {
+    if (!ticket || !selectedDate) return;
+    navigate('/payment', {
+      state: {
+        ticketId: ticket.id,
+        ticketName: ticket.name,
+        ticketType: ticket.type,
+        price: parseFloat(ticket.price),
+        quantity,
+        date: toLocalDateString(selectedDate),
+        time: selectedTime || 'all-day',
+      },
+    });
+  };
+
+  // Validates selection, handles urgency modal, then opens the terms modal.
   const handleProceedToPayment = () => {
     if (!ticket || !selectedDate) {
       alert('Please select a date');
@@ -80,7 +99,7 @@ export default function BookingPage() {
       return;
     }
 
-    // Check urgency level - show confirmation modal for high urgency slots
+    // Check urgency level — show confirmation modal for high urgency slots first
     if (selectedTime) {
       const urgency = getSlotUrgency(selectedTime);
       if (urgency === 'high' && !showUrgencyModal) {
@@ -89,17 +108,8 @@ export default function BookingPage() {
       }
     }
 
-    navigate('/payment', {
-      state: {
-        ticketId: ticket.id,
-        ticketName: ticket.name,
-        ticketType: ticket.type,
-        price: parseFloat(ticket.price),
-        quantity,
-        date: toLocalDateString(selectedDate),
-        time: selectedTime || 'all-day',
-      },
-    });
+    // All checks passed — show terms & conditions modal
+    setShowTermsModal(true);
   };
 
 
@@ -181,23 +191,7 @@ export default function BookingPage() {
               </p>
             </div>
 
-            <div
-              className="flex gap-3 px-4 py-3 mb-6 rounded-lg"
-              style={{
-                backgroundColor: '#f0f9ff',
-                border: '1px solid #7dd3fc',
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: '18px', color: '#0369a1', marginTop: '1px', flexShrink: 0 }}
-              >
-                info
-              </span>
-              <p style={{ fontSize: '13.5px', color: '#0c4a6e', margin: 0, lineHeight: '1.55' }}>
-                <strong>🧦 WAJIB:</strong> Membawa kaos kaki pribadi untuk digunakan saat memakai costume sepatu maupun saat berada di area lepas alas kaki demi kenyamanan dan kebersihan bersama.
-              </p>
-            </div>
+
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 flex flex-col gap-10">
@@ -255,7 +249,17 @@ export default function BookingPage() {
             }}
             onConfirm={() => {
               setShowUrgencyModal(false);
-              handleProceedToPayment();
+              // After urgency confirmed, show terms before navigating
+              setShowTermsModal(true);
+            }}
+          />
+
+          <BookingTermsModal
+            open={showTermsModal}
+            onClose={() => setShowTermsModal(false)}
+            onAgree={() => {
+              setShowTermsModal(false);
+              navigateToPayment();
             }}
           />
         </div>
