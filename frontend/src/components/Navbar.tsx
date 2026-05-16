@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
+import { LogOut, ReceiptText, Search, ShoppingCart, Sparkles, Ticket, UserRound, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
 
 type NavItem = {
@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTicketCount } from '../hooks/useTicketCount';
 import { useOrderCount } from '../hooks/useOrderCount';
 import { useCart } from '../contexts/cartStore';
+import { useLoyaltyPoints } from '../hooks/useLoyaltyPoints';
 import { getUserDisplayName } from '../utils/auth';
 
 const Navbar = () => {
@@ -28,6 +29,8 @@ const Navbar = () => {
   const { count: ticketCount } = useTicketCount();
   const { count: orderCount } = useOrderCount();
   const { totalQuantity } = useCart();
+  const { data: loyaltyData } = useLoyaltyPoints(user?.id);
+  const loyaltyPoints = loyaltyData?.total_points ?? 0;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -237,6 +240,19 @@ const Navbar = () => {
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
+
+                {/* Loyalty Points Badge */}
+                <Link
+                  to="/my-points"
+                  className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all hover:shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #1a0a2e, #2d0f5e)', border: '1px solid rgba(255,75,134,0.3)' }}
+                  title="SPARK CLUB Points"
+                >
+                  <Sparkles className="h-3.5 w-3.5" style={{ color: '#ff4b86' }} />
+                  <span className="text-xs font-bold" style={{ color: '#ff4b86' }}>
+                    {loyaltyPoints.toLocaleString()}
+                  </span>
+                </Link>
 
                 <Link
                   to="/my-tickets"
@@ -514,6 +530,16 @@ const Navbar = () => {
 
           {user && (
             <>
+              {/* Mobile: Points chip */}
+              <Link
+                to="/my-points"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider"
+                style={{ background: 'linear-gradient(135deg, #1a0a2e, #2d0f5e)', border: '1px solid rgba(255,75,134,0.4)', color: '#ff4b86' }}
+              >
+                <Sparkles className="h-3 w-3" />
+                {loyaltyPoints.toLocaleString()} Poin
+              </Link>
+
               <Link
                 to="/my-tickets"
                 className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"

@@ -6,9 +6,11 @@ import { useCart } from '../contexts/cartStore';
 import { useToast } from '../components/Toast';
 import { CheckoutCustomerForm } from './product-checkout/CheckoutCustomerForm';
 import { CheckoutPaymentSection } from './product-checkout/CheckoutPaymentSection';
+import { CheckoutPointsSection } from './product-checkout/CheckoutPointsSection';
 import { CheckoutSummaryCard } from './product-checkout/CheckoutSummaryCard';
 import { CheckoutVoucherSection } from './product-checkout/CheckoutVoucherSection';
 import { useProductCheckoutController } from './product-checkout/useProductCheckoutController';
+import { useLoyaltyPoints } from '../hooks/useLoyaltyPoints';
 
 export default function ProductCheckoutPage() {
   const navigate = useNavigate();
@@ -19,6 +21,8 @@ export default function ProductCheckoutPage() {
   const { items: allItems, removeItem } = useCart();
   const { showToast } = useToast();
   const cashierCheckoutEnabled = String(import.meta.env.VITE_ENABLE_CASHIER_CHECKOUT || '').toLowerCase() !== 'false';
+  const { data: loyaltyData } = useLoyaltyPoints(user?.id);
+  const userPoints = loyaltyData?.total_points ?? 0;
   const {
     customerName,
     customerPhone,
@@ -28,6 +32,7 @@ export default function ProductCheckoutPage() {
     appliedVoucher,
     voucherError,
     applyingVoucher,
+    appliedPoints,
     orderItems,
     subtotal,
     discountAmount,
@@ -38,6 +43,8 @@ export default function ProductCheckoutPage() {
     setVoucherCode,
     handleApplyVoucher,
     handleRemoveVoucher,
+    handleApplyPoints,
+    handleRemovePoints,
     handlePay,
     handleCashierCheckout,
     cashierDisabled,
@@ -95,6 +102,7 @@ export default function ProductCheckoutPage() {
               discountAmount={discountAmount}
               finalTotal={finalTotal}
               appliedVoucher={appliedVoucher}
+              appliedPoints={appliedPoints}
             />
 
             <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-lg border border-primary/10">
@@ -128,6 +136,15 @@ export default function ProductCheckoutPage() {
                 onChangeVoucherCode={setVoucherCode}
                 onApplyVoucher={handleApplyVoucher}
                 onRemoveVoucher={handleRemoveVoucher}
+              />
+
+              <CheckoutPointsSection
+                userPoints={userPoints}
+                subtotal={subtotal}
+                appliedPoints={appliedPoints}
+                loading={loading}
+                onApplyPoints={handleApplyPoints}
+                onRemovePoints={handleRemovePoints}
               />
 
               <CheckoutPaymentSection

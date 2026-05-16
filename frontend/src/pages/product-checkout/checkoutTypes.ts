@@ -28,6 +28,11 @@ export type AppliedVoucher = {
   discountValue?: number | null;
 };
 
+export type AppliedPoints = {
+  pointsUsed: number;
+  discountAmount: number;
+};
+
 export type ValidateVoucherResult = {
   voucher_id?: string | null;
   discount_type?: string | null;

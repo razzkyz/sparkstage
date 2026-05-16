@@ -34,3 +34,11 @@ export function mapCheckoutOrderItems(items: CartItem[]): CheckoutOrderItem[] {
 export function calculateFinalTotal(subtotal: number, discountAmount: number) {
   return Math.max(0, subtotal - discountAmount);
 }
+
+export function calculateFinalTotalWithPoints(
+  subtotal: number,
+  voucherDiscount: number,
+  pointsDiscount: number
+) {
+  return Math.max(0, subtotal - voucherDiscount - pointsDiscount);
+}

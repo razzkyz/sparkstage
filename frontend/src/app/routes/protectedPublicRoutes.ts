@@ -11,6 +11,7 @@ const MyTicketsPage = lazy(() => import('../../pages/MyTicketsPage'));
 const MyProductOrdersPage = lazy(() => import('../../pages/MyProductOrdersPage'));
 const ProductOrderSuccessPage = lazy(() => import('../../pages/ProductOrderSuccessPage'));
 const ProductOrderPendingPage = lazy(() => import('../../pages/ProductOrderPendingPage'));
+const MyPointsPage = lazy(() => import('../../pages/MyPointsPage'));
 
 export const protectedPublicRouteConfigs: AppRouteConfig[] = [
   { path: 'cart', Page: CartPage },
@@ -20,6 +21,7 @@ export const protectedPublicRouteConfigs: AppRouteConfig[] = [
   { path: 'booking-success', Page: BookingSuccessPage },
   { path: 'my-tickets', Page: MyTicketsPage },
   { path: 'my-orders', Page: MyProductOrdersPage },
+  { path: 'my-points', Page: MyPointsPage },
   { path: 'order/product/success/:orderNumber', Page: ProductOrderSuccessPage },
   { path: 'order/product/pending/:orderNumber', Page: ProductOrderPendingPage },
 ];

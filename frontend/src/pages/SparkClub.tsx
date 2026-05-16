@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X, Clock } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCart } from '../contexts/cartStore';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from '../hooks/useProduct';
 import { useCharmBarSettings } from '../hooks/useCharmBarSettings';
+import { useLoyaltyPoints, useLoyaltyHistory, getLoyaltyRank } from '../hooks/useLoyaltyPoints';
 import { useToast } from '../components/Toast';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
@@ -23,6 +24,85 @@ import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { buildImageKitThumbUrl } from '../lib/imagekit';
 
 const PRODUCTS_PER_PAGE = 20;
+
+// ---------- SPARK CLUB Loyalty Points Banner ----------
+
+function LoyaltyPointsBanner({ userId }: { userId: string }) {
+  const { data: pointsData, isLoading: pointsLoading } = useLoyaltyPoints(userId);
+  const { data: history = [], isLoading: histLoading } = useLoyaltyHistory(userId);
+
+  const totalPoints = pointsData?.total_points ?? 0;
+  const lastFive = history.slice(0, 5);
+  const loading = pointsLoading || histLoading;
+  const rank = getLoyaltyRank(totalPoints);
+
+  return (
+    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #2d0f5e 40%, #4a1080 100%)' }}>
+      {/* Top section: balance */}
+      <div className="relative px-6 pt-6 pb-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        {/* Decorative glow */}
+        <div className="absolute top-0 right-0 w-60 h-60 rounded-full opacity-10 blur-3xl" style={{ background: 'radial-gradient(circle, #ff4b86, transparent)' }} />
+
+        {/* Icon */}
+        <div className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style={{ background: rank.bgColor, border: `1px solid ${rank.borderColor}` }}>
+          {rank.icon}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold tracking-widest uppercase mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>SPARK CLUB</p>
+          <h2 className="text-3xl font-black text-white leading-none">
+            {loading ? (
+              <span className="inline-block w-20 h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.1)' }} />
+            ) : (
+              <>{totalPoints.toLocaleString()} <span className="text-lg font-semibold" style={{ color: '#ff4b86' }}>Poin</span></>
+            )}
+          </h2>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>1 tiket/produk = 20 poin · 1 poin = Rp 1 diskon</p>
+        </div>
+
+        {/* Rank Badge + Link */}
+        <Link
+          to="/my-points"
+          className="flex-shrink-0 flex flex-col items-center px-4 py-2 rounded-xl transition-all hover:scale-105"
+          style={{ background: rank.bgColor, border: `1px solid ${rank.borderColor}` }}
+        >
+          <span className="text-xl mb-0.5">{rank.icon}</span>
+          <p className="text-xs font-bold text-white">{rank.label}</p>
+          <p className="text-[9px] font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>Lihat Detail →</p>
+        </Link>
+      </div>
+
+      {/* Bottom: history */}
+      {!loading && lastFive.length > 0 && (
+        <div className="px-6 pb-5">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>Riwayat Poin</p>
+          <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+            {lastFive.map((item) => (
+              <div key={item.id} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }} />
+                  <span className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.6)' }}>{item.reason}</span>
+                </div>
+                <span className="text-xs font-bold flex-shrink-0 ml-3" style={{ color: item.points_change >= 0 ? '#4ade80' : '#f87171' }}>
+                  {item.points_change >= 0 ? '+' : ''}{item.points_change}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && lastFive.length === 0 && (
+        <div className="px-6 pb-5">
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Beli tiket atau produk pertamamu untuk mulai kumpulkan poin! ✨</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------- End Loyalty Points Banner ----------
 
 type SparkClubResultsProps = {
   filteredProducts: Product[];
@@ -323,6 +403,8 @@ const SparkClub = () => {
         </header>
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+          {/* SPARK CLUB Loyalty Points Banner - only for logged-in users */}
+          {user && <LoyaltyPointsBanner userId={user.id} />}
           <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 bg-white z-40 pt-4 -mt-6">
             <div className="flex flex-col space-y-4">
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">

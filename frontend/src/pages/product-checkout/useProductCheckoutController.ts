@@ -9,8 +9,9 @@ import { supabase } from '../../lib/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 import { withTimeout } from '../../utils/queryHelpers';
 import { loadDokuCheckoutScript, openDokuCheckout } from '../../utils/dokuCheckout';
-import { calculateFinalTotal, calculateSubtotal, mapCheckoutOrderItems, selectCheckoutItems } from './checkoutPricing';
+import { calculateFinalTotalWithPoints, calculateSubtotal, mapCheckoutOrderItems, selectCheckoutItems } from './checkoutPricing';
 import type {
+  AppliedPoints,
   AppliedVoucher,
   CheckoutOrderItem,
   CreateCashierOrderResponse,
@@ -76,6 +77,7 @@ export function useProductCheckoutController({
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [applyingVoucher, setApplyingVoucher] = useState(false);
+  const [appliedPoints, setAppliedPoints] = useState<AppliedPoints | null>(null);
   const skipEmptyCartRedirectRef = useRef(false);
 
   useEffect(() => {
@@ -99,7 +101,11 @@ export function useProductCheckoutController({
   const items = useMemo(() => selectCheckoutItems(allItems, selectedVariantIds), [allItems, selectedVariantIds]);
   const subtotal = useMemo(() => calculateSubtotal(items), [items]);
   const discountAmount = appliedVoucher?.discountAmount ?? 0;
-  const finalTotal = useMemo(() => calculateFinalTotal(subtotal, discountAmount), [discountAmount, subtotal]);
+  const pointsDiscountAmount = appliedPoints?.discountAmount ?? 0;
+  const finalTotal = useMemo(
+    () => calculateFinalTotalWithPoints(subtotal, discountAmount, pointsDiscountAmount),
+    [discountAmount, pointsDiscountAmount, subtotal]
+  );
   const orderItems = useMemo<CheckoutOrderItem[]>(() => mapCheckoutOrderItems(items), [items]);
   const canCheckout = initialized && Boolean(sessionToken) && checkoutReady && items.length > 0;
 
@@ -118,6 +124,9 @@ export function useProductCheckoutController({
       setAppliedVoucher(null);
       setVoucherCode('');
       setVoucherError(null);
+    }
+    if (appliedPoints) {
+      setAppliedPoints(null);
     }
   }, [items.map((i) => i.variantId).join(',')]);  // Only trigger when variant IDs change
 
@@ -249,6 +258,18 @@ export function useProductCheckoutController({
     setVoucherError(null);
   };
 
+  const handleApplyPoints = (pointsToUse: number) => {
+    if (pointsToUse < 1) return;
+    setAppliedPoints({
+      pointsUsed: pointsToUse,
+      discountAmount: pointsToUse, // 1 point = Rp 1
+    });
+  };
+
+  const handleRemovePoints = () => {
+    setAppliedPoints(null);
+  };
+
   const createOrder = async (functionName: 'create-doku-product-checkout' | 'create-cashier-product-order') => {
     if (!user) {
       navigate('/login');
@@ -295,6 +316,7 @@ export function useProductCheckoutController({
             customerEmail: user.email,
             customerPhone: customerPhone.trim() || undefined,
             voucherCode: appliedVoucher?.code || undefined,
+            pointsRedeemed: appliedPoints?.pointsUsed || undefined,
           },
           headers: { Authorization: `Bearer ${accessToken}` },
           fallbackMessage: `Failed to create ${functionName.includes('cashier') ? 'cashier order' : 'payment'}`,
@@ -408,10 +430,12 @@ export function useProductCheckoutController({
     appliedVoucher,
     voucherError,
     applyingVoucher,
+    appliedPoints,
     items,
     orderItems,
     subtotal,
     discountAmount,
+    pointsDiscountAmount,
     finalTotal,
     canCheckout,
     setCustomerName,
@@ -419,6 +443,8 @@ export function useProductCheckoutController({
     setVoucherCode,
     handleApplyVoucher,
     handleRemoveVoucher,
+    handleApplyPoints,
+    handleRemovePoints,
     handlePay,
     handleCashierCheckout,
     cashierDisabled: !initialized || !sessionToken || items.length === 0,

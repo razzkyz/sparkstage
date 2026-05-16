@@ -968,10 +968,37 @@ export async function ensureProductPaidSideEffects(params: {
         throw new Error(`Failed to finalize paid product side effects: ${updateError.message}`)
       }
 
+      // Award loyalty points: 20 points per item quantity (covers products + rentals)
+      const userId = (order as unknown as { user_id?: string | null }).user_id ?? null
+      if (userId && Array.isArray(orderItems) && orderItems.length > 0) {
+        try {
+          const totalQty = (orderItems as ProductOrderItem[]).reduce(
+            (sum, row) => sum + Math.max(1, Math.floor(Number((row as { quantity: number | string }).quantity))),
+            0
+          )
+          if (totalQty > 0) {
+            const { error: pointsError } = await supabase.rpc('award_product_loyalty_points', {
+              p_user_id: userId,
+              p_order_product_id: order.id,
+              p_total_quantity: totalQty,
+              p_reason: 'Product/rental purchase reward',
+            })
+            if (pointsError) {
+              console.error('[ensureProductPaidSideEffects] Error awarding product points:', pointsError.message)
+            } else {
+              console.log('[ensureProductPaidSideEffects] Loyalty points awarded for product order:', order.order_number, 'qty:', totalQty)
+            }
+          }
+        } catch (pointsErr) {
+          console.error('[ensureProductPaidSideEffects] Exception awarding product points:', pointsErr)
+        }
+      }
+
       return { pickupCode, finalStatus }
     },
   })
 }
+
 
 export async function releaseProductReservedStockIfNeeded(params: {
   supabase: ServiceClient

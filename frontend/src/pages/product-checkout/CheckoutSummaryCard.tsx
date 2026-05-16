@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../../utils/formatters';
-import type { CheckoutOrderItem, AppliedVoucher } from './checkoutTypes';
+import type { CheckoutOrderItem, AppliedVoucher, AppliedPoints } from './checkoutTypes';
 
 type CheckoutSummaryCardProps = {
   orderItems: CheckoutOrderItem[];
@@ -8,6 +8,7 @@ type CheckoutSummaryCardProps = {
   discountAmount: number;
   finalTotal: number;
   appliedVoucher: AppliedVoucher | null;
+  appliedPoints: AppliedPoints | null;
 };
 
 export function CheckoutSummaryCard({
@@ -16,6 +17,7 @@ export function CheckoutSummaryCard({
   discountAmount,
   finalTotal,
   appliedVoucher,
+  appliedPoints,
 }: CheckoutSummaryCardProps) {
   const { t } = useTranslation();
 
@@ -63,6 +65,12 @@ export function CheckoutSummaryCard({
             <div className="flex justify-between text-sm text-green-700">
               <span>{t('voucher.summary.discount', { code: appliedVoucher.code })}</span>
               <span>-{formatCurrency(discountAmount)}</span>
+            </div>
+          )}
+          {appliedPoints && appliedPoints.discountAmount > 0 && (
+            <div className="flex justify-between text-sm" style={{ color: '#a855f7' }}>
+              <span>⭐ SPARK CLUB ({appliedPoints.pointsUsed.toLocaleString()} poin)</span>
+              <span>-{formatCurrency(appliedPoints.discountAmount)}</span>
             </div>
           )}
           <div className="flex justify-between items-end">
