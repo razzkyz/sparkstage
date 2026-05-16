@@ -9,7 +9,7 @@ export async function loadProductOrderDetailsByPickupCode(pickupCode: string): P
   const { data: orderRow, error: orderError } = await supabase
     .from('order_products')
     .select(
-      'id, order_number, channel, total, pickup_code, pickup_status, paid_at, payment_status, status, pickup_expires_at, profiles(name, email)'
+      'id, order_number, channel, total, pickup_code, pickup_status, paid_at, updated_at, created_at, payment_status, status, pickup_expires_at, profiles(name, email)'
     )
     .eq('pickup_code', normalizedPickupCode)
     .single();
@@ -82,8 +82,8 @@ export async function loadProductOrderDetailsByPickupCode(pickupCode: string): P
     pickup_code: ((orderRow as { pickup_code?: string | null }).pickup_code ?? null),
     pickup_status: ((orderRow as { pickup_status?: string | null }).pickup_status ?? null),
     paid_at: ((orderRow as { paid_at?: string | null }).paid_at ?? null),
-    updated_at: null,
-    created_at: null,
+    updated_at: ((orderRow as { updated_at?: string | null }).updated_at ?? null),
+    created_at: ((orderRow as { created_at?: string | null }).created_at ?? null),
     profiles: profile ? { name: profile.name, email: profile.email } : null,
     channel: ((orderRow as { channel?: string | null }).channel ?? null),
     payment_status: String((orderRow as { payment_status?: string }).payment_status ?? ''),

@@ -8,22 +8,24 @@ type BookingTermsModalProps = {
 };
 
 const TERMS = [
-  'Harap tiba 15 menit sebelum sesi Anda dimulai.',
-  'Booking hanya berlaku untuk tanggal dan waktu yang dipilih.',
-  'Setiap tiket berlaku untuk satu orang.',
-  'Ini adalah pengalaman sesi bersama dengan peserta lain.',
-  'Durasi pengalaman adalah 2,5 jam termasuk 15 tahap.',
-  'Tidak diizinkan membawa makanan atau minuman dari luar.',
-  'Tiket yang sudah dibeli tidak dapat dibatalkan, dikembalikan, maupun di-reschedule.',
-  'Pembelian tiket on the spot tetap mengikuti sesi dan slot waktu yang sedang berjalan serta ketersediaan sesi.',
-  'Keterlambatan hadir dapat mengurangi durasi pengalaman sesuai waktu sesi yang berjalan.',
-  'Anak di bawah 5 tahun tidak perlu membeli tiket.',
-  '🧦 WAJIB membawa kaos kaki untuk area lepas alas kaki & penggunaan costume sepatu.',
+  'Satu tiket berlaku untuk satu orang.',
+  'Booking hanya berlaku untuk tanggal dan sesi yang dipilih.',
+  'Tiket yang sudah dibeli tidak dapat dibatalkan, dikembalikan, maupun di-reschedule. Semua pembayaran bersifat final dan non-refundable.',
+  'Pembelian tiket on the spot tetap mengikuti slot dan sesi yang tersedia, serta mengikuti waktu sesi yang sedang berjalan.',
+  'Harap tiba 15 menit sebelum sesi dimulai untuk briefing dan persiapan.',
+  'Keterlambatan hadir dapat mengurangi durasi pengalaman karena waktu sesi tetap berjalan sesuai jadwal.',
+  'Pengalaman di SPARK STAGE 55 berlangsung bersama peserta lain (sharing session), bukan private session.',
+  'Durasi pengalaman adalah 2,5 jam untuk explore 15 stage secara bergantian sesuai alur sesi yang berjalan.',
+  'Penggunaan costume free di setiap stage menjadi tanggung jawab masing-masing customer dan digunakan atas kesadaran penuh customer.',
+  'Costume yang disediakan di stage hanya bersifat outer dan digunakan bergantian dengan peserta lain.',
+  '🧦 WAJIB menggunakan kaos kaki untuk area lepas alas kaki serta penggunaan costume sepatu / boots. Customer yang tidak menggunakan kaos kaki tidak diperbolehkan menggunakan boots bulu atau costume sepatu yang tersedia di stage.',
+  'Seluruh hasil foto & video didapatkan dalam bentuk soft file. Customer wajib memastikan seluruh file sudah tersimpan sebelum meninggalkan stage. Kehilangan file akibat belum tersimpan bukan menjadi tanggung jawab SPARK STAGE 55.',
+  'Tidak diperbolehkan membawa makanan atau minuman dari luar.',
 ];
 
-/** Each bullet delay: 120 ms apart, starting after a 200 ms header delay */
-const ITEM_BASE_DELAY_MS = 200;
-const ITEM_STAGGER_MS = 90;
+/** Each bullet delay: 70 ms apart, starting after a 180 ms header delay */
+const ITEM_BASE_DELAY_MS = 180;
+const ITEM_STAGGER_MS = 70;
 
 export function BookingTermsModal({ open, onClose, onAgree }: BookingTermsModalProps) {
   const [agreed, setAgreed] = useState(false);
@@ -111,28 +113,49 @@ export function BookingTermsModal({ open, onClose, onAgree }: BookingTermsModalP
             transition: 'opacity 0.3s ease 0.05s, transform 0.35s cubic-bezier(0.22,1,0.36,1) 0.05s',
           }}
         >
+          {/* Ticket logo mark */}
           <div
             style={{
               flexShrink: 0,
-              width: '42px',
-              height: '42px',
+              width: '46px',
+              height: '46px',
               borderRadius: '50%',
-              background: 'rgba(255,255,255,0.22)',
+              background: 'rgba(255,255,255,0.18)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <span className="material-symbols-outlined" style={{ color: '#fff', fontSize: '22px' }}>
-              gavel
-            </span>
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ display: 'block' }}
+            >
+              {/* Ticket body */}
+              <path
+                d="M2 9a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v1.5a1.5 1.5 0 0 0 0 3V15a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1.5a1.5 1.5 0 0 0 0-3V9z"
+                fill="rgba(255,255,255,0.25)"
+                stroke="#fff"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+              />
+              {/* Star */}
+              <path
+                d="M12 9.5l.9 2.7h2.8l-2.3 1.7.9 2.7L12 14.9l-2.3 1.7.9-2.7-2.3-1.7h2.8z"
+                fill="#fff"
+              />
+            </svg>
           </div>
           <div>
             <h2
               id="terms-modal-title"
               style={{ color: '#fff', fontWeight: 900, fontSize: '17px', lineHeight: 1.2, margin: 0 }}
             >
-              Ketentuan &amp; Keterangan Booking
+              Ketentuan &amp; Persetujuan Booking
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '12px', margin: '4px 0 0' }}>
               Baca seluruh ketentuan sebelum melanjutkan
@@ -182,32 +205,6 @@ export function BookingTermsModal({ open, onClose, onAgree }: BookingTermsModalP
             })}
           </ul>
 
-          {/* Final no-refund alert — animates last */}
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px 14px',
-              borderRadius: '12px',
-              background: '#fff0f5',
-              border: '1.5px solid #ff4b86',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              opacity: animate ? 1 : 0,
-              transform: animate ? 'translateY(0)' : 'translateY(10px)',
-              transition: `opacity 0.35s ease ${ITEM_BASE_DELAY_MS + TERMS.length * ITEM_STAGGER_MS}ms, transform 0.4s cubic-bezier(0.22,1,0.36,1) ${ITEM_BASE_DELAY_MS + TERMS.length * ITEM_STAGGER_MS}ms`,
-            }}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ color: '#ff4b86', fontSize: '18px', flexShrink: 0, marginTop: '1px' }}
-            >
-              error
-            </span>
-            <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#c4003a', lineHeight: 1.5 }}>
-              🔴 Semua pembayaran bersifat final dan tidak dapat dikembalikan.
-            </p>
-          </div>
         </div>
 
         {/* ── Checkbox + Actions (sticky footer) ── */}

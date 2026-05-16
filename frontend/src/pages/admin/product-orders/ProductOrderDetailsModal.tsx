@@ -1,4 +1,5 @@
 import { formatCurrency } from '../../../utils/formatters';
+import { formatDateTimeWIB } from '../../../utils/timezone';
 import type { ProductOrderDetails } from './productOrdersTypes';
 
 type ProductOrderDetailsModalProps = {
@@ -40,6 +41,30 @@ export function ProductOrderDetailsModal({
 
         <div className="p-6">
           {actionError && <div className="mb-4 text-sm text-red-600">{actionError}</div>}
+
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {details.order.paid_at && (
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Pembayaran</p>
+                  <p className="font-medium text-gray-900">{formatDateTimeWIB(details.order.paid_at)}</p>
+                </div>
+              )}
+              {details.order.created_at && (
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Order</p>
+                  <p className="font-medium text-gray-900">{formatDateTimeWIB(details.order.created_at)}</p>
+                </div>
+              )}
+              {details.order.updated_at && details.order.pickup_status === 'completed' && (
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Verifikasi</p>
+                  <p className="font-medium text-gray-900 text-green-700">{formatDateTimeWIB(details.order.updated_at)}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-3">
             {details.items.map((item) => (
               <div key={item.id} className="flex items-center justify-between gap-4">

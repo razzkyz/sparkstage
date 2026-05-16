@@ -37,6 +37,8 @@ export default function EventBookings() {
   const [rescheduleBooking, setRescheduleBooking] = useState<PurchasedTicket | null>(null);
   const [newTimeSlot, setNewTimeSlot] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 100;
 
   useEffect(() => {
     fetchBookings();
@@ -110,6 +112,16 @@ export default function EventBookings() {
     
     return matchesSearch && matchesDate && matchesTimeSlot;
   });
+
+  // Reset ke halaman 1 ketika filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, dateFilter, timeSlotFilter]);
+
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
 
   const stats = {
     total: bookings.length,
@@ -236,6 +248,18 @@ export default function EventBookings() {
           </div>
         </div>
 
+        {/* Filter Results Info */}
+        {(searchQuery || dateFilter || timeSlotFilter) && (
+          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+            <p className="text-sm text-blue-800">
+              Filter aktif: menampilkan <span className="font-semibold">{filteredBookings.length}</span> dari <span className="font-semibold">{bookings.length}</span> booking
+              {searchQuery && <span> (pencarian: "{searchQuery}")</span>}
+              {dateFilter && <span> (tanggal: {dateFilter})</span>}
+              {timeSlotFilter && <span> (sesi: {timeSlotFilter})</span>}
+            </p>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <input
@@ -293,14 +317,14 @@ export default function EventBookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredBookings.map((booking, index) => (
+                {paginatedBookings.map((booking, index) => (
                   <tr
                     key={booking.id}
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => setSelectedBooking(booking)}
                   >
                     <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">{index + 1}</div>
+                      <div className="text-sm text-gray-900">{startIndex + index + 1}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -365,9 +389,78 @@ export default function EventBookings() {
               </tbody>
             </table>
           </div>
-          {filteredBookings.length === 0 && (
+          {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               Tidak ada booking yang ditemukan
+            </div>
+          ) : (
+            <div className="border-t border-gray-200 px-4 py-4 flex items-center justify-between bg-gray-50">
+              <div className="text-sm text-gray-600">
+                Menampilkan <span className="font-semibold">{startIndex + 1}</span> - <span className="font-semibold">{Math.min(endIndex, filteredBookings.length)}</span> dari <span className="font-semibold">{filteredBookings.length}</span> booking
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Halaman sebelumnya"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <div className="flex items-center gap-1">
+                  {/* Show first page */}
+                  {currentPage > 3 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        className="px-3 py-1 rounded text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        1
+                      </button>
+                      {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
+                    </>
+                  )}
+                  
+                  {/* Show surrounding pages */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, currentPage - 2) + i;
+                    return pageNum <= totalPages ? pageNum : null;
+                  }).filter(Boolean).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page as number)}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-main-600 text-white'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  {/* Show last page */}
+                  {currentPage < totalPages - 2 && (
+                    <>
+                      {currentPage < totalPages - 3 && <span className="px-2 text-gray-500">...</span>}
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        className="px-3 py-1 rounded text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Halaman berikutnya"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
