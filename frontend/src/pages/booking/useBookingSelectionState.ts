@@ -284,6 +284,10 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
     );
   }, [selectedDate, availabilities]);
 
+  // Sesi 4 (Evening 18:00–20:30) hanya tersedia sampai tanggal 17 Mei 2026.
+  // Setelah tanggal tersebut, hanya Sesi 1–3 yang aktif.
+  const EVENING_SESSION_CUTOFF = new Date('2026-05-17T23:59:59+07:00');
+
   const groupedSlots = useMemo<GroupedBookableSlots>(() => {
     const grouped: GroupedBookableSlots = {
       morning: [],
@@ -292,17 +296,19 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
       evening: [],
     };
 
+    const eveningAllowed = selectedDate !== null && selectedDate <= EVENING_SESSION_CUTOFF;
+
     availableTimeSlots.forEach((slot) => {
       if (!slot.time) return;
       const hour = parseInt(slot.time.split(':')[0], 10);
       if (hour >= 9 && hour < 12) grouped.morning.push(slot);
       else if (hour >= 12 && hour < 15) grouped.afternoon1.push(slot);
       else if (hour >= 15 && hour < 18) grouped.afternoon2.push(slot);
-      else if (hour >= 18) grouped.evening.push(slot);
+      else if (hour >= 18 && eveningAllowed) grouped.evening.push(slot);
     });
 
     return grouped;
-  }, [availableTimeSlots]);
+  }, [availableTimeSlots, selectedDate]);
 
   const canGoPrevMonth = useMemo(() => {
     const lastDayOfPrevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
