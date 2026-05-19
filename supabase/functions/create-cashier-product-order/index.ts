@@ -17,6 +17,7 @@ type CreateCashierOrderRequest = {
   customerEmail: string
   customerPhone?: string
   voucherCode?: string  // NEW: Optional voucher code for discount
+  pointsRedeemed?: number  // NEW: Optional loyalty points to redeem (1 point = Rp 1 discount)
 }
 
 function generatePickupCode() {
@@ -135,6 +136,17 @@ serve(async (req) => {
     let voucherId: string | null = null
     let voucherCode: string | null = null
     let discountAmount = 0
+    let pointsDiscountAmount = 0
+
+    // LOYALTY POINTS: Calculate points discount if provided
+    if (payload.pointsRedeemed && payload.pointsRedeemed > 0) {
+      // 1 point = Rp 1 discount, but cannot exceed 50% of subtotal
+      const maxPointsDiscount = Math.floor(totalAmount * 0.5)
+      pointsDiscountAmount = Math.min(payload.pointsRedeemed, maxPointsDiscount)
+      console.log(
+        `[CashierOrder] Points discount: ${pointsDiscountAmount} (points: ${payload.pointsRedeemed}, max: ${maxPointsDiscount})`,
+      )
+    }
 
     if (payload.voucherCode?.trim()) {
       // Extract category IDs from product variants
@@ -269,7 +281,14 @@ serve(async (req) => {
       reservedAdjustments.push({ variantId: item.productVariantId, quantity: item.quantity })
     }
 
-    const finalTotal = totalAmount - discountAmount
+    // Calculate final total with both voucher and loyalty points discounts
+    const totalDiscount = discountAmount + pointsDiscountAmount
+    const finalTotal = totalAmount - totalDiscount
+
+    console.log('[CashierOrder] Voucher discount:', discountAmount)
+    console.log('[CashierOrder] Points discount:', pointsDiscountAmount)
+    console.log('[CashierOrder] Total discount:', totalDiscount)
+    console.log('[CashierOrder] Final total:', finalTotal)
 
     const { data: order, error: orderError } = await supabase
       .from('order_products')
@@ -280,7 +299,7 @@ serve(async (req) => {
         status: 'awaiting_payment',
         payment_status: 'unpaid',
         subtotal: totalAmount,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscount,
         shipping_cost: 0,
         shipping_discount: 0,
         total: finalTotal,

@@ -41,6 +41,7 @@ type CreateTokenRequest = {
   customerEmail: string;
   customerPhone?: string;
   voucherCode?: string; // NEW: Optional voucher code for discount
+  pointsRedeemed?: number; // NEW: Optional loyalty points to redeem (1 point = Rp 1 discount)
 };
 
 type ReservedProductAdjustment = {
@@ -348,6 +349,17 @@ serve(async (req) => {
     let voucherId: string | null = null;
     let voucherCode: string | null = null;
     let discountAmount = 0;
+    let pointsDiscountAmount = 0;
+
+    // LOYALTY POINTS: Calculate points discount if provided
+    if (payload.pointsRedeemed && payload.pointsRedeemed > 0) {
+      // 1 point = Rp 1 discount, but cannot exceed 50% of subtotal
+      const maxPointsDiscount = Math.floor(totalAmount * 0.5);
+      pointsDiscountAmount = Math.min(payload.pointsRedeemed, maxPointsDiscount);
+      console.log(
+        `[create-doku-product-checkout] Points discount: ${pointsDiscountAmount} (points: ${payload.pointsRedeemed}, max: ${maxPointsDiscount})`,
+      );
+    }
 
     if (payload.voucherCode?.trim()) {
       // Extract category IDs from product variants
@@ -512,9 +524,13 @@ serve(async (req) => {
       });
     }
 
-    const finalTotal = totalAmount - discountAmount;
+    // Calculate final total with both voucher and loyalty points discounts
+    const totalDiscount = discountAmount + pointsDiscountAmount;
+    const finalTotal = totalAmount - totalDiscount;
 
-    console.log("[create-doku-product-checkout] Discount amount:", discountAmount);
+    console.log("[create-doku-product-checkout] Voucher discount:", discountAmount);
+    console.log("[create-doku-product-checkout] Points discount:", pointsDiscountAmount);
+    console.log("[create-doku-product-checkout] Total discount:", totalDiscount);
     console.log("[create-doku-product-checkout] Final total for DOKU:", finalTotal);
 
     const { data: order, error: orderError } = await supabase
@@ -526,7 +542,7 @@ serve(async (req) => {
         status: "awaiting_payment",
         payment_status: "unpaid",
         subtotal: totalAmount,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscount,
         shipping_cost: 0,
         shipping_discount: 0,
         total: finalTotal,
@@ -632,6 +648,17 @@ serve(async (req) => {
         quantity: 1,
         price: discountAmount * -1,
         sku: sanitizeDokuString(`voucher-${voucherId ?? "discount"}`, 64),
+        category: "discount",
+        type: "PROMOTION",
+      });
+    }
+
+    if (pointsDiscountAmount > 0) {
+      lineItems.push({
+        name: "SPARK CLUB Points Discount",
+        quantity: 1,
+        price: pointsDiscountAmount * -1,
+        sku: "loyalty-points-discount",
         category: "discount",
         type: "PROMOTION",
       });
