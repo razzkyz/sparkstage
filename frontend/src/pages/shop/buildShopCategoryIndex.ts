@@ -20,6 +20,7 @@ const CHARM_BAR_ONLY_CATEGORIES = new Set([
   'foodie',
   'zodiac',
   'pets',
+  'dressing-room',
 ]);
 
 export function buildShopCategoryIndex(categories: Category[]): ShopCategoryIndex {

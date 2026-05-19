@@ -276,9 +276,13 @@ export default function RentalOrders() {
 
       if (error) throw error;
 
-      // For now, show ALL product orders since the user mentioned they aren't seeing any data.
-      // If needed, we can re-add specific category filtering later when categories are strictly defined.
-      const filtered = data || [];
+      // Filter orders to only include those that have at least one product from the Dressing Room category
+      const filtered = (data || []).filter((order: any) => {
+        return order.order_product_items?.some((item: any) => {
+          const catName = item.product_variants?.products?.categories?.name;
+          return catName && catName.toLowerCase() === 'dressing room';
+        });
+      });
       setDressingRoomOrders(filtered as DressingRoomOrder[]);
     } catch (err) {
       console.error('Failed to fetch dressing room orders:', err);

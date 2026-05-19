@@ -8,6 +8,7 @@ import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkele
 import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
+import { nowWIB, toLocalDateString } from '../../utils/timezone';
 import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const CashierDashboard = () => {
@@ -15,6 +16,7 @@ const CashierDashboard = () => {
   const { showToast } = useToast();
   const { data: stats, error, isLoading } = useCashierSalesStats();
   const [menuSections, setMenuSections] = useState<AdminMenuSection[]>(CASHIER_MENU_SECTIONS);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const loadMenuSections = async () => {
@@ -33,6 +35,71 @@ const CashierDashboard = () => {
   const getUserInitials = () => {
     if (!user?.email) return 'K';
     return user.email.charAt(0).toUpperCase();
+  };
+
+  const handleExportCSV = () => {
+    if (!stats) {
+      showToast('error', 'Data belum dimuat');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const now = nowWIB();
+      const today = toLocalDateString(now);
+      const month = today.substring(0, 7);
+
+      // Prepare CSV data
+      const csvData = [
+        ['Laporan Penjualan Kasir - Spark Stage'],
+        ['Tanggal Laporan', today],
+        ['Bulan', month],
+        [],
+        ['RINGKASAN PENJUALAN HARI INI'],
+        ['Kategori', 'Jumlah', 'Revenue (Rp)'],
+        ['Tiket', stats.ticketSalesToday.toString(), stats.ticketRevenueToday.toString()],
+        ['Produk', stats.productSalesToday.toString(), stats.productRevenueToday.toString()],
+        ['TOTAL', (stats.ticketSalesToday + stats.productSalesToday).toString(), (stats.ticketRevenueToday + stats.productRevenueToday).toString()],
+        [],
+        ['RINGKASAN PENJUALAN BULAN INI'],
+        ['Kategori', 'Jumlah', 'Revenue (Rp)'],
+        ['Tiket', stats.ticketSalesMonth.toString(), stats.ticketRevenueMonth.toString()],
+        ['Produk', stats.productSalesMonth.toString(), stats.productRevenueMonth.toString()],
+        ['TOTAL', (stats.ticketSalesMonth + stats.productSalesMonth).toString(), (stats.ticketRevenueMonth + stats.productRevenueMonth).toString()],
+      ];
+
+      // Convert to CSV format
+      const csvContent = csvData
+        .map((row) =>
+          row
+            .map((cell) => {
+              // Escape quotes and wrap in quotes if contains comma
+              const escaped = String(cell).replace(/"/g, '""');
+              return escaped.includes(',') ? `"${escaped}"` : escaped;
+            })
+            .join(',')
+        )
+        .join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `penjualan-kasir-${today}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('success', 'Laporan berhasil diunduh');
+    } catch (err) {
+      console.error('Export failed:', err);
+      showToast('error', 'Gagal mengunduh laporan');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -55,42 +122,53 @@ const CashierDashboard = () => {
             <p className="text-sm text-gray-500 truncate">Panel Penjualan Spark</p>
           </div>
         </div>
-        <button
-          onClick={signOut}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors w-full sm:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined text-sm text-gray-700">logout</span>
-          Keluar
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
+          <button
+            onClick={handleExportCSV}
+            disabled={isExporting || isLoading}
+            className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-bold hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-sm text-green-700">download</span>
+            <span className="text-green-700">{isExporting ? 'Unduh...' : 'Export CSV'}</span>
+          </button>
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm text-gray-700">logout</span>
+            Keluar
+          </button>
+        </div>
       </div>
 
       <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
-        {/* Tiket Sales Section */}
+        {/* Main Stats Cards - Today */}
         <div className="space-y-4">
-          <h3 className="text-lg font-black text-gray-900">Penjualan Tiket</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h3 className="text-lg font-black text-gray-900">📊 Penjualan Hari Ini</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => <DashboardStatSkeleton key={`ticket-${index}`} />)
+              ? Array.from({ length: 3 }).map((_, index) => <DashboardStatSkeleton key={`today-${index}`} />)
               : [
                 {
-                  label: 'Tiket Terjual Hari Ini',
+                  label: '🎫 Tiket Terjual',
                   value: stats?.ticketSalesToday ?? 0,
                   subtext: `Rp ${formatCurrency(stats?.ticketRevenueToday ?? 0)}`,
+                  color: 'bg-blue-50 border-blue-200',
+                  textColor: 'text-blue-700',
                 },
                 {
-                  label: 'Revenue Tiket Hari Ini',
-                  value: `Rp ${formatCurrency(stats?.ticketRevenueToday ?? 0)}`,
-                  subtext: `${stats?.ticketSalesToday ?? 0} tiket`,
+                  label: '🛍️ Produk Terjual',
+                  value: stats?.productSalesToday ?? 0,
+                  subtext: `Rp ${formatCurrency(stats?.productRevenueToday ?? 0)}`,
+                  color: 'bg-purple-50 border-purple-200',
+                  textColor: 'text-purple-700',
                 },
                 {
-                  label: 'Tiket Terjual Bulan Ini',
-                  value: stats?.ticketSalesMonth ?? 0,
-                  subtext: `Rp ${formatCurrency(stats?.ticketRevenueMonth ?? 0)}`,
-                },
-                {
-                  label: 'Revenue Tiket Bulan Ini',
-                  value: `Rp ${formatCurrency(stats?.ticketRevenueMonth ?? 0)}`,
-                  subtext: `${stats?.ticketSalesMonth ?? 0} tiket`,
+                  label: '💰 Total Revenue',
+                  value: `Rp ${formatCurrency((stats?.ticketRevenueToday ?? 0) + (stats?.productRevenueToday ?? 0))}`,
+                  subtext: `${(stats?.ticketSalesToday ?? 0) + (stats?.productSalesToday ?? 0)} item terjual`,
+                  color: 'bg-emerald-50 border-emerald-200',
+                  textColor: 'text-emerald-700',
                 },
               ].map((item, index) => (
                 <m.div
@@ -98,118 +176,107 @@ const CashierDashboard = () => {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="rounded-xl border border-gray-200 bg-white p-5"
+                  className={`rounded-xl border ${item.color} bg-white p-6`}
                 >
-                  <p className="text-sm text-gray-500 mb-1">{item.label}</p>
-                  <p className="text-2xl md:text-3xl font-black text-gray-900">{item.value}</p>
-                  <p className="text-xs text-gray-400 mt-2">{item.subtext}</p>
+                  <p className={`text-sm ${item.textColor} mb-2`}>{item.label}</p>
+                  <p className="text-3xl md:text-4xl font-black text-gray-900">{item.value}</p>
+                  <p className={`text-xs ${item.textColor} mt-3`}>{item.subtext}</p>
                 </m.div>
               ))}
           </div>
         </div>
 
-        {/* Product Sales Section */}
+        {/* Main Stats Cards - This Month */}
         <div className="space-y-4">
-          <h3 className="text-lg font-black text-gray-900">Penjualan Produk</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h3 className="text-lg font-black text-gray-900">📈 Penjualan Bulan Ini</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {isLoading
-              ? Array.from({ length: 4 }).map((_, index) => <DashboardStatSkeleton key={`product-${index}`} />)
+              ? Array.from({ length: 3 }).map((_, index) => <DashboardStatSkeleton key={`month-${index}`} />)
               : [
                 {
-                  label: 'Produk Terjual Hari Ini',
-                  value: stats?.productSalesToday ?? 0,
-                  subtext: `Rp ${formatCurrency(stats?.productRevenueToday ?? 0)}`,
+                  label: '🎫 Tiket Terjual',
+                  value: stats?.ticketSalesMonth ?? 0,
+                  subtext: `Rp ${formatCurrency(stats?.ticketRevenueMonth ?? 0)}`,
+                  color: 'bg-blue-50 border-blue-200',
+                  textColor: 'text-blue-700',
                 },
                 {
-                  label: 'Revenue Produk Hari Ini',
-                  value: `Rp ${formatCurrency(stats?.productRevenueToday ?? 0)}`,
-                  subtext: `${stats?.productSalesToday ?? 0} produk`,
-                },
-                {
-                  label: 'Produk Terjual Bulan Ini',
+                  label: '🛍️ Produk Terjual',
                   value: stats?.productSalesMonth ?? 0,
                   subtext: `Rp ${formatCurrency(stats?.productRevenueMonth ?? 0)}`,
+                  color: 'bg-purple-50 border-purple-200',
+                  textColor: 'text-purple-700',
                 },
                 {
-                  label: 'Revenue Produk Bulan Ini',
-                  value: `Rp ${formatCurrency(stats?.productRevenueMonth ?? 0)}`,
-                  subtext: `${stats?.productSalesMonth ?? 0} produk`,
+                  label: '💰 Total Revenue',
+                  value: `Rp ${formatCurrency((stats?.ticketRevenueMonth ?? 0) + (stats?.productRevenueMonth ?? 0))}`,
+                  subtext: `${(stats?.ticketSalesMonth ?? 0) + (stats?.productSalesMonth ?? 0)} item terjual`,
+                  color: 'bg-emerald-50 border-emerald-200',
+                  textColor: 'text-emerald-700',
                 },
               ].map((item, index) => (
                 <m.div
                   key={item.label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: (index + 4) * 0.05 }}
-                  className="rounded-xl border border-gray-200 bg-white p-5"
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className={`rounded-xl border ${item.color} bg-white p-6`}
                 >
-                  <p className="text-sm text-gray-500 mb-1">{item.label}</p>
-                  <p className="text-2xl md:text-3xl font-black text-gray-900">{item.value}</p>
-                  <p className="text-xs text-gray-400 mt-2">{item.subtext}</p>
+                  <p className={`text-sm ${item.textColor} mb-2`}>{item.label}</p>
+                  <p className="text-3xl md:text-4xl font-black text-gray-900">{item.value}</p>
+                  <p className={`text-xs ${item.textColor} mt-3`}>{item.subtext}</p>
                 </m.div>
               ))}
           </div>
         </div>
 
-        {/* Summary Card */}
+        {/* Summary Table */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h3 className="text-lg font-black text-gray-900 mb-6">Ringkasan Total Penjualan</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-bold text-gray-700">Hari Ini</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Total Tiket:</span>
-                  <span className="font-black text-gray-900">{stats?.ticketSalesToday ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Revenue Tiket:</span>
-                  <span className="font-black text-gray-900">Rp {formatCurrency(stats?.ticketRevenueToday ?? 0)}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Total Produk:</span>
-                  <span className="font-black text-gray-900">{stats?.productSalesToday ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Revenue Produk:</span>
-                  <span className="font-black text-gray-900">Rp {formatCurrency(stats?.productRevenueToday ?? 0)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-sm font-bold text-gray-700">Total Revenue:</span>
-                  <span className="text-xl font-black text-[#ff4b86]">
-                    Rp {formatCurrency((stats?.ticketRevenueToday ?? 0) + (stats?.productRevenueToday ?? 0))}
-                  </span>
-                </div>
-              </div>
+          <h3 className="text-lg font-black text-gray-900 mb-6">📋 Ringkasan Lengkap</h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+              ))}
             </div>
-            <div className="space-y-4">
-              <h4 className="font-bold text-gray-700">Bulan Ini</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Total Tiket:</span>
-                  <span className="font-black text-gray-900">{stats?.ticketSalesMonth ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Revenue Tiket:</span>
-                  <span className="font-black text-gray-900">Rp {formatCurrency(stats?.ticketRevenueMonth ?? 0)}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Total Produk:</span>
-                  <span className="font-black text-gray-900">{stats?.productSalesMonth ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Revenue Produk:</span>
-                  <span className="font-black text-gray-900">Rp {formatCurrency(stats?.productRevenueMonth ?? 0)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-sm font-bold text-gray-700">Total Revenue:</span>
-                  <span className="text-xl font-black text-[#ff4b86]">
-                    Rp {formatCurrency((stats?.ticketRevenueMonth ?? 0) + (stats?.productRevenueMonth ?? 0))}
-                  </span>
-                </div>
-              </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-bold text-gray-700">Periode</th>
+                    <th className="text-center py-3 px-4 font-bold text-gray-700">Tiket (qty)</th>
+                    <th className="text-center py-3 px-4 font-bold text-gray-700">Tiket (Rp)</th>
+                    <th className="text-center py-3 px-4 font-bold text-gray-700">Produk (qty)</th>
+                    <th className="text-center py-3 px-4 font-bold text-gray-700">Produk (Rp)</th>
+                    <th className="text-center py-3 px-4 font-bold text-gray-700">Total (Rp)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-100 hover:bg-blue-50/50">
+                    <td className="py-3 px-4 font-bold text-gray-900">Hari Ini</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{stats?.ticketSalesToday ?? 0}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{formatCurrency(stats?.ticketRevenueToday ?? 0)}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{stats?.productSalesToday ?? 0}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{formatCurrency(stats?.productRevenueToday ?? 0)}</td>
+                    <td className="text-center py-3 px-4 font-black text-[#ff4b86]">
+                      {formatCurrency((stats?.ticketRevenueToday ?? 0) + (stats?.productRevenueToday ?? 0))}
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-emerald-50/50">
+                    <td className="py-3 px-4 font-bold text-gray-900">Bulan Ini</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{stats?.ticketSalesMonth ?? 0}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{formatCurrency(stats?.ticketRevenueMonth ?? 0)}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{stats?.productSalesMonth ?? 0}</td>
+                    <td className="text-center py-3 px-4 text-gray-600">{formatCurrency(stats?.productRevenueMonth ?? 0)}</td>
+                    <td className="text-center py-3 px-4 font-black text-[#ff4b86]">
+                      {formatCurrency((stats?.ticketRevenueMonth ?? 0) + (stats?.productRevenueMonth ?? 0))}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
         </div>
       </LazyMotion>
     </AdminLayout>

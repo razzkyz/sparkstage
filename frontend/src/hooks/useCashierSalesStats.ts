@@ -29,36 +29,50 @@ export function useCashierSalesStats() {
       const todayKey = toLocalDateString(now);
       const monthStart = `${todayKey.substring(0, 7)}-01`;
       
+      // Convert WIB dates to UTC for Supabase filtering
+      // WIB is UTC+7, so subtract 7 hours to get UTC equivalent
+      const todayUTC = new Date(todayKey + 'T00:00:00');
+      todayUTC.setHours(todayUTC.getHours() - 7);
+      const todayUTCStr = todayUTC.toISOString().split('T')[0];
+      
+      const todayEndUTC = new Date(todayKey + 'T23:59:59');
+      todayEndUTC.setHours(todayEndUTC.getHours() - 7);
+      const todayEndUTCStr = todayEndUTC.toISOString();
+      
+      const monthStartUTC = new Date(monthStart + 'T00:00:00');
+      monthStartUTC.setHours(monthStartUTC.getHours() - 7);
+      const monthStartUTCStr = monthStartUTC.toISOString().split('T')[0];
+      
       const [ticketToday, ticketMonth, productToday, productMonth] = await Promise.all([
         // Ticket sales today
         supabase
           .from('order_items')
-          .select('id, price', { count: 'exact' })
+          .select('id, subtotal', { count: 'exact' })
           .abortSignal(signal)
-          .gte('created_at', `${todayKey}T00:00:00+07:00`)
-          .lt('created_at', `${todayKey}T23:59:59+07:00`),
+          .gte('created_at', `${todayUTCStr}T00:00:00Z`)
+          .lt('created_at', todayEndUTCStr),
         
         // Ticket sales this month
         supabase
           .from('order_items')
-          .select('id, price', { count: 'exact' })
+          .select('id, subtotal', { count: 'exact' })
           .abortSignal(signal)
-          .gte('created_at', `${monthStart}T00:00:00+07:00`),
+          .gte('created_at', `${monthStartUTCStr}T00:00:00Z`),
         
         // Product sales today
         supabase
           .from('order_product_items')
-          .select('id, price', { count: 'exact' })
+          .select('id, subtotal', { count: 'exact' })
           .abortSignal(signal)
-          .gte('created_at', `${todayKey}T00:00:00+07:00`)
-          .lt('created_at', `${todayKey}T23:59:59+07:00`),
+          .gte('created_at', `${todayUTCStr}T00:00:00Z`)
+          .lt('created_at', todayEndUTCStr),
         
         // Product sales this month
         supabase
           .from('order_product_items')
-          .select('id, price', { count: 'exact' })
+          .select('id, subtotal', { count: 'exact' })
           .abortSignal(signal)
-          .gte('created_at', `${monthStart}T00:00:00+07:00`),
+          .gte('created_at', `${monthStartUTCStr}T00:00:00Z`),
       ]);
 
       if (ticketToday.error || ticketMonth.error || productToday.error || productMonth.error) {
@@ -74,9 +88,9 @@ export function useCashierSalesStats() {
       }
 
       // Calculate revenues
-      const calculateRevenue = (rows: Array<{ price: number | string }> | null) => {
+      const calculateRevenue = (rows: Array<any> | null) => {
         if (!rows) return 0;
-        return rows.reduce((sum, row) => sum + Number(row.price || 0), 0);
+        return rows.reduce((sum, row) => sum + Number(row.subtotal || 0), 0);
       };
 
       return {

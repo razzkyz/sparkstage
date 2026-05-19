@@ -4,6 +4,7 @@ import type { AppRouteConfig } from './routeTypes';
 
 const Dashboard = lazy(() => import('../../pages/admin/Dashboard'));
 const CashierDashboard = lazy(() => import('../../pages/admin/CashierDashboard'));
+const CashierOrders = lazy(() => import('../../pages/admin/CashierOrders'));
 const DressingRoomDashboard = lazy(() => import('../../pages/admin/DressingRoomDashboard'));
 const TicketsManagement = lazy(() => import('../../pages/admin/TicketsManagement'));
 const StoreInventory = lazy(() => import('../../pages/admin/StoreInventory'));
@@ -33,6 +34,7 @@ const SalesReport = lazy(() => import('../../pages/admin/SalesReport'));
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/dashboard', Page: Dashboard },
   { path: '/admin/cashier-dashboard', Page: CashierDashboard },
+  { path: '/admin/cashier-orders', Page: CashierOrders },
   { path: '/admin/dressing-room-dashboard', Page: DressingRoomDashboard },
   { path: '/admin/tickets', Page: TicketsManagement },
   { path: '/admin/store', Page: StoreInventory },
