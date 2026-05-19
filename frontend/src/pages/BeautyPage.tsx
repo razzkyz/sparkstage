@@ -99,8 +99,17 @@ export default function BeautyPage() {
     <PageTransition>
       <main className="min-h-[calc(100vh-64px)] bg-white text-black">
         <section className="border-y border-black/20">
-          <div className="mx-auto grid max-w-7xl grid-cols-[2fr_3fr] items-center gap-8 px-6 py-10 sm:gap-12 sm:px-8 sm:py-12 lg:gap-20 lg:px-12 lg:py-16">
-            <div className="aspect-[4/5] w-full max-w-xs overflow-hidden bg-[#f5f1f0] md:max-w-sm">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 sm:gap-8 sm:px-8 sm:py-12 md:flex-row md:justify-center md:gap-10 lg:gap-20 lg:px-12 lg:py-16">
+            {/* Title for Mobile (Hidden on md and up) */}
+            <h1
+              className="text-center text-5xl leading-none sm:text-6xl md:hidden w-full"
+              style={getCmsFontStyle(heroFonts.heading)}
+            >
+              {content.hero_title}
+            </h1>
+
+            {/* Image */}
+            <div className="aspect-[4/5] w-full max-w-[280px] sm:max-w-[320px] md:w-[280px] md:max-w-none lg:w-[340px] xl:w-[380px] shrink-0 overflow-hidden rounded-xl bg-[#f5f1f0]">
               <img
                 src={content.hero_image_url}
                 alt={content.hero_title}
@@ -108,15 +117,17 @@ export default function BeautyPage() {
               />
             </div>
 
-            <div className="flex w-full flex-col items-end text-right">
+            {/* Title & Paragraph Container */}
+            <div className="flex w-full flex-col items-center text-center md:items-end md:text-right md:max-w-md lg:max-w-lg xl:max-w-xl">
+              {/* Title for Tablet/Desktop (Hidden on mobile) */}
               <h1
-                className="mt-3 text-[2rem] leading-none sm:mt-4 sm:text-6xl lg:text-7xl"
+                className="hidden md:block md:text-5xl lg:text-7xl xl:text-[5rem] leading-none"
                 style={getCmsFontStyle(heroFonts.heading)}
               >
                 {content.hero_title}
               </h1>
               <p
-                className="mt-3 max-w-md text-[11px] leading-relaxed text-black/85 sm:mt-6 sm:text-2xl"
+                className="mt-4 max-w-md text-[13px] leading-relaxed text-black/85 sm:text-base md:mt-5 md:max-w-full md:text-sm lg:mt-6 lg:text-lg xl:text-xl"
                 style={getCmsFontStyle(heroFonts.body)}
               >
                 {content.hero_description}
@@ -126,7 +137,7 @@ export default function BeautyPage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
-          <h2 className="text-4xl leading-none sm:text-6xl" style={getCmsFontStyle(lookFonts.heading)}>{content.look_heading}</h2>
+          <h2 className="text-center text-4xl leading-none sm:text-6xl" style={getCmsFontStyle(lookFonts.heading)}>{content.look_heading}</h2>
 
           <div className="mt-8 grid grid-cols-[1fr_1fr] items-stretch gap-4 border-b border-black/20 pb-8 sm:gap-6 lg:gap-8">
             {/* Left: 2x2 star product grid */}
@@ -169,7 +180,7 @@ export default function BeautyPage() {
             </div>
 
             {/* Right: large model photo */}
-            <div className="flex items-end justify-center overflow-hidden">
+            <div className="flex items-end justify-center overflow-hidden rounded-lg">
               <img
                 src={content.look_model_image_url}
                 alt="GLAM editorial model"
