@@ -392,7 +392,20 @@ export function useProductCheckoutController({
 
     try {
       const payload = (await createOrder('create-doku-product-checkout')) as CreateProductTokenResponse | null;
-      if (!payload?.payment_url || !payload.order_number) {
+      if (!payload) {
+        setError('No response from payment server. Please try again.');
+        return;
+      }
+
+      if (!payload?.payment_url) {
+        console.error('[handlePay] Missing payment_url in response:', payload);
+        setError(payload && 'error' in payload ? (payload as unknown as { error?: string }).error || 'Payment creation failed' : 'Failed to generate payment link. Please try again.');
+        return;
+      }
+
+      if (!payload.order_number) {
+        console.error('[handlePay] Missing order_number in response:', payload);
+        setError('Failed to create order number. Please try again.');
         return;
       }
 
