@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { DivisionBadge } from '@/components/admin/DivisionFilter'
 import type { DivisionType } from '@/hooks/useAdminDivisions'
 import { Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
+import AdminLayout from '@/components/AdminLayout'
+import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
+import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
 
 interface Admin {
   user_id: string
@@ -25,8 +28,9 @@ interface Division {
 }
 
 export function DivisionManager() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const queryClient = useQueryClient()
+  const menuSections = useAdminMenuSections()
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null)
   const [selectedDivision, setSelectedDivision] = useState<DivisionType | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -35,18 +39,14 @@ export function DivisionManager() {
   const { data: admins = [], isLoading: adminsLoading } = useQuery({
     queryKey: ['admins-with-divisions'],
     queryFn: async () => {
-      const { data: adminUsers } = await supabase
-        .from('user_role_assignments')
-        .select('user_id, role_name')
-        .in('role_name', ['admin', 'super_admin'])
+      const { data: adminUsers, error: adminsError } = await supabase.rpc('get_admin_users')
 
-      if (!adminUsers) return []
+      if (adminsError || !adminUsers) {
+        console.error('Error fetching admins:', adminsError)
+        return []
+      }
 
-      const adminPromises = adminUsers.map(async (admin) => {
-        // Get user email
-        const { data: { users } } = await supabase.auth.admin.listUsers()
-        const userRecord = users?.find((u) => u.id === admin.user_id)
-
+      const adminPromises = adminUsers.map(async (admin: any) => {
         // Get divisions
         const { data: divisions } = await supabase.rpc('get_user_divisions', {
           p_user_id: admin.user_id,
@@ -54,7 +54,7 @@ export function DivisionManager() {
 
         return {
           user_id: admin.user_id,
-          email: userRecord?.email || 'Unknown',
+          email: admin.email || 'Unknown',
           role_name: admin.role_name,
           divisions: (divisions || []).map((d: any) => ({
             division_id: d.division_id,
@@ -143,6 +143,14 @@ export function DivisionManager() {
     : []
 
   return (
+    <AdminLayout
+      menuItems={ADMIN_MENU_ITEMS}
+      menuSections={menuSections}
+      defaultActiveMenuId="divisions"
+      title="Kelola Divisi"
+      subtitle="Manage admin division assignments"
+      onLogout={signOut}
+    >
     <div className="space-y-6">
       {/* Messages */}
       {message && (
@@ -261,5 +269,8 @@ export function DivisionManager() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   )
 }
+
+export default DivisionManager

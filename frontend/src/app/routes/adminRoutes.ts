@@ -9,6 +9,7 @@ const DressingRoomDashboard = lazy(() => import('../../pages/admin/DressingRoomD
 const TicketsManagement = lazy(() => import('../../pages/admin/TicketsManagement'));
 const StoreInventory = lazy(() => import('../../pages/admin/StoreInventory'));
 const StageManager = lazy(() => import('../../pages/admin/StageManager'));
+const DivisionManager = lazy(() => import('../../pages/admin/divisions/DivisionManager'));
 const StageAnalytics = lazy(() => import('../../pages/admin/StageAnalytics'));
 const StageBulkQR = lazy(() => import('../../pages/admin/StageBulkQR'));
 const OrderTicket = lazy(() => import('../../pages/admin/OrderTicket'));
@@ -64,4 +65,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/sales-report', Page: SalesReport },
   { path: '/admin/audit-logs', Page: AuditLogsPage },
   { path: '/admin/loyalty-points', Page: AdminPointsManager },
+  { path: '/admin/divisions', Page: DivisionManager },
 ];

@@ -148,7 +148,8 @@ export function useAdminLoyaltyPoints() {
     queryKey: ['admin-loyalty-customers'],
     queryFn: async () => {
       try {
-        const { data: { users } } = await supabase.auth.admin.listUsers()
+        const { data: users, error } = await supabase.rpc('get_all_users_for_admin')
+        if (error) throw error
 
         // Get loyalty points for each user
         const { data: points } = await supabase
@@ -156,10 +157,10 @@ export function useAdminLoyaltyPoints() {
           .select('user_id, current_points, tier_level, tier_name')
 
         return (
-          users?.map((u) => {
-            const pointsRecord = points?.find((p) => p.user_id === u.id)
+          users?.map((u: any) => {
+            const pointsRecord = points?.find((p) => p.user_id === u.user_id)
             return {
-              user_id: u.id,
+              user_id: u.user_id,
               email: u.email || '',
               current_points: pointsRecord?.current_points || 0,
               tier_level: pointsRecord?.tier_level || 0,

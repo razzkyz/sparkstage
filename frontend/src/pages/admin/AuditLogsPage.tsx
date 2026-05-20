@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react'
+import AdminLayout from '@/components/AdminLayout'
+import { useAuth } from '@/contexts/AuthContext'
+import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
+import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
 import { useAuditLogs, useExportAuditLogs, type AuditAction } from '@/hooks/useAuditLogs'
 import { Download, RotateCcw, Eye } from 'lucide-react'
 import './AuditLogsPage.css'
@@ -29,6 +33,8 @@ const TABLE_LABELS: Record<string, string> = {
 }
 
 export function AuditLogsPage() {
+  const { signOut } = useAuth()
+  const menuSections = useAdminMenuSections()
   const [selectedAction, setSelectedAction] = useState<AuditAction | ''>('')
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [startDate, setStartDate] = useState<string>('')
@@ -84,9 +90,17 @@ export function AuditLogsPage() {
   }
 
   return (
-    <div className="audit-logs-page">
-      {/* Header */}
-      <div className="audit-header">
+    <AdminLayout
+      menuItems={ADMIN_MENU_ITEMS}
+      menuSections={menuSections}
+      defaultActiveMenuId="audit-logs"
+      title="Audit Logs"
+      subtitle="Track all admin activities and system changes"
+      onLogout={signOut}
+    >
+      <div className="audit-logs-page">
+        {/* Header */}
+        <div className="audit-header">
         <h1>Audit Logs</h1>
         <p className="text-gray-600">Track all admin activities and system changes</p>
       </div>
@@ -267,7 +281,8 @@ export function AuditLogsPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   )
 }
 
