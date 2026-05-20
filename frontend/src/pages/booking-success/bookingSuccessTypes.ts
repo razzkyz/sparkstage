@@ -63,6 +63,7 @@ export interface OrderRow {
   expires_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  payment_url?: string | null;
   profiles?: {
     name?: string | null;
   } | null;
@@ -73,4 +74,4 @@ export interface OrderDataFromRpc extends OrderRow {
 }
 
 export type OrderData = OrderRow & { order_items: OrderItem[] };
-export type OrderState = OrderData | OrderRow | { status?: string | null; expires_at?: string | null; customer_name?: string | null; profiles?: { name?: string | null } | null };
+export type OrderState = OrderData | OrderRow | { status?: string | null; expires_at?: string | null; customer_name?: string | null; payment_url?: string | null; profiles?: { name?: string | null } | null };
