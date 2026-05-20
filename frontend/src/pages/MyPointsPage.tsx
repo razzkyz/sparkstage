@@ -5,7 +5,7 @@ import { PageTransition } from '../components/PageTransition';
 import {
   useLoyaltyPoints,
   useLoyaltyHistory,
-  getLoyaltyRank,
+  getLoyaltyRankByTier,
   getRankProgress,
   LOYALTY_RANKS,
 } from '../hooks/useLoyaltyPoints';
@@ -73,7 +73,8 @@ const MyPointsPage = () => {
   }, [user, navigate]);
 
   const totalPoints = pointsData?.total_points ?? 0;
-  const rank        = getLoyaltyRank(totalPoints);
+  const tierLevel   = pointsData?.tier_level ?? 0;
+  const rank        = getLoyaltyRankByTier(tierLevel);
   const progress    = getRankProgress(totalPoints);
   const nextRank    = LOYALTY_RANKS.find(r => r.minPoints > rank.minPoints) ?? null;
   const loading     = pointsLoading || histLoading;

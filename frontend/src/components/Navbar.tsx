@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTicketCount } from '../hooks/useTicketCount';
 import { useOrderCount } from '../hooks/useOrderCount';
 import { useCart } from '../contexts/cartStore';
-import { useLoyaltyPoints, getLoyaltyRank } from '../hooks/useLoyaltyPoints';
+import { useLoyaltyPoints, getLoyaltyRankByTier } from '../hooks/useLoyaltyPoints';
 import { getUserDisplayName } from '../utils/auth';
 
 let previousDesktopStarPosition = 0;
@@ -33,7 +33,8 @@ const Navbar = () => {
   const { totalQuantity } = useCart();
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
   const loyaltyPoints = loyaltyData?.total_points ?? 0;
-  const loyaltyRank = getLoyaltyRank(loyaltyPoints);
+  const loyaltyTier = loyaltyData?.tier_level ?? 0;
+  const loyaltyRank = getLoyaltyRankByTier(loyaltyTier);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -261,7 +262,7 @@ const Navbar = () => {
 
                 {/* Loyalty Points Badge — Desktop */}
                 <Link
-                  to="/my-points"
+                  to="/spark-club"
                   className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
                   style={{
                     background: 'linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)',
@@ -567,7 +568,7 @@ const Navbar = () => {
             <>
               {/* Mobile: Points chip */}
               <Link
-                to="/my-points"
+                to="/spark-club"
                 className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-black tracking-wide active:scale-95 transition-transform"
                 style={{
                   background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',

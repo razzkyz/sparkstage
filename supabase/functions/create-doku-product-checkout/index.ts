@@ -19,6 +19,7 @@ import {
   jsonError,
   jsonErrorWithDetails,
 } from "../_shared/http.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 import {
   getAllowedAppOrigins,
   getDokuEnv,
@@ -144,13 +145,33 @@ serve(async (req) => {
     if (authResult.response) return authResult.response;
 
     const auth = authResult.context!;
-    const dokuEnv = getDokuEnv();
 
     // Create separate client with SERVICE ROLE KEY for database operations
     supabase = createServiceClient(
       auth.supabaseEnv.url,
       auth.supabaseEnv.serviceRoleKey,
     );
+
+    // CHECK RATE LIMIT: Max 10 checkouts per user per minute
+    const rateLimitResult = await checkRateLimit(
+      supabase,
+      auth.user.id,
+      {
+        maxRequests: 10,
+        windowMs: 60000, // 1 minute
+        keyPrefix: "checkout_product",
+      }
+    );
+
+    if (!rateLimitResult.allowed) {
+      return jsonErrorWithDetails(req, 429, {
+        error: "Too many checkout requests",
+        code: "RATE_LIMITED",
+        details: `Max 10 requests per minute. Try again in ${rateLimitResult.retryAfter}ms`,
+      });
+    }
+
+    const dokuEnv = getDokuEnv();
 
     const payload = (await req.json()) as CreateTokenRequest;
     if (!payload.items || payload.items.length === 0) {

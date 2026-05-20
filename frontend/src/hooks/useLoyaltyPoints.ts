@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 
 export type LoyaltyPointsBalance = {
   total_points: number;
+  tier_level: number;
   updated_at: string;
 };
 
@@ -92,6 +93,11 @@ export function getLoyaltyRank(points: number): LoyaltyRank {
   return LOYALTY_RANKS[0];
 }
 
+/** Get rank by tier level (0=Stargazer, 1=Moonwalker, 2=Galaxian, 3=Supernova) */
+export function getLoyaltyRankByTier(tierLevel: number): LoyaltyRank {
+  return LOYALTY_RANKS[Math.max(0, Math.min(tierLevel, LOYALTY_RANKS.length - 1))];
+}
+
 /** Progress percentage to next rank (0–100) */
 export function getRankProgress(points: number): number {
   const rank = getLoyaltyRank(points);
@@ -113,7 +119,7 @@ export function calcMaxRedeemablePoints(userPoints: number, subtotal: number): n
 async function fetchLoyaltyPoints(userId: string, signal?: AbortSignal): Promise<LoyaltyPointsBalance | null> {
   const { data, error } = await supabase
     .from('customer_loyalty_points')
-    .select('total_points, updated_at')
+    .select('total_points, tier_level, updated_at')
     .eq('user_id', userId)
     .abortSignal(signal as AbortSignal)
     .maybeSingle();

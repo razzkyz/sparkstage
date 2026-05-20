@@ -1,5 +1,5 @@
 import { formatCurrency } from '../../utils/formatters';
-import { calcMaxRedeemablePoints, getLoyaltyRank } from '../../hooks/useLoyaltyPoints';
+import { calcMaxRedeemablePoints, getLoyaltyRankByTier } from '../../hooks/useLoyaltyPoints';
 
 export type AppliedPoints = {
   pointsUsed: number;
@@ -8,6 +8,7 @@ export type AppliedPoints = {
 
 type CheckoutPointsSectionProps = {
   userPoints: number;
+  userTierLevel: number;
   subtotal: number;
   appliedPoints: AppliedPoints | null;
   loading: boolean;
@@ -17,6 +18,7 @@ type CheckoutPointsSectionProps = {
 
 export function CheckoutPointsSection({
   userPoints,
+  userTierLevel,
   subtotal,
   appliedPoints,
   loading,
@@ -24,7 +26,7 @@ export function CheckoutPointsSection({
   onRemovePoints,
 }: CheckoutPointsSectionProps) {
   const maxRedeemable = calcMaxRedeemablePoints(userPoints, subtotal);
-  const rank = getLoyaltyRank(userPoints);
+  const rank = getLoyaltyRankByTier(userTierLevel);
   const hasEnoughPoints = userPoints > 0 && maxRedeemable > 0;
 
   if (userPoints === 0) return null;

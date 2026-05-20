@@ -11,6 +11,7 @@ import { CheckoutSummaryCard } from './product-checkout/CheckoutSummaryCard';
 import { CheckoutVoucherSection } from './product-checkout/CheckoutVoucherSection';
 import { useProductCheckoutController } from './product-checkout/useProductCheckoutController';
 import { useLoyaltyPoints } from '../hooks/useLoyaltyPoints';
+import { ReferralCodeInput } from '../components/account/ReferralCodeInput';
 
 export default function ProductCheckoutPage() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function ProductCheckoutPage() {
   const cashierCheckoutEnabled = String(import.meta.env.VITE_ENABLE_CASHIER_CHECKOUT || '').toLowerCase() !== 'false';
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
   const userPoints = loyaltyData?.total_points ?? 0;
+  const userTierLevel = loyaltyData?.tier_level ?? 0;
   const {
     customerName,
     customerPhone,
@@ -140,12 +142,18 @@ export default function ProductCheckoutPage() {
 
               <CheckoutPointsSection
                 userPoints={userPoints}
+                userTierLevel={userTierLevel}
                 subtotal={subtotal}
                 appliedPoints={appliedPoints}
                 loading={loading}
                 onApplyPoints={handleApplyPoints}
                 onRemovePoints={handleRemovePoints}
               />
+
+              <div className="mt-4 pt-4 border-t border-rose-100">
+                <p className="text-sm font-medium text-rose-900 mb-3">Have a referral code?</p>
+                <ReferralCodeInput />
+              </div>
 
               <CheckoutPaymentSection
                 loading={loading}

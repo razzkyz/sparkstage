@@ -11,7 +11,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from '../hooks/useProduct';
 import { useCharmBarSettings } from '../hooks/useCharmBarSettings';
-import { useLoyaltyPoints, useLoyaltyHistory, getLoyaltyRank } from '../hooks/useLoyaltyPoints';
+import { useLoyaltyPoints, useLoyaltyHistory, getLoyaltyRankByTier } from '../hooks/useLoyaltyPoints';
 import { useToast } from '../components/Toast';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
@@ -32,9 +32,10 @@ function LoyaltyPointsBanner({ userId }: { userId: string }) {
   const { data: history = [], isLoading: histLoading } = useLoyaltyHistory(userId);
 
   const totalPoints = pointsData?.total_points ?? 0;
+  const tierLevel = pointsData?.tier_level ?? 0;
   const lastFive = history.slice(0, 5);
   const loading = pointsLoading || histLoading;
-  const rank = getLoyaltyRank(totalPoints);
+  const rank = getLoyaltyRankByTier(tierLevel);
 
   return (
     <div className="mb-8 rounded-2xl overflow-hidden shadow-xl" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #2d0f5e 40%, #4a1080 100%)' }}>

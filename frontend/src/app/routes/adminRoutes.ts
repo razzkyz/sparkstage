@@ -30,6 +30,8 @@ const EventBookings = lazy(() => import('../../pages/admin/EventBookings'));
 const VenueReviewsAdmin = lazy(() => import('../../pages/admin/VenueReviewsAdmin'));
 const TabletQRScanner = lazy(() => import('../../pages/admin/TabletQRScanner'));
 const SalesReport = lazy(() => import('../../pages/admin/SalesReport'));
+const AuditLogsPage = lazy(() => import('../../pages/admin/AuditLogsPage'));
+const AdminPointsManager = lazy(() => import('../../pages/admin/AdminPointsManager'));
 
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/dashboard', Page: Dashboard },
@@ -60,4 +62,6 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/tablet-qr-scanner', Page: TabletQRScanner },
   { path: '/admin/venue-reviews', Page: VenueReviewsAdmin },
   { path: '/admin/sales-report', Page: SalesReport },
+  { path: '/admin/audit-logs', Page: AuditLogsPage },
+  { path: '/admin/loyalty-points', Page: AdminPointsManager },
 ];
