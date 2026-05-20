@@ -1,7 +1,3 @@
--- Migration: Add cancel_ticket_order_atomic function
--- Date: 2026-05-20
--- Description: Atomic cancellation of ticket orders, releasing reserved ticket capacity.
-
 CREATE OR REPLACE FUNCTION public.cancel_ticket_order_atomic(
   p_order_number TEXT,
   p_user_id UUID
@@ -49,7 +45,8 @@ BEGIN
     );
   END IF;
 
-  IF v_order.user_id IS DISTINCT FROM p_user_id THEN
+  -- Ensure we compare using text safely just in case user_id is UUID or TEXT
+  IF v_order.user_id::text IS DISTINCT FROM p_user_id::text THEN
     RETURN jsonb_build_object(
       'ok', false,
       'code', 'forbidden',
@@ -126,9 +123,3 @@ BEGIN
   );
 END;
 $$;
-
--- Revoke execute from public
-REVOKE EXECUTE ON FUNCTION public.cancel_ticket_order_atomic(TEXT, UUID) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.cancel_ticket_order_atomic(TEXT, UUID) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.cancel_ticket_order_atomic(TEXT, UUID) FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.cancel_ticket_order_atomic(TEXT, UUID) TO service_role;

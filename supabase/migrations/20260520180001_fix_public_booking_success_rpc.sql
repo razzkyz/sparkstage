@@ -81,11 +81,10 @@ BEGIN
       '[]'::JSON
     ) AS tickets
   FROM public.orders o
-  LEFT JOIN public.order_items oi ON oi.order_id = o.id AND oi.deleted_at IS NULL
-  LEFT JOIN public.purchased_tickets pt ON pt.order_item_id = oi.id AND pt.deleted_at IS NULL
+  LEFT JOIN public.order_items oi ON oi.order_id = o.id
+  LEFT JOIN public.purchased_tickets pt ON pt.order_item_id = oi.id
   LEFT JOIN public.tickets t ON t.id = pt.ticket_id
   WHERE o.id = v_order_id
-    AND o.deleted_at IS NULL
   GROUP BY o.id;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY INVOKER;

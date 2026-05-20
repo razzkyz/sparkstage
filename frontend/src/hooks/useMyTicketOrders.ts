@@ -69,6 +69,7 @@ export function useMyTicketOrders(userId: string | null | undefined) {
         `
         )
         .eq('user_id', userId)
+        .eq('is_hidden_by_user', false)
         .order('created_at', { ascending: false });
 
       if (error) {

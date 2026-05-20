@@ -28,6 +28,7 @@ export default function MyTicketsPage() {
     toggleExpand,
     handleSyncStatus,
     handleCancelOrder,
+    handleHideOrder,
     getStatusBadge,
   } = useMyTicketsView({
     userId: user?.id,
@@ -129,6 +130,7 @@ export default function MyTicketsPage() {
               onToggleExpand={toggleExpand}
               onSyncStatus={handleSyncStatus}
               onCancelOrder={handleCancelOrder}
+              onHideOrder={handleHideOrder}
               t={t}
             />
           ) : (

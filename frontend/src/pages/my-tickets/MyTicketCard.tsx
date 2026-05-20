@@ -11,6 +11,7 @@ type MyTicketCardProps = {
   onToggleExpand: () => void;
   onPayNow: () => void;
   onCancel: () => void;
+  onHide: () => void;
   onSyncStatus: () => void;
   onViewDetails: () => void;
   statusBadge: { label: string; tone: 'yellow' | 'green' | 'gray' | 'red' };
@@ -24,6 +25,7 @@ export function MyTicketCard({
   onToggleExpand,
   onPayNow,
   onCancel,
+  onHide,
   onSyncStatus,
   onViewDetails,
   statusBadge,
@@ -38,6 +40,8 @@ export function MyTicketCard({
     gray: 'bg-gray-100 text-gray-800 border-gray-200',
     red: 'bg-red-100 text-red-800 border-red-200',
   };
+
+  const firstItem = order.order_items?.[0];
 
   return (
     <div className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-rose-300 transition-all overflow-hidden">
@@ -67,6 +71,24 @@ export function MyTicketCard({
             </div>
           </div>
         </div>
+
+        {firstItem && (
+          <div className="mb-4 bg-rose-50 border border-rose-100 rounded-lg p-3">
+            <h4 className="font-bold text-gray-900 mb-1">{firstItem.ticket_name}</h4>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
+              <div className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">calendar_today</span>
+                <span>{firstItem.selected_date}</span>
+              </div>
+              {firstItem.selected_time_slots && (
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">schedule</span>
+                  <span>{Array.isArray(firstItem.selected_time_slots) ? firstItem.selected_time_slots.join(', ') : firstItem.selected_time_slots}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
@@ -114,6 +136,14 @@ export function MyTicketCard({
               {t('myTickets.viewQR', 'View QR')}
             </button>
           )}
+
+          <button
+            onClick={onHide}
+            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">delete</span>
+            Hapus Tiket
+          </button>
         </div>
       </div>
 

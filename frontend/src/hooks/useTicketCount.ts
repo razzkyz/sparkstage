@@ -28,13 +28,23 @@ export const useTicketCount = () => {
         // Count purchased tickets with status 'active' and valid_date >= today
         const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
 
-        const { count: activeTicketCount, error: ticketError } = await supabase
+        const { data: activeTickets, error: ticketError } = await supabase
           .from('purchased_tickets')
-          .select('*', { count: 'exact', head: true })
+          .select(`
+            id,
+            order_items!inner(
+              orders!inner(
+                is_hidden_by_user
+              )
+            )
+          `)
           .eq('user_id', userId)
           .eq('status', 'active')
           .gte('valid_date', todayStr)
+          .eq('order_items.orders.is_hidden_by_user', false)
           .abortSignal(timeoutSignal);
+        
+        const activeTicketCount = activeTickets?.length || 0;
 
         // Count pending orders for tickets
         const { count: pendingOrderCount, error: orderError } = await supabase
@@ -42,6 +52,7 @@ export const useTicketCount = () => {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('status', 'pending')
+          .eq('is_hidden_by_user', false)
           .abortSignal(timeoutSignal);
 
         if (ticketError && orderError) {
