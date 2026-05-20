@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NavigateFunction, Location } from 'react-router-dom';
-import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState } from '../../utils/dokuCheckout';
+import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState, clearAllPaymentSessions, storePaymentContext, validatePaymentTypeMatch } from '../../utils/dokuCheckout';
 import {
   restoreBookingState,
   hasBookingState,
@@ -42,6 +42,11 @@ export function usePaymentPageController({
         console.error('Failed to load DOKU Checkout:', loadError);
         setError('Failed to load payment system. Please refresh the page.');
       });
+
+    // CRITICAL: Clear all old payment sessions when entering ticket checkout
+    // Prevents product payment PRD- invoice from being reused in ticket payment
+    // Must happen BEFORE page setup to ensure clean payment context
+    clearAllPaymentSessions();
 
     // Cleanup: Reset DOKU state when component unmounts to prevent session reuse
     // Fixes: "saat user cancel payment popup: payment session lama harus dihapus"
@@ -141,13 +146,21 @@ export function usePaymentPageController({
         throw new Error('Payment system is still loading. Please try again.');
       }
 
+      // CRITICAL: Validate payment type isolation - SPK invoice for tickets ONLY
+      if (!validatePaymentTypeMatch('ticket', response.order_number)) {
+        throw new Error('Invalid ticket payment session. Please refresh and try again.');
+      }
+
       clearBookingState();
       
-      // Reset DOKU state before opening new payment session
-      // Ensures popup doesn't reuse old invoice/amount from previous checkout
-      // Fixes: "popup berikutnya wajib generate payment baru"
+      // Reset DOKU state TWICE to ensure old payment session completely gone
+      // First reset closes the old popup, second reset clears SDK state
       resetDokuCheckoutState();
       
+      // Store new payment context for isolation validation
+      storePaymentContext('ticket', response.order_number, response.payment_url);
+      
+      // Open fresh payment popup with correct SPK invoice
       openDokuCheckout(response.payment_url);
       navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}&pending=1`, {
         state: buildBookingSuccessState({

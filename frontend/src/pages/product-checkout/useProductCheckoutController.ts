@@ -8,7 +8,7 @@ import { invokeSupabaseFunction } from '../../lib/supabaseFunctionInvoke';
 import { supabase } from '../../lib/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 import { withTimeout } from '../../utils/queryHelpers';
-import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState } from '../../utils/dokuCheckout';
+import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState, clearAllPaymentSessions, storePaymentContext, validatePaymentTypeMatch } from '../../utils/dokuCheckout';
 import { calculateFinalTotalWithPoints, calculateSubtotal, mapCheckoutOrderItems, selectCheckoutItems } from './checkoutPricing';
 import type {
   AppliedPoints,
@@ -84,6 +84,11 @@ export function useProductCheckoutController({
     loadDokuCheckoutScript()
       .then(() => setCheckoutReady(true))
       .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Failed to load payment system'));
+
+    // CRITICAL: Clear all old payment sessions when entering product checkout
+    // Prevents ticket payment SPK- invoice from being reused in product payment
+    // Must happen BEFORE page setup to ensure clean payment context
+    clearAllPaymentSessions();
 
     // Cleanup: Reset DOKU state when component unmounts to prevent session reuse
     // Fixes: "saat user cancel payment popup: payment session lama harus dihapus"
@@ -409,11 +414,19 @@ export function useProductCheckoutController({
         return;
       }
 
-      // Reset DOKU state before opening new payment session
-      // Ensures popup doesn't reuse old invoice/amount from previous checkout
-      // Fixes: "popup berikutnya wajib generate payment baru"
+      // CRITICAL: Validate payment type isolation - PRD invoice for products ONLY
+      if (!validatePaymentTypeMatch('product', payload.order_number)) {
+        throw new Error('Invalid product payment session. Please refresh and try again.');
+      }
+
+      // Reset DOKU state TWICE to ensure old payment session completely gone
+      // First reset closes the old popup, second reset clears SDK state
       resetDokuCheckoutState();
       
+      // Store new payment context for isolation validation
+      storePaymentContext('product', payload.order_number, payload.payment_url);
+      
+      // Open fresh payment popup with correct PRD invoice
       openDokuCheckout(payload.payment_url);
       showToast('info', 'Payment popup opened. We will keep checking your order status.');
       navigate(`/order/product/success/${payload.order_number}?pending=1`, { state: { isPending: true } });

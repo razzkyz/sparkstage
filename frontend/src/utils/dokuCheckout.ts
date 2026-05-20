@@ -7,6 +7,12 @@ declare global {
   }
 }
 
+export type PaymentType = 'ticket' | 'product';
+
+const PAYMENT_TYPE_KEY = 'doku_payment_type';
+const PAYMENT_URL_KEY = 'doku_payment_url';
+const PAYMENT_INVOICE_KEY = 'doku_invoice_number';
+
 function getDokuCheckoutScriptUrl() {
   const isProduction = import.meta.env.VITE_DOKU_IS_PRODUCTION === 'true';
   return isProduction
@@ -105,4 +111,93 @@ export function openDokuCheckout(paymentUrl: string) {
   }
 
   window.loadJokulCheckout(paymentUrl);
+}
+
+/**
+ * Store payment context to detect and prevent cross-payment-type reuse
+ * CRITICAL: Ticket and Product payments must NEVER share state
+ */
+export function storePaymentContext(paymentType: PaymentType, invoiceNumber: string, paymentUrl: string) {
+  try {
+    sessionStorage.setItem(PAYMENT_TYPE_KEY, paymentType);
+    sessionStorage.setItem(PAYMENT_INVOICE_KEY, invoiceNumber);
+    sessionStorage.setItem(PAYMENT_URL_KEY, paymentUrl);
+    console.log(`[dokuCheckout] Payment context stored: ${paymentType} invoice=${invoiceNumber}`);
+  } catch (err) {
+    console.warn('[dokuCheckout] Failed to store payment context:', err);
+  }
+}
+
+/**
+ * Get current payment context to validate payment type isolation
+ */
+export function getPaymentContext(): { paymentType: PaymentType | null; invoiceNumber: string | null; paymentUrl: string | null } {
+  try {
+    return {
+      paymentType: (sessionStorage.getItem(PAYMENT_TYPE_KEY) || null) as PaymentType | null,
+      invoiceNumber: sessionStorage.getItem(PAYMENT_INVOICE_KEY) || null,
+      paymentUrl: sessionStorage.getItem(PAYMENT_URL_KEY) || null,
+    };
+  } catch (err) {
+    console.warn('[dokuCheckout] Failed to read payment context:', err);
+    return { paymentType: null, invoiceNumber: null, paymentUrl: null };
+  }
+}
+
+/**
+ * Clear all payment session data when switching payment types
+ * CRITICAL: Must be called when navigating from Product → Ticket checkout
+ * Prevents old PRD invoice from appearing in Ticket payment popup
+ */
+export function clearAllPaymentSessions() {
+  try {
+    // Close any open DOKU popup
+    resetDokuCheckoutState();
+    
+    // Clear all payment-related sessionStorage keys
+    sessionStorage.removeItem(PAYMENT_TYPE_KEY);
+    sessionStorage.removeItem(PAYMENT_INVOICE_KEY);
+    sessionStorage.removeItem(PAYMENT_URL_KEY);
+    
+    // Clear browser cache of payment URLs (force fresh fetch from server)
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          caches.open(cacheName).then(cache => {
+            cache.keys().then(requests => {
+              requests.forEach(request => {
+                if (request.url.includes('doku') || request.url.includes('payment')) {
+                  cache.delete(request);
+                }
+              });
+            });
+          });
+        });
+      }).catch(() => {
+        // Cache API not available in this context
+      });
+    }
+    
+    console.log('[dokuCheckout] All payment sessions cleared - ready for fresh payment');
+  } catch (err) {
+    console.warn('[dokuCheckout] Error clearing payment sessions:', err);
+  }
+}
+
+/**
+ * Validate that payment type matches invoice prefix (PRD vs SPK)
+ * CRITICAL: Detect when wrong payment type is being used
+ */
+export function validatePaymentTypeMatch(paymentType: PaymentType, invoiceNumber: string): boolean {
+  const expectedPrefix = paymentType === 'ticket' ? 'SPK-' : 'PRD-';
+  const actualPrefix = invoiceNumber.substring(0, 4);
+  
+  if (actualPrefix !== expectedPrefix) {
+    console.error(
+      `[dokuCheckout] PAYMENT TYPE MISMATCH: Expected ${paymentType} (${expectedPrefix}) but got invoice ${invoiceNumber}`,
+    );
+    return false;
+  }
+  
+  return true;
 }

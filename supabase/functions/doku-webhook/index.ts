@@ -13,6 +13,53 @@ import {
   type TicketOrderItem 
 } from '../_shared/payment-effects.ts'
 
+type PaymentType = 'ticket' | 'product'
+
+/**
+ * Extract payment type from invoice number prefix
+ * CRITICAL: Product and Ticket payments MUST be isolated
+ * PRD- = product payment
+ * SPK- = ticket payment
+ */
+function extractPaymentTypeFromInvoice(invoiceNumber: string): PaymentType | null {
+  const prefix = invoiceNumber.substring(0, 4)
+  if (prefix === 'PRD-') return 'product'
+  if (prefix === 'SPK-') return 'ticket'
+  return null
+}
+
+/**
+ * Validate that order type matches invoice type
+ * CRITICAL: Detect payment type mismatch before processing
+ * This prevents product invoices from being applied to ticket orders
+ */
+function validatePaymentTypeMatch(
+  foundOrderType: 'product' | 'ticket',
+  invoicePaymentType: PaymentType | null,
+  orderNumber: string,
+): boolean {
+  if (!invoicePaymentType) {
+    console.warn(
+      `[DOKU WEBHOOK] WARNING: Unknown invoice type prefix for ${orderNumber}, but found ${foundOrderType} order in database`,
+    )
+    return true // Allow legacy invoices without proper prefix
+  }
+
+  const match = foundOrderType === invoicePaymentType
+  if (!match) {
+    console.error(
+      `[DOKU WEBHOOK] CRITICAL: Payment type mismatch for ${orderNumber}`,
+      {
+        invoiceType: invoicePaymentType,
+        foundOrderType,
+        expectedInvoicePrefix: foundOrderType === 'product' ? 'PRD-' : 'SPK-',
+      },
+    )
+  }
+
+  return match
+}
+
 function readHeader(headers: Headers, name: string) {
   return headers.get(name) ?? headers.get(name.toLowerCase()) ?? ''
 }
@@ -372,6 +419,15 @@ serve(async (req) => {
       idempotencyEventType,
     })
 
+    // CRITICAL: Extract payment type from invoice to validate payment isolation
+    // PRD- = product payment, SPK- = ticket payment
+    const invoicePaymentType = extractPaymentTypeFromInvoice(orderNumber)
+    console.log('[DOKU WEBHOOK] Invoice payment type:', {
+      orderNumber,
+      paymentType: invoicePaymentType,
+      prefix: orderNumber.substring(0, 4),
+    })
+
     const { data: existingWebhook } = await supabase
       .from('webhook_logs')
       .select('id')
@@ -406,6 +462,44 @@ serve(async (req) => {
     })
 
     if (productOrder) {
+      // CRITICAL: Validate payment type isolation before processing
+      // Ensure product invoice (PRD-) is only used for product orders
+      const isPaymentTypeValid = validatePaymentTypeMatch('product', invoicePaymentType, orderNumber)
+
+      if (!isPaymentTypeValid) {
+        console.error('[DOKU WEBHOOK] CRITICAL ERROR: Payment type mismatch detected', {
+          orderNumber,
+          invoicePaymentType,
+          foundOrderType: 'product',
+          expectedPrefix: 'PRD-',
+        })
+
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'payment_type_mismatch',
+          payload: {
+            notification,
+            error: 'Product invoice being applied to ticket order or vice versa',
+            invoicePaymentType,
+            foundOrderType: 'product',
+          },
+          success: false,
+          errorMessage: `Payment type mismatch: invoice has type ${invoicePaymentType} but found product order`,
+          processedAt: nowIso,
+        })
+
+        return jsonErrorWithDetails(
+          req,
+          422,
+          {
+            error: 'Payment type mismatch',
+            code: 'PAYMENT_TYPE_MISMATCH',
+            details: `Invoice type ${invoicePaymentType} does not match found order type product`,
+          },
+          { allowAllOrigins: true }
+        )
+      }
+
       console.log('[DOKU WEBHOOK] Processing product order transition to:', providerStatus)
       const result = await processProductOrderTransition({
         supabase,
@@ -631,6 +725,45 @@ serve(async (req) => {
     }
 
     const orderItemsRows = (order as { order_items?: unknown }).order_items
+    
+    // CRITICAL: Validate payment type isolation before processing
+    // Ensure ticket invoice (SPK-) is only used for ticket orders
+    const isPaymentTypeValid = validatePaymentTypeMatch('ticket', invoicePaymentType, orderNumber)
+
+    if (!isPaymentTypeValid) {
+      console.error('[DOKU WEBHOOK] CRITICAL ERROR: Payment type mismatch detected', {
+        orderNumber,
+        invoicePaymentType,
+        foundOrderType: 'ticket',
+        expectedPrefix: 'SPK-',
+      })
+
+      await logWebhookEvent(supabase, {
+        orderNumber,
+        eventType: 'payment_type_mismatch',
+        payload: {
+          notification,
+          error: 'Ticket invoice being applied to product order or vice versa',
+          invoicePaymentType,
+          foundOrderType: 'ticket',
+        },
+        success: false,
+        errorMessage: `Payment type mismatch: invoice has type ${invoicePaymentType} but found ticket order`,
+        processedAt: nowIso,
+      })
+
+      return jsonErrorWithDetails(
+        req,
+        422,
+        {
+          error: 'Payment type mismatch',
+          code: 'PAYMENT_TYPE_MISMATCH',
+          details: `Invoice type ${invoicePaymentType} does not match found order type ticket`,
+        },
+        { allowAllOrigins: true }
+      )
+    }
+
     console.log('[DOKU WEBHOOK] Processing ticket order transition to:', providerStatus)
     const result = await processTicketOrderTransition({
       supabase,
