@@ -71,12 +71,12 @@ const Navbar = () => {
     { key: 'on-stage', label: 'ON STAGE', to: '/on-stage' },
     { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
     { key: 'glam', label: 'GLAM', to: '/glam' },
-    { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
+    // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
     { key: 'charm-bar', label: 'CHARM BAR', to: '/charm-bar' },
     { key: 'shop', label: 'SPARK CLUB', to: '/shop' },
     { key: 'event', label: 'CELEBRATE', to: '/events' },
     { key: 'news', label: 'NEWS', to: '/news' },
-];
+  ];
 
   const activeIndex = Math.max(0, navItems.findIndex((item) => item.key === activeNavKey));
   const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();

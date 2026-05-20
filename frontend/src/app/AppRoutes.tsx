@@ -5,7 +5,7 @@ import Home from '../pages/Home';
 import PublicLayout from '../components/PublicLayout';
 import NotFound from '../pages/NotFound';
 import { adminRouteConfigs } from './routes/adminRoutes';
-import { createRouteRenderers, LegacyFashionCollectionRedirect, LegacyFashionLookRedirect } from './routes/routeShell';
+import { createRouteRenderers /* , LegacyFashionCollectionRedirect, LegacyFashionLookRedirect */ } from './routes/routeShell';
 import { standaloneRouteConfigs } from './routes/standaloneRoutes';
 import { legacyPublicRedirectRoutes, adminRedirectRoutes } from './routes/legacyRoutes';
 import { publicRouteConfigs } from './routes/publicRoutes';
@@ -44,8 +44,8 @@ export function AppRoutes() {
             <Route key={path} path={path} element={wrap(element)} />
           ))}
 
-          <Route path="fashion/look/:lookNumber" element={wrap(<LegacyFashionLookRedirect />)} />
-          <Route path="fashion/:collectionSlug" element={wrap(<LegacyFashionCollectionRedirect />)} />
+          {/* <Route path="fashion/look/:lookNumber" element={wrap(<LegacyFashionLookRedirect />)} /> */}
+          {/* <Route path="fashion/:collectionSlug" element={wrap(<LegacyFashionCollectionRedirect />)} /> */}
 
           {protectedPublicRouteConfigs.map(({ path, Page }) => (
             <Route key={path} path={path} element={renderProtectedLazyPage(Page)} />
