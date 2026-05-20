@@ -154,14 +154,14 @@ function SparkClubResults({ filteredProducts, loading, resetSignal, onPrefetchPr
             <Link
               key={product.id}
               to={`/shop/product/${product.id}`}
-              className="group cursor-pointer"
+              className="group cursor-pointer flex flex-col h-full"
               onMouseEnter={() => onPrefetchProduct(product.id)}
               style={{
                 animation: isAnimating ? `fadeInUp 0.5s ease-out ${index * 0.05}s both` : 'none'
               }}
             >
-              <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
-                <div className="relative overflow-hidden aspect-square bg-gray-50">
+              <div className="flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
+                <div className="relative overflow-hidden aspect-square bg-gray-50 shrink-0">
                   {product.image ? (
                     <img
                       alt={product.name}
@@ -198,14 +198,14 @@ function SparkClubResults({ filteredProducts, loading, resetSignal, onPrefetchPr
                     </span>
                   )}
                 </div>
-                <div className="p-3">
+                <div className="p-3 flex flex-col flex-grow">
                   <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
                     {product.name}
                   </h3>
-                  <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light">
-                    {product.description}
+                  <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]">
+                    {product.description || '\u00A0'}
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-auto">
                     <span className="text-base font-black text-[#ff4b86]">{formatCurrency(product.price)}</span>
                     {product.originalPrice ? (
                       <span className="text-xs text-gray-400 line-through font-light">
