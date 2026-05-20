@@ -336,8 +336,7 @@ export default function CharmBar() {
     <PageTransition>
       <div className="min-h-screen bg-white">
 
-        {/* Matikan comment untuk mengaktifkan kembali banner*/}
-        {/* <section className="relative w-full overflow-hidden bg-black">
+        <section className="relative w-full overflow-hidden bg-black">
           <img
             ref={heroRef}
             src={buildImageKitThumbUrl(charmBarSettings?.hero_image_url || `${CHARM_BAR_ASSET_BASE}/43620168072.png`, {
@@ -347,7 +346,7 @@ export default function CharmBar() {
             alt="Charm bar hero"
             className="w-full h-auto object-contain"
           />
-        </section> */}
+        </section>
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
           {/* Category Image Grid */}
