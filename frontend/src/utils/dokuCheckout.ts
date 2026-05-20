@@ -91,9 +91,9 @@ export function resetDokuCheckoutState() {
     dokuOverlay.remove();
   }
 
-  // Clear global DOKU state to force fresh initialization
+  // Clear DOKU popup state only (not the script loader function)
+  // Keeps loadJokulCheckout intact so we can open new checkouts
   // Use assignment instead of delete to avoid strict mode errors
-  window.loadJokulCheckout = undefined;
   window.JokulCheckout = undefined;
 
   console.log('[dokuCheckout] DOKU checkout state reset for clean payment session');
