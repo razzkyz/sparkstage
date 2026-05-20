@@ -134,7 +134,7 @@ export default function MyTicketsPage() {
               t={t}
             />
           ) : (
-            <MyTicketsEmptyState activeTab={activeTab} onBrowseEvents={() => navigate('/#booking')} t={t} />
+            <MyTicketsEmptyState activeTab={activeTab} onBrowseEvents={() => navigate('/booking')} t={t} />
           )}
         </div>
         </main>

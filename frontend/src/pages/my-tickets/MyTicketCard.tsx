@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { formatCurrency } from '../../utils/formatters';
 import { formatDateTimeWIB } from '../../utils/timezone';
 import type { TicketOrderListItem } from '../../hooks/useMyTicketOrders';
+import { getSessionRange } from '../booking-success/bookingSuccessFormatters';
 import { MyTicketExpandedDetail } from './MyTicketExpandedDetail';
 
 type MyTicketCardProps = {
@@ -83,7 +84,12 @@ export function MyTicketCard({
               {firstItem.selected_time_slots && (
                 <div className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">schedule</span>
-                  <span>{Array.isArray(firstItem.selected_time_slots) ? firstItem.selected_time_slots.join(', ') : firstItem.selected_time_slots}</span>
+                  <span>
+                    {(() => {
+                      const slots = Array.isArray(firstItem.selected_time_slots) ? firstItem.selected_time_slots : [firstItem.selected_time_slots];
+                      return slots.map(slot => getSessionRange(slot) || slot).join(', ');
+                    })()}
+                  </span>
                 </div>
               )}
             </div>

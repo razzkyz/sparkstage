@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { TicketOrderListItem } from '../../hooks/useMyTicketOrders';
+import { getSessionRange } from '../booking-success/bookingSuccessFormatters';
 
 type MyTicketExpandedDetailProps = {
   order: TicketOrderListItem;
@@ -22,7 +23,10 @@ export function MyTicketExpandedDetail({ order, t }: MyTicketExpandedDetailProps
                   <div className="text-sm text-gray-500 mt-1 space-y-1">
                     <p>Date: {item.selected_date}</p>
                     {item.selected_time_slots && (
-                      <p>Time: {Array.isArray(item.selected_time_slots) ? item.selected_time_slots.join(', ') : item.selected_time_slots}</p>
+                      <p>Time: {(() => {
+                        const slots = Array.isArray(item.selected_time_slots) ? item.selected_time_slots : [item.selected_time_slots];
+                        return slots.map(slot => getSessionRange(slot) || slot).join(', ');
+                      })()}</p>
                     )}
                     <p>Qty: {item.quantity}</p>
                   </div>
