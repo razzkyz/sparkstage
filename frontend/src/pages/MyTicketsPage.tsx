@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { todayWIB, createWIBDate, nowWIB, addMinutes, SESSION_DURATION_MINUTES, formatTimeWIB } from '../utils/timezone';
 import { useMyTickets } from '../hooks/useMyTickets';
+import { useMyTicketOrders } from '../hooks/useMyTicketOrders';
 import TicketCardSkeleton from '../components/skeletons/TicketCardSkeleton';
 import { PageTransition } from '../components/PageTransition';
 import { useToast } from '../components/Toast';
@@ -31,6 +32,7 @@ export default function MyTicketsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
   const { data: tickets = [], error, isLoading: loading, isFetching } = useMyTickets(user?.id);
+  const { data: pendingOrders = [], isLoading: ordersLoading } = useMyTicketOrders(user?.id);
 
   // Reschedule functionality disabled for users
   // const RESCHEDULE_ENABLED = false;
@@ -209,6 +211,49 @@ export default function MyTicketsPage() {
             </div>
           </div>
         </div>
+
+        {/* PENDING PAYMENTS SECTION */}
+        {activeTab === 'upcoming' && pendingOrders.length > 0 && !ordersLoading && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-neutral-950 mb-4">Pending Payments</h2>
+            <div className="space-y-3">
+              {pendingOrders
+                .filter(order => order.status?.toLowerCase() === 'pending' || order.payment_status?.toLowerCase() === 'pending')
+                .map(order => (
+                  <div key={order.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-semibold text-neutral-950">{order.order_number}</p>
+                      <p className="text-sm text-gray-600">
+                        IDR {Number(order.total || 0).toLocaleString('id-ID')}
+                      </p>
+                      {order.order_items && order.order_items.length > 0 && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {order.order_items.map(item => item.ticket_name).join(', ')}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Ordered: {new Date(order.created_at).toLocaleDateString('id-ID')}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => navigate(`/booking-success?order_id=${encodeURIComponent(order.order_number)}`)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+                      >
+                        Check Status
+                      </button>
+                      <button
+                        onClick={() => navigate(`/booking-success?order_id=${encodeURIComponent(order.order_number)}&pending=1`)}
+                        className="px-4 py-2 text-sm bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition font-semibold"
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Expiry Warning Banner - Only show on Upcoming tab */}
         {activeTab === 'upcoming' && upcomingTickets.length > 0 && (
