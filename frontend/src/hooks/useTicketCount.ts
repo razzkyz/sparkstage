@@ -28,7 +28,7 @@ export const useTicketCount = () => {
         // Count purchased tickets with status 'active' and valid_date >= today
         const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
 
-        const { count: ticketCount, error: ticketError } = await supabase
+        const { count: activeTicketCount, error: ticketError } = await supabase
           .from('purchased_tickets')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId)
@@ -36,10 +36,18 @@ export const useTicketCount = () => {
           .gte('valid_date', todayStr)
           .abortSignal(timeoutSignal);
 
-        if (ticketError) {
+        // Count pending orders for tickets
+        const { count: pendingOrderCount, error: orderError } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('status', 'pending')
+          .abortSignal(timeoutSignal);
+
+        if (ticketError && orderError) {
           setCount(0);
         } else {
-          setCount(ticketCount || 0);
+          setCount((activeTicketCount || 0) + (pendingOrderCount || 0));
         }
       } catch {
         setCount(0);
@@ -57,6 +65,9 @@ export const useTicketCount = () => {
     const subscription = supabase
       .channel('purchased_tickets_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'purchased_tickets', filter: `user_id=eq.${userId}` }, () => {
+        fetchTicketCount();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${userId}` }, () => {
         fetchTicketCount();
       })
       .subscribe();
