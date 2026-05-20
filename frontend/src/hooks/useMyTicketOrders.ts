@@ -1,16 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
-export type TicketOrder = {
+export type TicketOrderItem = {
+  id: number;
+  ticket_id: number;
+  ticket_name: string;
+  selected_date: string;
+  selected_time_slots: any;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  purchased_tickets: Array<{
+    id: number;
+    ticket_code: string;
+    status: string;
+    queue_number: number | null;
+    queue_overflow: boolean | null;
+  }>;
+};
+
+export type TicketOrderListItem = {
   id: number;
   order_number: string;
   status: string;
   total: number;
   created_at: string;
-  order_items?: Array<{
-    id: number;
-    ticket_name?: string;
-  }>;
+  expires_at: string | null;
+  order_items: TicketOrderItem[];
+  itemCount: number;
 };
 
 export function useMyTicketOrders(userId: string | null | undefined) {
@@ -29,9 +46,23 @@ export function useMyTicketOrders(userId: string | null | undefined) {
           status,
           total,
           created_at,
+          expires_at,
           order_items (
             id,
-            ticket_name
+            ticket_id,
+            ticket_name,
+            selected_date,
+            selected_time_slots,
+            quantity,
+            unit_price,
+            subtotal,
+            purchased_tickets (
+              id,
+              ticket_code,
+              status,
+              queue_number,
+              queue_overflow
+            )
           )
         `
         )
@@ -43,8 +74,15 @@ export function useMyTicketOrders(userId: string | null | undefined) {
         throw error;
       }
       
-      console.log('[useMyTicketOrders] Fetched orders:', data);
-      return (data || []) as TicketOrder[];
+      const orders = (data || []).map((order: any) => {
+        const itemCount = (order.order_items || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+        return {
+          ...order,
+          itemCount,
+        };
+      });
+
+      return orders as TicketOrderListItem[];
     },
   });
 }

@@ -91,9 +91,10 @@
   },
   "myTickets": {
     "title": "My Tickets",
-    "subtitle": "Manage and access your upcoming photo sessions",
+    "subtitle": "Manage and access your ticket orders and sessions",
     "tabs": {
-      "upcoming": "Upcoming",
+      "pending": "Pending",
+      "active": "Active",
       "history": "History"
     },
     "breadcrumb": {
@@ -107,19 +108,45 @@
     "viewQR": "View QR",
     "ticketInactive": "Ticket Inactive",
     "status": {
+      "pendingPayment": "Pending Payment",
+      "paid": "Paid",
       "used": "Ticket already used/scanned",
       "cancelled": "Ticket cancelled",
-      "expired": "Ticket expired"
+      "expired": "Ticket expired",
+      "failed": "Payment failed",
+      "refunded": "Refunded"
     },
     "empty": {
-      "upcoming": {
-        "title": "No upcoming tickets",
+      "pending": {
+        "title": "No pending payments",
+        "subtitle": "You don't have any pending ticket orders"
+      },
+      "active": {
+        "title": "No active tickets",
         "subtitle": "Book a ticket to see it here"
       },
       "history": {
         "title": "No ticket history yet",
         "subtitle": "Your past tickets will appear here"
       }
+    },
+    "actions": {
+      "viewItems": "View Items",
+      "hideItems": "Hide Items",
+      "viewDetails": "View Full Details",
+      "refreshStatus": "Refresh Status",
+      "refreshing": "Refreshing...",
+      "payNow": "Pay Now",
+      "cancelOrder": "Cancel",
+      "browseEvents": "Browse Events"
+    },
+    "errors": {
+      "notAuthenticated": "Not authenticated",
+      "syncFailed": "Failed to sync status"
+    },
+    "toast": {
+      "syncSuccess": "Order status updated",
+      "cancelSuccess": "Order cancelled"
     },
     "expiryWarning": {
       "title": "⚠️ Important Notice",

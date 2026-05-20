@@ -91,9 +91,10 @@
   },
   "myTickets": {
     "title": "Tiket Saya",
-    "subtitle": "Kelola dan akses sesi foto Anda",
+    "subtitle": "Kelola dan akses pesanan tiket dan sesi foto Anda",
     "tabs": {
-      "upcoming": "Mendatang",
+      "pending": "Menunggu",
+      "active": "Aktif",
       "history": "Riwayat"
     },
     "breadcrumb": {
@@ -107,19 +108,45 @@
     "viewQR": "Lihat QR",
     "ticketInactive": "Tiket Tidak Aktif",
     "status": {
+      "pendingPayment": "Menunggu Pembayaran",
+      "paid": "Lunas",
       "used": "Tiket sudah terpakai/terscan",
       "cancelled": "Tiket dibatalkan",
-      "expired": "Tiket kadaluarsa"
+      "expired": "Tiket kadaluarsa",
+      "failed": "Pembayaran gagal",
+      "refunded": "Dana dikembalikan"
     },
     "empty": {
-      "upcoming": {
-        "title": "Tidak ada tiket mendatang",
+      "pending": {
+        "title": "Tidak ada tagihan tertunda",
+        "subtitle": "Anda tidak memiliki pesanan tiket yang belum dibayar"
+      },
+      "active": {
+        "title": "Tidak ada tiket aktif",
         "subtitle": "Pesan tiket untuk melihatnya di sini"
       },
       "history": {
         "title": "Belum ada riwayat tiket",
         "subtitle": "Tiket yang sudah lewat akan muncul di sini"
       }
+    },
+    "actions": {
+      "viewItems": "Lihat Item",
+      "hideItems": "Sembunyikan Item",
+      "viewDetails": "Lihat Detail Lengkap",
+      "refreshStatus": "Perbarui Status",
+      "refreshing": "Memeriksa...",
+      "payNow": "Bayar Sekarang",
+      "cancelOrder": "Batalkan",
+      "browseEvents": "Lihat Event"
+    },
+    "errors": {
+      "notAuthenticated": "Belum masuk",
+      "syncFailed": "Gagal memperbarui status"
+    },
+    "toast": {
+      "syncSuccess": "Status pesanan berhasil diperbarui",
+      "cancelSuccess": "Pesanan dibatalkan"
     },
     "expiryWarning": {
       "title": "⚠️ Perhatian Penting",
