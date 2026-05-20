@@ -144,7 +144,7 @@ export function useAdminLoyaltyPoints() {
   const queryClient = useQueryClient()
 
   // Fetch all customers with loyalty points
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [] as LoyaltyPointsRecord[], isLoading } = useQuery<LoyaltyPointsRecord[]>({
     queryKey: ['admin-loyalty-customers'],
     queryFn: async () => {
       try {

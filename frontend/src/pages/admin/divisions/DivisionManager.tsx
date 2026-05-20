@@ -36,7 +36,7 @@ export function DivisionManager() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Fetch all admins and their divisions
-  const { data: admins = [], isLoading: adminsLoading } = useQuery({
+  const { data: admins = [] as Admin[], isLoading: adminsLoading } = useQuery<Admin[]>({
     queryKey: ['admins-with-divisions'],
     queryFn: async () => {
       const { data: adminUsers, error: adminsError } = await supabase.rpc('get_admin_users')
