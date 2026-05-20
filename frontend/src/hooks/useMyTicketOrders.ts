@@ -50,12 +50,14 @@ export function useMyTicketOrders(userId: string | null | undefined) {
           order_items (
             id,
             ticket_id,
-            ticket_name,
             selected_date,
             selected_time_slots,
             quantity,
             unit_price,
             subtotal,
+            tickets (
+              name
+            ),
             purchased_tickets (
               id,
               ticket_code,
@@ -76,8 +78,16 @@ export function useMyTicketOrders(userId: string | null | undefined) {
       
       const orders = (data || []).map((order: any) => {
         const itemCount = (order.order_items || []).reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+        
+        // Map tickets.name back to ticket_name for compatibility
+        const order_items = (order.order_items || []).map((item: any) => ({
+          ...item,
+          ticket_name: item.tickets?.name || 'Unknown Ticket',
+        }));
+
         return {
           ...order,
+          order_items,
           itemCount,
         };
       });
