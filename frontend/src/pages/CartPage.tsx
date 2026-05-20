@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/cartStore';
+import { clearBookingState } from '../utils/bookingStateManager';
 import { formatCurrency } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, CheckSquare, Square } from 'lucide-react';
@@ -9,6 +10,12 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { items, setQuantity, removeItem } = useCart();
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+
+  // Clear ticket booking state when entering cart/product flow
+  // Prevents mixing ticket and product order data
+  useEffect(() => {
+    clearBookingState();
+  }, []);
 
   // Initialize selection with all items on load
   useEffect(() => {

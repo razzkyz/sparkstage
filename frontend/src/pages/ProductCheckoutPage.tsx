@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/cartStore';
 import { useToast } from '../components/Toast';
+import { clearBookingState } from '../utils/bookingStateManager';
 import { CheckoutCustomerForm } from './product-checkout/CheckoutCustomerForm';
 import { CheckoutPaymentSection } from './product-checkout/CheckoutPaymentSection';
 import { CheckoutPointsSection } from './product-checkout/CheckoutPointsSection';
@@ -65,6 +67,12 @@ export default function ProductCheckoutPage() {
     showToast,
     cashierCheckoutEnabled,
   });
+
+  // Clear ticket booking state when entering product checkout
+  // Prevents mixing ticket and product order data
+  useEffect(() => {
+    clearBookingState();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background-light flex flex-col">
