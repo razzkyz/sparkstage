@@ -5,7 +5,6 @@ export type TicketOrder = {
   id: number;
   order_number: string;
   status: string;
-  payment_status: string;
   total: number;
   created_at: string;
   order_items?: Array<{
@@ -28,7 +27,6 @@ export function useMyTicketOrders(userId: string | null | undefined) {
           id,
           order_number,
           status,
-          payment_status,
           total,
           created_at,
           order_items (
@@ -40,7 +38,12 @@ export function useMyTicketOrders(userId: string | null | undefined) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useMyTicketOrders] Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('[useMyTicketOrders] Fetched orders:', data);
       return (data || []) as TicketOrder[];
     },
   });

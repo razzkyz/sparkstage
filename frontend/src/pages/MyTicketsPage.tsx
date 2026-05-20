@@ -34,6 +34,17 @@ export default function MyTicketsPage() {
   const { data: tickets = [], error, isLoading: loading, isFetching } = useMyTickets(user?.id);
   const { data: pendingOrders = [], isLoading: ordersLoading } = useMyTicketOrders(user?.id);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[MyTicketsPage] pendingOrders:', {
+      data: pendingOrders,
+      count: pendingOrders.length,
+      ordersLoading,
+      activeTab,
+      filteredCount: pendingOrders.filter(o => o.status === 'pending').length,
+    });
+  }, [pendingOrders, ordersLoading, activeTab]);
+
   // Reschedule functionality disabled for users
   // const RESCHEDULE_ENABLED = false;
 
@@ -218,7 +229,7 @@ export default function MyTicketsPage() {
             <h2 className="text-lg font-bold text-neutral-950 mb-4">Pending Payments</h2>
             <div className="space-y-3">
               {pendingOrders
-                .filter(order => order.status?.toLowerCase() === 'pending' || order.payment_status?.toLowerCase() === 'pending')
+                .filter(order => order.status === 'pending')
                 .map(order => (
                   <div key={order.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex-1">
