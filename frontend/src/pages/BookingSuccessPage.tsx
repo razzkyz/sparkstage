@@ -88,6 +88,7 @@ export default function BookingSuccessPage() {
               syncError={syncError}
               onRetryLoad={handleRetryLoad}
               onManualCheck={() => handleSyncStatus(false)}
+              paymentUrl={orderData?.payment_url}
             />
           )}
 
