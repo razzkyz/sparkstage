@@ -1,7 +1,7 @@
 import { type AdminMenuItem, type AdminMenuSection } from '../components/AdminLayout';
 
 export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
-  { id: 'dashboard', label: 'Dasbor', icon: 'dashboard', path: '/admin/dashboard', filled: true },
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/admin/dashboard', filled: true },
 ];
 
 export const STARGUIDE_MENU_SECTIONS: AdminMenuSection[] = [
