@@ -80,16 +80,29 @@ export function useTicketsManagement() {
 
         const rows = allTicketsData as unknown as PurchasedTicketRow[];
         const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
-        const { data: profilesData, error: profilesError } =
-          userIds.length > 0
-            ? await supabase.from('profiles').select('id, name, email').abortSignal(timeoutSignal).in('id', userIds)
-            : { data: [], error: null };
+        
+        // Batch fetch profiles in chunks to avoid URL length limits (400 Bad Request)
+        // Supabase REST API has URL length limits, so split into batches of 100 UUIDs max
+        const BATCH_SIZE = 100;
+        let profilesData: any[] = [];
+        
+        if (userIds.length > 0) {
+          for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+            const batch = userIds.slice(i, i + BATCH_SIZE);
+            const { data, error: profilesError } =
+              await supabase.from('profiles').select('id, name, email').abortSignal(timeoutSignal).in('id', batch);
 
-        if (profilesError) {
-          const err = new Error(profilesError.message) as APIError;
-          err.status = 500;
-          err.info = profilesError;
-          throw err;
+            if (profilesError) {
+              const err = new Error(profilesError.message) as APIError;
+              err.status = 500;
+              err.info = profilesError;
+              throw err;
+            }
+            
+            if (data) {
+              profilesData = [...profilesData, ...data];
+            }
+          }
         }
 
         const profilesMap = new Map(

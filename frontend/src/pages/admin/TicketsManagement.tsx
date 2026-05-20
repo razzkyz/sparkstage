@@ -8,6 +8,8 @@ import { useTicketsManagement } from '../../hooks/useTicketsManagement';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
 
+const ITEMS_PER_PAGE = 100;
+
 const TicketsManagement = () => {
   const { signOut } = useAuth();
   const { showToast } = useToast();
@@ -15,6 +17,7 @@ const TicketsManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('used');
   const [eventFilter, setEventFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const { data, error, isLoading, isFetching, refetch } = useTicketsManagement();
   const tickets = data?.tickets ?? [];
   const stats = data?.stats ?? { totalValid: 0, entered: 0 };
@@ -53,6 +56,16 @@ const TicketsManagement = () => {
 
     return matchesSearch && matchesStatus && matchesEvent;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, eventFilter]);
 
   return (
     <AdminLayout
@@ -136,7 +149,7 @@ const TicketsManagement = () => {
              'Semua Tiket'}
           </h3>
           <div className="text-sm text-gray-600">
-            Menampilkan {filteredTickets.length} dari {tickets.length} tiket
+            Menampilkan {paginatedTickets.length} dari {filteredTickets.length} tiket (Halaman {currentPage} dari {totalPages || 1})
           </div>
         </div>
         {isLoading ? (
@@ -146,11 +159,100 @@ const TicketsManagement = () => {
                 <TableRowSkeleton columns={6} />
                 <TableRowSkeleton columns={6} />
                 <TableRowSkeleton columns={6} />
+                <TableRowSkeleton columns={6} />
+                <TableRowSkeleton columns={6} />
               </tbody>
             </table>
           </div>
+        ) : filteredTickets.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+            <span className="material-symbols-outlined text-5xl text-gray-400 mb-3 block">receipt</span>
+            <p className="text-gray-600 font-medium">Tidak ada tiket yang sesuai dengan filter</p>
+          </div>
         ) : (
-          <PurchasedTicketsTable tickets={filteredTickets} loading={false} stats={stats} onCopyTicket={copyToClipboard} />
+          <>
+            <PurchasedTicketsTable tickets={paginatedTickets} loading={false} stats={stats} onCopyTicket={copyToClipboard} />
+            
+            {/* Pagination Controls */}
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="text-sm text-gray-600">
+                Total: {filteredTickets.length} tiket
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-sm">navigate_before</span>
+                  Sebelumnya
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {totalPages <= 5 ? (
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      {currentPage > 2 && (
+                        <button
+                          onClick={() => setCurrentPage(1)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors"
+                        >
+                          1
+                        </button>
+                      )}
+                      {currentPage > 3 && <span className="text-gray-600 px-2">...</span>}
+                      {[currentPage - 1, currentPage, currentPage + 1]
+                        .filter((p) => p > 1 && p < totalPages)
+                        .map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              currentPage === page
+                                ? 'bg-primary text-white'
+                                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      {currentPage < totalPages - 2 && <span className="text-gray-600 px-2">...</span>}
+                      {currentPage < totalPages - 1 && (
+                        <button
+                          onClick={() => setCurrentPage(totalPages)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors"
+                        >
+                          {totalPages}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Berikutnya
+                  <span className="material-symbols-outlined text-sm">navigate_next</span>
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </section>
     </AdminLayout>
