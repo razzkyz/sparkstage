@@ -1,6 +1,9 @@
 declare global {
   interface Window {
     loadJokulCheckout?: (paymentUrl: string) => void;
+    JokulCheckout?: {
+      closeCheckout?: () => void;
+    };
   }
 }
 
@@ -33,6 +36,38 @@ export function loadDokuCheckoutScript(): Promise<void> {
     script.onerror = () => reject(new Error('Failed to load DOKU Checkout'));
     document.head.appendChild(script);
   });
+}
+
+/**
+ * Reset DOKU SDK state to prevent payment session reuse.
+ * Must be called before opening a new checkout to ensure clean payment context.
+ * Fixes: "saat user cancel payment: popup berikutnya wajib generate payment baru"
+ */
+export function resetDokuCheckoutState() {
+  // Close any open DOKU checkout popup
+  if (window.JokulCheckout?.closeCheckout) {
+    try {
+      window.JokulCheckout.closeCheckout();
+    } catch (err) {
+      console.warn('[dokuCheckout] Failed to close DOKU popup:', err);
+    }
+  }
+
+  // Remove DOKU overlay/modal elements if they exist
+  const dokuOverlay = document.querySelector('[data-doku-overlay], .jokul-checkout-overlay, .jokul-overlay');
+  if (dokuOverlay) {
+    dokuOverlay.remove();
+  }
+
+  // Clear global DOKU state to force fresh initialization
+  if (window.loadJokulCheckout) {
+    delete window.loadJokulCheckout;
+  }
+  if (window.JokulCheckout) {
+    delete window.JokulCheckout;
+  }
+
+  console.log('[dokuCheckout] DOKU checkout state reset for clean payment session');
 }
 
 export function openDokuCheckout(paymentUrl: string) {

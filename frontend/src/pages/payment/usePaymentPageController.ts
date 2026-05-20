@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NavigateFunction, Location } from 'react-router-dom';
-import { loadDokuCheckoutScript, openDokuCheckout } from '../../utils/dokuCheckout';
+import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState } from '../../utils/dokuCheckout';
 import {
   restoreBookingState,
   hasBookingState,
@@ -42,6 +42,12 @@ export function usePaymentPageController({
         console.error('Failed to load DOKU Checkout:', loadError);
         setError('Failed to load payment system. Please refresh the page.');
       });
+
+    // Cleanup: Reset DOKU state when component unmounts to prevent session reuse
+    // Fixes: "saat user cancel payment popup: payment session lama harus dihapus"
+    return () => {
+      resetDokuCheckoutState();
+    };
   }, []);
 
   useEffect(() => {
@@ -136,6 +142,12 @@ export function usePaymentPageController({
       }
 
       clearBookingState();
+      
+      // Reset DOKU state before opening new payment session
+      // Ensures popup doesn't reuse old invoice/amount from previous checkout
+      // Fixes: "popup berikutnya wajib generate payment baru"
+      resetDokuCheckoutState();
+      
       openDokuCheckout(response.payment_url);
       navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}&pending=1`, {
         state: buildBookingSuccessState({
