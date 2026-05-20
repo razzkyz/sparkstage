@@ -23,7 +23,11 @@ export function loadDokuCheckoutScript(): Promise<void> {
 
     const existingScript = document.querySelector<HTMLScriptElement>('script[data-doku-checkout="true"]');
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(), { once: true });
+      existingScript.addEventListener('load', () => {
+        // Make window properties configurable to allow DOKU library cleanup
+        makeWindowPropertiesConfigurable();
+        resolve();
+      }, { once: true });
       existingScript.addEventListener('error', () => reject(new Error('Failed to load DOKU Checkout')), { once: true });
       return;
     }
@@ -32,10 +36,38 @@ export function loadDokuCheckoutScript(): Promise<void> {
     script.src = getDokuCheckoutScriptUrl();
     script.async = true;
     script.dataset.dokuCheckout = 'true';
-    script.onload = () => resolve();
+    script.onload = () => {
+      // Make window properties configurable to allow DOKU library cleanup
+      makeWindowPropertiesConfigurable();
+      resolve();
+    };
     script.onerror = () => reject(new Error('Failed to load DOKU Checkout'));
     document.head.appendChild(script);
   });
+}
+
+/**
+ * Ensures DOKU-related window properties are configurable so the DOKU library can delete them.
+ * Fixes: "Cannot delete property 'loadJokulCheckout' of #<Window>"
+ */
+function makeWindowPropertiesConfigurable() {
+  const propertiesToMakeConfigurable = ['loadJokulCheckout', 'JokulCheckout'];
+  
+  for (const prop of propertiesToMakeConfigurable) {
+    if (prop in window) {
+      const descriptor = Object.getOwnPropertyDescriptor(window, prop);
+      if (descriptor && !descriptor.configurable) {
+        try {
+          Object.defineProperty(window, prop, {
+            ...descriptor,
+            configurable: true,
+          });
+        } catch (err) {
+          console.warn(`[dokuCheckout] Failed to make ${prop} configurable:`, err);
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -60,12 +92,9 @@ export function resetDokuCheckoutState() {
   }
 
   // Clear global DOKU state to force fresh initialization
-  if (window.loadJokulCheckout) {
-    delete window.loadJokulCheckout;
-  }
-  if (window.JokulCheckout) {
-    delete window.JokulCheckout;
-  }
+  // Use assignment instead of delete to avoid strict mode errors
+  window.loadJokulCheckout = undefined;
+  window.JokulCheckout = undefined;
 
   console.log('[dokuCheckout] DOKU checkout state reset for clean payment session');
 }
