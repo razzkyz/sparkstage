@@ -44,7 +44,7 @@ export function useMyTicketOrders(userId: string | null | undefined) {
           id,
           order_number,
           status,
-          total,
+          total_amount,
           created_at,
           expires_at,
           order_items (
@@ -87,6 +87,7 @@ export function useMyTicketOrders(userId: string | null | undefined) {
 
         return {
           ...order,
+          total: order.total_amount,
           order_items,
           itemCount,
         };
