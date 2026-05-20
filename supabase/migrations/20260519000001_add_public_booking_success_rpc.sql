@@ -69,7 +69,7 @@ BEGIN
         ORDER BY oi.id
       ) FILTER (WHERE oi.id IS NOT NULL),
       '[]'::JSON
-    ) AS order_items,
+    ) FILTER (WHERE oi.id IS NOT NULL) AS order_items,
     COALESCE(
       JSON_AGG(
         JSON_BUILD_OBJECT(
@@ -87,14 +87,14 @@ BEGIN
         ORDER BY pt.id
       ) FILTER (WHERE pt.id IS NOT NULL),
       '[]'::JSON
-    ) AS tickets
+    ) FILTER (WHERE pt.id IS NOT NULL) AS tickets
   FROM public.orders o
-  LEFT JOIN public.order_items oi ON oi.order_id = o.id
-  LEFT JOIN public.purchased_tickets pt ON pt.order_item_id = oi.id
+  LEFT JOIN public.order_items oi ON oi.order_id = o.id AND oi.deleted_at IS NULL
+  LEFT JOIN public.purchased_tickets pt ON pt.order_item_id = oi.id AND pt.deleted_at IS NULL
   LEFT JOIN public.tickets t ON t.id = pt.ticket_id
   WHERE o.id = v_order_id
-  GROUP BY o.id, o.order_number, o.user_id, o.customer_name, o.customer_email,
-           o.customer_phone, o.total_amount, o.status, o.expires_at, o.created_at, o.updated_at;
+    AND o.deleted_at IS NULL
+  GROUP BY o.id;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY INVOKER;
 
