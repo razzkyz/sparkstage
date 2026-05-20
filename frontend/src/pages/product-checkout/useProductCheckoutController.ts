@@ -426,6 +426,12 @@ export function useProductCheckoutController({
       // Store new payment context for isolation validation
       storePaymentContext('product', payload.order_number, payload.payment_url);
       
+      console.log('[handlePay] About to open DOKU checkout:', {
+        orderNumber: payload.order_number,
+        paymentUrl: payload.payment_url,
+        invoicePrefix: payload.order_number.substring(0, 4),
+      });
+      
       // Open fresh payment popup with correct PRD invoice
       openDokuCheckout(payload.payment_url);
       showToast('info', 'Payment popup opened. We will keep checking your order status.');

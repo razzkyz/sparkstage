@@ -110,6 +110,9 @@ export function openDokuCheckout(paymentUrl: string) {
     throw new Error('DOKU Checkout is not loaded yet.');
   }
 
+  console.log('[dokuCheckout] Opening DOKU checkout with URL:', paymentUrl);
+  console.log('[dokuCheckout] URL contains invoice type:', paymentUrl.includes('SPK') ? 'SPK (TICKET)' : paymentUrl.includes('PRD') ? 'PRD (PRODUCT)' : 'UNKNOWN');
+  
   window.loadJokulCheckout(paymentUrl);
 }
 
