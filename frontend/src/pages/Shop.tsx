@@ -8,14 +8,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { useProductSummaries, type Product } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-import { useBanners } from '../hooks/useBanners';
+// import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from '../hooks/useProduct';
 import { useCharmBarSettings } from '../hooks/useCharmBarSettings';
 import { useToast } from '../components/Toast';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
 import { queryKeys } from '../lib/queryKeys';
-import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
+// import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
 import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
 import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
@@ -192,7 +192,7 @@ const Shop = () => {
 
   const { data: products = [], error: productsError, isLoading: productsLoading, refetch: refetchProducts } = useProductSummaries();
   const { data: categories = [], error: categoriesError, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
-  const { data: shopBanners = [] } = useBanners('shop');
+  // const { data: shopBanners = [] } = useBanners('shop');
   const { settings: charmBarSettings, isLoading: charmBarLoading } = useCharmBarSettings();
 
   const loading = (productsLoading || categoriesLoading || charmBarLoading) && products.length === 0;
@@ -299,7 +299,9 @@ const Shop = () => {
   return (
     <PageTransition>
       <div className="bg-white min-h-screen">
-        <header className="relative w-full overflow-hidden">
+
+        {/* Matikan comment untuk mengaktifkan kembali banner*/}
+        {/* <header className="relative w-full overflow-hidden">
           {shopBanners.length > 0 ? (
             <HeroBannerCarousel
               slides={shopBanners}
@@ -336,10 +338,10 @@ const Shop = () => {
               />
             </>
           )}
-        </header>
+        </header> */}
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-          <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 bg-white z-40 pt-4 -mt-6">
+          <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
             <div className="flex flex-col space-y-4">
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">
                 <div className="relative mb-3">
