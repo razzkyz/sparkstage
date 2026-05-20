@@ -433,7 +433,7 @@ export function useProductCheckoutController({
       });
       
       // Open fresh payment popup with correct PRD invoice
-      openDokuCheckout(payload.payment_url);
+      openDokuCheckout(payload.payment_url, payload.order_number);
       showToast('info', 'Payment popup opened. We will keep checking your order status.');
       navigate(`/order/product/success/${payload.order_number}?pending=1`, { state: { isPending: true } });
     } catch (payError) {

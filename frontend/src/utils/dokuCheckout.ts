@@ -105,13 +105,18 @@ export function resetDokuCheckoutState() {
   console.log('[dokuCheckout] DOKU checkout state reset for clean payment session');
 }
 
-export function openDokuCheckout(paymentUrl: string) {
+export function openDokuCheckout(paymentUrl: string, invoiceNumber?: string) {
   if (!window.loadJokulCheckout) {
     throw new Error('DOKU Checkout is not loaded yet.');
   }
 
   console.log('[dokuCheckout] Opening DOKU checkout with URL:', paymentUrl);
-  console.log('[dokuCheckout] URL contains invoice type:', paymentUrl.includes('SPK') ? 'SPK (TICKET)' : paymentUrl.includes('PRD') ? 'PRD (PRODUCT)' : 'UNKNOWN');
+  
+  if (invoiceNumber) {
+    const invoicePrefix = invoiceNumber.substring(0, 4);
+    const invoiceType = invoicePrefix === 'PRD-' ? 'PRODUCT' : invoicePrefix === 'SPK-' ? 'TICKET' : 'UNKNOWN';
+    console.log('[dokuCheckout] Invoice type from order number:', invoiceType, `(${invoicePrefix})`);
+  }
   
   window.loadJokulCheckout(paymentUrl);
 }

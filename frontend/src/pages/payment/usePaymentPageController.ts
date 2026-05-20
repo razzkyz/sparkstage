@@ -161,7 +161,7 @@ export function usePaymentPageController({
       storePaymentContext('ticket', response.order_number, response.payment_url);
       
       // Open fresh payment popup with correct SPK invoice
-      openDokuCheckout(response.payment_url);
+      openDokuCheckout(response.payment_url, response.order_number);
       navigate(`/booking-success?order_id=${encodeURIComponent(response.order_number)}&pending=1`, {
         state: buildBookingSuccessState({
           orderNumber: response.order_number,
