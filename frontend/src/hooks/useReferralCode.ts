@@ -135,9 +135,8 @@ export function useApplyReferralCode() {
 export interface LoyaltyPointsRecord {
   user_id: string
   email: string
-  current_points: number
+  total_points: number
   tier_level: number
-  tier_name: string
 }
 
 export function useAdminLoyaltyPoints() {
@@ -148,26 +147,36 @@ export function useAdminLoyaltyPoints() {
     queryKey: ['admin-loyalty-customers'],
     queryFn: async () => {
       try {
-        const { data: users, error } = await supabase.rpc('get_all_users_for_admin')
-        if (error) throw error
+        // Get all users
+        const { data: users, error: usersError } = await supabase.rpc('get_all_users_for_admin')
+        if (usersError) throw usersError
+        if (!users || users.length === 0) return []
 
-        // Get loyalty points for each user
-        const { data: points } = await supabase
+        // Get loyalty points for all users
+        const { data: points, error: pointsError } = await supabase
           .from('customer_loyalty_points')
-          .select('user_id, current_points, tier_level, tier_name')
+          .select('user_id, total_points, tier_level')
 
-        return (
-          users?.map((u: any) => {
-            const pointsRecord = points?.find((p) => p.user_id === u.user_id)
-            return {
-              user_id: u.user_id,
-              email: u.email || '',
-              current_points: pointsRecord?.current_points || 0,
-              tier_level: pointsRecord?.tier_level || 0,
-              tier_name: pointsRecord?.tier_name || 'Bronze',
-            }
-          }) || []
-        )
+        if (pointsError) {
+          console.error('Error fetching loyalty points:', pointsError)
+          return users.map((u: any) => ({
+            user_id: u.user_id,
+            email: u.email || '',
+            total_points: 0,
+            tier_level: 0,
+          }))
+        }
+
+        // Merge users with their loyalty points
+        return users.map((u: any) => {
+          const pointsRecord = points?.find((p: any) => p.user_id === u.user_id)
+          return {
+            user_id: u.user_id,
+            email: u.email || '',
+            total_points: pointsRecord?.total_points || 0,
+            tier_level: pointsRecord?.tier_level || 0,
+          }
+        })
       } catch (error) {
         console.error('Error fetching loyalty customers:', error)
         return []
@@ -179,17 +188,26 @@ export function useAdminLoyaltyPoints() {
   // Award bonus points to customer
   const awardPoints = useMutation({
     mutationFn: async ({ userId, points, reason }: { userId: string; points: number; reason: string }) => {
+      // For admin bonus, insert directly to loyalty_points_history (similar to redemption flow)
       const { data, error } = await supabase
-        .from('loyalty_points_transactions')
+        .from('loyalty_points_history')
         .insert({
           user_id: userId,
-          points,
-          transaction_type: 'admin_bonus',
-          description: reason,
+          points_change: points,
+          reason: reason || 'Admin bonus award',
+          order_id: null,
           created_at: new Date().toISOString(),
         })
 
       if (error) throw error
+
+      // Also update total_points directly
+      await supabase.rpc('award_admin_bonus', {
+        p_user_id: userId,
+        p_points: points,
+        p_reason: reason || 'Admin bonus award',
+      })
+
       return data
     },
     onSuccess: () => {
@@ -200,17 +218,26 @@ export function useAdminLoyaltyPoints() {
   // Deduct points from customer
   const deductPoints = useMutation({
     mutationFn: async ({ userId, points, reason }: { userId: string; points: number; reason: string }) => {
+      // Record negative points change
       const { data, error } = await supabase
-        .from('loyalty_points_transactions')
+        .from('loyalty_points_history')
         .insert({
           user_id: userId,
-          points: -points,
-          transaction_type: 'admin_deduction',
-          description: reason,
+          points_change: -points,
+          reason: reason || 'Admin deduction',
+          order_id: null,
           created_at: new Date().toISOString(),
         })
 
       if (error) throw error
+
+      // Update total_points directly
+      await supabase.rpc('deduct_admin_points', {
+        p_user_id: userId,
+        p_points: points,
+        p_reason: reason || 'Admin deduction',
+      })
+
       return data
     },
     onSuccess: () => {

@@ -6,6 +6,11 @@ import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
 import { useAdminLoyaltyPoints } from '@/hooks/useReferralCode'
 import { Plus, Minus, AlertCircle, CheckCircle, Search } from 'lucide-react'
 
+function getTierName(tier_level: number): string {
+  const tiers = ['Stargazer', 'Moonwalker', 'Galaxian', 'Supernova']
+  return tiers[tier_level] || 'Stargazer'
+}
+
 export function AdminPointsManager() {
   const { signOut } = useAuth()
   const menuSections = useAdminMenuSections()
@@ -100,9 +105,9 @@ export function AdminPointsManager() {
                 >
                   <div className="customer-info">
                     <div className="email">{customer.email}</div>
-                    <div className="points">{customer.current_points} pts</div>
+                    <div className="points">{customer.total_points} pts</div>
                   </div>
-                  <div className="tier-badge">{customer.tier_name}</div>
+                  <div className="tier-badge">{getTierName(customer.tier_level)}</div>
                 </button>
               ))}
             </div>
@@ -118,10 +123,10 @@ export function AdminPointsManager() {
               <div className="customer-summary">
                 <h3>{selectedCustomer.email}</h3>
                 <p>
-                  Current Points: <strong>{selectedCustomer.current_points}</strong>
+                  Current Points: <strong>{selectedCustomer.total_points}</strong>
                 </p>
                 <p>
-                  Tier: <strong>{selectedCustomer.tier_name}</strong>
+                  Tier: <strong>{getTierName(selectedCustomer.tier_level)}</strong>
                 </p>
               </div>
 
