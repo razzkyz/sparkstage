@@ -19,6 +19,8 @@ import { useCart } from '../contexts/cartStore';
 import { useLoyaltyPoints, getLoyaltyRank } from '../hooks/useLoyaltyPoints';
 import { getUserDisplayName } from '../utils/auth';
 
+let previousDesktopStarPosition = 0;
+
 const Navbar = () => {
   // On phones the spacer centres the active item; on tablets (md+) less
   // spacer is needed because more items fit on screen.
@@ -37,7 +39,8 @@ const Navbar = () => {
 
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [desktopStarPosition, setDesktopStarPosition] = useState(0);
+  const [desktopStarPosition, setDesktopStarPosition] = useState(previousDesktopStarPosition);
+  const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
   const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
 
@@ -124,6 +127,20 @@ const Navbar = () => {
   }, [centerMobileActiveItem, updateDesktopStarPosition]);
 
   useEffect(() => {
+    if (desktopStarPosition !== 0) {
+      previousDesktopStarPosition = desktopStarPosition;
+    }
+  }, [desktopStarPosition]);
+
+  useEffect(() => {
+    // If it was a fresh load (position 0), enable transitions after initial jump
+    if (previousDesktopStarPosition === 0) {
+      const timer = setTimeout(() => setEnableStarTransition(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
     const onResize = () => {
       updateDesktopStarPosition();
       centerMobileActiveItem('auto');
@@ -189,7 +206,7 @@ const Navbar = () => {
       {/* Top Bar - Sticky */}
       <div className={`sticky top-0 bg-white z-[110] border-b border-gray-200 transition-shadow ${scrolled ? 'shadow-md' : ''}`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-4 lg:py-5">
+        <div className="flex items-center justify-between py-2 lg:py-3">
           <div className="w-1/3 flex items-center gap-3">
             <div className="hidden lg:block">
               <LanguageSwitcher />
@@ -207,13 +224,13 @@ const Navbar = () => {
 
           <div className="w-1/3 flex justify-center">
             <Link to="/" className="inline-flex items-center" aria-label="Home">
-              <Logo className="h-[3.5rem] md:h-[4.5rem]" />
+              <Logo className="h-[2.5rem] md:h-[3.5rem]" />
             </Link>
           </div>
 
           <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
             <div className="hidden lg:block">
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-14 w-auto md:h-18 object-contain" />
+              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-10 w-auto md:h-12 object-contain" />
             </div>
 
             {user ? (
@@ -382,7 +399,7 @@ const Navbar = () => {
             )}
 
             <div className="lg:hidden flex items-center gap-2">
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[3.5rem] w-auto object-contain" />
+              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
 
               {!user && (
                 <Link
@@ -414,15 +431,17 @@ const Navbar = () => {
 
       <div className="hidden lg:block">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative py-6">
+          <div className="relative py-4">
             <div
-              className="absolute transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] pointer-events-none"
+              className={`absolute pointer-events-none ${
+                enableStarTransition ? 'transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
+              }`}
               style={{
                 left: `${desktopStarPosition}px`,
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: '80px',
-                height: '80px',
+                width: '64px',
+                height: '64px',
                 zIndex: 0,
               }}
             >
@@ -443,8 +462,8 @@ const Navbar = () => {
                     key={item.key}
                     ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                     to={item.to}
-                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center gap-2 ${
-                      isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
+                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center gap-2 z-10 relative ${
+                      isActive ? 'text-black' : 'text-gray-600 hover:text-[#ff4b86]'
                     }`}
                   >
                     {Icon && (
@@ -463,13 +482,13 @@ const Navbar = () => {
 
       <div className="lg:hidden">
         <div
-          className="relative flex items-center justify-center min-h-[80px] overflow-hidden py-1 sm:min-h-[88px]"
+          className="relative flex items-center justify-center min-h-[72px] overflow-hidden py-2 sm:min-h-[80px] md:min-h-[88px]"
         >
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2"
             aria-hidden
           >
-            <span className="animate-nav-star-breathe block h-[72px] w-[72px] sm:h-[84px] sm:w-[84px] md:h-[92px] md:w-[92px]">
+            <span className="animate-nav-star-breathe block h-[56px] w-[56px] sm:h-[64px] sm:w-[64px] md:h-[72px] md:w-[72px]">
               <img
                 src="/images/landing/ICON%20STAR-01.svg"
                 alt=""
@@ -480,7 +499,7 @@ const Navbar = () => {
 
           <div
             ref={mobileNavScrollerRef}
-            className="relative z-10 flex w-full items-center overflow-x-auto py-3 scroll-smooth snap-x snap-mandatory [overscroll-behavior-x:contain] [scrollbar-width:none] [touch-action:pan-x] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="relative z-10 flex w-full items-center overflow-x-auto py-2 scroll-smooth snap-x snap-mandatory [overscroll-behavior-x:contain] [scrollbar-width:none] [touch-action:pan-x] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div
@@ -503,7 +522,7 @@ const Navbar = () => {
                   ref={(el) => (mobileNavItemsRef.current[idx] = el)}
                   to={item.to}
                   className={`relative z-10 shrink-0 snap-center min-w-[106px] md:min-w-[120px] text-center text-xs md:text-sm font-semibold uppercase px-3 md:px-4 py-2 mx-0.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu ${
-                    isActive ? 'text-white [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]' : 'text-gray-600 active:text-gray-900'
+                    isActive ? 'text-black [text-shadow:0_2px_6px_rgba(255,255,255,0.3)]' : 'text-gray-600 hover:text-[#ff4b86] active:text-[#ff4b86]'
                   }`}
                 >
                   <span className="relative z-10 flex items-center justify-center gap-1">
