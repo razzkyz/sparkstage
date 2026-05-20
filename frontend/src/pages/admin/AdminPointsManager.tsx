@@ -1,8 +1,14 @@
 import { useState } from 'react'
+import AdminLayout from '@/components/AdminLayout'
+import { useAuth } from '@/contexts/AuthContext'
+import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
+import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
 import { useAdminLoyaltyPoints } from '@/hooks/useReferralCode'
 import { Plus, Minus, AlertCircle, CheckCircle, Search } from 'lucide-react'
 
 export function AdminPointsManager() {
+  const { signOut } = useAuth()
+  const menuSections = useAdminMenuSections()
   const [searchEmail, setSearchEmail] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [pointsAmount, setPointsAmount] = useState('')
@@ -49,11 +55,19 @@ export function AdminPointsManager() {
   }
 
   return (
-    <div className="points-manager">
-      <div className="pm-header">
-        <h1>Loyalty Points Manager</h1>
-        <p className="text-gray-600">Manage customer loyalty points and tiers</p>
-      </div>
+    <AdminLayout
+      menuItems={ADMIN_MENU_ITEMS}
+      menuSections={menuSections}
+      defaultActiveMenuId="loyalty-points"
+      title="Kelola Poin Loyalty"
+      subtitle="Award or deduct loyalty points to customers"
+      onLogout={signOut}
+    >
+      <div className="points-manager">
+        <div className="pm-header">
+          <h1>Loyalty Points Manager</h1>
+          <p className="text-gray-600">Manage customer loyalty points and tiers</p>
+        </div>
 
       {message && (
         <div className={`message-banner ${message.type}`}>
@@ -426,7 +440,8 @@ export function AdminPointsManager() {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </AdminLayout>
   )
 }
 

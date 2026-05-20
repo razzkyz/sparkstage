@@ -66,6 +66,9 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       { id: 'news-page', label: 'News Page Config', icon: 'article', path: '/admin/news-page' },
       { id: 'charm-bar-page', label: 'Charm Bar Config', icon: 'diamond', path: '/admin/charm-bar-page' },
       { id: 'venue-reviews', label: 'Venue Reviews', icon: 'star', path: '/admin/venue-reviews' },
+      { id: 'loyalty-points', label: 'Kelola Poin Loyalty', icon: 'card_giftcard', path: '/admin/loyalty-points', highlight: true },
+      { id: 'audit-logs', label: 'Audit Logs', icon: 'history', path: '/admin/audit-logs' },
+      { id: 'divisions', label: 'Kelola Divisi', icon: 'apartment', path: '/admin/divisions' },
     ],
   },
   {
