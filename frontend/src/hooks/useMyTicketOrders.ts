@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 export type TicketOrderItem = {
@@ -32,9 +33,39 @@ export type TicketOrderListItem = {
 
 export function useMyTicketOrders(userId: string | null | undefined) {
   const enabled = typeof userId === 'string' && userId.length > 0;
+  const queryClient = useQueryClient();
+  const queryKey = enabled ? ['myTicketOrders', userId] : ['myTicketOrders', 'invalid'];
 
-  return useQuery({
-    queryKey: enabled ? ['myTicketOrders', userId] : ['myTicketOrders', 'invalid'],
+  // Real-time subscription to orders table
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Subscribe to changes on orders table
+    const subscription = supabase
+      .channel(`orders:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Immediately refetch when order changes detected
+          console.log('[useMyTicketOrders] Order change detected, refetching...');
+          queryClient.invalidateQueries({ queryKey });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [enabled, userId, queryKey, queryClient]);
+
+  const query = useQuery({
+    queryKey,
     enabled,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -96,5 +127,13 @@ export function useMyTicketOrders(userId: string | null | undefined) {
 
       return orders as TicketOrderListItem[];
     },
+    // Fallback polling as safety net (every 30 seconds)
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 5000,
   });
+
+  return query;
 }
