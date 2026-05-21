@@ -1,4 +1,4 @@
-import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LogOut, ReceiptText, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
@@ -42,13 +42,11 @@ const Navbar = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [desktopStarPosition, setDesktopStarPosition] = useState(previousDesktopStarPosition);
   const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
-  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
-  const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
-  const desktopSearchInputRef = useRef<HTMLInputElement | null>(null);
+
   const hasCenteredMobileItemRef = useRef(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -108,7 +106,7 @@ const Navbar = () => {
       const centeredLeft = a.offsetLeft - ((s.clientWidth - a.offsetWidth) / 2);
       const clampedLeft = Math.min(maxScrollLeft, Math.max(0, centeredLeft));
       try {
-        s.scrollTo({ left: clampedLeft, behavior });
+        s.scrollTo({ left: clampedLeft, behavior: behavior === 'auto' ? ('instant' as any) : behavior });
       } catch {
         // Safari fallback: scrollTo with options may throw in very old versions
         s.scrollLeft = clampedLeft;
@@ -151,39 +149,12 @@ const Navbar = () => {
     return () => window.removeEventListener('resize', onResize);
   }, [centerMobileActiveItem, updateDesktopStarPosition]);
 
-  useEffect(() => {
-    if (!isDesktopSearchOpen) return;
-    requestAnimationFrame(() => desktopSearchInputRef.current?.focus());
-  }, [isDesktopSearchOpen]);
+
 
   const handleMobileLanguageToggle = () => {
     void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
   };
 
-  const handleDesktopSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!isDesktopSearchOpen) {
-      setIsDesktopSearchOpen(true);
-      return;
-    }
-
-    const query = desktopSearchQuery.trim();
-    setIsDesktopSearchOpen(false);
-
-    if (query) {
-      navigate(`/shop?q=${encodeURIComponent(query)}`);
-      return;
-    }
-
-    navigate('/shop');
-  };
-
-  const handleDesktopSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Escape') return;
-    setIsDesktopSearchOpen(false);
-    setDesktopSearchQuery('');
-  };
 
   const handleSignOutClick = () => {
     setShowLogoutConfirm(true);
