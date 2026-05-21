@@ -13,8 +13,6 @@ type MyTicketsListProps = {
   };
   onToggleExpand: (orderId: number) => void;
   onSyncStatus: (order: TicketOrderListItem) => void;
-  onCancelOrder: (order: TicketOrderListItem) => void;
-  onHideOrder: (order: TicketOrderListItem) => void;
   t: TFunction;
 };
 
@@ -25,8 +23,6 @@ export function MyTicketsList({
   getStatusBadge,
   onToggleExpand,
   onSyncStatus,
-  onCancelOrder,
-  onHideOrder,
   t,
 }: MyTicketsListProps) {
   const navigate = useNavigate();
@@ -41,8 +37,6 @@ export function MyTicketsList({
           isSyncing={syncingOrderId === order.id}
           onToggleExpand={() => onToggleExpand(order.id)}
           onPayNow={() => navigate(`/booking-success?order_id=${encodeURIComponent(order.order_number)}&pending=1`)}
-          onCancel={() => void onCancelOrder(order)}
-          onHide={() => void onHideOrder(order)}
           onSyncStatus={() => void onSyncStatus(order)}
           onViewDetails={() => navigate(`/booking-success?order_id=${encodeURIComponent(order.order_number)}`)}
           statusBadge={getStatusBadge(order)}

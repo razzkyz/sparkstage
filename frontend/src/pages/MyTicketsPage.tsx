@@ -129,8 +129,6 @@ export default function MyTicketsPage() {
               getStatusBadge={getStatusBadge}
               onToggleExpand={toggleExpand}
               onSyncStatus={handleSyncStatus}
-              onCancelOrder={handleCancelOrder}
-              onHideOrder={handleHideOrder}
               t={t}
             />
           ) : (

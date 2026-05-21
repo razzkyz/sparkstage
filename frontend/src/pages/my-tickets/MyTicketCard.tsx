@@ -11,8 +11,6 @@ type MyTicketCardProps = {
   isSyncing: boolean;
   onToggleExpand: () => void;
   onPayNow: () => void;
-  onCancel: () => void;
-  onHide: () => void;
   onSyncStatus: () => void;
   onViewDetails: () => void;
   statusBadge: { label: string; tone: 'yellow' | 'green' | 'gray' | 'red' };
@@ -25,8 +23,6 @@ export function MyTicketCard({
   isSyncing,
   onToggleExpand,
   onPayNow,
-  onCancel,
-  onHide,
   onSyncStatus,
   onViewDetails,
   statusBadge,
@@ -115,14 +111,6 @@ export function MyTicketCard({
                 {t('myTickets.actions.payNow', 'Pay Now')}
               </button>
               <button
-                onClick={onCancel}
-                disabled={isSyncing}
-                className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-lg">{isSyncing ? 'progress_activity' : 'cancel'}</span>
-                {t('myTickets.actions.cancelOrder', 'Cancel')}
-              </button>
-              <button
                 onClick={onSyncStatus}
                 disabled={isSyncing}
                 className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -142,14 +130,6 @@ export function MyTicketCard({
               {t('myTickets.viewQR', 'View QR')}
             </button>
           )}
-
-          <button
-            onClick={onHide}
-            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
-          >
-            <span className="material-symbols-outlined text-lg">delete</span>
-            Hapus Tiket
-          </button>
         </div>
       </div>
 
