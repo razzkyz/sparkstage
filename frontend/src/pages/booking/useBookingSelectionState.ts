@@ -237,6 +237,14 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
       const hasCapacity = avail.available_capacity > 0;
       const hasTimeSlot = !!avail.time_slot;
 
+      // Khusus tanggal 27 Mei 2026, sesi pagi (09:00 - 11:59) ditiadakan
+      if (matchesDate && dateString === '2026-05-27' && hasTimeSlot) {
+        const hour = parseInt(avail.time_slot!.split(':')[0], 10);
+        if (hour >= 9 && hour < 12) {
+          return false;
+        }
+      }
+
       return matchesDate && hasCapacity && hasTimeSlot;
     });
 

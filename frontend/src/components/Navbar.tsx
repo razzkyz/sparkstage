@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, ReceiptText, Search, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
+import { LogOut, ReceiptText, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
 
 type NavItem = {
@@ -209,18 +209,24 @@ const Navbar = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-2 lg:py-3">
           <div className="w-1/3 flex items-center gap-3">
-            <div className="hidden lg:block">
+            {/* Desktop: Language Switcher + Stage 55 logo */}
+            <div className="hidden lg:flex items-center gap-3">
+              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-10 w-auto md:h-12 object-contain" />
               <LanguageSwitcher />
             </div>
-            <button
-              type="button"
-              onClick={handleMobileLanguageToggle}
-              className="lg:hidden px-3.5 py-2.5 rounded-md border border-gray-300 text-sm font-black uppercase tracking-wider text-gray-800 active:bg-gray-50"
-              aria-label={t('language.switch')}
-              title={`${t('language.switch')}: ${isIndonesian ? 'English' : 'Bahasa Indonesia'}`}
-            >
-              {isIndonesian ? 'ID' : 'EN'}
-            </button>
+            {/* Mobile: Stage 55 logo + Language toggle */}
+            <div className="lg:hidden flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleMobileLanguageToggle}
+                className="px-3.5 py-2.5 rounded-md border border-gray-300 text-sm font-black uppercase tracking-wider text-gray-800 active:bg-gray-50"
+                aria-label={t('language.switch')}
+                title={`${t('language.switch')}: ${isIndonesian ? 'English' : 'Bahasa Indonesia'}`}
+              >
+                {isIndonesian ? 'ID' : 'EN'}
+              </button>
+              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
+            </div>
           </div>
 
           <div className="w-1/3 flex justify-center">
@@ -230,9 +236,6 @@ const Navbar = () => {
           </div>
 
           <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
-            <div className="hidden lg:block">
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-10 w-auto md:h-12 object-contain" />
-            </div>
 
             {user ? (
               <div className="hidden lg:flex items-center gap-5">
@@ -322,33 +325,7 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                <form
-                  className="flex items-center gap-2"
-                  onSubmit={handleDesktopSearchSubmit}
-                  role="search"
-                >
-                  {isDesktopSearchOpen && (
-                    <input
-                      ref={desktopSearchInputRef}
-                      type="search"
-                      value={desktopSearchQuery}
-                      onChange={(event) => setDesktopSearchQuery(event.target.value)}
-                      onKeyDown={handleDesktopSearchKeyDown}
-                      placeholder="Search products"
-                      className="w-44 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition focus:border-main-600 focus:ring-2 focus:ring-main-600/20"
-                    />
-                  )}
-                  <button
-                    aria-label={t('nav.search')}
-                    className="text-gray-500 hover:text-main-600 transition-colors"
-                    type={isDesktopSearchOpen ? 'submit' : 'button'}
-                    onClick={() => {
-                      if (!isDesktopSearchOpen) setIsDesktopSearchOpen(true);
-                    }}
-                  >
-                    <Search className="h-5 w-5" />
-                  </button>
-                </form>
+{/* Search disabled */}
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-4">
@@ -369,39 +346,11 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                <form
-                  className="flex items-center gap-2"
-                  onSubmit={handleDesktopSearchSubmit}
-                  role="search"
-                >
-                  {isDesktopSearchOpen && (
-                    <input
-                      ref={desktopSearchInputRef}
-                      type="search"
-                      value={desktopSearchQuery}
-                      onChange={(event) => setDesktopSearchQuery(event.target.value)}
-                      onKeyDown={handleDesktopSearchKeyDown}
-                      placeholder="Search products"
-                      className="w-44 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition focus:border-main-600 focus:ring-2 focus:ring-main-600/20"
-                    />
-                  )}
-                  <button
-                    aria-label={t('nav.search')}
-                    className="p-2 text-gray-700 hover:text-main-600 transition-colors"
-                    type={isDesktopSearchOpen ? 'submit' : 'button'}
-                    onClick={() => {
-                      if (!isDesktopSearchOpen) setIsDesktopSearchOpen(true);
-                    }}
-                  >
-                    <Search className="h-5 w-5" />
-                  </button>
-                </form>
+{/* Search disabled */}
               </div>
             )}
 
             <div className="lg:hidden flex items-center gap-2">
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
-
               {!user && (
                 <Link
                   to="/login"
@@ -410,6 +359,23 @@ const Navbar = () => {
                   title={t('auth.signIn')}
                 >
                   <UserRound className="h-[1.375rem] w-[1.375rem]" />
+                </Link>
+              )}
+
+              {/* Mobile: Points chip next to cart */}
+              {user && (
+                <Link
+                  to="/my-points"
+                  className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
+                    boxShadow: '0 2px 8px rgba(255,75,134,0.4)',
+                    color: 'white',
+                  }}
+                >
+                  <span className="text-xs">{loyaltyRank.icon}</span>
+                  <span>{loyaltyPoints.toLocaleString()}</span>
+                  <span className="opacity-70 font-semibold text-[9px]">pts</span>
                 </Link>
               )}
 
@@ -552,7 +518,8 @@ const Navbar = () => {
       </div>
 
       <div className="lg:hidden border-t border-gray-200 bg-white">
-        <div className="px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="px-4 sm:px-6 py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2 w-max min-w-full justify-end">
           {isAdmin && (
             <Link
               to="/admin/dashboard"
@@ -566,20 +533,7 @@ const Navbar = () => {
 
           {user && (
             <>
-              {/* Mobile: Points chip */}
-              <Link
-                to="/my-points"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-black tracking-wide active:scale-95 transition-transform"
-                style={{
-                  background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
-                  boxShadow: '0 2px 8px rgba(255,75,134,0.4)',
-                  color: 'white',
-                }}
-              >
-                <span className="text-sm">{loyaltyRank.icon}</span>
-                <span>{loyaltyPoints.toLocaleString()}</span>
-                <span className="opacity-70 font-semibold text-[10px]">pts</span>
-              </Link>
+              {/* Points chip moved to top bar */}
 
               <Link
                 to="/my-tickets"
@@ -619,6 +573,7 @@ const Navbar = () => {
             </>
           )}
 
+        </div>
         </div>
       </div>
       </nav>

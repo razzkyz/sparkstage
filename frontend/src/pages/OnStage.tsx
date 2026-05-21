@@ -146,7 +146,7 @@ const OnStage = () => {
       </section>
 
       {/* Buy Ticket Button - Fixed positioning */}
-      <div ref={ticketButtonRef} className="relative z-20 pt-8 pb-6 bg-gradient-to-b from-white via-white to-gray-50 px-2 sm:px-4 border-b border-gray-100 shadow-sm">
+      <div ref={ticketButtonRef} className="relative z-20 py-8 md:py-12 bg-gradient-to-b from-white via-white to-gray-50 px-4 sm:px-6 md:px-8 border-b border-gray-100 shadow-sm">
         <div className="flex justify-center">
           <Link
             to="/booking"
@@ -166,21 +166,31 @@ const OnStage = () => {
 
       {/* Process Carousel (New Section) */}
       {processBanners.length > 0 && (
-        <section ref={processCarouselRef} className="w-full relative overflow-hidden bg-gradient-to-b from-white to-gray-50 mb-8 border-t border-b border-gray-100/50 pb-8 shadow-sm">
-          {/* Title Image Overflow (Only shown for current active slide) */}
-          <div ref={processTitleRef} className="flex justify-center mb-8 h-32 md:h-40 lg:h-48 transition-all duration-500 text-center relative z-20 mt-6 px-4">
-            {processBanners[currentProcessSlide]?.title_image_url ? (
-              <img 
-                src={processBanners[currentProcessSlide].title_image_url!} 
-                alt={processBanners[currentProcessSlide].title || 'Process Title Typography'} 
-                className="h-full w-auto object-contain animate-fade-in drop-shadow-lg hover:drop-shadow-xl transition-all"
-              />
-            ) : processBanners[currentProcessSlide]?.title ? (
-              <h2 className="text-4xl md:text-6xl font-black tracking-widest text-main-600 self-center animate-fade-in uppercase pt-4 drop-shadow-md">
-                {processBanners[currentProcessSlide].title}
-              </h2>
-            ) : null}
+        <section ref={processCarouselRef} className="w-full relative overflow-hidden bg-gradient-to-b from-white to-gray-50 py-8 md:py-12 mb-8 border-t border-b border-gray-100/50 shadow-sm">
+          {/* Section Header */}
+          <div className="text-center mb-8 md:mb-12 px-4 relative z-20">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-main-600 via-pink-500 to-purple-600 uppercase drop-shadow-md pb-2 transform -skew-x-6">
+              Preview Stage 
+            </h2>
+            <div className="w-24 md:w-32 h-1.5 bg-gradient-to-r from-main-600 to-pink-500 mx-auto mt-2 rounded-full shadow-sm animate-pulse"></div>
           </div>
+
+          {/* Title Image Overflow (Only shown for current active slide) */}
+          {(processBanners[currentProcessSlide]?.title_image_url || processBanners[currentProcessSlide]?.title) && (
+            <div ref={processTitleRef} className="flex justify-center mb-8 md:mb-10 h-24 md:h-32 lg:h-40 transition-all duration-500 text-center relative z-20 px-4">
+              {processBanners[currentProcessSlide]?.title_image_url ? (
+                <img 
+                  src={processBanners[currentProcessSlide].title_image_url!} 
+                  alt={processBanners[currentProcessSlide].title || 'Process Title Typography'} 
+                  className="h-full w-auto object-contain animate-fade-in drop-shadow-lg hover:drop-shadow-xl transition-all"
+                />
+              ) : (
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-widest text-main-600 self-center animate-fade-in uppercase pt-4 drop-shadow-md">
+                  {processBanners[currentProcessSlide].title}
+                </h2>
+              )}
+            </div>
+          )}
 
           {/* Carousel Container */}
           <div className="relative w-full">
