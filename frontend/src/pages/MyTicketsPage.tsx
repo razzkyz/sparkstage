@@ -27,8 +27,6 @@ export default function MyTicketsPage() {
     setActiveTab,
     toggleExpand,
     handleSyncStatus,
-    handleCancelOrder,
-    handleHideOrder,
     getStatusBadge,
   } = useMyTicketsView({
     userId: user?.id,

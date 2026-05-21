@@ -1,13 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
-import { getSupabaseFunctionStatus } from '../../lib/supabaseFunctionError';
-import { invokeSupabaseFunction } from '../../lib/supabaseFunctionInvoke';
-import { withTimeout } from '../../utils/queryHelpers';
 import { useMyTicketOrders } from '../../hooks/useMyTicketOrders';
 import type { TicketOrderListItem } from '../../hooks/useMyTicketOrders';
 import { syncTicketOrderStatus } from './syncTicketOrderStatus';
-import { supabase } from '../../lib/supabase';
 
 type UseMyTicketsViewParams = {
   userId: string | null | undefined;
@@ -156,64 +152,6 @@ export function useMyTicketsView({
     [getValidAccessToken, refreshSession, sessionToken, showToast, t]
   );
 
-  const handleCancelOrder = useCallback(
-    async (order: TicketOrderListItem) => {
-      const invokeCancelTicketOrder = (accessToken: string) =>
-        withTimeout(
-          invokeSupabaseFunction({
-            functionName: 'cancel-ticket-order',
-            body: { order_number: order.order_number },
-            headers: { Authorization: `Bearer ${accessToken}` },
-            fallbackMessage: 'Failed to cancel order',
-          }),
-          15000,
-          'Request timeout. Please try again.'
-        );
-
-      let accessToken = (await getValidAccessToken()) ?? sessionToken ?? null;
-      if (!accessToken) {
-        showToast('error', t('myTickets.errors.notAuthenticated'));
-        return;
-      }
-
-      const orderStatus = String(order.status || '').toLowerCase();
-
-      if (orderStatus === 'paid') {
-        showToast('info', t('myTickets.status.paid'));
-        return;
-      }
-      if (orderStatus === 'cancelled' || orderStatus === 'expired') {
-        showToast('info', t('myTickets.status.expired'));
-        return;
-      }
-
-      setSyncingOrderId(order.id);
-      try {
-        try {
-          await invokeCancelTicketOrder(accessToken);
-        } catch (cancelError) {
-          if (getSupabaseFunctionStatus(cancelError) === 401) {
-            await refreshSession();
-            accessToken = await getValidAccessToken();
-            if (!accessToken) {
-              throw cancelError;
-            }
-            await invokeCancelTicketOrder(accessToken);
-          } else {
-            throw cancelError;
-          }
-        }
-
-        showToast('success', t('myTickets.toast.cancelSuccess', 'Order cancelled.'));
-      } catch (cancelError) {
-        showToast('error', cancelError instanceof Error ? cancelError.message : 'Failed to cancel order');
-      } finally {
-        setSyncingOrderId(null);
-      }
-    },
-    [getValidAccessToken, refreshSession, sessionToken, showToast, t]
-  );
-
   const toggleExpand = useCallback((orderId: number) => {
     setExpandedOrder((current) => (current === orderId ? null : orderId));
   }, []);
@@ -238,29 +176,6 @@ export function useMyTicketsView({
     [t]
   );
 
-  const handleHideOrder = useCallback(
-    async (order: TicketOrderListItem) => {
-      if (!window.confirm('Anda yakin mau hapus tiket? (Tiket hanya disembunyikan dari daftar)')) {
-        return;
-      }
-      
-      try {
-        const { error } = await supabase
-          .from('orders')
-          .update({ is_hidden_by_user: true })
-          .eq('order_number', order.order_number);
-        
-        if (error) throw error;
-        
-        // Refresh the page or just let the user know
-        window.location.reload();
-      } catch (err) {
-        showToast('error', err instanceof Error ? err.message : 'Gagal menyembunyikan tiket');
-      }
-    },
-    [showToast]
-  );
-
   return {
     orders,
     loading,
@@ -275,8 +190,6 @@ export function useMyTicketsView({
     setActiveTab,
     toggleExpand,
     handleSyncStatus,
-    handleCancelOrder,
-    handleHideOrder,
     getStatusBadge,
   };
 }
