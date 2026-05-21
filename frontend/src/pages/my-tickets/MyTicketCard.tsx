@@ -11,6 +11,7 @@ type MyTicketCardProps = {
   isSyncing: boolean;
   onToggleExpand: () => void;
   onPayNow: () => void;
+  onHide: () => void;
   onSyncStatus: () => void;
   onViewDetails: () => void;
   statusBadge: { label: string; tone: 'yellow' | 'green' | 'gray' | 'red' };
@@ -23,6 +24,7 @@ export function MyTicketCard({
   isSyncing,
   onToggleExpand,
   onPayNow,
+  onHide,
   onSyncStatus,
   onViewDetails,
   statusBadge,
@@ -130,6 +132,14 @@ export function MyTicketCard({
               {t('myTickets.viewQR', 'View QR')}
             </button>
           )}
+
+          <button
+            onClick={onHide}
+            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">delete</span>
+            Hapus Tiket
+          </button>
         </div>
       </div>
 

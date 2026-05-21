@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next';
 import { useMyTicketOrders } from '../../hooks/useMyTicketOrders';
 import type { TicketOrderListItem } from '../../hooks/useMyTicketOrders';
 import { syncTicketOrderStatus } from './syncTicketOrderStatus';
+import { supabase } from '../../lib/supabase';
 
 type UseMyTicketsViewParams = {
   userId: string | null | undefined;
@@ -176,6 +177,29 @@ export function useMyTicketsView({
     [t]
   );
 
+  const handleHideOrder = useCallback(
+    async (order: TicketOrderListItem) => {
+      if (!window.confirm('Anda yakin mau hapus tiket? (Tiket hanya disembunyikan dari daftar)')) {
+        return;
+      }
+      
+      try {
+        const { error } = await supabase
+          .from('orders')
+          .update({ is_hidden_by_user: true })
+          .eq('order_number', order.order_number);
+        
+        if (error) throw error;
+        
+        // Refresh the page or just let the user know
+        window.location.reload();
+      } catch (err) {
+        showToast('error', err instanceof Error ? err.message : 'Gagal menyembunyikan tiket');
+      }
+    },
+    [showToast]
+  );
+
   return {
     orders,
     loading,
@@ -190,6 +214,7 @@ export function useMyTicketsView({
     setActiveTab,
     toggleExpand,
     handleSyncStatus,
+    handleHideOrder,
     getStatusBadge,
   };
 }
