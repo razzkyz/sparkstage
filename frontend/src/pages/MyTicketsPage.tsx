@@ -1,19 +1,28 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TicketCardSkeleton from '../components/skeletons/TicketCardSkeleton';
 import { PageTransition } from '../components/PageTransition';
 import { useToast } from '../components/Toast';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MyTicketsEmptyState } from './my-tickets/MyTicketsEmptyState';
 import { MyTicketsList } from './my-tickets/MyTicketsList';
 import { MyTicketsTabs } from './my-tickets/MyTicketsTabs';
 import { useMyTicketsView } from './my-tickets/useMyTicketsView';
+import { supabase } from '../lib/supabase';
+import type { TicketOrderListItem } from '../hooks/useMyTicketOrders';
 
 export default function MyTicketsPage() {
   const navigate = useNavigate();
   const { user, session, getValidAccessToken, refreshSession } = useAuth();
   const { showToast } = useToast();
   const { t } = useTranslation();
+  
+  const [showHideConfirm, setShowHideConfirm] = useState(false);
+  const [orderToHide, setOrderToHide] = useState<TicketOrderListItem | null>(null);
+  const [isHidingOrder, setIsHidingOrder] = useState(false);
+  
   const {
     loading,
     isFetching,
@@ -27,7 +36,6 @@ export default function MyTicketsPage() {
     setActiveTab,
     toggleExpand,
     handleSyncStatus,
-    handleHideOrder,
     getStatusBadge,
   } = useMyTicketsView({
     userId: user?.id,
@@ -37,6 +45,54 @@ export default function MyTicketsPage() {
     showToast,
     t,
   });
+
+  // Auto-route to appropriate tab based on orders status
+  useEffect(() => {
+    if (loading) return;
+    
+    // If user has pending orders, default to pending tab
+    if (pendingOrders.length > 0) {
+      setActiveTab('pending');
+    } 
+    // If no pending but has active orders, default to active
+    else if (activeOrders.length > 0) {
+      setActiveTab('active');
+    }
+    // Otherwise show history
+    else {
+      setActiveTab('history');
+    }
+  }, [loading, pendingOrders.length, activeOrders.length, setActiveTab]);
+
+  const handleHideOrderClick = (order: TicketOrderListItem) => {
+    setOrderToHide(order);
+    setShowHideConfirm(true);
+  };
+
+  const handleConfirmHide = async () => {
+    if (!orderToHide) return;
+    
+    setIsHidingOrder(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ is_hidden_by_user: true })
+        .eq('order_number', orderToHide.order_number);
+      
+      if (error) throw error;
+      
+      showToast('success', 'Tiket berhasil dihapus dari daftar');
+      setShowHideConfirm(false);
+      setOrderToHide(null);
+      
+      // Refresh page to reflect changes
+      window.location.reload();
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Gagal menyembunyikan tiket');
+    } finally {
+      setIsHidingOrder(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -128,13 +184,29 @@ export default function MyTicketsPage() {
               getStatusBadge={getStatusBadge}
               onToggleExpand={toggleExpand}
               onSyncStatus={handleSyncStatus}
-              onHideOrder={handleHideOrder}
+              onHideOrder={handleHideOrderClick}
               t={t}
             />
           ) : (
             <MyTicketsEmptyState activeTab={activeTab} onBrowseEvents={() => navigate('/booking')} t={t} />
           )}
         </div>
+
+        {/* Confirm Delete Dialog */}
+        <ConfirmDialog
+          isOpen={showHideConfirm}
+          title="Hapus Tiket?"
+          message="Tiket hanya akan disembunyikan dari daftar. Kamu masih bisa melihatnya nanti di riwayat jika diperlukan."
+          confirmText="Ya, Hapus"
+          cancelText="Batal"
+          isDangerous={true}
+          isLoading={isHidingOrder}
+          onConfirm={handleConfirmHide}
+          onCancel={() => {
+            setShowHideConfirm(false);
+            setOrderToHide(null);
+          }}
+        />
         </main>
       </div>
     </PageTransition>
