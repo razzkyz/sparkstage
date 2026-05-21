@@ -169,10 +169,10 @@ const OnStage = () => {
         <section ref={processCarouselRef} className="w-full relative overflow-hidden bg-gradient-to-b from-white to-gray-50 py-8 md:py-12 mb-8 border-t border-b border-gray-100/50 shadow-sm">
           {/* Section Header */}
           <div className="text-center mb-8 md:mb-12 px-4 relative z-20">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-main-600 via-pink-500 to-purple-600 uppercase drop-shadow-md pb-2 transform -skew-x-6">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-pink-500 uppercase drop-shadow-md pb-2 transform -skew-x-6">
               Preview Stage 
             </h2>
-            <div className="w-24 md:w-32 h-1.5 bg-gradient-to-r from-main-600 to-pink-500 mx-auto mt-2 rounded-full shadow-sm animate-pulse"></div>
+            <div className="w-24 md:w-32 h-1.5 bg-gradient-to-r from-gray-900 to-pink-500 mx-auto mt-2 rounded-full shadow-sm animate-pulse"></div>
           </div>
 
           {/* Title Image Overflow (Only shown for current active slide) */}

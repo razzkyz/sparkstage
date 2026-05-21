@@ -22,10 +22,6 @@ import { getUserDisplayName } from '../utils/auth';
 let previousDesktopStarPosition = 0;
 
 const Navbar = () => {
-  // On phones the spacer centres the active item; on tablets (md+) less
-  // spacer is needed because more items fit on screen.
-  const mobileEdgeSpacerWidth = 'calc(50vw - 50px)';
-  const tabletEdgeSpacerWidth = 'calc(50vw - 70px)';
   const { t, i18n } = useTranslation();
   const { user, signOut, isAdmin, loggingOut } = useAuth();
   const { count: ticketCount } = useTicketCount();
@@ -44,7 +40,6 @@ const Navbar = () => {
   const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
-  const mobileNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
 
   const hasCenteredMobileItemRef = useRef(false);
@@ -94,12 +89,12 @@ const Navbar = () => {
 
   const centerMobileActiveItem = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const scroller = mobileNavScrollerRef.current;
-    const activeItem = mobileNavItemsRef.current[activeIndex];
+    const activeItem = desktopNavItemsRef.current[activeIndex];
     if (!scroller || !activeItem) return;
 
     const doScroll = () => {
       const s = mobileNavScrollerRef.current;
-      const a = mobileNavItemsRef.current[activeIndex];
+      const a = desktopNavItemsRef.current[activeIndex];
       if (!s || !a) return;
 
       const maxScrollLeft = Math.max(0, s.scrollWidth - s.clientWidth);
@@ -366,10 +361,11 @@ const Navbar = () => {
 
       {/* Main Navigation - Non-sticky */}
       <nav className="w-full relative z-[100] bg-white border-b border-gray-300">
-
-      <div className="hidden lg:block">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative py-4">
+          <div 
+            ref={mobileNavScrollerRef}
+            className="relative py-4 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
             <div
               className={`absolute pointer-events-none ${
                 enableStarTransition ? 'transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
@@ -390,7 +386,7 @@ const Navbar = () => {
               />
             </div>
 
-            <div className="flex justify-evenly items-center relative z-10">
+            <div className="flex lg:justify-evenly items-center relative z-10 min-w-max gap-2 sm:gap-4 lg:gap-0 px-2 lg:px-0">
               {navItems.map((item, idx) => {
                 const isActive = idx === activeIndex;
                 const Icon = item.icon;
@@ -416,137 +412,64 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="lg:hidden">
-        <div
-          className="relative flex items-center justify-center min-h-[72px] overflow-hidden py-2 sm:min-h-[80px] md:min-h-[88px]"
-        >
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2"
-            aria-hidden
-          >
-            <span className="animate-nav-star-breathe block h-[56px] w-[56px] sm:h-[64px] sm:w-[64px] md:h-[72px] md:w-[72px]">
-              <img
-                src="/images/landing/ICON%20STAR-01.svg"
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            </span>
-          </div>
+        <div className="lg:hidden border-t border-gray-200 bg-white">
+          <div className="px-4 sm:px-6 py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-2 w-max min-w-full justify-end">
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white active:scale-95 transition-transform"
+                style={{ background: '#ff4b86' }}
+              >
+                <span className="material-symbols-outlined text-[16px]">dashboard</span>
+                Dashboard
+              </Link>
+            )}
 
-          <div
-            ref={mobileNavScrollerRef}
-            className="relative z-10 flex w-full items-center overflow-x-auto py-2 scroll-smooth snap-x snap-mandatory [overscroll-behavior-x:contain] [scrollbar-width:none] [touch-action:pan-x] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
-            <div
-              className="shrink-0 md:hidden"
-              style={{ width: mobileEdgeSpacerWidth }}
-              aria-hidden
-            />
-            <div
-              className="shrink-0 hidden md:block"
-              style={{ width: tabletEdgeSpacerWidth }}
-              aria-hidden
-            />
-            {navItems.map((item, idx) => {
-              const isActive = idx === activeIndex;
-              const Icon = item.icon;
-
-              return (
+            {user && (
+              <>
                 <Link
-                  key={item.key}
-                  ref={(el) => (mobileNavItemsRef.current[idx] = el)}
-                  to={item.to}
-                  className={`relative z-10 shrink-0 snap-center min-w-[106px] md:min-w-[120px] text-center text-xs md:text-sm font-semibold uppercase px-3 md:px-4 py-2 mx-0.5 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu ${
-                    isActive ? 'text-black [text-shadow:0_2px_6px_rgba(255,255,255,0.3)]' : 'text-gray-600 hover:text-[#ff4b86] active:text-[#ff4b86]'
-                  }`}
+                  to="/my-tickets"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
                 >
-                  <span className="relative z-10 flex items-center justify-center gap-1">
-                    {Icon && (
-                      <div className="bg-main-500 rounded-full p-0.5">
-                        <Icon className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                    {item.label}
-                  </span>
+                  <Ticket className="h-3.5 w-3.5" />
+                  {t('nav.myTickets')}
+                  {ticketCount > 0 && (
+                    <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                      {ticketCount}
+                    </span>
+                  )}
                 </Link>
-              );
-            })}
-            <div
-              className="shrink-0 md:hidden"
-              style={{ width: mobileEdgeSpacerWidth }}
-              aria-hidden
-            />
-            <div
-              className="shrink-0 hidden md:block"
-              style={{ width: tabletEdgeSpacerWidth }}
-              aria-hidden
-            />
+
+                <Link
+                  to="/my-orders"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
+                >
+                  <ReceiptText className="h-3.5 w-3.5" />
+                  {t('nav.myOrders')}
+                  {orderCount > 0 && (
+                    <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                      {orderCount}
+                    </span>
+                  )}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleSignOutClick}
+                  disabled={loggingOut}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-pink-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#ff4b86] active:bg-pink-50 disabled:opacity-50"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  {t('auth.signOut')}
+                </button>
+              </>
+            )}
+
+          </div>
           </div>
         </div>
-      </div>
-
-      <div className="lg:hidden border-t border-gray-200 bg-white">
-        <div className="px-4 sm:px-6 py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex items-center gap-2 w-max min-w-full justify-end">
-          {isAdmin && (
-            <Link
-              to="/admin/dashboard"
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white active:scale-95 transition-transform"
-              style={{ background: '#ff4b86' }}
-            >
-              <span className="material-symbols-outlined text-[16px]">dashboard</span>
-              Dashboard
-            </Link>
-          )}
-
-          {user && (
-            <>
-              {/* Points chip moved to top bar */}
-
-              <Link
-                to="/my-tickets"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
-              >
-                <Ticket className="h-3.5 w-3.5" />
-                {t('nav.myTickets')}
-                {ticketCount > 0 && (
-                  <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                    {ticketCount}
-                  </span>
-                )}
-              </Link>
-
-              <Link
-                to="/my-orders"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
-              >
-                <ReceiptText className="h-3.5 w-3.5" />
-                {t('nav.myOrders')}
-                {orderCount > 0 && (
-                  <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                    {orderCount}
-                  </span>
-                )}
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleSignOutClick}
-                disabled={loggingOut}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-pink-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#ff4b86] active:bg-pink-50 disabled:opacity-50"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                {t('auth.signOut')}
-              </button>
-            </>
-          )}
-
-        </div>
-        </div>
-      </div>
       </nav>
 
       {showLogoutConfirm && (
