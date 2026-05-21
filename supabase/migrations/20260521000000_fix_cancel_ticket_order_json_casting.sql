@@ -99,8 +99,9 @@ BEGIN
           -- Extract text from array element (removes quotes)
           v_slot := v_slots_jsonb->>0;
         ELSIF jsonb_typeof(v_slots_jsonb) = 'string' THEN
-          -- Extract text from JSON string (removes quotes)
-          v_slot := v_slots_jsonb::text;
+          -- Extract text from JSON string and strip quotes
+          -- e.g. JSON "10:00" -> 10:00 (without quotes)
+          v_slot := TRIM(v_slots_jsonb::text, '"');
         END IF;
       EXCEPTION WHEN OTHERS THEN
         -- If it's already a plain text value like 'all-day' or '10:00'
