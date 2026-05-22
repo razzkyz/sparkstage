@@ -43,7 +43,11 @@ export const AdminDashboardRouter = () => {
           navigate('/admin/entrance-dashboard')
           break
         case 'dressing_room_admin':
+        case 'dress':
           navigate('/admin/dashboard')
+          break
+        case 'devops':
+          navigate('/admin/audit-logs')
           break
         case 'ticket_admin':
           navigate('/admin/ticket-dashboard')

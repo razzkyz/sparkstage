@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminLayout from '@/components/AdminLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
@@ -18,6 +19,10 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   admin_division_assigned: 'Division Assigned',
   price_modified: 'Price Modified',
   order_status_changed: 'Order Status Changed',
+  product_modified: 'Product Modified',
+  ticket_scanned: 'Ticket Scanned',
+  order_created: 'Event Order Created',
+  product_order_created: 'Product Order Created',
 }
 
 const TABLE_LABELS: Record<string, string> = {
@@ -30,10 +35,11 @@ const TABLE_LABELS: Record<string, string> = {
   admin_divisions: 'Admin Divisions',
   products: 'Products',
   product_orders: 'Product Orders',
+  purchased_tickets: 'Purchased Tickets',
 }
 
 export function AuditLogsPage() {
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const menuSections = useAdminMenuSections()
   const [selectedAction, setSelectedAction] = useState<AuditAction | ''>('')
   const [selectedTable, setSelectedTable] = useState<string>('')
@@ -41,6 +47,22 @@ export function AuditLogsPage() {
   const [endDate, setEndDate] = useState<string>('')
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user?.id) {
+      import('@/auth/adminRole').then(({ lookupUserRole }) => {
+        lookupUserRole(user.id).then((result) => {
+          if (result.ok) {
+            const role = result.role?.toLowerCase()
+            if (role !== 'admin' && role !== 'super_admin' && role !== 'devops') {
+              navigate('/admin/dashboard', { replace: true })
+            }
+          }
+        })
+      })
+    }
+  }, [user, navigate])
 
   const pageSize = 25
 
@@ -172,6 +194,7 @@ export function AuditLogsPage() {
               <thead>
                 <tr>
                   <th>Date/Time</th>
+                  <th>User</th>
                   <th>Action</th>
                   <th>Table</th>
                   <th>Record ID</th>
@@ -192,6 +215,12 @@ export function AuditLogsPage() {
                           minute: '2-digit',
                           second: '2-digit',
                         })}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="user-info text-sm">
+                        <div className="font-medium text-gray-900">{log.user_email || log.user_id.substring(0, 8)}</div>
+                        <div className="text-gray-500">{log.user_role || 'Unknown Role'}</div>
                       </div>
                     </td>
                     <td>

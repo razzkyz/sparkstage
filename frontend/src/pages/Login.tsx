@@ -15,6 +15,7 @@ import { isAdmin } from '../utils/auth';
 import { lookupUserRole } from '../auth/adminRole';
 import { supabase } from '../lib/supabase';
 import { withTimeout } from '../utils/queryHelpers';
+import { useLoginRateLimit } from '../hooks/useLoginRateLimit';
 
 const translateAuthError = (errorMessage: string): string => {
   if (errorMessage.includes('Invalid login credentials')) {
@@ -42,6 +43,8 @@ const Login = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const postAuthRedirect = sanitizePostAuthRedirect(location.state);
+  
+  const { isLocked, formatRemainingTime, recordFailedAttempt, clearAttempts } = useLoginRateLimit(email);
 
   // Show session expiry message if redirected from auto-logout
   useEffect(() => {
@@ -57,15 +60,19 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) return;
+    
     setError('');
     setLoading(true);
 
     const { error } = await signIn(email, password);
 
     if (error) {
+      recordFailedAttempt();
       setError(translateAuthError(error.message));
       setLoading(false);
     } else {
+      clearAttempts();
       try {
         const { data: sessionData } = await withTimeout(
           supabase.auth.getSession(),
@@ -162,9 +169,20 @@ const Login = () => {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
-            {error && (
+            {error && !isLocked && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-sm text-sm">
                 {error}
+              </div>
+            )}
+            
+            {/* Lockout Message */}
+            {isLocked && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-sm text-sm flex items-start gap-2">
+                <span className="material-symbols-outlined text-orange-500 mt-0.5">lock_clock</span>
+                <div>
+                  <p className="font-bold">Terlalu banyak percobaan gagal</p>
+                  <p>Sistem mendeteksi indikasi bot. Silakan tunggu <span className="font-mono bg-orange-100 px-1 rounded">{formatRemainingTime()}</span> menit sebelum mencoba lagi.</p>
+                </div>
               </div>
             )}
 
@@ -249,10 +267,11 @@ const Login = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#ff4b86] hover:bg-[#e63d75] text-white py-3 rounded-sm font-medium transition-colors shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || isLocked}
+              className="w-full bg-[#ff4b86] hover:bg-[#e63d75] text-white py-3 rounded-sm font-medium transition-colors shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              {loading ? t('auth.login.loading') : t('auth.signIn')}
+              {isLocked && <span className="material-symbols-outlined text-[18px]">lock</span>}
+              {loading ? t('auth.login.loading') : isLocked ? 'Akun Terkunci Sementara' : t('auth.signIn')}
             </button>
           </form>
 

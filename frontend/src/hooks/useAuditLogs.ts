@@ -14,6 +14,10 @@ export type AuditAction =
   | 'admin_division_assigned'
   | 'price_modified'
   | 'order_status_changed'
+  | 'product_modified'
+  | 'ticket_scanned'
+  | 'order_created'
+  | 'product_order_created'
 
 export interface AuditLog {
   id: string
@@ -27,6 +31,8 @@ export interface AuditLog {
   user_agent: string | null
   description: string | null
   created_at: string
+  user_email?: string
+  user_role?: string
 }
 
 export interface AuditLogFilters {
@@ -83,7 +89,20 @@ export function useAuditLogs(filters?: AuditLogFilters) {
 
         if (err) throw err
 
-        return (data || []) as AuditLog[]
+        const rawLogs = (data || []) as AuditLog[]
+        if (rawLogs.length === 0) return []
+
+        // Fetch user roles and emails to map to user_id
+        const { data: usersData } = await supabase.rpc('get_admin_users')
+        const userMap = new Map<string, { email: string; role: string }>(
+          (usersData || []).map((u: any) => [u.user_id, { email: u.email, role: u.role_name }])
+        )
+
+        return rawLogs.map((log) => ({
+          ...log,
+          user_email: userMap.get(log.user_id)?.email,
+          user_role: userMap.get(log.user_id)?.role,
+        }))
       } catch (error) {
         console.error('Error fetching audit logs:', error)
         return []
