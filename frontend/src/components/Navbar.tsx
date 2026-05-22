@@ -11,7 +11,7 @@ type NavItem = {
   isPink?: boolean;
   icon?: LucideIcon;
 };
-import LanguageSwitcher from './LanguageSwitcher';
+// import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../contexts/AuthContext';
 import { useTicketCount } from '../hooks/useTicketCount';
 import { useOrderCount } from '../hooks/useOrderCount';
@@ -22,7 +22,7 @@ import { getUserDisplayName } from '../utils/auth';
 let previousDesktopStarPosition = 0;
 
 const Navbar = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, signOut, isAdmin, loggingOut } = useAuth();
   const { count: ticketCount } = useTicketCount();
   const { count: orderCount } = useOrderCount();
@@ -76,8 +76,8 @@ const Navbar = () => {
   ];
 
   const activeIndex = Math.max(0, navItems.findIndex((item) => item.key === activeNavKey));
-  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();
-  const isIndonesian = currentLanguage.startsWith('id');
+  // const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();
+  // const isIndonesian = currentLanguage.startsWith('id');
 
   const updateDesktopStarPosition = useCallback(() => {
     const activeItem = desktopNavItemsRef.current[activeIndex];
@@ -146,9 +146,9 @@ const Navbar = () => {
 
 
 
-  const handleMobileLanguageToggle = () => {
-    void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
-  };
+  // const handleMobileLanguageToggle = () => {
+  //   void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
+  // };
 
 
   const handleSignOutClick = () => {
@@ -176,13 +176,15 @@ const Navbar = () => {
         <div className="flex items-center justify-between py-2 lg:py-3">
           <div className="w-1/3 flex items-center gap-3">
             {/* Desktop: Language Switcher + Stage 55 logo */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center">
               <img src="/images/landing/stage55.png" alt="Stage 55" className="h-10 w-auto md:h-12 object-contain" />
-              <LanguageSwitcher />
+              {/* Language switcher disabled */}
+              {/* <LanguageSwitcher /> */}
             </div>
             {/* Mobile: Stage 55 logo + Language toggle */}
             <div className="lg:hidden flex items-center gap-2">
-              <button
+              {/* Language toggle disabled */}
+              {/* <button
                 type="button"
                 onClick={handleMobileLanguageToggle}
                 className="px-3.5 py-2.5 rounded-md border border-gray-300 text-sm font-black uppercase tracking-wider text-gray-800 active:bg-gray-50"
@@ -190,7 +192,7 @@ const Navbar = () => {
                 title={`${t('language.switch')}: ${isIndonesian ? 'English' : 'Bahasa Indonesia'}`}
               >
                 {isIndonesian ? 'ID' : 'EN'}
-              </button>
+              </button> */}
               <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
             </div>
           </div>

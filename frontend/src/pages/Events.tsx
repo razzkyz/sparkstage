@@ -10,7 +10,7 @@ const Events = () => {
   }
 
   const content = settings ?? DEFAULT_EVENT_PAGE_SETTINGS;
-  const heroImages = content.hero_images.filter(Boolean);
+  // const heroImages = content.hero_images.filter(Boolean);
   const magicTitle = content.magic_title;
   const magicDesc = content.magic_description;
   const magicBtnText = content.magic_button_text;
@@ -26,7 +26,8 @@ const Events = () => {
     <div className="bg-[#fcfcf9] min-h-screen text-gray-900 selection:bg-primary/20">
       
       {/* 1. Hero Gallery Row (Dynamic Layout) */}
-      <section className="flex h-[42vh] w-full snap-x snap-mandatory overflow-x-auto hide-scrollbar sm:h-[50vh] md:h-[65vh]">
+      {/* Nonaktifkan sementara*/}
+      {/* <section className="flex h-[42vh] w-full snap-x snap-mandatory overflow-x-auto hide-scrollbar sm:h-[50vh] md:h-[65vh]">
         {heroImages.map((img, idx) => (
           <div 
             key={idx} 
@@ -44,9 +45,9 @@ const Events = () => {
             />
           </div>
         ))}
-      </section>
+      </section> */}
 
-      <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 md:py-32">
+      <main className="mx-auto max-w-7xl px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 lg:px-8 md:pt-32 md:pb-12">
         
         {/* 2. Capturing Magic Moment Section */}
         <section className="mb-20 grid grid-cols-[minmax(0,1.2fr)_minmax(7rem,0.8fr)] items-start gap-4 sm:mb-32 sm:flex sm:items-center sm:gap-12 md:gap-24">
@@ -106,7 +107,7 @@ const Events = () => {
         </section>
 
         {/* 4. Choose Your Experience Links */}
-        <section className="mb-24 text-center sm:mb-40">
+        <section className="mb-12 text-center sm:mb-12">
           <h2 className="mb-10 text-2xl text-gray-800 sm:mb-16 sm:text-3xl md:text-4xl" style={getCmsFontStyle(experienceFonts.heading)}>
             {expTitle.split(' ').map((word, i) => {
               const isItalic = word.toLowerCase() === 'your';

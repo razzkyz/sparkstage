@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
@@ -10,7 +10,8 @@ import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
 gsap.registerPlugin(ScrollTrigger);
 
 const OnStage = () => {
-  const [currentProcessSlide, setCurrentProcessSlide] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
 
   // GSAP animation refs
   const ticketButtonRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,55 @@ const OnStage = () => {
   const loading = (heroLoading || processLoading) && !hasData;
   const error = heroError || processError;
 
+  const activeRealIndex = useMemo(() => {
+    if (processBanners.length <= 1) return 0;
+    if (currentIndex === 0) return processBanners.length - 1;
+    if (currentIndex === processBanners.length + 1) return 0;
+    return currentIndex - 1;
+  }, [currentIndex, processBanners.length]);
+
+  const slidesToRender = useMemo(() => {
+    if (processBanners.length <= 1) return processBanners;
+    return [
+      processBanners[processBanners.length - 1],
+      ...processBanners,
+      processBanners[0],
+    ];
+  }, [processBanners]);
+
+  const nextSlide = () => {
+    if (processBanners.length <= 1) return;
+    setIsTransitionEnabled(true);
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  const prevSlide = () => {
+    if (processBanners.length <= 1) return;
+    setIsTransitionEnabled(true);
+    setCurrentIndex((prev) => prev - 1);
+  };
+
+  const handleTransitionEnd = () => {
+    if (currentIndex === 0) {
+      setIsTransitionEnabled(false);
+      setCurrentIndex(processBanners.length);
+    } else if (currentIndex === processBanners.length + 1) {
+      setIsTransitionEnabled(false);
+      setCurrentIndex(1);
+    }
+  };
+
+  useEffect(() => {
+    if (!isTransitionEnabled) {
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsTransitionEnabled(true);
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [isTransitionEnabled]);
+
   // Process banner auto-slide timer
   useEffect(() => {
     if (processBanners.length <= 1) return;
@@ -51,10 +101,11 @@ const OnStage = () => {
     }
 
     const interval = setInterval(() => {
-      setCurrentProcessSlide((p) => (p + 1) % processBanners.length);
+      setIsTransitionEnabled(true);
+      setCurrentIndex((prev) => prev + 1);
     }, 8000);
     return () => clearInterval(interval);
-  }, [processBanners.length, currentProcessSlide]);
+  }, [processBanners.length, activeRealIndex]);
 
   // Ticket button entrance animation
   useEffect(() => {
@@ -176,17 +227,17 @@ const OnStage = () => {
           </div>
 
           {/* Title Image Overflow (Only shown for current active slide) */}
-          {(processBanners[currentProcessSlide]?.title_image_url || processBanners[currentProcessSlide]?.title) && (
+          {(processBanners[activeRealIndex]?.title_image_url || processBanners[activeRealIndex]?.title) && (
             <div ref={processTitleRef} className="flex justify-center mb-8 md:mb-10 h-24 md:h-32 lg:h-40 transition-all duration-500 text-center relative z-20 px-4">
-              {processBanners[currentProcessSlide]?.title_image_url ? (
+              {processBanners[activeRealIndex]?.title_image_url ? (
                 <img 
-                  src={processBanners[currentProcessSlide].title_image_url!} 
-                  alt={processBanners[currentProcessSlide].title || 'Process Title Typography'} 
+                  src={processBanners[activeRealIndex].title_image_url!} 
+                  alt={processBanners[activeRealIndex].title || 'Process Title Typography'} 
                   className="h-full w-auto object-contain animate-fade-in drop-shadow-lg hover:drop-shadow-xl transition-all"
                 />
               ) : (
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-widest text-main-600 self-center animate-fade-in uppercase pt-4 drop-shadow-md">
-                  {processBanners[currentProcessSlide].title}
+                  {processBanners[activeRealIndex].title}
                 </h2>
               )}
             </div>
@@ -202,19 +253,21 @@ const OnStage = () => {
                 const swipeThreshold = 50;
                 const diff = processTouchStartX.current - processTouchEndX.current;
                 if (Math.abs(diff) > swipeThreshold) {
-                  if (diff > 0) setCurrentProcessSlide((p) => (p + 1) % processBanners.length);
-                  else setCurrentProcessSlide((p) => (p - 1 + processBanners.length) % processBanners.length);
+                  if (diff > 0) nextSlide();
+                  else prevSlide();
                 }
               }}
             >
               <div
-                className="flex transition-transform duration-700 ease-in-out"
+                className="flex"
                 style={{
-                  transform: `translateX(-${currentProcessSlide * 100}%)`
+                  transform: `translateX(-${currentIndex * 100}%)`,
+                  transition: isTransitionEnabled ? 'transform 700ms ease-in-out' : 'none'
                 }}
+                onTransitionEnd={handleTransitionEnd}
               >
-                {processBanners.map((processBanner) => (
-                  <div key={processBanner.id} className="w-full shrink-0">
+                {slidesToRender.map((processBanner, idx) => (
+                  <div key={`${processBanner.id}-${idx}`} className="w-full shrink-0">
                     <Link 
                       to={processBanner.link_url || '#'} 
                       className={`block w-full h-full ${!processBanner.link_url ? 'cursor-default pointer-events-none' : ''}`}
@@ -246,13 +299,15 @@ const OnStage = () => {
             {processBanners.length > 1 && (
               <>
                 <button
-                  onClick={() => setCurrentProcessSlide((p) => (p - 1 + processBanners.length) % processBanners.length)}
+                  type="button"
+                  onClick={prevSlide}
                   className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white/80 active:bg-white text-main-600 p-2 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all touch-manipulation backdrop-blur-md hover:scale-110 active:scale-95"
                 >
                   <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
                 <button
-                  onClick={() => setCurrentProcessSlide((p) => (p + 1) % processBanners.length)}
+                  type="button"
+                  onClick={nextSlide}
                   className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white/80 active:bg-white text-main-600 p-2 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all touch-manipulation backdrop-blur-md hover:scale-110 active:scale-95"
                 >
                   <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
@@ -267,9 +322,13 @@ const OnStage = () => {
               {processBanners.map((_, idx) => (
                 <button
                   key={`process-dot-${idx}`}
-                  onClick={() => setCurrentProcessSlide(idx)}
+                  type="button"
+                  onClick={() => {
+                    setIsTransitionEnabled(true);
+                    setCurrentIndex(idx + 1);
+                  }}
                   className={`rounded-full ux-transition-color touch-manipulation transition-all duration-300 ${
-                    currentProcessSlide === idx 
+                    activeRealIndex === idx 
                       ? 'bg-main-600 w-8 h-3 shadow-lg' 
                       : 'bg-gray-300 hover:bg-gray-400 w-2.5 h-2.5 hover:scale-125'
                   }`}
