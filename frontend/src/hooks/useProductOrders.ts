@@ -46,7 +46,8 @@ export function useProductOrders() {
     queryFn: async ({ signal }) => {
       const { signal: timeoutSignal, cleanup, didTimeout } = createQuerySignal(signal);
       try {
-        const [ordersResult, pendingPickupResult, pendingPaymentResult] = await Promise.all([
+        const [ordersResult, completedResult, pendingPickupResult, pendingPaymentResult] = await Promise.all([
+          // Active orders (pending payment, pending pickup, today's paid) - limit to 100 for performance
           supabase
             .from('order_products')
             .select('id, order_number, channel, payment_status, status, total, pickup_code, pickup_status, paid_at, updated_at, created_at, profiles(name, email), order_product_items(id, quantity, price, subtotal, product_variants(name, products(name, categories(name))))')
@@ -55,6 +56,14 @@ export function useProductOrders() {
             .order('paid_at', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(100),
+          // Completed orders - fetch ALL without limit
+          supabase
+            .from('order_products')
+            .select('id, order_number, channel, payment_status, status, total, pickup_code, pickup_status, paid_at, updated_at, created_at, profiles(name, email), order_product_items(id, quantity, price, subtotal, product_variants(name, products(name, categories(name))))')
+            .abortSignal(timeoutSignal)
+            .eq('payment_status', 'paid')
+            .eq('pickup_status', 'completed')
+            .order('updated_at', { ascending: false }),
           supabase
             .from('order_products')
             .select('id', { count: 'exact', head: true })
@@ -78,8 +87,14 @@ export function useProductOrders() {
           throw err;
         }
 
+        // Merge completed orders with active orders
+        const allOrders = [
+          ...(ordersResult.data || []),
+          ...(completedResult.data || []),
+        ] as OrderSummaryRow[];
+
         return {
-          orders: (ordersResult.data || []) as OrderSummaryRow[],
+          orders: allOrders,
           pendingPickupCount: pendingPickupResult.count ?? 0,
           pendingPaymentCount: pendingPaymentResult.count ?? 0,
         };
