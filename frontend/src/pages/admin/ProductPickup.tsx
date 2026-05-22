@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
+import { useUserRole } from '../../hooks/useUserRole';
 import { completeProductPickup } from './product-pickup/completeProductPickup';
 
 const ProductPickup = () => {
@@ -23,6 +24,9 @@ const ProductPickup = () => {
     };
   } | null>(null);
   const menuSections = useAdminMenuSections();
+  const { role } = useUserRole();
+  // kasir menu uses 'product-scan' as id, admin/dressing_room uses 'product-pickup'
+  const activeMenuId = role === 'kasir' ? 'product-scan' : 'product-pickup';
 
   const completePickup = useCallback(
     async (rawCode: string): Promise<void> => {
@@ -78,7 +82,7 @@ const ProductPickup = () => {
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
       menuSections={menuSections}
-      defaultActiveMenuId="product-pickup"
+      defaultActiveMenuId={activeMenuId}
       title="Scan Pickup Produk"
       onLogout={signOut}
     >

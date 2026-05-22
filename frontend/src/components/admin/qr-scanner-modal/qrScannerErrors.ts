@@ -18,6 +18,21 @@ export const mapScannerStartError = ({
   fallbackError,
 }: MapScannerStartErrorParams): { message: string; details: string } => {
   const name = getErrorName(fallbackError) || getErrorName(primaryError);
+  const primaryErrorStr = primaryError instanceof Error ? primaryError.message : String(primaryError);
+  const fallbackErrorStr = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+
+  // Check for Permissions Policy violation (appears in console but not as thrown error)
+  if (
+    primaryErrorStr.includes('Permissions policy violation') ||
+    primaryErrorStr.includes('camera is not allowed') ||
+    fallbackErrorStr.includes('Permissions policy violation') ||
+    fallbackErrorStr.includes('camera is not allowed')
+  ) {
+    return {
+      message: 'Izin kamera diblokir oleh browser',
+      details: 'Browser memblokir akses kamera. Buka Settings browser → Privacy → Camera, dan izinkan untuk situs ini. Lalu klik "Coba Lagi".',
+    };
+  }
 
   if (name === 'NotAllowedError') {
     return {
