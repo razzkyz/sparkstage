@@ -267,22 +267,22 @@ export default function CharmBar() {
   }, [filteredProducts.length]);
 
   // Get available categories for Charm Bar
-  const availableCategories = useMemo(() => {
-    if (!categories) return [];
+  // const availableCategories = useMemo(() => {
+  //   if (!categories) return [];
     
-    const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
-    return categories.filter((cat) => charmBarSlugs.includes(cat.slug));
-  }, [categories]);
+  //   const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
+  //   return categories.filter((cat) => charmBarSlugs.includes(cat.slug));
+  // }, [categories]);
 
-  const activeSubcategories = useMemo(() => {
-    if (!activeCategory || activeCategory === 'all' || !categoryIndex) return [];
-    return categoryIndex.childCategoriesByParentSlug.get(activeCategory) || [];
-  }, [activeCategory, categoryIndex]);
+  // const activeSubcategories = useMemo(() => {
+  //   if (!activeCategory || activeCategory === 'all' || !categoryIndex) return [];
+  //   return categoryIndex.childCategoriesByParentSlug.get(activeCategory) || [];
+  // }, [activeCategory, categoryIndex]);
 
-  const activeSubSubcategories = useMemo(() => {
-    if (!activeSubcategory || activeSubcategory === 'all' || !categoryIndex) return [];
-    return categoryIndex.childCategoriesByParentSlug.get(activeSubcategory) || [];
-  }, [activeSubcategory, categoryIndex]);
+  // const activeSubSubcategories = useMemo(() => {
+  //   if (!activeSubcategory || activeSubcategory === 'all' || !categoryIndex) return [];
+  //   return categoryIndex.childCategoriesByParentSlug.get(activeSubcategory) || [];
+  // }, [activeSubcategory, categoryIndex]);
 
   const handleAddToCart = (product: Product) => {
     if (!user) {
@@ -318,15 +318,15 @@ export default function CharmBar() {
     });
   };
 
-  const scrollToCategory = (index: number) => {
-    const container = document.getElementById('category-scroll-container');
-    if (container) {
-      const buttons = container.querySelectorAll('button');
-      if (buttons[index]) {
-        buttons[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      }
-    }
-  };
+  // const scrollToCategory = (index: number) => {
+  //   const container = document.getElementById('category-scroll-container');
+  //   if (container) {
+  //     const buttons = container.querySelectorAll('button');
+  //     if (buttons[index]) {
+  //       buttons[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  //     }
+  //   }
+  // };
 
   if (loading) {
     return <AppLoadingScreen />;
@@ -351,8 +351,35 @@ export default function CharmBar() {
         </div> */}
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+
+<div className="relative w-full max-w-md mx-auto mb-2 px-2">
+                <div className="relative mb-3">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      updateFilters({ q: e.target.value });
+                    }}
+                    placeholder="Search Charm Bar products..."
+                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
+                  />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateFilters({ q: null });
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
           {/* Category Image Grid */}
-          <div className="mb-12">
+          <div className="mb-5">
             <div className="relative">
               <button
                 type="button"
@@ -429,33 +456,11 @@ export default function CharmBar() {
               </button>
             </div>
           </div>
-          <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
+          
+              
+          
+          {/* <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
             <div className="flex flex-col space-y-4">
-              <div className="relative w-full max-w-md mx-auto mb-2 px-2">
-                <div className="relative mb-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      updateFilters({ q: e.target.value });
-                    }}
-                    placeholder="Search Charm Bar products..."
-                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
-                  />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  {searchQuery ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({ q: null });
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
 
               <div className="relative">
                 <div className="flex items-center">
@@ -606,7 +611,7 @@ export default function CharmBar() {
                 </div>
               ) : null}
             </div>
-          </div>
+          </div> */}
 
           {productsError ? (
             <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
