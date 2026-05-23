@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS } from '../../constants/adminMenu';
@@ -131,6 +132,13 @@ const CashierDashboard = () => {
             <span className="material-symbols-outlined text-sm text-green-700">download</span>
             <span className="text-green-700">{isExporting ? 'Unduh...' : 'Export CSV'}</span>
           </button>
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm text-gray-700">home</span>
+            Halaman Utama
+          </Link>
           <button
             onClick={signOut}
             className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors"

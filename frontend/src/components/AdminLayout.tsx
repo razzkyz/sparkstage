@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserDisplayName } from '../utils/auth';
 
@@ -219,7 +219,21 @@ const AdminLayout = ({
           </nav>
         </div>
 
-        <div className="mt-auto pt-6 border-t border-gray-200">
+        <div className="mt-auto pt-4 border-t border-gray-200 flex flex-col gap-1">
+          <Link
+            to="/"
+            className="flex w-full items-center gap-3 rounded-lg p-2 hover:bg-gray-50 transition-colors text-left group min-w-0"
+          >
+            <div className="h-8 w-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-base text-gray-600">home</span>
+            </div>
+            <div className="flex-1 overflow-hidden min-w-0">
+              <p className="truncate text-sm font-bold text-gray-700 group-hover:text-gray-900">Halaman Utama</p>
+              <p className="truncate text-xs text-gray-400">Kembali ke On Stage</p>
+            </div>
+            <span className="material-symbols-outlined text-gray-400 group-hover:text-gray-900 flex-shrink-0 text-base">arrow_forward</span>
+          </Link>
+
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}

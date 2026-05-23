@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
@@ -44,13 +45,22 @@ const Dashboard = () => {
             <p className="text-sm text-gray-500 truncate">Panel Admin Spark</p>
           </div>
         </div>
-        <button
-          onClick={signOut}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors w-full sm:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined text-sm text-gray-700">logout</span>
-          Keluar
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm text-gray-700">home</span>
+            Halaman Utama
+          </Link>
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold hover:bg-gray-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm text-gray-700">logout</span>
+            Keluar
+          </button>
+        </div>
       </div>
 
       <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
