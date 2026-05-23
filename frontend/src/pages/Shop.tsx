@@ -19,6 +19,7 @@ import { queryKeys } from '../lib/queryKeys';
 import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
 import { filterShopProducts } from './shop/filterShopProducts';
 import { useShopFilters } from './shop/useShopFilters';
+import { CHARM_BAR_CATEGORY_SLUGS } from './shop/charmBarSlugs';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import { buildImageKitThumbUrl } from '../lib/imagekit';
 
@@ -209,10 +210,15 @@ const Shop = () => {
     [categories]
   );
 
+  const nonCharmBarProducts = useMemo(
+    () => products.filter((p) => !p.categorySlug || !CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug)),
+    [products]
+  );
+
   const filteredProducts = useMemo(
     () =>
       filterShopProducts({
-        products,
+        products: nonCharmBarProducts,
         activeCategory,
         activeSubcategory,
         activeSubSubcategory,
@@ -220,7 +226,7 @@ const Shop = () => {
         allowedSlugMap,
         bestSellerIds: charmBarSettings?.best_seller_charms || [],
       }),
-    [products, activeCategory, activeSubcategory, activeSubSubcategory, deferredSearchQuery, allowedSlugMap, charmBarSettings]
+    [nonCharmBarProducts, activeCategory, activeSubcategory, activeSubSubcategory, deferredSearchQuery, allowedSlugMap, charmBarSettings]
   );
 
   const activeSubcategories = useMemo(() => {
