@@ -16,7 +16,8 @@ export const isSafari = (): boolean => {
 };
 
 export const calculateResponsiveQrBox = (containerSize: number): { width: number; height: number } => {
-  const sizeFactor = isIOS() ? 0.6 : 0.7;
-  const size = Math.min(Math.floor(containerSize * sizeFactor), 250);
+  // Use a larger size factor, effectively taking up almost the entire container
+  const sizeFactor = isIOS() ? 0.85 : 0.95;
+  const size = Math.floor(containerSize * sizeFactor);
   return { width: size, height: size };
 };

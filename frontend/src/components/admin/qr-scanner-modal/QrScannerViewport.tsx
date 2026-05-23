@@ -24,7 +24,7 @@ export function QrScannerViewport({
   description,
 }: QrScannerViewportProps) {
   return (
-    <div className="relative mb-6 min-h-[60vh] md:min-h-[70vh] lg:min-h-[75vh] overflow-hidden rounded-2xl bg-gray-100 shadow-md">
+    <div className="relative mb-6 h-[80vh]  overflow-hidden rounded-2xl bg-gray-100 shadow-md">
       <div id={readerId} className="h-full w-full" />
 
       {status === 'starting' ? (
@@ -35,9 +35,9 @@ export function QrScannerViewport({
       ) : null}
 
       {status === 'scanning' ? (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-sm">
-          <p className="flex items-center gap-2 text-xs font-medium text-white">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
+          <p className="flex items-center gap-1.5 text-[11px] font-medium text-white whitespace-nowrap">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
             Arahkan ke QR Code
           </p>
         </div>

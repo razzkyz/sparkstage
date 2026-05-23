@@ -90,7 +90,7 @@ export function useQrScannerController({
     [autoResumeAfterMs]
   );
 
-  const clearReaderDom = useCallback(() => {
+  const forceStopMediaTracks = useCallback(() => {
     try {
       const readerElement = document.getElementById(readerId);
       if (!readerElement) return;
@@ -99,19 +99,36 @@ export function useQrScannerController({
       videos.forEach((video) => {
         const stream = video.srcObject as MediaStream | null;
         if (stream) {
-          stream.getTracks().forEach((track) => track.stop());
+          stream.getTracks().forEach((track) => {
+            track.stop();
+            track.enabled = false;
+          });
         }
         video.srcObject = null;
       });
-      readerElement.innerHTML = '';
+    } catch (error) {
+      console.warn('[QRScanner] Error stopping media tracks:', error);
+    }
+  }, [readerId]);
+
+  const clearReaderDom = useCallback(() => {
+    try {
+      forceStopMediaTracks();
+      const readerElement = document.getElementById(readerId);
+      if (readerElement) {
+        readerElement.innerHTML = '';
+      }
     } catch (error) {
       console.warn('[QRScanner] Error cleaning up DOM:', error);
     }
-  }, [readerId]);
+  }, [readerId, forceStopMediaTracks]);
 
   const stopScanner = useCallback(async () => {
     const qr = qrRef.current;
     if (!qr) return;
+
+    // Force stop tracks BEFORE calling qr.stop() which might remove the video element
+    forceStopMediaTracks();
 
     try {
       if (qr.getState() === 2) {
@@ -129,7 +146,7 @@ export function useQrScannerController({
 
     clearReaderDom();
     qrRef.current = null;
-  }, [clearReaderDom]);
+  }, [forceStopMediaTracks, clearReaderDom]);
 
   const handleClose = useCallback(() => {
     if (closingRef.current) return;
