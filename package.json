@@ -35,7 +35,13 @@
     "supabase:secrets:list": "supabase secrets list",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status"
+    "supabase:status": "supabase status",
+    "data:identify-dummy": "node --loader tsx scripts/identify-dummy-data.ts",
+    "data:validate-production": "node --loader tsx scripts/validate-production-data.ts",
+    "data:cleanup-dummy": "node --loader tsx scripts/cleanup-dummy-data.ts",
+    "data:cleanup-dummy:confirm": "node --loader tsx scripts/cleanup-dummy-data.ts --confirm",
+    "data:sync-dummy-to-production": "node --loader tsx scripts/sync-dummy-to-production.ts",
+    "data:sync-dummy-to-production:confirm": "node --loader tsx scripts/sync-dummy-to-production.ts --sync"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
