@@ -189,8 +189,12 @@ export default function SalesReport() {
   const menuSections = useAdminMenuSections();
   const queryEnabled = !!session && isAdmin;
 
-  const today = new Date().toISOString().split('T')[0];
-  const firstOfMonth = today.slice(0, 8) + '01';
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
+  const firstOfMonth = `${year}-${month}-01`;
 
   const [from, setFrom] = useState(firstOfMonth);
   const [to,   setTo]   = useState(today);
@@ -212,8 +216,8 @@ export default function SalesReport() {
      queryError.message.includes('400'));
 
   // ── Client-side date filter ───────────────────────────────────────────
-  const fromMs = from ? new Date(from + 'T00:00:00').getTime() : 0;
-  const toMs   = to   ? new Date(to   + 'T23:59:59').getTime() : Infinity;
+  const fromMs = from ? new Date(`${from}T00:00:00`).getTime() : 0;
+  const toMs   = to   ? new Date(`${to}T23:59:59.999`).getTime() : Infinity;
 
   const filteredTickets = useMemo(() =>
     tickets.filter(t => {

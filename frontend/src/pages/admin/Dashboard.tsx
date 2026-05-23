@@ -5,6 +5,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
+import { useAdminLoyaltyPoints } from '../../hooks/useReferralCode';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { showToast } = useToast();
   const { data: stats, error, isLoading } = useDashboardStats();
+  const { customers, isLoading: isCustomersLoading } = useAdminLoyaltyPoints();
   const menuSections = useAdminMenuSections();
 
   useEffect(() => {
@@ -64,7 +66,27 @@ const Dashboard = () => {
       </div>
 
       <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {isCustomersLoading
+            ? Array.from({ length: 2 }).map((_, index) => <DashboardStatSkeleton key={`customer-${index}`} />)
+            : [
+              { label: 'Total Pelanggan Terdaftar', value: customers.length.toLocaleString() },
+              { label: 'Total Poin Loyalty', value: customers.reduce((acc, curr) => acc + (curr.total_points || 0), 0).toLocaleString() },
+            ].map((item, index) => (
+              <m.div
+                key={item.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+              >
+                <p className="text-sm text-gray-500 mb-1 font-semibold">{item.label}</p>
+                <p className="text-3xl font-black text-indigo-600">{item.value}</p>
+              </m.div>
+            ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {isLoading
             ? Array.from({ length: 4 }).map((_, index) => <DashboardStatSkeleton key={`ticket-${index}`} />)
             : [
