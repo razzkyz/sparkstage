@@ -84,10 +84,10 @@ export function getPickupStatusLabel(pickupStatus: string | null) {
 }
 
 export function getOrderTimingLabel(order: OrderSummaryRow) {
-  if (order.pickup_status === 'completed' && order.updated_at) {
+  if (order.pickup_status === 'completed' && (order.verified_at || order.updated_at)) {
     return {
       prefix: 'Terverifikasi:',
-      value: formatDateTimeWIB(order.updated_at),
+      value: formatDateTimeWIB(order.verified_at || order.updated_at || ''),
     };
   }
 

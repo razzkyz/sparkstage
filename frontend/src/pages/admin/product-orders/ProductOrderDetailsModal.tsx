@@ -56,10 +56,10 @@ export function ProductOrderDetailsModal({
                   <p className="font-medium text-gray-900">{formatDateTimeWIB(details.order.created_at)}</p>
                 </div>
               )}
-              {details.order.updated_at && details.order.pickup_status === 'completed' && (
+              {details.order.verified_at && details.order.pickup_status === 'completed' && (
                 <div>
                   <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Verifikasi</p>
-                  <p className="font-medium text-gray-900 text-green-700">{formatDateTimeWIB(details.order.updated_at)}</p>
+                  <p className="font-medium text-gray-900">{formatDateTimeWIB(details.order.verified_at)}</p>
                 </div>
               )}
             </div>
