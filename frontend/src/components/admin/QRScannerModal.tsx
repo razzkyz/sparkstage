@@ -53,7 +53,9 @@ export default function QRScannerModal(props: QrScannerModalProps) {
           onSubmit={(event) => void controller.handleManualSubmit(event)}
         />
 
-        <div className="mt-4 flex gap-2">
+
+        {/* button close modal scan dinonaktifkan */}
+        {/* <div className="flex">
           <button
             type="button"
             onClick={controller.handleClose}
@@ -61,7 +63,7 @@ export default function QRScannerModal(props: QrScannerModalProps) {
           >
             Tutup
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

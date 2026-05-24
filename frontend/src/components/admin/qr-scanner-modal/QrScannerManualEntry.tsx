@@ -18,14 +18,14 @@ export function QrScannerManualEntry({
   return (
     <div className="border-t border-gray-100 pt-4">
       <p className="mb-3 text-center text-xs text-gray-500">📝 Kamera bermasalah? Input kode manual:</p>
-      <form onSubmit={onSubmit} className="flex gap-2">
+      <form onSubmit={onSubmit} className="flex flex-col">
         <input
           type="text"
           value={manualCode}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Contoh: TKT-ABC-123"
           disabled={manualSubmitting || processing}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-mono uppercase text-neutral-900 outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 placeholder:text-gray-400"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm font-mono uppercase text-neutral-900 outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 placeholder:text-gray-400"
         />
         <button
           type="submit"
