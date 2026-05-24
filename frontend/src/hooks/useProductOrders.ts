@@ -48,11 +48,12 @@ export function useProductOrders() {
       try {
         const [ordersResult, completedResult, pendingPickupResult, pendingPaymentResult] = await Promise.all([
           // Active orders (pending payment, pending pickup, today's paid) - limit to 100 for performance
+          // Exclude completed orders - they are fetched separately
           supabase
             .from('order_products')
             .select('id, order_number, channel, payment_status, status, total, pickup_code, pickup_status, paid_at, updated_at, created_at, profiles(name, email), order_product_items(id, quantity, price, subtotal, product_variants(name, products(name, categories(name))))')
             .abortSignal(timeoutSignal)
-            .or('payment_status.eq.paid,and(payment_status.in.(unpaid,pending),status.eq.awaiting_payment,channel.eq.cashier)')
+            .or('and(payment_status.eq.paid,pickup_status.neq.completed),and(payment_status.in.(unpaid,pending),status.eq.awaiting_payment,channel.eq.cashier)')
             .order('paid_at', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(100),
