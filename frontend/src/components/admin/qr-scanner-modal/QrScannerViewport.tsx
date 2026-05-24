@@ -24,7 +24,7 @@ export function QrScannerViewport({
   description,
 }: QrScannerViewportProps) {
   return (
-    <div className="relative mb-6 max-h-[80vh] w-full md:h-[75vh] overflow-hidden rounded-2xl bg-black shadow-md">
+    <div className="relative mb-6 max-h-[80vh] w-full h-auto md:h-[75vh] overflow-hidden rounded-2xl bg-black shadow-md">
       <div id={readerId} className="h-full w-full object-cover [&>video]:object-cover" />
 
       {status === 'starting' ? (
