@@ -252,3 +252,62 @@ export function useAdminLoyaltyPoints() {
     deductPoints,
   }
 }
+
+export interface CustomerStats {
+  totalCustomers: number
+  emailRegistered: number
+  googleOAuth: number
+  withLoyaltyPoints: number
+}
+
+/**
+ * Hook to get accurate customer registration statistics
+ * Counts all registered users from auth.users table
+ */
+export function useTotalCustomerCount() {
+  const { data: stats, isLoading, error } = useQuery<CustomerStats>({
+    queryKey: ['total-customer-count'],
+    queryFn: async () => {
+      try {
+        // Get total customer count from the accurate RPC function
+        const { data: countData, error: countError } = await supabase.rpc(
+          'get_customer_registration_stats'
+        )
+
+        if (countError) throw countError
+
+        if (!countData || countData.length === 0) {
+          return {
+            totalCustomers: 0,
+            emailRegistered: 0,
+            googleOAuth: 0,
+            withLoyaltyPoints: 0,
+          }
+        }
+
+        const result = countData[0]
+        return {
+          totalCustomers: Number(result.total_customers) || 0,
+          emailRegistered: Number(result.email_registered) || 0,
+          googleOAuth: Number(result.google_oauth) || 0,
+          withLoyaltyPoints: Number(result.with_loyalty_points) || 0,
+        }
+      } catch (error) {
+        console.error('Error fetching customer statistics:', error)
+        return {
+          totalCustomers: 0,
+          emailRegistered: 0,
+          googleOAuth: 0,
+          withLoyaltyPoints: 0,
+        }
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  return {
+    stats: stats || { totalCustomers: 0, emailRegistered: 0, googleOAuth: 0, withLoyaltyPoints: 0 },
+    isLoading,
+    error,
+  }
+}

@@ -3,7 +3,7 @@ import AdminLayout from '@/components/AdminLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
 import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
-import { useAdminLoyaltyPoints } from '@/hooks/useReferralCode'
+import { useAdminLoyaltyPoints, useTotalCustomerCount } from '@/hooks/useReferralCode'
 import { Plus, Minus, AlertCircle, CheckCircle, Search, Trophy, Users, Gift } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -29,6 +29,7 @@ export function AdminPointsManager() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const { customers, isLoading, awardPoints, deductPoints } = useAdminLoyaltyPoints()
+  const { stats: customerStats } = useTotalCustomerCount()
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => c.email.toLowerCase().includes(searchEmail.toLowerCase()))
@@ -53,11 +54,11 @@ export function AdminPointsManager() {
     const totalPoints = customers.reduce((acc, curr) => acc + (curr.total_points || 0), 0)
     const activeTiers = customers.filter(c => c.tier_level > 0).length
     return {
-      totalCustomers: customers.length,
+      totalCustomers: customerStats.totalCustomers,
       totalPoints,
       activeTiers
     }
-  }, [customers])
+  }, [customers, customerStats.totalCustomers])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -5,7 +5,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
-import { useAdminLoyaltyPoints } from '../../hooks/useReferralCode';
+import { useAdminLoyaltyPoints, useTotalCustomerCount } from '../../hooks/useReferralCode';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
@@ -14,7 +14,8 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { showToast } = useToast();
   const { data: stats, error, isLoading } = useDashboardStats();
-  const { customers, isLoading: isCustomersLoading } = useAdminLoyaltyPoints();
+  const { customers } = useAdminLoyaltyPoints();
+  const { stats: customerStats, isLoading: isCustomerStatsLoading } = useTotalCustomerCount();
   const menuSections = useAdminMenuSections();
 
   useEffect(() => {
@@ -67,10 +68,10 @@ const Dashboard = () => {
 
       <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {isCustomersLoading
+          {isCustomerStatsLoading
             ? Array.from({ length: 2 }).map((_, index) => <DashboardStatSkeleton key={`customer-${index}`} />)
             : [
-              { label: 'Total Pelanggan Terdaftar', value: customers.length.toLocaleString() },
+              { label: 'Total Pelanggan Terdaftar', value: customerStats.totalCustomers.toLocaleString() },
               { label: 'Total Poin Loyalty', value: customers.reduce((acc, curr) => acc + (curr.total_points || 0), 0).toLocaleString() },
             ].map((item, index) => (
               <m.div
