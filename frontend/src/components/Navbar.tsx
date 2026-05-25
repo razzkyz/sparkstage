@@ -67,7 +67,7 @@ const Navbar = () => {
     { key: 'on-stage', label: 'ON STAGE', to: '/on-stage' },
     { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
     // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
-    { key: 'shop', label: 'SHOP', to: '/shop' },
+    { key: 'shop', label: 'SHOP', to: '/beauty' },
     { key: 'event', label: 'EVENT', to: '/events' },
     { key: 'news', label: 'NEWS', to: '/news' },
   ];
