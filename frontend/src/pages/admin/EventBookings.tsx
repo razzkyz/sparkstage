@@ -55,6 +55,7 @@ export default function EventBookings() {
         const { data, error } = await supabase
           .from('purchased_tickets')
           .select('*')
+          .eq('status', 'used')
           .order('created_at', { ascending: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
 

@@ -30,7 +30,7 @@ export function useDashboardStats() {
         paidOrders,
         processingOrders,
       ] = await Promise.all([
-        supabase.from('purchased_tickets').select('*', { count: 'exact', head: true }).abortSignal(signal),
+        supabase.from('purchased_tickets').select('*', { count: 'exact', head: true }).abortSignal(signal).eq('status', 'used'),
         supabase.from('purchased_tickets').select('*', { count: 'exact', head: true }).abortSignal(signal).eq('status', 'used'),
         supabase.from('purchased_tickets').select('*', { count: 'exact', head: true }).abortSignal(signal).not('redeemed_merchandise_at', 'is', null),
         supabase.from('orders').select('*', { count: 'exact', head: true }).abortSignal(signal),
