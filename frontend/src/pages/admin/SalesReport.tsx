@@ -100,6 +100,7 @@ function useTicketSales(enabled: boolean) {
         const { data, error } = await supabase
           .from('purchased_tickets')
           .select('id, ticket_code, valid_date, time_slot, status, created_at, used_at, tickets(name)')
+          .eq('status', 'used')
           .order('created_at', { ascending: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
         if (error) throw error;
@@ -150,9 +151,10 @@ function usePrintSales(enabled: boolean) {
       // First check: get count of ALL rows
       const { count, error: countError } = await supabase
         .from('print_orders')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'paid');
       
-      console.log('print_orders total rows in DB:', count);
+      console.log('print_orders total rows in DB (status=paid):', count);
       if (countError) console.error('Count error:', countError);
 
       let allData: any[] = [];
@@ -162,7 +164,8 @@ function usePrintSales(enabled: boolean) {
         const { data, error } = await supabase
           .from('print_orders')
           .select('id, doku_order_id, amount, status, paid_at, created_at, customer_name, customer_email, queue_number')
-          .order('created_at', { ascending: false, nullsFirst: false })
+          .eq('status', 'paid')
+          .order('paid_at', { ascending: false, nullsFirst: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
         
         if (error) {
@@ -216,8 +219,17 @@ export default function SalesReport() {
      queryError.message.includes('400'));
 
   // ── Client-side date filter ───────────────────────────────────────────
-  const fromMs = from ? new Date(`${from}T00:00:00`).getTime() : 0;
-  const toMs   = to   ? new Date(`${to}T23:59:59.999`).getTime() : Infinity;
+  // Convert date strings to UTC timestamps for consistent filtering
+  const getUTCTimestamp = (dateStr: string, isEnd: boolean = false): number => {
+    if (!dateStr) return isEnd ? Infinity : 0;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    // Create UTC date
+    const date = new Date(Date.UTC(year, month - 1, day, isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0));
+    return date.getTime();
+  };
+  
+  const fromMs = getUTCTimestamp(from, false);
+  const toMs   = getUTCTimestamp(to, true);
 
   const filteredTickets = useMemo(() =>
     tickets.filter(t => {
@@ -229,6 +241,7 @@ export default function SalesReport() {
 
   const filteredProducts = useMemo(() =>
     products.filter(o => {
+      // Use paid_at for date filtering (when money was actually received)
       const dateStr = o.paid_at || o.created_at;
       if (!dateStr) return false;
       const ms = new Date(dateStr).getTime();
@@ -241,6 +254,7 @@ export default function SalesReport() {
 
   const filteredPrints = useMemo(() =>
     prints.filter(p => {
+      // Use paid_at for date filtering (when payment was confirmed) - must match DOKU date
       const dateStr = p.paid_at || p.created_at;
       if (!dateStr) return false;
       const ms = new Date(dateStr).getTime();
@@ -299,30 +313,36 @@ export default function SalesReport() {
 
   // ── Summaries ────────────────────────────────────────────────────────────
   const ticketStats = useMemo(() => {
-    const paid = filteredTickets.length;  // already filtered by status='used' above
+    const paid = filteredTickets.length;
     const revenue = paid * TICKET_PRICE;
+    console.log(`[SalesReport] Tickets - Count: ${paid}, Revenue: ${revenue}`);
     return { paid, revenue, used: paid };
   }, [filteredTickets]);
+  
   // Reset pages when filters change
   useMemo(() => {
     setTicketPage(1);
     setProductPage(1);
     setPrintPage(1);
   }, [from, to]);
+  
   const productStats = useMemo(() => {
     const productOrders = filteredProducts.length;
     const productRevenue = filteredProducts.reduce((s, o) => s + (o.total || 0), 0);
     const items = filteredProducts.reduce((s, o) => s + o.order_product_items.reduce((ss, i) => ss + i.quantity, 0), 0);
+    console.log(`[SalesReport] Products - Count: ${productOrders}, Revenue: ${productRevenue}, Items: ${items}`);
     return { orders: productOrders, revenue: productRevenue, items };
   }, [filteredProducts]);
 
   const printStats = useMemo(() => {
     const orders = filteredPrints.length;
     const revenue = filteredPrints.reduce((s, p) => s + (p.amount || 0), 0);
+    console.log(`[SalesReport] Prints - Count: ${orders}, Revenue: ${revenue}`);
     return { orders, revenue };
   }, [filteredPrints]);
 
   const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue;
+  console.log(`[SalesReport] TOTAL REVENUE: ${totalRevenue} (Tickets: ${ticketStats.revenue} + Products: ${productStats.revenue} + Prints: ${printStats.revenue})`);
 
   // ── CSV Exports ──────────────────────────────────────────────────────────
   function exportTicketsCSV() {
