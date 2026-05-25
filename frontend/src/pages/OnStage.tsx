@@ -341,8 +341,10 @@ const OnStage = () => {
       )}
 
       {/* Info Section with Links */}
+      {/* Dinonaktifkan sementara */}
       <section className="w-full bg-gradient-to-b from-gray-50 to-white py-16 md:py-24 px-4 sm:px-6 md:px-8">
         <div className="max-w-6xl mx-auto">
+
           {/* Section Header */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4">
@@ -370,9 +372,9 @@ const OnStage = () => {
           </div>
 
           {/* Links Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"> */}
             {/* Booking Card */}
-            <Link
+            {/* <Link
               to="/booking"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-main-600 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -389,10 +391,10 @@ const OnStage = () => {
                   Pesan Sekarang →
                 </span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Glam/Dressing Room Card */}
-            <Link
+            {/* <Link
               to="/dressing-room"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-pink-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -409,10 +411,10 @@ const OnStage = () => {
                   Lihat Koleksi →
                 </span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* CharmBar Card */}
-            <Link
+            {/* <Link
               to="/charmbar"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-purple-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -429,10 +431,10 @@ const OnStage = () => {
                   Jelajahi Charm →
                 </span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Shop Card */}
-            <Link
+            {/* <Link
               to="/shop"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-orange-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -449,10 +451,10 @@ const OnStage = () => {
                   Belanja Sekarang →
                 </span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Events Card */}
-            <Link
+            {/* <Link
               to="/events"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-red-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -469,10 +471,10 @@ const OnStage = () => {
                   Lihat Event →
                 </span>
               </div>
-            </Link>
+            </Link> */}
 
             {/* News Card */}
-            <Link
+            {/* <Link
               to="/news"
               className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-blue-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
             >
@@ -489,8 +491,8 @@ const OnStage = () => {
                   Baca Berita →
                 </span>
               </div>
-            </Link>
-          </div>
+            </Link> */}
+          {/* </div> */}
         </div>
       </section>
     </div>
