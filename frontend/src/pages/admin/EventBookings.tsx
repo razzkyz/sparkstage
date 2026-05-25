@@ -229,7 +229,7 @@ export default function EventBookings() {
             <p className="text-sm text-gray-600 mt-1">Kelola pesanan tiket event</p>
           </div>
           <button
-            onClick={fetchBookings}
+            onClick={() => fetchBookings()}
             className="flex items-center gap-2 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors"
           >
             <span className="material-symbols-outlined text-sm">refresh</span>
