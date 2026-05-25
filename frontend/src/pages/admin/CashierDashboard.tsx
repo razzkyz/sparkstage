@@ -158,7 +158,7 @@ const CashierDashboard = () => {
               ? Array.from({ length: 3 }).map((_, index) => <DashboardStatSkeleton key={`today-${index}`} />)
               : [
                 {
-                  label: '🎫 Tiket Terjual',
+                  label: '🎫 Tiket Terpakai',
                   value: stats?.ticketSalesToday ?? 0,
                   subtext: `Rp ${formatCurrency(stats?.ticketRevenueToday ?? 0)}`,
                   color: 'bg-blue-50 border-blue-200',
@@ -202,7 +202,7 @@ const CashierDashboard = () => {
               ? Array.from({ length: 3 }).map((_, index) => <DashboardStatSkeleton key={`month-${index}`} />)
               : [
                 {
-                  label: '🎫 Tiket Terjual',
+                  label: '🎫 Tiket Terpakai',
                   value: stats?.ticketSalesMonth ?? 0,
                   subtext: `Rp ${formatCurrency(stats?.ticketRevenueMonth ?? 0)}`,
                   color: 'bg-blue-50 border-blue-200',

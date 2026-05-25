@@ -91,7 +91,7 @@ const Dashboard = () => {
           {isLoading
             ? Array.from({ length: 4 }).map((_, index) => <DashboardStatSkeleton key={`ticket-${index}`} />)
             : [
-              { label: 'Total tiket terjual', value: stats?.totalPurchasedTickets ?? 0 },
+              { label: 'Total tiket terpakai', value: stats?.totalPurchasedTickets ?? 0 },
               { label: 'Total sudah masuk', value: stats?.totalEntered ?? 0 },
               { label: 'Total tidak datang', value: stats?.totalNoShow ?? 0 },
               { label: 'Total sudah tukar hadiah', value: stats?.totalGiftsExchanged ?? 0 },
@@ -159,7 +159,7 @@ const Dashboard = () => {
       {/* Charts Section */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h3 className="text-lg font-black text-gray-900">Grafik Tiket Terjual</h3>
+          <h3 className="text-lg font-black text-gray-900">Grafik Tiket Terpakai</h3>
           <div className="relative w-full sm:w-auto">
             <select className="appearance-none bg-white border border-gray-200 rounded px-3 py-2 pr-8 text-sm text-gray-900 focus:outline-none focus:border-main-500 w-full sm:w-auto">
               <option>Tahun ini</option>

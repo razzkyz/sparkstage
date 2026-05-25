@@ -32,6 +32,7 @@ export default function EventBookings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [timeSlotFilter, setTimeSlotFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [rescheduleBooking, setRescheduleBooking] = useState<PurchasedTicket | null>(null);
@@ -55,7 +56,6 @@ export default function EventBookings() {
         const { data, error } = await supabase
           .from('purchased_tickets')
           .select('*')
-          .eq('status', 'used')
           .order('created_at', { ascending: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -113,13 +113,15 @@ export default function EventBookings() {
     
     const matchesTimeSlot = !timeSlotFilter || booking.time_slot === timeSlotFilter;
     
-    return matchesSearch && matchesDate && matchesTimeSlot;
+    const matchesStatus = !statusFilter || booking.status === statusFilter;
+    
+    return matchesSearch && matchesDate && matchesTimeSlot && matchesStatus;
   });
 
   // Reset ke halaman 1 ketika filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, dateFilter, timeSlotFilter]);
+  }, [searchQuery, dateFilter, timeSlotFilter, statusFilter]);
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -250,6 +252,7 @@ export default function EventBookings() {
               {searchQuery && <span> (pencarian: "{searchQuery}")</span>}
               {dateFilter && <span> (tanggal: {dateFilter})</span>}
               {timeSlotFilter && <span> (sesi: {timeSlotFilter})</span>}
+              {statusFilter && <span> (status: {statusFilter})</span>}
             </p>
           </div>
         )}
@@ -280,11 +283,23 @@ export default function EventBookings() {
             <option value="15:00:00">15:00</option>
             <option value="18:00:00">18:00</option>
           </select>
-          {(dateFilter || timeSlotFilter) && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+          >
+            <option value="">Semua Status</option>
+            <option value="active">Active</option>
+            <option value="used">Used</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="expired">Expired</option>
+          </select>
+          {(dateFilter || timeSlotFilter || statusFilter) && (
             <button
               onClick={() => {
                 setDateFilter('');
                 setTimeSlotFilter('');
+                setStatusFilter('');
               }}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
