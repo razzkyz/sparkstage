@@ -3,7 +3,7 @@ import {
   addDays,
   createWIBDate,
   getMinutesUntilSessionEnd,
-  isTimeSlotBookable,
+  isSessionGroupEnded,
   nowWIB,
   toLocalDateString,
   todayWIB,
@@ -248,15 +248,14 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
       return matchesDate && hasCapacity && hasTimeSlot;
     });
 
-    console.log(`[BookingPage] Available slots for ${dateString} at ${currentTime.toISOString()}:`, filtered.length);
+    console.log(`[BookingPage] Available slots for ${dateString}:`, filtered.length);
 
     return filtered.map((avail) => {
-      // Always use real-time nowWIB() to accurately detect session end
-      const isPast = isToday && avail.time_slot ? !isTimeSlotBookable(dateString, avail.time_slot, nowWIB()) : false;
-
-      if (isPast) {
-        console.log(`[BookingPage] Marking slot ${avail.time_slot} as past/disabled: session has ended`);
-      }
+      // Use session GROUP end time (14:30, 17:30, etc.) so all slots within
+      // the same sesi expire at the same boundary — not per-slot start+150min.
+      const isPast = isToday && avail.time_slot
+        ? isSessionGroupEnded(dateString, avail.time_slot, nowWIB())
+        : false;
 
       return {
         time: avail.time_slot as string,
@@ -270,7 +269,8 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
     if (!selectedDate) return null;
 
     const dateString = toLocalDateString(selectedDate);
-    const isToday = selectedDate.toDateString() === todayWIB().toDateString();
+    const todayString = toLocalDateString(todayWIB());
+    const isToday = dateString === todayString;
 
     if (!isToday) return null;
 

@@ -45,8 +45,17 @@ export default function EventBookings() {
     fetchBookings();
   }, []);
 
-  const fetchBookings = async () => {
-    setLoading(true);
+  // Auto-refresh effect (every 10 seconds, silent)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchBookings(true); // silent refresh
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchBookings = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       let allData: PurchasedTicket[] = [];
       let page = 0;
@@ -69,7 +78,7 @@ export default function EventBookings() {
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

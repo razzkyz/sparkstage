@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
@@ -206,9 +206,22 @@ export default function SalesReport() {
   const [productPage, setProductPage] = useState(1);
   const [printPage, setPrintPage] = useState(1);
 
-  const { data: tickets  = [], isLoading: ticketsLoading,  error: ticketsError  } = useTicketSales(queryEnabled);
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useProductSales(queryEnabled);
-  const { data: prints   = [], isLoading: printsLoading,   error: printsError   } = usePrintSales(queryEnabled);
+  const { data: tickets  = [], isLoading: ticketsLoading,  error: ticketsError, refetch: refetchTickets } = useTicketSales(queryEnabled);
+  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProductSales(queryEnabled);
+  const { data: prints   = [], isLoading: printsLoading,   error: printsError, refetch: refetchPrints } = usePrintSales(queryEnabled);
+
+  // Auto-refresh effect (every 10 seconds, silent)
+  useEffect(() => {
+    if (!queryEnabled) return;
+
+    const interval = setInterval(() => {
+      refetchTickets();
+      refetchProducts();
+      refetchPrints();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [queryEnabled, refetchTickets, refetchProducts, refetchPrints]);
 
   const queryError = ticketsError || productsError || printsError;
   const isAuthError = queryError instanceof Error &&

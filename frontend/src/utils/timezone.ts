@@ -29,9 +29,8 @@ export const WIB_OFFSET_MS = WIB_OFFSET_HOURS * 60 * 60 * 1000;
  * Returns a Date object representing current WIB time
  */
 export function nowWIB(): Date {
-  // Return actual real Date representing this exact moment. 
-  // We no longer shift by +7 hours here, as other functions (toLocalDateString, formatDateTimeWIB) 
-  // correctly handle the offset from a real Date object.
+  // Return actual UTC time (absolute moment)
+  // The timezone conversion happens in other functions when needed
   return new Date();
 }
 
@@ -177,6 +176,51 @@ export function parseTimeSlotToday(timeSlot: string, referenceDate?: Date): Date
  * Updated: January 2026 - Changed from 3 hours to 2.5 hours
  */
 export const SESSION_DURATION_MINUTES = 150; // 2.5 hours
+
+/**
+ * Get the fixed session group end time for a given time slot.
+ * Sessions are grouped by period with a shared hard cutoff:
+ *   - Sesi Pagi    (09:xx – 11:xx) → ends 11:30
+ *   - Sesi Siang   (12:xx – 14:xx) → ends 14:30
+ *   - Sesi Sore    (15:xx – 17:xx) → ends 17:30
+ *   - Sesi Malam   (18:xx – 20:xx) → ends 20:30
+ *
+ * Use this instead of start_time + SESSION_DURATION_MINUTES so that ALL slots
+ * in the same session group expire at the SAME time (the group boundary),
+ * not at their individual start_time + 150 min.
+ *
+ * @param timeSlot - Time in HH:MM:SS or HH:MM format
+ * @returns session group end time string (HH:MM:SS)
+ */
+export function getSessionGroupEndTime(timeSlot: string): string {
+  const hour = parseInt(timeSlot.split(':')[0], 10);
+  if (hour >= 9 && hour < 12) return '11:30:00';
+  if (hour >= 12 && hour < 15) return '14:30:00';
+  if (hour >= 15 && hour < 18) return '17:30:00';
+  if (hour >= 18) return '20:30:00';
+  // Fallback: treat slot as expired if it doesn't map to a known session
+  return '00:00:00';
+}
+
+/**
+ * Check if the session GROUP that a time slot belongs to has ended.
+ * Uses group boundary times (14:30, 17:30, etc.) rather than per-slot duration.
+ *
+ * @param dateString - Date in YYYY-MM-DD format
+ * @param timeSlot   - Time in HH:MM:SS format (session start time)
+ * @param referenceTime - Optional override for current time
+ * @returns true if the session group's cutoff time has passed
+ */
+export function isSessionGroupEnded(
+  dateString: string,
+  timeSlot: string,
+  referenceTime?: Date
+): boolean {
+  const groupEndTimeStr = getSessionGroupEndTime(timeSlot);
+  const groupEndTime = createWIBDate(dateString, groupEndTimeStr);
+  const currentTime = referenceTime ? new Date(referenceTime) : nowWIB();
+  return groupEndTime <= currentTime;
+}
 
 /**
  * Get booking buffer time (current time + buffer minutes) in WIB

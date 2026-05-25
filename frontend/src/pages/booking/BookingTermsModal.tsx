@@ -25,6 +25,8 @@ const TERMS = [
   'Customer diperbolehkan membawa digicam maupun camera profesional untuk kebutuhan photo & video shoot.',
   'Seluruh hasil foto & video didapatkan dalam bentuk soft file. Customer wajib memastikan seluruh file sudah tersimpan sebelum meninggalkan stage. Kehilangan file akibat belum tersimpan bukan menjadi tanggung jawab SPARK STAGE 55.',
   'Tidak diperbolehkan membawa makanan atau minuman dari luar.',
+  'Mengingat acara ini bersifat sharing session (sesi bersama), barcode foto yang akan kamu dapatkan di area retail setelah sesi selesai akan berisi galeri gabungan dari seluruh star yang ada di sesimu (bukan hanya foto individual).',
+  'Pastikan kamu langsung mengunduh foto-fotomu, karena akses tautan pada barcode hanya berlaku maksimal 2 hari setelah sesi berakhir ✨',
 ];
 
 /** Each bullet delay: 70 ms apart, starting after a 180 ms header delay */

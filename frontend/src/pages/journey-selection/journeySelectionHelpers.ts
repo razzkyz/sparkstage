@@ -1,7 +1,7 @@
 import {
   addDays,
   getMinutesUntilSessionEnd,
-  isTimeSlotBookable,
+  isSessionGroupEnded,
   toLocalDateString,
   todayWIB,
 } from '../../utils/timezone';
@@ -75,8 +75,9 @@ export function buildAvailableTimeSlots(params: {
     .map((availability) => ({
       time: availability.time_slot as string,
       available: availability.available_capacity,
+      // Use session GROUP end time so all slots in the same sesi expire together
       isPast: isToday && availability.time_slot
-        ? !isTimeSlotBookable(dateString, availability.time_slot, currentTime)
+        ? isSessionGroupEnded(dateString, availability.time_slot, currentTime)
         : false,
     }));
 }
@@ -103,7 +104,8 @@ export function groupAvailableTimeSlots(slots: AvailableTimeSlot[]): GroupedTime
 export function getMinutesUntilCloseForSlot(selectedDate: Date | null, timeSlot: string) {
   if (!selectedDate) return null;
   const dateString = toLocalDateString(selectedDate);
-  const isToday = selectedDate.toDateString() === todayWIB().toDateString();
+  const todayString = toLocalDateString(todayWIB());
+  const isToday = dateString === todayString;
   if (!isToday) return null;
   return getMinutesUntilSessionEnd(dateString, timeSlot);
 }
