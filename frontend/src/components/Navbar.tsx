@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, ReceiptText, ShoppingCart, Ticket, UserRound, type LucideIcon } from 'lucide-react';
+import { LogOut, Menu, ReceiptText, ShoppingCart, Ticket, UserRound, X, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
 
 type NavItem = {
@@ -36,6 +36,7 @@ const Navbar = () => {
 
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopStarPosition, setDesktopStarPosition] = useState(previousDesktopStarPosition);
   const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
 
@@ -55,10 +56,8 @@ const Navbar = () => {
     if (path === '/') return 'on-stage';
     if (path.startsWith('/on-stage')) return 'on-stage';
     if (path.startsWith('/events')) return 'event';
-    if (path.startsWith('/shop')) return 'shop';
+    if (path.startsWith('/shop') || path.startsWith('/glam') || path.startsWith('/beauty') || path.startsWith('/charm-bar') || path.startsWith('/chamr-bar')) return 'shop';
     if (path.startsWith('/dressing-room') || path.startsWith('/fashion')) return 'dressing-room';
-    if (path.startsWith('/beauty') || path.startsWith('/glam')) return 'glam';
-    if (path.startsWith('/charm-bar') || path.startsWith('/chamr-bar')) return 'charm-bar';
     if (path.startsWith('/news')) return 'news';
     if (path.startsWith('/booking')) return 'booking';
     return '';
@@ -67,11 +66,9 @@ const Navbar = () => {
   const navItems: NavItem[] = [
     { key: 'on-stage', label: 'ON STAGE', to: '/on-stage' },
     { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
-    { key: 'glam', label: 'GLAM', to: '/glam' },
     // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
-    { key: 'charm-bar', label: 'CHARM BAR', to: '/charm-bar' },
-    { key: 'shop', label: 'SPARK CLUB', to: '/shop' },
-    { key: 'event', label: 'CELEBRATE', to: '/events' },
+    { key: 'shop', label: 'SHOP', to: '/shop' },
+    { key: 'event', label: 'EVENT', to: '/events' },
     { key: 'news', label: 'NEWS', to: '/news' },
   ];
 
@@ -181,18 +178,20 @@ const Navbar = () => {
               {/* Language switcher disabled */}
               {/* <LanguageSwitcher /> */}
             </div>
-            {/* Mobile: Stage 55 logo + Language toggle */}
-            <div className="lg:hidden flex items-center gap-2">
-              {/* Language toggle disabled */}
-              {/* <button
+            {/* Mobile/Tablet: Hamburger + Stage 55 logo */}
+            <div className="lg:hidden flex items-center">
+              {/* Hamburger button — triggers left sidebar */}
+              <button
+                id="navbar-hamburger-btn"
                 type="button"
-                onClick={handleMobileLanguageToggle}
-                className="px-3.5 py-2.5 rounded-md border border-gray-300 text-sm font-black uppercase tracking-wider text-gray-800 active:bg-gray-50"
-                aria-label={t('language.switch')}
-                title={`${t('language.switch')}: ${isIndonesian ? 'English' : 'Bahasa Indonesia'}`}
+                aria-label="Buka menu navigasi"
+                aria-expanded={sidebarOpen}
+                aria-controls="mobile-sidebar"
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 -ml-1 rounded-md text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
               >
-                {isIndonesian ? 'ID' : 'EN'}
-              </button> */}
+                <Menu className="h-6 w-6" />
+              </button>
               <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
             </div>
           </div>
@@ -318,7 +317,7 @@ const Navbar = () => {
               </div>
             )}
 
-            <div className="lg:hidden flex items-center gap-2">
+            <div className="lg:hidden flex items-center gap-0.5">
               {!user && (
                 <Link
                   to="/login"
@@ -330,24 +329,41 @@ const Navbar = () => {
                 </Link>
               )}
 
-              {/* Mobile: Points chip next to cart */}
+              {/* Mobile: Ticket icon */}
               {user && (
                 <Link
-                  to="/my-points"
-                  className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
-                  style={{
-                    background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
-                    boxShadow: '0 2px 8px rgba(255,75,134,0.4)',
-                    color: 'white',
-                  }}
+                  to="/my-tickets"
+                  className="relative p-1.5 text-gray-700 active:text-main-600"
+                  aria-label={t('nav.myTickets')}
+                  title={t('nav.myTickets')}
                 >
-                  <span className="text-xs">{loyaltyRank.icon}</span>
-                  <span>{loyaltyPoints.toLocaleString()}</span>
-                  <span className="opacity-70 font-semibold text-[9px]">pts</span>
+                  <Ticket className="h-6 w-6" />
+                  {ticketCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      {ticketCount}
+                    </span>
+                  )}
                 </Link>
               )}
 
-              <Link to="/cart" className="relative p-2 text-gray-700 active:text-main-600" aria-label={t('nav.cart')}>
+              {/* Mobile: Orders icon */}
+              {user && (
+                <Link
+                  to="/my-orders"
+                  className="relative p-1.5 text-gray-700 active:text-main-600"
+                  aria-label={t('nav.myOrders')}
+                  title={t('nav.myOrders')}
+                >
+                  <ReceiptText className="h-6 w-6" />
+                  {orderCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      {orderCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
+              <Link to="/cart" className="relative p-1.5 text-gray-700 active:text-main-600" aria-label={t('nav.cart')}>
                 <ShoppingCart className="h-6 w-6" />
                 {totalQuantity > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
@@ -362,7 +378,7 @@ const Navbar = () => {
       </div>
 
       {/* Main Navigation - Non-sticky */}
-      <nav className="w-full relative z-[100] bg-white border-b border-gray-300">
+      <nav className="hidden lg:block w-full relative z-[100] bg-white border-b border-gray-300">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div 
             ref={mobileNavScrollerRef}
@@ -415,64 +431,141 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="lg:hidden border-t border-gray-200 bg-white">
-          <div className="px-4 sm:px-6 py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex items-center gap-2 w-max min-w-full justify-end">
-            {isAdmin && (
-              <Link
-                to="/admin/dashboard"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white active:scale-95 transition-transform"
-                style={{ background: '#ff4b86' }}
-              >
-                <span className="material-symbols-outlined text-[16px]">dashboard</span>
-                Dashboard
-              </Link>
-            )}
-
-            {user && (
-              <>
-                <Link
-                  to="/my-tickets"
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
-                >
-                  <Ticket className="h-3.5 w-3.5" />
-                  {t('nav.myTickets')}
-                  {ticketCount > 0 && (
-                    <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                      {ticketCount}
-                    </span>
-                  )}
-                </Link>
-
-                <Link
-                  to="/my-orders"
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 active:bg-gray-50"
-                >
-                  <ReceiptText className="h-3.5 w-3.5" />
-                  {t('nav.myOrders')}
-                  {orderCount > 0 && (
-                    <span className="bg-main-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                      {orderCount}
-                    </span>
-                  )}
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleSignOutClick}
-                  disabled={loggingOut}
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-pink-300 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#ff4b86] active:bg-pink-50 disabled:opacity-50"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  {t('auth.signOut')}
-                </button>
-              </>
-            )}
-
-          </div>
-          </div>
-        </div>
       </nav>
+
+      {/* ── Mobile / Tablet Sidebar Drawer ────────────────────────────── */}
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={() => setSidebarOpen(false)}
+        className={`lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] transition-opacity duration-300 ${
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
+      {/* Drawer panel */}
+      <aside
+        id="mobile-sidebar"
+        aria-label="Menu navigasi"
+        className={`lg:hidden fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-[210] flex flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <img src="/images/landing/stage55.png" alt="Stage 55" className="h-9 w-auto object-contain" />
+          <button
+            id="sidebar-close-btn"
+            type="button"
+            aria-label="Tutup menu"
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 overflow-y-auto py-3">
+          {navItems.map((item, idx) => {
+            const isActive = idx === activeIndex;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.key}
+                to={item.to}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-5 py-3.5 text-sm font-bold uppercase tracking-wider transition-colors ${
+                  isActive
+                    ? 'text-[#ff4b86] bg-pink-50 border-r-4 border-[#ff4b86]'
+                    : 'text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50/60'
+                }`}
+              >
+                {Icon ? (
+                  <div className="bg-main-500 rounded-full p-1 flex-shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-white" />
+                  </div>
+                ) : (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      isActive ? 'bg-[#ff4b86]' : 'bg-gray-300'
+                    }`}
+                  />
+                )}
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar footer — user profile */}
+        <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+          {user ? (
+            <>
+              {/* User info row */}
+              <div className="flex items-center gap-3">
+                {/* Avatar initial */}
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-black"
+                  style={{ background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)' }}
+                >
+                  {getUserDisplayName(user).charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">{getUserDisplayName(user)}</p>
+                  {/* Points badge */}
+                  <Link
+                    to="/my-points"
+                    onClick={() => setSidebarOpen(false)}
+                    className="inline-flex items-center gap-1 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
+                    style={{
+                      background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
+                      color: 'white',
+                    }}
+                  >
+                    <span>{loyaltyRank.icon}</span>
+                    <span>{loyaltyPoints.toLocaleString()}</span>
+                    <span className="opacity-70 font-semibold text-[9px]">pts</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Admin Dashboard button */}
+              {isAdmin && (
+                <Link
+                  to="/admin/dashboard"
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold text-white transition-colors active:scale-95"
+                  style={{ background: '#ff4b86' }}
+                >
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  Dashboard Admin
+                </Link>
+              )}
+
+              {/* Sign Out */}
+              <button
+                type="button"
+                onClick={() => { setSidebarOpen(false); handleSignOutClick(); }}
+                disabled={loggingOut}
+                className="flex w-full items-center gap-3 py-2 text-sm font-semibold text-gray-500 hover:text-[#ff4b86] transition-colors disabled:opacity-50"
+              >
+                <LogOut className="h-4 w-4 flex-shrink-0" />
+                {t('auth.signOut')}
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 py-2.5 text-sm font-semibold text-gray-700 hover:text-[#ff4b86] transition-colors"
+            >
+              <UserRound className="h-4 w-4 flex-shrink-0" />
+              {t('auth.signIn')}
+            </Link>
+          )}
+        </div>
+      </aside>
 
       {showLogoutConfirm && (
         <>

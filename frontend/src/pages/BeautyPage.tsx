@@ -97,8 +97,38 @@ export default function BeautyPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-[calc(100vh-64px)] bg-white text-black">
-        <section className="border-y border-black/20">
+      <main className="min-h-[calc(100vh-64px)] bg-white text-black py-5">
+                    {/* ── Shop Section Navigator ──────────────────────────── */}
+            <div className="flex gap-3 justify-center flex-wrap">
+
+              {/* Glam — current page (active) */}
+              <Link
+                to="/beauty"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-sm font-bold uppercase tracking-wider shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                Glam
+              </Link>
+
+              {/* Charm Bar */}
+              <Link
+                to="/charm-bar"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+              >
+                <span className="material-symbols-outlined text-[16px]">diamond</span>
+                Charm
+              </Link>
+
+              {/* Spark Club */}
+              <Link
+                to="/shop"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+              >
+                <span className="material-symbols-outlined text-[16px]">storefront</span>
+                Spark
+              </Link>
+            </div>
+        <section className="">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 sm:gap-8 sm:px-8 sm:py-12 md:flex-row md:justify-center md:gap-10 lg:gap-20 lg:px-12 lg:py-16">
             {/* Title for Mobile (Hidden on md and up) */}
             <h1
@@ -191,9 +221,10 @@ export default function BeautyPage() {
         </section>
 
 
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-8 sm:pb-16 lg:px-12 lg:pb-24">
+        <section className="mx-auto max-w-7xl px-4 pb-5 sm:px-8 lg:px-12">
           <div className="flex flex-col items-center gap-4">
             <h3 className="text-3xl italic tracking-wide" style={getCmsFontStyle(productFonts.heading)}>{content.product_section_title}</h3>
+
             <label className="relative w-full max-w-[400px]">
               <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40" />
               <input

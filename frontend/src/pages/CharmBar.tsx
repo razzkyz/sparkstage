@@ -350,9 +350,44 @@ export default function CharmBar() {
           />
         </div> */}
 
-        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
 
-<div className="relative w-full max-w-md mx-auto mb-2 px-2">
+          {/* ── Shop Section Navigator ──────────────────────────── */}
+          <div className="mb-6">
+          <div className="flex gap-3 justify-center flex-wrap">
+
+              {/* Glam — current page (active) */}
+              <Link
+                to="/beauty"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                Glam
+              </Link>
+
+              {/* Charm Bar */}
+              <Link
+                to="/charm-bar"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-sm font-bold uppercase tracking-wider shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[16px]">diamond</span>
+                Charm
+              </Link>
+
+              {/* Spark Club */}
+              <Link
+                to="/shop"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+              >
+                <span className="material-symbols-outlined text-[16px]">storefront</span>
+                Spark
+              </Link>
+            </div>
+          </div>
+
+          <h3 className="text-2xl italic tracking-wide text-center mb-4">Charm Bar</h3>
+
+              <div className="relative w-full max-w-md mx-auto mb-2 px-2">
                 <div className="relative mb-3">
                   <input
                     type="text"
