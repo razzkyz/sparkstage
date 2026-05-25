@@ -160,15 +160,15 @@ const OnStage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Slider */}
-      <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black">
+      <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black h-96 md:h-screen">
 
         {heroBanners.length > 0 ? (
           <HeroBannerCarousel
             slides={heroBanners}
             intervalMs={8000}
-            containerClassName="relative w-full"
-            imageClassName="w-full h-auto object-contain"
-            autoHeight={true}
+            containerClassName="relative w-full h-96 md:h-screen"
+            imageClassName="w-full h-full object-cover"
+            autoHeight={false}
             prevButtonClassName="absolute left-1 sm:left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/40 active:bg-white/60 backdrop-blur-md text-white p-1.5 sm:p-2 md:p-3 rounded-full ux-transition-color touch-manipulation shadow-lg hover:shadow-xl transition-all"
             nextButtonClassName="absolute right-1 sm:right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/40 active:bg-white/60 backdrop-blur-md text-white p-1.5 sm:p-2 md:p-3 rounded-full ux-transition-color touch-manipulation shadow-lg hover:shadow-xl transition-all"
             indicatorActiveClassName="bg-white shadow-lg"
@@ -339,6 +339,160 @@ const OnStage = () => {
           )}
         </section>
       )}
+
+      {/* Info Section with Links */}
+      <section className="w-full bg-gradient-to-b from-gray-50 to-white py-16 md:py-24 px-4 sm:px-6 md:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4">
+              Jelajahi Spark Stage
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Temukan pengalaman tak terlupakan bersama kami. Dari pembelian tiket hingga berbagai wahana seru, semuanya tersedia di sini!
+            </p>
+            <div className="w-24 md:w-32 h-1.5 bg-gradient-to-r from-main-600 to-pink-500 mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          {/* Top CTA */}
+          <div className="mt-12 md:mt-16 mb-16 md:mb-20 text-center bg-white rounded-3xl p-12 md:p-16 relative overflow-hidden group shadow-lg hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex flex-col items-center gap-8">
+              <div className="h-40 md:h-48">
+                <img src="/images/ready.png" alt="Ready to be The Star" className="h-full w-auto object-contain" />
+              </div>
+              <Link
+                to="/booking"
+                className="inline-block bg-gradient-to-r from-main-600 to-main-700 text-white font-bold px-10 py-4 rounded-xl hover:scale-110 hover:shadow-2xl transition-all duration-300"
+              >
+                Mulai Sekarang 🌟
+              </Link>
+            </div>
+          </div>
+
+          {/* Links Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {/* Booking Card */}
+            <Link
+              to="/booking"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-main-600 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-main-600/5 to-main-700/5 group-hover:from-main-600/10 group-hover:to-main-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/landing/TICKET FIX.PNG" alt="Booking" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">Booking Tiket</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Pesan tiket masuk Spark Stage dan nikmati pengalaman bertemu bintang favorit Anda. Tersedia berbagai paket sesuai pilihan Anda.
+                </p>
+                <span className="inline-block text-main-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Pesan Sekarang →
+                </span>
+              </div>
+            </Link>
+
+            {/* Glam/Dressing Room Card */}
+            <Link
+              to="/dressing-room"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-pink-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-600/5 to-rose-700/5 group-hover:from-pink-600/10 group-hover:to-rose-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/glam page assets/VISUAL 1.png" alt="Glam Room" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">Glam Room</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Transformasi diri Anda dengan gaya glamor! Sewa berbagai kostum dan aksesori eksklusif untuk tampilan terbaik Anda.
+                </p>
+                <span className="inline-block text-pink-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Lihat Koleksi →
+                </span>
+              </div>
+            </Link>
+
+            {/* CharmBar Card */}
+            <Link
+              to="/charmbar"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-purple-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-indigo-700/5 group-hover:from-purple-600/10 group-hover:to-indigo-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/Charm Bar assets/CHARM VISUAL 1.png" alt="CharmBar" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">CharmBar</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Dapatkan charm eksklusif dan limited edition. Kumpulkan charm favorit Anda untuk koleksi spesial yang berharga.
+                </p>
+                <span className="inline-block text-purple-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Jelajahi Charm →
+                </span>
+              </div>
+            </Link>
+
+            {/* Shop Card */}
+            <Link
+              to="/shop"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-orange-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-600/5 to-amber-700/5 group-hover:from-orange-600/10 group-hover:to-amber-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/Charm Bar assets/CHARM VISUAL 2.png" alt="Shop" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">Toko</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Belanja merchandise eksklusif, merchandise resmi, dan berbagai produk unik yang tidak bisa Anda temukan di tempat lain.
+                </p>
+                <span className="inline-block text-orange-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Belanja Sekarang →
+                </span>
+              </div>
+            </Link>
+
+            {/* Events Card */}
+            <Link
+              to="/events"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-red-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-rose-700/5 group-hover:from-red-600/10 group-hover:to-rose-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/landing/SPARK MAP FINAL web.png" alt="Events" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">Event</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Jangan lewatkan event menarik dan terbaru di Spark Stage. Dari konser hingga meet & greet eksklusif dengan artis favorit.
+                </p>
+                <span className="inline-block text-red-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Lihat Event →
+                </span>
+              </div>
+            </Link>
+
+            {/* News Card */}
+            <Link
+              to="/news"
+              className="group relative overflow-hidden rounded-2xl bg-white border-2 border-gray-100 hover:border-blue-500 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 p-8 text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-cyan-700/5 group-hover:from-blue-600/10 group-hover:to-cyan-700/10 transition-all duration-300"></div>
+              <div className="relative z-10">
+                <div className="h-64 mb-4 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center overflow-hidden rounded-xl bg-white">
+                  <img src="/images/landing/ICON STAR-01.png" alt="News" className="w-auto h-auto max-w-full max-h-full object-contain" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-3">Berita</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Dapatkan berita terbaru dan update terkini tentang Spark Stage. Jangan ketinggalan informasi penting dan berita eksklusif.
+                </p>
+                <span className="inline-block text-blue-600 font-bold group-hover:translate-x-2 transition-transform duration-300">
+                  Baca Berita →
+                </span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

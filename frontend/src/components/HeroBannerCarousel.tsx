@@ -68,7 +68,7 @@ export const HeroBannerCarousel = memo(function HeroBannerCarousel({
       onTouchEnd={onTouchEnd}
       {...bindHover}
     >
-      <div className={autoHeight ? "relative w-full" : "relative h-full w-full"}>
+      <div className={autoHeight ? "relative w-full" : "relative w-full h-full"}>
         {slides.map((slide, slideIndex) => (
           <div
             key={slide.id}
@@ -81,7 +81,7 @@ export const HeroBannerCarousel = memo(function HeroBannerCarousel({
               <video
                 src={slide.image_url}
                 className={imageClassName || (autoHeight ? "w-full h-auto object-contain" : "absolute inset-0 w-full h-full object-contain")}
-                style={autoHeight ? { width: '100%', objectFit: 'contain' } : { width: '100%', height: '100%', objectFit: 'contain' }}
+                style={autoHeight ? { width: '100%', objectFit: 'contain' } : { width: '100%', height: '100%', objectFit: imageClassName?.includes('object-cover') ? 'cover' : 'contain' }}
                 autoPlay
                 loop
                 muted
@@ -92,7 +92,7 @@ export const HeroBannerCarousel = memo(function HeroBannerCarousel({
                 src={slide.image_url}
                 alt={slide.title}
                 className={imageClassName || (autoHeight ? "w-full h-auto object-contain" : "absolute inset-0 w-full h-full object-contain")}
-                style={autoHeight ? { width: '100%', objectFit: 'contain' } : { width: '100%', height: '100%', objectFit: 'contain' }}
+                style={autoHeight ? { width: '100%', objectFit: 'contain' } : { width: '100%', height: '100%', objectFit: imageClassName?.includes('object-cover') ? 'cover' : 'contain' }}
               />
             )}
             {renderOverlay ? <div className={overlayClassName}>{renderOverlay(slide)}</div> : null}
