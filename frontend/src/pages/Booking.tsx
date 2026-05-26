@@ -97,7 +97,7 @@ const Booking = () => {
       </section>
 
       {/* Booking Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-8 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {/* Left Column: Calendar & Time Slots */}
@@ -212,6 +212,15 @@ const Booking = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Ticket Banner */}
+        <div className="w-full py-8 md:py-12 mt-8 flex justify-center px-4 sm:px-6">
+          <img
+            src="/images/landing/TICKET BOARD ENTRANCE website.png"
+            alt="BE A STAR Ticket"
+            className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+          />
         </div>
       </section>
 

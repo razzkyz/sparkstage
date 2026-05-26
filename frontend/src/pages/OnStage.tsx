@@ -26,7 +26,6 @@ const OnStage = () => {
   const trendingSliderRef = useRef<HTMLDivElement>(null);
 
   // GSAP animation refs
-  const ticketButtonRef = useRef<HTMLDivElement>(null);
   const processTitleRef = useRef<HTMLDivElement>(null);
   const processCarouselRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
@@ -164,16 +163,7 @@ const OnStage = () => {
     return () => clearInterval(interval);
   }, [processBanners.length, activeRealIndex]);
 
-  // Ticket button entrance animation
-  useEffect(() => {
-    if (ticketButtonRef.current) {
-      gsap.fromTo(
-        ticketButtonRef.current,
-        { opacity: 0, scale: 0.8, y: 30 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: 'back.out', delay: 0.2 }
-      );
-    }
-  }, []);
+
 
   // Hero section fade-in animation
   useEffect(() => {
@@ -253,24 +243,7 @@ const OnStage = () => {
         )}
       </section>
 
-      {/* Buy Ticket Button - Fixed positioning */}
-      <div ref={ticketButtonRef} className="relative z-20 py-8 md:py-16 bg-white px-4 sm:px-6 md:px-8 border-b border-gray-100">
-        <div className="flex justify-center">
-          <Link
-            to="/booking"
-            className="inline-block transition-all duration-300 hover:scale-110 hover:-translate-y-3 hover:drop-shadow-2xl active:scale-100 active:translate-y-0 active:drop-shadow-lg w-full max-w-2xl sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl group"
-          >
-            <div className="relative">
-              <img
-                src="/images/landing/TICKET BOARD ENTRANCE website.png"
-                alt="BE A STAR Ticket"
-                className="w-full h-auto object-contain drop-shadow-2xl group-hover:drop-shadow-[0_20px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
-            </div>
-          </Link>
-        </div>
-      </div>
+
 
       {/* Process Carousel (New Section) */}
       {processBanners.length > 0 && (
