@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Logo from '../components/Logo';
-import LoveLogo from '../components/LoveLogo';
 import FallingLoveLogo from '../components/FallingLoveLogo';
 import {
   clearPostAuthRedirect,
@@ -164,12 +163,9 @@ const Login = () => {
 
           {/* Welcome Text */}
           <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-3 mb-4">
-              <LoveLogo size="md" animated={true} />
-              <h1 className="font-display text-3xl md:text-4xl text-text-light mb-0">
-                {t('auth.login.title')}
-              </h1>
-            </div>
+            <h1 className="font-display text-3xl md:text-4xl text-text-light mb-4">
+              {t('auth.login.title')}
+            </h1>
             <p className="text-subtext-light">
               {t('auth.login.subtitle')}
             </p>
@@ -342,7 +338,6 @@ const Login = () => {
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-center space-y-6">
-            <LoveLogo size="xl" animated={true} />
             <h2 className="font-display text-5xl text-text-light mt-4">
               Welcome to Spark Stage
             </h2>
