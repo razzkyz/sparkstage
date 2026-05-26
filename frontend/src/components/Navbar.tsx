@@ -42,6 +42,7 @@ const Navbar = () => {
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
+  const desktopNavContainerRef = useRef<HTMLDivElement | null>(null);
 
   const hasCenteredMobileItemRef = useRef(false);
   useEffect(() => {
@@ -78,9 +79,12 @@ const Navbar = () => {
 
   const updateDesktopStarPosition = useCallback(() => {
     const activeItem = desktopNavItemsRef.current[activeIndex];
-    if (!activeItem) return;
+    const container = desktopNavContainerRef.current;
+    if (!activeItem || !container) return;
 
-    const left = activeItem.offsetLeft + (activeItem.offsetWidth / 2);
+    const itemRect = activeItem.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const left = itemRect.left - containerRect.left + itemRect.width / 2;
     setDesktopStarPosition(left);
   }, [activeIndex]);
 
@@ -167,8 +171,10 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Top Bar - Sticky */}
-      <div className={`sticky top-0 bg-white z-[110] border-b border-gray-200 transition-shadow ${scrolled ? 'shadow-md' : ''}`}>
+      {/* ── Sticky Header Wrapper (Top Bar + Desktop Nav) ── */}
+      <div className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? 'shadow-[0_4px_16px_rgba(0,0,0,0.08)]' : ''}`}>
+      {/* Top Bar */}
+      <div className="border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-2 lg:py-3">
           <div className="w-1/3 flex items-center gap-3">
@@ -377,13 +383,15 @@ const Navbar = () => {
       </div>
       </div>
 
-      {/* Main Navigation - Non-sticky */}
-      <nav className="hidden lg:block w-full relative z-[100] bg-white border-b border-gray-300">
+      {/* Main Navigation - Desktop (inside sticky wrapper) */}
+      <nav className="hidden lg:block w-full relative bg-white border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div 
-            ref={mobileNavScrollerRef}
-            className="relative py-4 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          {/* Star positioned relative to this wrapper */}
+          <div
+            ref={desktopNavContainerRef}
+            className="relative py-4"
           >
+            {/* Animated star indicator */}
             <div
               className={`absolute pointer-events-none ${
                 enableStarTransition ? 'transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
@@ -404,7 +412,12 @@ const Navbar = () => {
               />
             </div>
 
-            <div className="flex lg:justify-evenly items-center relative z-10 min-w-max gap-2 sm:gap-4 lg:gap-0 px-2 lg:px-0">
+            {/* Nav items — equal-width grid so the middle item is always centred */}
+            <div
+              ref={mobileNavScrollerRef}
+              className="grid relative z-10 w-full"
+              style={{ gridTemplateColumns: `repeat(${navItems.length}, 1fr)` }}
+            >
               {navItems.map((item, idx) => {
                 const isActive = idx === activeIndex;
                 const Icon = item.icon;
@@ -414,7 +427,7 @@ const Navbar = () => {
                     key={item.key}
                     ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                     to={item.to}
-                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center gap-2 z-10 relative ${
+                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
                       isActive ? 'text-black' : 'text-gray-600 hover:text-[#ff4b86]'
                     }`}
                   >
@@ -430,8 +443,8 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-
       </nav>
+      </div>{/* end sticky wrapper */}
 
       {/* ── Mobile / Tablet Sidebar Drawer ────────────────────────────── */}
       {/* Backdrop */}
