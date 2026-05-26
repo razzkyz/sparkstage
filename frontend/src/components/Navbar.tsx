@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Camera, CalendarDays, Newspaper, LogOut, Menu, ReceiptText, ShoppingCart, ShoppingBag, Ticket, UserRound, X, type LucideIcon } from 'lucide-react';
-import Logo from './Logo';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Camera,
+  CalendarDays,
+  Newspaper,
+  LogOut,
+  Menu,
+  ReceiptText,
+  ShoppingCart,
+  ShoppingBag,
+  Ticket,
+  UserRound,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import Logo from "./Logo";
 
 type NavItem = {
   key: string;
@@ -12,12 +25,15 @@ type NavItem = {
   icon?: LucideIcon;
 };
 // import LanguageSwitcher from './LanguageSwitcher';
-import { useAuth } from '../contexts/AuthContext';
-import { useTicketCount } from '../hooks/useTicketCount';
-import { useOrderCount } from '../hooks/useOrderCount';
-import { useCart } from '../contexts/cartStore';
-import { useLoyaltyPoints, getLoyaltyRankByTier } from '../hooks/useLoyaltyPoints';
-import { getUserDisplayName } from '../utils/auth';
+import { useAuth } from "../contexts/AuthContext";
+import { useTicketCount } from "../hooks/useTicketCount";
+import { useOrderCount } from "../hooks/useOrderCount";
+import { useCart } from "../contexts/cartStore";
+import {
+  useLoyaltyPoints,
+  getLoyaltyRankByTier,
+} from "../hooks/useLoyaltyPoints";
+import { getUserDisplayName } from "../utils/auth";
 
 let previousDesktopStarPosition = 0;
 
@@ -38,8 +54,12 @@ const Navbar = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
-  const [desktopStarPosition, setDesktopStarPosition] = useState(previousDesktopStarPosition);
-  const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
+  const [desktopStarPosition, setDesktopStarPosition] = useState(
+    previousDesktopStarPosition,
+  );
+  const [enableStarTransition, setEnableStarTransition] = useState(
+    previousDesktopStarPosition !== 0,
+  );
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
@@ -49,32 +69,49 @@ const Navbar = () => {
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const activeNavKey = (() => {
     const path = location.pathname;
-    if (path === '/') return 'on-stage';
-    if (path.startsWith('/on-stage')) return 'on-stage';
-    if (path.startsWith('/events')) return 'event';
-    if (path.startsWith('/shop') || path.startsWith('/glam') || path.startsWith('/beauty') || path.startsWith('/charm-bar') || path.startsWith('/chamr-bar')) return 'shop';
-    if (path.startsWith('/dressing-room') || path.startsWith('/fashion')) return 'dressing-room';
-    if (path.startsWith('/news')) return 'news';
-    if (path.startsWith('/booking')) return 'booking';
-    return '';
+    if (path === "/") return "on-stage";
+    if (path.startsWith("/on-stage")) return "on-stage";
+    if (path.startsWith("/events")) return "event";
+    if (
+      path.startsWith("/shop") ||
+      path.startsWith("/glam") ||
+      path.startsWith("/beauty") ||
+      path.startsWith("/charm-bar") ||
+      path.startsWith("/chamr-bar")
+    )
+      return "shop";
+    if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
+      return "dressing-room";
+    if (path.startsWith("/news")) return "news";
+    if (path.startsWith("/booking")) return "booking";
+    return "";
   })();
 
   const navItems: NavItem[] = [
-    { key: 'on-stage', label: 'ON STAGE', to: '/on-stage', icon: Camera },
-    { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
+    { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
+    {
+      key: "booking",
+      label: "BOOKING",
+      to: "/booking",
+      isPink: true,
+      icon: Ticket,
+    },
     // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
-    { key: 'shop', label: 'SHOP', to: '/shop', icon: ShoppingBag },
-    { key: 'event', label: 'EVENT', to: '/events', icon: CalendarDays },
-    { key: 'news', label: 'NEWS', to: '/news', icon: Newspaper },
+    { key: "shop", label: "SHOP", to: "/glam", icon: ShoppingBag },
+    { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
+    { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
   ];
 
-  const activeIndex = Math.max(0, navItems.findIndex((item) => item.key === activeNavKey));
+  const activeIndex = Math.max(
+    0,
+    navItems.findIndex((item) => item.key === activeNavKey),
+  );
   // const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();
   // const isIndonesian = currentLanguage.startsWith('id');
 
@@ -89,35 +126,43 @@ const Navbar = () => {
     setDesktopStarPosition(left);
   }, [activeIndex]);
 
-  const centerMobileActiveItem = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    const scroller = mobileNavScrollerRef.current;
-    const activeItem = desktopNavItemsRef.current[activeIndex];
-    if (!scroller || !activeItem) return;
+  const centerMobileActiveItem = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const scroller = mobileNavScrollerRef.current;
+      const activeItem = desktopNavItemsRef.current[activeIndex];
+      if (!scroller || !activeItem) return;
 
-    const doScroll = () => {
-      const s = mobileNavScrollerRef.current;
-      const a = desktopNavItemsRef.current[activeIndex];
-      if (!s || !a) return;
+      const doScroll = () => {
+        const s = mobileNavScrollerRef.current;
+        const a = desktopNavItemsRef.current[activeIndex];
+        if (!s || !a) return;
 
-      const maxScrollLeft = Math.max(0, s.scrollWidth - s.clientWidth);
-      const centeredLeft = a.offsetLeft - ((s.clientWidth - a.offsetWidth) / 2);
-      const clampedLeft = Math.min(maxScrollLeft, Math.max(0, centeredLeft));
-      try {
-        s.scrollTo({ left: clampedLeft, behavior: behavior === 'auto' ? ('instant' as any) : behavior });
-      } catch {
-        // Safari fallback: scrollTo with options may throw in very old versions
-        s.scrollLeft = clampedLeft;
-      }
-    };
+        const maxScrollLeft = Math.max(0, s.scrollWidth - s.clientWidth);
+        const centeredLeft = a.offsetLeft - (s.clientWidth - a.offsetWidth) / 2;
+        const clampedLeft = Math.min(maxScrollLeft, Math.max(0, centeredLeft));
+        try {
+          s.scrollTo({
+            left: clampedLeft,
+            behavior: behavior === "auto" ? ("instant" as any) : behavior,
+          });
+        } catch {
+          // Safari fallback: scrollTo with options may throw in very old versions
+          s.scrollLeft = clampedLeft;
+        }
+      };
 
-    // Safari iOS needs a layout flush before offsetLeft is accurate.
-    // Double-rAF ensures the browser has painted at least one frame.
-    requestAnimationFrame(() => requestAnimationFrame(doScroll));
-  }, [activeIndex]);
+      // Safari iOS needs a layout flush before offsetLeft is accurate.
+      // Double-rAF ensures the browser has painted at least one frame.
+      requestAnimationFrame(() => requestAnimationFrame(doScroll));
+    },
+    [activeIndex],
+  );
 
   useEffect(() => {
     updateDesktopStarPosition();
-    const behavior: ScrollBehavior = hasCenteredMobileItemRef.current ? 'smooth' : 'auto';
+    const behavior: ScrollBehavior = hasCenteredMobileItemRef.current
+      ? "smooth"
+      : "auto";
     centerMobileActiveItem(behavior);
     hasCenteredMobileItemRef.current = true;
   }, [centerMobileActiveItem, updateDesktopStarPosition]);
@@ -139,19 +184,16 @@ const Navbar = () => {
   useEffect(() => {
     const onResize = () => {
       updateDesktopStarPosition();
-      centerMobileActiveItem('auto');
+      centerMobileActiveItem("auto");
     };
 
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, [centerMobileActiveItem, updateDesktopStarPosition]);
-
-
 
   // const handleMobileLanguageToggle = () => {
   //   void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
   // };
-
 
   const handleSignOutClick = () => {
     setShowLogoutConfirm(true);
@@ -162,7 +204,7 @@ const Navbar = () => {
     setShowLogoutConfirm(false);
     const { error } = await signOut();
     if (!error) {
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -173,277 +215,305 @@ const Navbar = () => {
   return (
     <>
       {/* ── Sticky Header Wrapper (Top Bar + Desktop Nav) ── */}
-      <div className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? 'shadow-[0_4px_16px_rgba(0,0,0,0.08)]' : ''}`}>
-      {/* Top Bar */}
-      <div className="border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-2 lg:py-3">
-          <div className="w-1/3 flex items-center gap-3">
-            {/* Desktop: Language Switcher + Stage 55 logo */}
-            <div className="hidden lg:flex items-center">
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-10 w-auto md:h-12 object-contain" />
-              {/* Language switcher disabled */}
-              {/* <LanguageSwitcher /> */}
-            </div>
-            {/* Mobile/Tablet: Hamburger */}
-            <div className="lg:hidden flex items-center">
-              {/* Hamburger button — triggers left sidebar */}
-              <button
-                id="navbar-hamburger-btn"
-                type="button"
-                aria-label="Buka menu navigasi"
-                aria-expanded={sidebarOpen}
-                aria-controls="mobile-sidebar"
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 -ml-1 rounded-xl bg-gray-50/80 text-black shadow-sm border border-gray-200 hover:text-[#ff4b86] hover:bg-pink-50 hover:border-pink-200 hover:shadow-md active:bg-pink-100 transition-all duration-300 active:scale-90"
-              >
-                <Menu className="h-6 w-6" strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-
-          <div className="w-1/3 flex justify-center">
-            <Link to="/" className="inline-flex items-center" aria-label="Home">
-              <Logo className="h-[2.5rem] md:h-[3.5rem]" />
-            </Link>
-          </div>
-
-          <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
-
-            {user ? (
-              <div className="hidden lg:flex items-center gap-5">
-                <span className="text-sm font-medium text-gray-900">
-                  {getUserDisplayName(user)}
-                </span>
-
-                {isAdmin && (
-                  <Link
-                    to="/admin/dashboard"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
-                    title="Admin Dashboard"
+      <div
+        className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : ""}`}
+      >
+        {/* Top Bar */}
+        <div className="border-b border-gray-200">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between py-2 lg:py-3">
+              <div className="w-1/3 flex items-center gap-3">
+                {/* Desktop: Language Switcher + Stage 55 logo */}
+                <div className="hidden lg:flex items-center">
+                  <img
+                    src="/images/landing/stage55.png"
+                    alt="Stage 55"
+                    className="h-10 w-auto md:h-12 object-contain"
+                  />
+                  {/* Language switcher disabled */}
+                  {/* <LanguageSwitcher /> */}
+                </div>
+                {/* Mobile/Tablet: Hamburger */}
+                <div className="lg:hidden flex items-center">
+                  {/* Hamburger button — triggers left sidebar */}
+                  <button
+                    id="navbar-hamburger-btn"
+                    type="button"
+                    aria-label="Buka menu navigasi"
+                    aria-expanded={sidebarOpen}
+                    aria-controls="mobile-sidebar"
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-2 -ml-1 rounded-xl bg-gray-50/80 text-black shadow-sm border border-gray-200 hover:text-[#ff4b86] hover:bg-pink-50 hover:border-pink-200 hover:shadow-md active:bg-pink-100 transition-all duration-300 active:scale-90"
                   >
-                    <span className="material-symbols-outlined text-sm">dashboard</span>
-                    Dashboard
-                  </Link>
+                    <Menu className="h-6 w-6" strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-1/3 flex justify-center">
+                <Link
+                  to="/"
+                  className="inline-flex items-center"
+                  aria-label="Home"
+                >
+                  <Logo className="h-[2.5rem] md:h-[3.5rem]" />
+                </Link>
+              </div>
+
+              <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
+                {user ? (
+                  <div className="hidden lg:flex items-center gap-5">
+                    <span className="text-sm font-medium text-gray-900">
+                      {getUserDisplayName(user)}
+                    </span>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
+                        title="Admin Dashboard"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          dashboard
+                        </span>
+                        Dashboard
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={handleSignOutClick}
+                      disabled={loggingOut}
+                      className="text-gray-500 hover:text-primary transition-colors"
+                      title={t("auth.signOut")}
+                    >
+                      <LogOut className="h-5 w-5" />
+                    </button>
+
+                    {/* Loyalty Points Badge — Desktop */}
+                    <Link
+                      to="/my-points"
+                      className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
+                        boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
+                      }}
+                      title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
+                    >
+                      {/* Rank icon */}
+                      <span className="text-sm leading-none">
+                        {loyaltyRank.icon}
+                      </span>
+                      {/* Points count */}
+                      <span className="text-xs font-black tracking-tight text-white">
+                        {loyaltyPoints.toLocaleString()}
+                      </span>
+                      {/* pts label */}
+                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
+                        pts
+                      </span>
+                      {/* Shine on hover */}
+                      <span
+                        className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                        }}
+                      />
+                    </Link>
+
+                    <Link
+                      to="/my-tickets"
+                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      title={t("nav.myTickets")}
+                    >
+                      <Ticket className="h-5 w-5" />
+                      {ticketCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                          {ticketCount}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link
+                      to="/my-orders"
+                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      title={t("nav.myOrders")}
+                    >
+                      <ReceiptText className="h-5 w-5" />
+                      {orderCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                          {orderCount}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link
+                      to="/cart"
+                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      aria-label={t("nav.cart")}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      {totalQuantity > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                          {totalQuantity}
+                        </span>
+                      )}
+                    </Link>
+
+                    {/* Search disabled */}
+                  </div>
+                ) : (
+                  <div className="hidden lg:flex items-center gap-4">
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                      style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
+                      aria-label={t("auth.signIn")}
+                      title={t("auth.signIn")}
+                    >
+                      <UserRound className="h-4 w-4" />
+                      <span>{t("auth.signIn")}</span>
+                    </Link>
+
+                    {/* Search disabled */}
+                  </div>
                 )}
 
-                <button
-                  onClick={handleSignOutClick}
-                  disabled={loggingOut}
-                  className="text-gray-500 hover:text-primary transition-colors"
-                  title={t('auth.signOut')}
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-
-                {/* Loyalty Points Badge — Desktop */}
-                <Link
-                  to="/my-points"
-                  className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
-                  style={{
-                    background: 'linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)',
-                    boxShadow: '0 2px 10px rgba(255,75,134,0.4)',
-                  }}
-                  title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
-                >
-                  {/* Rank icon */}
-                  <span className="text-sm leading-none">
-                    {loyaltyRank.icon}
-                  </span>
-                  {/* Points count */}
-                  <span className="text-xs font-black tracking-tight text-white">
-                    {loyaltyPoints.toLocaleString()}
-                  </span>
-                  {/* pts label */}
-                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">pts</span>
-                  {/* Shine on hover */}
-                  <span
-                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                    style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)' }}
-                  />
-                </Link>
-
-                <Link
-                  to="/my-tickets"
-                  className="relative text-gray-500 hover:text-main-600 transition-colors"
-                  title={t('nav.myTickets')}
-                >
-                  <Ticket className="h-5 w-5" />
-                  {ticketCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {ticketCount}
-                    </span>
+                <div className="lg:hidden flex items-center gap-0.5">
+                  {!user && (
+                    <Link
+                      to="/login"
+                      className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                      style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
+                      aria-label={t("auth.signIn")}
+                      title={t("auth.signIn")}
+                    >
+                      <UserRound className="h-5 w-5" />
+                    </Link>
                   )}
-                </Link>
 
-                <Link
-                  to="/my-orders"
-                  className="relative text-gray-500 hover:text-main-600 transition-colors"
-                  title={t('nav.myOrders')}
-                >
-                  <ReceiptText className="h-5 w-5" />
-                  {orderCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {orderCount}
-                    </span>
+                  {/* Mobile: Ticket icon */}
+                  {user && (
+                    <Link
+                      to="/my-tickets"
+                      className="relative p-1.5 text-gray-700 active:text-main-600"
+                      aria-label={t("nav.myTickets")}
+                      title={t("nav.myTickets")}
+                    >
+                      <Ticket className="h-6 w-6" />
+                      {ticketCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                          {ticketCount}
+                        </span>
+                      )}
+                    </Link>
                   )}
-                </Link>
 
-                <Link to="/cart" className="relative text-gray-500 hover:text-main-600 transition-colors" aria-label={t('nav.cart')}>
-                  <ShoppingCart className="h-5 w-5" />
-                  {totalQuantity > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {totalQuantity}
-                    </span>
+                  {/* Mobile: Orders icon */}
+                  {user && (
+                    <Link
+                      to="/my-orders"
+                      className="relative p-1.5 text-gray-700 active:text-main-600"
+                      aria-label={t("nav.myOrders")}
+                      title={t("nav.myOrders")}
+                    >
+                      <ReceiptText className="h-6 w-6" />
+                      {orderCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                          {orderCount}
+                        </span>
+                      )}
+                    </Link>
                   )}
-                </Link>
 
-{/* Search disabled */}
+                  {/* Mobile: Cart — hanya tampil jika sudah login */}
+                  {user && (
+                    <Link
+                      to="/cart"
+                      className="relative p-1.5 text-gray-700 active:text-main-600"
+                      aria-label={t("nav.cart")}
+                    >
+                      <ShoppingCart className="h-6 w-6" />
+                      {totalQuantity > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
+                          {totalQuantity}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="hidden lg:flex items-center gap-4">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                  style={{ border: '1.5px solid rgba(255, 75, 134, 1)' }}
-                  aria-label={t('auth.signIn')}
-                  title={t('auth.signIn')}
-                >
-                  <UserRound className="h-4 w-4" />
-                  <span>{t('auth.signIn')}</span>
-                </Link>
-
-
-{/* Search disabled */}
-              </div>
-            )}
-
-            <div className="lg:hidden flex items-center gap-0.5">
-              {!user && (
-                <Link
-                  to="/login"
-                  className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                  style={{ border: '1.5px solid rgba(255, 75, 134, 1)' }}
-                  aria-label={t('auth.signIn')}
-                  title={t('auth.signIn')}
-                >
-                  <UserRound className="h-5 w-5" />
-                </Link>
-              )}
-
-              {/* Mobile: Ticket icon */}
-              {user && (
-                <Link
-                  to="/my-tickets"
-                  className="relative p-1.5 text-gray-700 active:text-main-600"
-                  aria-label={t('nav.myTickets')}
-                  title={t('nav.myTickets')}
-                >
-                  <Ticket className="h-6 w-6" />
-                  {ticketCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {ticketCount}
-                    </span>
-                  )}
-                </Link>
-              )}
-
-              {/* Mobile: Orders icon */}
-              {user && (
-                <Link
-                  to="/my-orders"
-                  className="relative p-1.5 text-gray-700 active:text-main-600"
-                  aria-label={t('nav.myOrders')}
-                  title={t('nav.myOrders')}
-                >
-                  <ReceiptText className="h-6 w-6" />
-                  {orderCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {orderCount}
-                    </span>
-                  )}
-                </Link>
-              )}
-
-              {/* Mobile: Cart — hanya tampil jika sudah login */}
-              {user && (
-                <Link to="/cart" className="relative p-1.5 text-gray-700 active:text-main-600" aria-label={t('nav.cart')}>
-                  <ShoppingCart className="h-6 w-6" />
-                  {totalQuantity > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
-                      {totalQuantity}
-                    </span>
-                  )}
-                </Link>
-              )}
             </div>
           </div>
         </div>
-      </div>
-      </div>
 
-      {/* Main Navigation - Desktop (inside sticky wrapper) */}
-      <nav className="hidden lg:block w-full relative bg-white border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Star positioned relative to this wrapper */}
-          <div
-            ref={desktopNavContainerRef}
-            className="relative py-4"
-          >
-            {/* Animated star indicator */}
-            <div
-              className={`absolute pointer-events-none ${
-                enableStarTransition ? 'transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
-              }`}
-              style={{
-                left: `${desktopStarPosition}px`,
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '64px',
-                height: '64px',
-                zIndex: 0,
-              }}
-            >
-              <img
-                src="/images/landing/ICON%20STAR-01.svg"
-                alt="Active"
-                className="w-full h-full object-contain"
-              />
-            </div>
+        {/* Main Navigation - Desktop (inside sticky wrapper) */}
+        <nav className="hidden lg:block w-full relative bg-white border-b border-gray-200">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Star positioned relative to this wrapper */}
+            <div ref={desktopNavContainerRef} className="relative py-4">
+              {/* Animated star indicator */}
+              <div
+                className={`absolute pointer-events-none ${
+                  enableStarTransition
+                    ? "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    : ""
+                }`}
+                style={{
+                  left: `${desktopStarPosition}px`,
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: "64px",
+                  height: "64px",
+                  zIndex: 0,
+                }}
+              >
+                <img
+                  src="/images/landing/ICON%20STAR-01.svg"
+                  alt="Active"
+                  className="w-full h-full object-contain"
+                />
+              </div>
 
-            {/* Nav items — equal-width grid so the middle item is always centred */}
-            <div
-              ref={mobileNavScrollerRef}
-              className="grid relative z-10 w-full"
-              style={{ gridTemplateColumns: `repeat(${navItems.length}, 1fr)` }}
-            >
-              {navItems.map((item, idx) => {
-                const isActive = idx === activeIndex;
-                const Icon = item.icon;
+              {/* Nav items — equal-width grid so the middle item is always centred */}
+              <div
+                ref={mobileNavScrollerRef}
+                className="grid relative z-10 w-full"
+                style={{
+                  gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
+                }}
+              >
+                {navItems.map((item, idx) => {
+                  const isActive = idx === activeIndex;
+                  const Icon = item.icon;
 
-                return (
-                  <Link
-                    key={item.key}
-                    ref={(el) => (desktopNavItemsRef.current[idx] = el)}
-                    to={item.to}
-                    className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
-                      isActive ? 'text-black' : 'text-gray-600 hover:text-[#ff4b86]'
-                    }`}
-                  >
-                    {Icon && item.key === 'booking' && (
-                      <div className="bg-main-500 rounded-full p-1">
-                        <Icon className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                    {item.label}
-                  </Link>
-                );
-              })}
+                  return (
+                    <Link
+                      key={item.key}
+                      ref={(el) => (desktopNavItemsRef.current[idx] = el)}
+                      to={item.to}
+                      className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
+                        isActive
+                          ? "text-black"
+                          : "text-gray-600 hover:text-[#ff4b86]"
+                      }`}
+                    >
+                      {Icon && item.key === "booking" && (
+                        <div className="bg-main-500 rounded-full p-1">
+                          <Icon className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
-      </div>{/* end sticky wrapper */}
+        </nav>
+      </div>
+      {/* end sticky wrapper */}
 
       {/* ── Mobile / Tablet Sidebar Drawer ────────────────────────────── */}
       {/* Backdrop */}
@@ -451,7 +521,9 @@ const Navbar = () => {
         aria-hidden="true"
         onClick={() => setSidebarOpen(false)}
         className={`lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] transition-opacity duration-300 ${
-          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          sidebarOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
       />
 
@@ -460,12 +532,16 @@ const Navbar = () => {
         id="mobile-sidebar"
         aria-label="Menu navigasi"
         className={`lg:hidden fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-[210] flex flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <img src="/images/landing/stage55.png" alt="Stage 55" className="h-9 w-auto object-contain" />
+          <img
+            src="/images/landing/stage55.png"
+            alt="Stage 55"
+            className="h-9 w-auto object-contain"
+          />
           <button
             id="sidebar-close-btn"
             type="button"
@@ -483,46 +559,79 @@ const Navbar = () => {
             const isActive = idx === activeIndex;
             const Icon = item.icon;
 
-            if (item.key === 'shop') {
+            if (item.key === "shop") {
               return (
                 <div key={item.key} className="flex flex-col">
-                  <div className={`flex items-center justify-between px-5 py-2.5 transition-colors ${
+                  <div
+                    className={`flex items-center justify-between px-5 py-2.5 transition-colors ${
                       isActive
-                        ? 'bg-pink-50 border-r-4 border-[#ff4b86]'
-                        : 'hover:bg-pink-50/60'
-                    }`}>
+                        ? "bg-pink-50 border-r-4 border-[#ff4b86]"
+                        : "hover:bg-pink-50/60"
+                    }`}
+                  >
                     <Link
                       to={item.to}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex-1 flex items-center gap-3 py-1 text-sm font-bold uppercase tracking-wider ${isActive ? 'text-[#ff4b86]' : 'text-gray-700 hover:text-[#ff4b86]'}`}
+                      className={`flex-1 flex items-center gap-3 py-1 text-sm font-bold uppercase tracking-wider ${isActive ? "text-[#ff4b86]" : "text-gray-700 hover:text-[#ff4b86]"}`}
                     >
                       {Icon ? (
                         <div className="bg-main-500 rounded-full p-1 flex-shrink-0">
                           <Icon className="w-3.5 h-3.5 text-white" />
                         </div>
                       ) : (
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-[#ff4b86]' : 'bg-gray-300'}`} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? "bg-[#ff4b86]" : "bg-gray-300"}`}
+                        />
                       )}
                       {item.label}
                     </Link>
-                    <button 
-                      type="button" 
-                      onClick={(e) => { e.preventDefault(); setShopDropdownOpen(!shopDropdownOpen); }}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShopDropdownOpen(!shopDropdownOpen);
+                      }}
                       className="p-1.5 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-100 transition-colors"
                     >
-                      <svg className={`w-5 h-5 transform transition-transform ${shopDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${shopDropdownOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
                     </button>
                   </div>
                   {/* Dropdown Items */}
-                  <div className={`overflow-hidden transition-all duration-300 ${shopDropdownOpen ? 'max-h-48' : 'max-h-0'}`}>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${shopDropdownOpen ? "max-h-48" : "max-h-0"}`}
+                  >
                     <div className="bg-gray-50 flex flex-col py-1.5 border-y border-gray-100">
-                      <Link to="/glam" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                      <Link
+                        to="/glam"
+                        onClick={() => setSidebarOpen(false)}
+                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
+                      >
                         Glam Collection
                       </Link>
-                      <Link to="/charm-bar" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                      <Link
+                        to="/charm-bar"
+                        onClick={() => setSidebarOpen(false)}
+                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
+                      >
                         Charm Bar
                       </Link>
-                      <Link to="/shop" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                      <Link
+                        to="/shop"
+                        onClick={() => setSidebarOpen(false)}
+                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
+                      >
                         Spark Products
                       </Link>
                     </div>
@@ -538,8 +647,8 @@ const Navbar = () => {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-5 py-3.5 text-sm font-bold uppercase tracking-wider transition-colors ${
                   isActive
-                    ? 'text-[#ff4b86] bg-pink-50 border-r-4 border-[#ff4b86]'
-                    : 'text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50/60'
+                    ? "text-[#ff4b86] bg-pink-50 border-r-4 border-[#ff4b86]"
+                    : "text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50/60"
                 }`}
               >
                 {Icon ? (
@@ -549,7 +658,7 @@ const Navbar = () => {
                 ) : (
                   <span
                     className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                      isActive ? 'bg-[#ff4b86]' : 'bg-gray-300'
+                      isActive ? "bg-[#ff4b86]" : "bg-gray-300"
                     }`}
                   />
                 )}
@@ -568,25 +677,31 @@ const Navbar = () => {
                 {/* Avatar initial */}
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-black"
-                  style={{ background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)' }}
+                  style={{
+                    background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                  }}
                 >
                   {getUserDisplayName(user).charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{getUserDisplayName(user)}</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {getUserDisplayName(user)}
+                  </p>
                   {/* Points badge */}
                   <Link
                     to="/my-points"
                     onClick={() => setSidebarOpen(false)}
                     className="inline-flex items-center gap-1 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
                     style={{
-                      background: 'linear-gradient(135deg, #ff2d72, #ff6b9d)',
-                      color: 'white',
+                      background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                      color: "white",
                     }}
                   >
                     <span>{loyaltyRank.icon}</span>
                     <span>{loyaltyPoints.toLocaleString()}</span>
-                    <span className="opacity-70 font-semibold text-[9px]">pts</span>
+                    <span className="opacity-70 font-semibold text-[9px]">
+                      pts
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -597,9 +712,11 @@ const Navbar = () => {
                   to="/admin/dashboard"
                   onClick={() => setSidebarOpen(false)}
                   className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold text-white transition-colors active:scale-95"
-                  style={{ background: '#ff4b86' }}
+                  style={{ background: "#ff4b86" }}
                 >
-                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    dashboard
+                  </span>
                   Dashboard Admin
                 </Link>
               )}
@@ -607,12 +724,15 @@ const Navbar = () => {
               {/* Sign Out */}
               <button
                 type="button"
-                onClick={() => { setSidebarOpen(false); handleSignOutClick(); }}
+                onClick={() => {
+                  setSidebarOpen(false);
+                  handleSignOutClick();
+                }}
                 disabled={loggingOut}
                 className="flex w-full items-center gap-3 py-2 text-sm font-semibold text-gray-500 hover:text-[#ff4b86] transition-colors disabled:opacity-50"
               >
                 <LogOut className="h-4 w-4 flex-shrink-0" />
-                {t('auth.signOut')}
+                {t("auth.signOut")}
               </button>
             </>
           </div>
@@ -634,8 +754,12 @@ const Navbar = () => {
                   <LogOut className="h-8 w-8 text-[#ff4b86]" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black uppercase tracking-wider text-gray-900">{t('auth.signOut')}</h3>
-                  <p className="text-sm text-gray-600 mt-2">{t('auth.signOutConfirm')}</p>
+                  <h3 className="text-xl font-black uppercase tracking-wider text-gray-900">
+                    {t("auth.signOut")}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {t("auth.signOutConfirm")}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col md:flex-row gap-3 pt-2">
@@ -644,7 +768,7 @@ const Navbar = () => {
                   className="flex-1 px-4 py-3.5 text-sm font-bold uppercase tracking-wider text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl transition-colors order-2 md:order-1"
                   type="button"
                 >
-                  {t('auth.cancel')}
+                  {t("auth.cancel")}
                 </button>
                 <button
                   onClick={handleSignOutConfirm}
@@ -652,7 +776,7 @@ const Navbar = () => {
                   className="flex-1 px-4 py-3.5 text-sm font-bold uppercase tracking-wider text-white bg-[#ff4b86] hover:bg-[#e63d75] active:bg-[#cc2f64] rounded-xl transition-colors disabled:opacity-50 order-1 md:order-2"
                   type="button"
                 >
-                  {t('auth.confirm')}
+                  {t("auth.confirm")}
                 </button>
               </div>
             </div>

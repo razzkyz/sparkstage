@@ -214,14 +214,7 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* Ticket Banner */}
-        <div className="w-full py-8 md:py-12 mt-8 flex justify-center px-4 sm:px-6">
-          <img
-            src="/images/landing/TICKET BOARD ENTRANCE website.png"
-            alt="BE A STAR Ticket"
-            className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
-          />
-        </div>
+        
       </section>
 
       {/* Venue Reviews Section */}
