@@ -8,6 +8,8 @@ const AuthCallback = lazy(() => import('../../pages/AuthCallback'));
 const CheckoutPage = lazy(() => import('../../pages/CheckoutPage'));
 const StageScanPage = lazy(() => import('../../pages/StageScanPage'));
 const StageDetailPage = lazy(() => import('../../pages/StageDetailPage'));
+const ForgotPassword = lazy(() => import('../../pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('../../pages/ResetPassword'));
 
 export const standaloneRouteConfigs: AppRouteConfig[] = [
   { path: '/login', Page: Login },
@@ -16,4 +18,6 @@ export const standaloneRouteConfigs: AppRouteConfig[] = [
   { path: '/checkout', Page: CheckoutPage },
   { path: '/scan/:stageCode', Page: StageScanPage },
   { path: '/stage/:stageCode', Page: StageDetailPage },
+  { path: '/forgot-password', Page: ForgotPassword },
+  { path: '/reset-password', Page: ResetPassword },
 ];

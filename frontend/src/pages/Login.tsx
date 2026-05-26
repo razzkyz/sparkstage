@@ -338,6 +338,11 @@ const Login = () => {
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-center space-y-6">
+            {/* <img 
+              src="/images/ready.png" 
+              alt="Ready" 
+              className="w-32 h-32 mx-auto object-contain"
+            /> */}
             <h2 className="font-display text-5xl text-text-light mt-4">
               Welcome to Spark Stage
             </h2>
