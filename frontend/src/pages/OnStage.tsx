@@ -207,13 +207,13 @@ const OnStage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Slider */}
-      <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black h-72 md:h-[65vh]">
+      <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black h-72 md:h-[80vh]">
 
         {heroBanners.length > 0 ? (
           <HeroBannerCarousel
             slides={heroBanners}
             intervalMs={8000}
-            containerClassName="relative w-full h-72 md:h-[65vh]"
+            containerClassName="relative w-full h-72 md:h-[80vh]"
             imageClassName="w-full h-full object-cover"
             autoHeight={false}
             prevButtonClassName="absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 bg-white text-black hover:bg-gray-200 active:bg-white p-2 sm:p-3 md:p-4 rounded-full touch-manipulation shadow-lg transition-colors"
@@ -370,48 +370,48 @@ const OnStage = () => {
         </section>
       )}
 
-      {/* 2x2 Promo Grid Section */}
-      <section className="w-full bg-white py-12 md:py-16">
-        <div className="w-full mx-auto px-4 sm:px-6 md:px-8 max-w-[1600px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      {/*  Grid Section */}
+      <section className="w-full bg-white py-12 md:py-16 flex justify-center">
+        <div className="w-full mx-auto px-4 sm:px-6 md:px-8 max-w-[1600px] flex justify-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4  gap-4 md:gap-6">
             
-            {/* Promo 1 */}
-            <Link to="/booking" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/3] overflow-hidden bg-gray-100">
+            {/* Grid 1 */}
+            <Link to="/booking" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/4] xl:aspect-[4/5]  max-w-[500px] overflow-hidden bg-gray-100 rounded-lg">
               <img src="/images/landing/TICKET FIX.PNG" alt="Booking Tiket" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-              <div className="absolute bottom-8 left-0 w-full text-center z-10 px-4">
-                <h3 className="text-3xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">BOOKING TIKET</h3>
-                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-sm md:text-base">PESAN SEKARANG</span>
+              <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
+                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">ON STAGE TIKET</h3>
+                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">BOOKING SEKARANG</span>
               </div>
             </Link>
 
-            {/* Promo 2 */}
-            <Link to="/dressing-room" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/3] overflow-hidden bg-gray-100">
+            {/* Grid 2 */}
+            <Link to="/dressing-room" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg">
               <img src="/images/glam page assets/VISUAL 1.png" alt="Glam Room" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-              <div className="absolute bottom-8 left-0 w-full text-center z-10 px-4">
-                <h3 className="text-3xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">GLAM ROOM</h3>
-                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-sm md:text-base">LIHAT KOLEKSI</span>
+              <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
+                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">GLAM ROOM</h3>
+                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">LIHAT KOLEKSI</span>
               </div>
             </Link>
 
-            {/* Promo 3 */}
-            <Link to="/charmbar" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/3] overflow-hidden bg-gray-100">
+            {/* Grid 3 */}
+            <Link to="/charmbar" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg">
               <img src="/images/Charm Bar assets/CHARM VISUAL 1.png" alt="CharmBar" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-              <div className="absolute bottom-8 left-0 w-full text-center z-10 px-4">
-                <h3 className="text-3xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">CHARMBAR</h3>
-                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-sm md:text-base">JELAJAHI CHARM</span>
+              <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
+                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">CHARM BAR</h3>
+                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">LIHAT KOLEKSI</span>
               </div>
             </Link>
 
-            {/* Promo 4 */}
-            <Link to="/shop" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/3] overflow-hidden bg-gray-100">
+            {/* grid 4 */}
+            <Link to="/shop" className="group block relative w-full aspect-[4/5] md:aspect-square lg:aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg">
               <img src="/images/Charm Bar assets/CHARM VISUAL 2.png" alt="Merchandise" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-              <div className="absolute bottom-8 left-0 w-full text-center z-10 px-4">
-                <h3 className="text-3xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">MERCHANDISE</h3>
-                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-sm md:text-base">SHOP NOW</span>
+              <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
+                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">SPARK CLUB</h3>
+                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">LIHAT KOLEKSI</span>
               </div>
             </Link>
 

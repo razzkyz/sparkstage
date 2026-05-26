@@ -430,7 +430,7 @@ const Navbar = () => {
                       isActive ? 'text-black' : 'text-gray-600 hover:text-[#ff4b86]'
                     }`}
                   >
-                    {Icon && (
+                    {Icon && item.key === 'booking' && (
                       <div className="bg-main-500 rounded-full p-1">
                         <Icon className="w-3 h-3 text-white" />
                       </div>
