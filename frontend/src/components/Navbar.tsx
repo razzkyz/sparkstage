@@ -304,20 +304,15 @@ const Navbar = () => {
               <div className="hidden lg:flex items-center gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                  style={{ border: '1.5px solid rgba(255, 75, 134, 1)' }}
+                  aria-label={t('auth.signIn')}
+                  title={t('auth.signIn')}
                 >
                   <UserRound className="h-4 w-4" />
-                  {t('auth.signIn')}
+                  <span>{t('auth.signIn')}</span>
                 </Link>
 
-                <Link to="/cart" className="relative p-2 text-gray-700 hover:text-main-600 transition-colors" aria-label={t('nav.cart')}>
-                  <ShoppingCart className="h-5 w-5" />
-                  {totalQuantity > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                      {totalQuantity}
-                    </span>
-                  )}
-                </Link>
 
 {/* Search disabled */}
               </div>
@@ -327,11 +322,12 @@ const Navbar = () => {
               {!user && (
                 <Link
                   to="/login"
-                  className="p-2 rounded-md border border-gray-300 text-gray-700 active:bg-gray-50"
+                  className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                  style={{ border: '1.5px solid rgba(255, 75, 134, 1)' }}
                   aria-label={t('auth.signIn')}
                   title={t('auth.signIn')}
                 >
-                  <UserRound className="h-[1.375rem] w-[1.375rem]" />
+                  <UserRound className="h-5 w-5" />
                 </Link>
               )}
 
@@ -369,14 +365,17 @@ const Navbar = () => {
                 </Link>
               )}
 
-              <Link to="/cart" className="relative p-1.5 text-gray-700 active:text-main-600" aria-label={t('nav.cart')}>
-                <ShoppingCart className="h-6 w-6" />
-                {totalQuantity > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
-                    {totalQuantity}
-                  </span>
-                )}
-              </Link>
+              {/* Mobile: Cart — hanya tampil jika sudah login */}
+              {user && (
+                <Link to="/cart" className="relative p-1.5 text-gray-700 active:text-main-600" aria-label={t('nav.cart')}>
+                  <ShoppingCart className="h-6 w-6" />
+                  {totalQuantity > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
+                      {totalQuantity}
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -512,8 +511,8 @@ const Navbar = () => {
         </nav>
 
         {/* Sidebar footer — user profile */}
-        <div className="border-t border-gray-100 px-5 py-4 space-y-3">
-          {user ? (
+        {user && (
+          <div className="border-t border-gray-100 px-5 py-4 space-y-3">
             <>
               {/* User info row */}
               <div className="flex items-center gap-3">
@@ -567,17 +566,8 @@ const Navbar = () => {
                 {t('auth.signOut')}
               </button>
             </>
-          ) : (
-            <Link
-              to="/login"
-              onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 py-2.5 text-sm font-semibold text-gray-700 hover:text-[#ff4b86] transition-colors"
-            >
-              <UserRound className="h-4 w-4 flex-shrink-0" />
-              {t('auth.signIn')}
-            </Link>
-          )}
-        </div>
+          </div>
+        )}
       </aside>
 
       {showLogoutConfirm && (
