@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Menu, ReceiptText, ShoppingCart, Ticket, UserRound, X, type LucideIcon } from 'lucide-react';
+import { Camera, CalendarDays, Newspaper, LogOut, Menu, ReceiptText, ShoppingCart, ShoppingBag, Ticket, UserRound, X, type LucideIcon } from 'lucide-react';
 import Logo from './Logo';
 
 type NavItem = {
@@ -37,6 +37,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
   const [desktopStarPosition, setDesktopStarPosition] = useState(previousDesktopStarPosition);
   const [enableStarTransition, setEnableStarTransition] = useState(previousDesktopStarPosition !== 0);
 
@@ -65,12 +66,12 @@ const Navbar = () => {
   })();
 
   const navItems: NavItem[] = [
-    { key: 'on-stage', label: 'ON STAGE', to: '/on-stage' },
+    { key: 'on-stage', label: 'ON STAGE', to: '/on-stage', icon: Camera },
     { key: 'booking', label: 'BOOKING', to: '/booking', isPink: true, icon: Ticket },
     // { key: 'dressing-room', label: 'FASHION ON DEMAND', to: '/dressing-room' },
-    { key: 'shop', label: 'SHOP', to: '/beauty' },
-    { key: 'event', label: 'EVENT', to: '/events' },
-    { key: 'news', label: 'NEWS', to: '/news' },
+    { key: 'shop', label: 'SHOP', to: '/shop', icon: ShoppingBag },
+    { key: 'event', label: 'EVENT', to: '/events', icon: CalendarDays },
+    { key: 'news', label: 'NEWS', to: '/news', icon: Newspaper },
   ];
 
   const activeIndex = Math.max(0, navItems.findIndex((item) => item.key === activeNavKey));
@@ -184,7 +185,7 @@ const Navbar = () => {
               {/* Language switcher disabled */}
               {/* <LanguageSwitcher /> */}
             </div>
-            {/* Mobile/Tablet: Hamburger + Stage 55 logo */}
+            {/* Mobile/Tablet: Hamburger */}
             <div className="lg:hidden flex items-center">
               {/* Hamburger button — triggers left sidebar */}
               <button
@@ -194,11 +195,10 @@ const Navbar = () => {
                 aria-expanded={sidebarOpen}
                 aria-controls="mobile-sidebar"
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 -ml-1 rounded-md text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
+                className="p-2 -ml-1 rounded-xl bg-gray-50/80 text-black shadow-sm border border-gray-200 hover:text-[#ff4b86] hover:bg-pink-50 hover:border-pink-200 hover:shadow-md active:bg-pink-100 transition-all duration-300 active:scale-90"
               >
-                <Menu className="h-6 w-6" />
+                <Menu className="h-6 w-6" strokeWidth={2.5} />
               </button>
-              <img src="/images/landing/stage55.png" alt="Stage 55" className="h-[2.5rem] w-auto object-contain" />
             </div>
           </div>
 
@@ -482,6 +482,55 @@ const Navbar = () => {
           {navItems.map((item, idx) => {
             const isActive = idx === activeIndex;
             const Icon = item.icon;
+
+            if (item.key === 'shop') {
+              return (
+                <div key={item.key} className="flex flex-col">
+                  <div className={`flex items-center justify-between px-5 py-2.5 transition-colors ${
+                      isActive
+                        ? 'bg-pink-50 border-r-4 border-[#ff4b86]'
+                        : 'hover:bg-pink-50/60'
+                    }`}>
+                    <Link
+                      to={item.to}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex-1 flex items-center gap-3 py-1 text-sm font-bold uppercase tracking-wider ${isActive ? 'text-[#ff4b86]' : 'text-gray-700 hover:text-[#ff4b86]'}`}
+                    >
+                      {Icon ? (
+                        <div className="bg-main-500 rounded-full p-1 flex-shrink-0">
+                          <Icon className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      ) : (
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-[#ff4b86]' : 'bg-gray-300'}`} />
+                      )}
+                      {item.label}
+                    </Link>
+                    <button 
+                      type="button" 
+                      onClick={(e) => { e.preventDefault(); setShopDropdownOpen(!shopDropdownOpen); }}
+                      className="p-1.5 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-100 transition-colors"
+                    >
+                      <svg className={`w-5 h-5 transform transition-transform ${shopDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                  </div>
+                  {/* Dropdown Items */}
+                  <div className={`overflow-hidden transition-all duration-300 ${shopDropdownOpen ? 'max-h-48' : 'max-h-0'}`}>
+                    <div className="bg-gray-50 flex flex-col py-1.5 border-y border-gray-100">
+                      <Link to="/glam" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                        Glam Collection
+                      </Link>
+                      <Link to="/charm-bar" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                        Charm Bar
+                      </Link>
+                      <Link to="/shop" onClick={() => setSidebarOpen(false)} className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider">
+                        Spark Products
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.key}
