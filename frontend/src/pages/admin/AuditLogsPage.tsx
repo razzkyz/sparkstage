@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu'
 import { useAdminMenuSections } from '@/hooks/useAdminMenuSections'
 import { useAuditLogs, useExportAuditLogs, type AuditAction } from '@/hooks/useAuditLogs'
-import { Download, RotateCcw, Eye, ChevronUp, FileText, Search, Activity, Database, Calendar } from 'lucide-react'
+import { useOnlineAdmins } from '@/hooks/useOnlineAdmins'
+import { Download, RotateCcw, Eye, ChevronUp, FileText, Search, Activity, Database, Calendar, UserRound } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ACTION_LABELS: Record<AuditAction, string> = {
@@ -23,6 +24,8 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   ticket_scanned: 'Ticket Scanned',
   order_created: 'Event Order Created',
   product_order_created: 'Product Order Created',
+  dashboard_modified: 'Dashboard Modified',
+  user_logged_in: 'User Logged In',
 }
 
 const TABLE_LABELS: Record<string, string> = {
@@ -36,13 +39,23 @@ const TABLE_LABELS: Record<string, string> = {
   products: 'Products',
   product_orders: 'Product Orders',
   purchased_tickets: 'Purchased Tickets',
+  booking_page_settings: 'Booking Settings',
+  glam_page_settings: 'Glam Settings',
+  charm_bar_settings: 'Charm Bar Settings',
+  event_page_settings: 'Event Settings',
+  news_settings: 'News Settings',
+  events_schedule: 'Events Schedule',
+  events_schedule_items: 'Schedule Items',
+  beauty_posters: 'Beauty Posters',
 }
 
 export function AuditLogsPage() {
   const { user, signOut } = useAuth()
   const menuSections = useAdminMenuSections()
+  const onlineAdmins = useOnlineAdmins()
   const [selectedAction, setSelectedAction] = useState<AuditAction | ''>('')
   const [selectedTable, setSelectedTable] = useState<string>('')
+  const [adminEmailFilter, setAdminEmailFilter] = useState<string>('')
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -75,11 +88,12 @@ export function AuditLogsPage() {
 
     if (selectedAction) f.action = selectedAction
     if (selectedTable) f.table_name = selectedTable
+    if (adminEmailFilter) f.user_email = adminEmailFilter
     if (startDate) f.startDate = new Date(startDate)
     if (endDate) f.endDate = new Date(endDate)
 
     return f
-  }, [selectedAction, selectedTable, startDate, endDate, page])
+  }, [selectedAction, selectedTable, adminEmailFilter, startDate, endDate, page])
 
   const { logs, isLoading } = useAuditLogs(filters)
   const { exportToCSV } = useExportAuditLogs()
@@ -87,6 +101,7 @@ export function AuditLogsPage() {
   const handleReset = () => {
     setSelectedAction('')
     setSelectedTable('')
+    setAdminEmailFilter('')
     setStartDate('')
     setEndDate('')
     setPage(1)
@@ -130,7 +145,18 @@ export function AuditLogsPage() {
               <Activity className="text-indigo-500" size={24} />
               System Audit Logs
             </h1>
-            <p className="text-slate-500 mt-1 text-sm">Monitor security events, system modifications, and administrative actions.</p>
+            <p className="text-slate-500 mt-1 text-sm mb-3">Monitor security events, system modifications, and administrative actions.</p>
+            {onlineAdmins.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                <span className="text-xs font-semibold text-slate-400 self-center mr-1">ONLINE:</span>
+                {onlineAdmins.map((email) => (
+                  <div key={email} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs font-medium border border-green-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    {email}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <button 
@@ -152,7 +178,18 @@ export function AuditLogsPage() {
 
         {/* Filters Panel */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5"><UserRound size={12}/> Admin Email</label>
+              <input 
+                type="text" 
+                placeholder="e.g. admin@gmail.com"
+                value={adminEmailFilter} 
+                onChange={(e) => { setAdminEmailFilter(e.target.value); setPage(1) }} 
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all"
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Activity size={12}/> Action Type</label>
               <select 
@@ -245,9 +282,11 @@ export function AuditLogsPage() {
                       <React.Fragment key={log.id}>
                         <tr className="hover:bg-slate-50/80 transition-colors group">
                           <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-medium text-xs">
-                            {new Date(log.created_at).toLocaleString('en-US', {
+                            {new Date(log.created_at).toLocaleString('id-ID', {
+                              timeZone: 'Asia/Jakarta',
                               year: 'numeric', month: 'short', day: 'numeric',
                               hour: '2-digit', minute: '2-digit', second: '2-digit',
+                              timeZoneName: 'short'
                             })}
                           </td>
                           <td className="px-6 py-4">

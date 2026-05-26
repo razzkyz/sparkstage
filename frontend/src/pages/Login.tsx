@@ -90,6 +90,15 @@ const Login = () => {
         const adminStatus = await isAdmin(userId);
         
         if (adminStatus) {
+          // Log admin login
+          await supabase.rpc('log_audit_event', {
+            p_user_id: userId,
+            p_action: 'user_logged_in',
+            p_table_name: 'auth_users',
+            p_record_id: userId,
+            p_description: `Admin logged in`,
+          });
+
           // Route based on user role
           const roleResult = await lookupUserRole(userId);
           if (roleResult.ok) {

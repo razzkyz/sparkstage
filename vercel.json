@@ -4,6 +4,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/shop/product/:id",
+      "destination": "/api/product.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

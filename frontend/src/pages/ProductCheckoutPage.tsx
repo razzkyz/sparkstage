@@ -21,12 +21,22 @@ export default function ProductCheckoutPage() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { user, session, initialized, getValidAccessToken, refreshSession } = useAuth();
-  const { items: allItems, removeItem } = useCart();
+  const { items: cartItems, removeItem: removeCartItem } = useCart();
   const { showToast } = useToast();
   const cashierCheckoutEnabled = String(import.meta.env.VITE_ENABLE_CASHIER_CHECKOUT || '').toLowerCase() !== 'false';
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
   const userPoints = loyaltyData?.total_points ?? 0;
   const userTierLevel = loyaltyData?.tier_level ?? 0;
+
+  // Direct Buy handling
+  const directItem = location.state?.directItem as any | undefined;
+  const allItems = directItem ? [directItem] : cartItems;
+  const removeItem = (variantId: number) => {
+    if (!directItem) {
+      removeCartItem(variantId);
+    }
+  };
+
   const {
     customerName,
     customerPhone,
@@ -54,7 +64,7 @@ export default function ProductCheckoutPage() {
     cashierDisabled,
   } = useProductCheckoutController({
     allItems,
-    selectedVariantIds: location.state?.selectedVariantIds as number[] | undefined,
+    selectedVariantIds: directItem ? [directItem.variantId] : (location.state?.selectedVariantIds as number[] | undefined),
     user,
     sessionToken: session?.access_token,
     initialized,

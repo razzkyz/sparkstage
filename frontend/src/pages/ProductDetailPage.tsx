@@ -86,6 +86,32 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleBuyNow = () => {
+    if (!user) {
+      showToast('error', 'Please login to checkout');
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    if (!product || !selectedVariant) return;
+    if (selectedVariant.available <= 0) return;
+
+    const fallbackImages = product.imageUrls.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : [];
+    const imageFromCarousel = fallbackImages[imageIndex] ?? null;
+
+    const directItem = {
+      productId: product.id,
+      productName: product.name,
+      productImageUrl: selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
+      variantId: selectedVariant.id,
+      variantName: selectedVariant.name,
+      unitPrice: selectedVariant.price,
+      quantity: 1,
+      isRental: false,
+    };
+
+    navigate('/checkout/product', { state: { directItem } });
+  };
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-[#FAFAFA]">
@@ -252,14 +278,22 @@ export default function ProductDetailPage() {
 
                   {/* Actions */}
                   <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
-                    <div className="pt-4">
+                    <div className="pt-4 flex flex-col gap-3">
+                      <m.button
+                        onClick={handleBuyNow}
+                        disabled={!selectedVariant || selectedVariant.available <= 0}
+                        className="w-full bg-[#e63d75] text-white py-5 rounded-xl uppercase tracking-widest text-sm font-bold shadow-xl shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 active:bg-[#a32550] ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 disabled:bg-gray-400"
+                      >
+                        {!selectedVariant || selectedVariant.available <= 0 ? 'Out of Stock' : `Pay ${formatCurrency(selectedVariant?.price ?? 0)}`}
+                      </m.button>
+
                       <m.button
                         onClick={handleAddToCart}
                         disabled={!selectedVariant || selectedVariant.available <= 0}
                         className="w-full bg-[#e63d75] text-white py-5 rounded-xl uppercase tracking-widest text-sm font-bold shadow-xl shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 active:bg-[#a32550] ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 disabled:bg-gray-400"
                       >
                         <ShoppingBag className="w-5 h-5" />
-                        {!selectedVariant || selectedVariant.available <= 0 ? 'Out of Stock' : 'Add to Shopping Bag'}
+                        Add to Shopping Bag
                       </m.button>
 
                       {!selectedVariant || selectedVariant.available <= 0 ? (

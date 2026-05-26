@@ -18,6 +18,8 @@ export type AuditAction =
   | 'ticket_scanned'
   | 'order_created'
   | 'product_order_created'
+  | 'dashboard_modified'
+  | 'user_logged_in'
 
 export interface AuditLog {
   id: string
@@ -38,6 +40,7 @@ export interface AuditLog {
 export interface AuditLogFilters {
   action?: AuditAction
   table_name?: string
+  user_email?: string
   startDate?: Date
   endDate?: Date
   limit?: number
@@ -56,12 +59,31 @@ export function useAuditLogs(filters?: AuditLogFilters) {
       if (!user?.id) return []
 
       try {
+        // Find user_id if user_email filter is provided
+        let filterUserId: string | undefined = undefined;
+        const { data: usersData } = await supabase.rpc('get_admin_users');
+        const adminUsers = usersData || [];
+        
+        if (filters?.user_email) {
+          const found = adminUsers.find((u: any) => u.email.toLowerCase() === filters.user_email!.toLowerCase());
+          if (found) {
+            filterUserId = found.user_id;
+          } else {
+            // If email not found in admins, return empty since no logs will match
+            return [];
+          }
+        }
+
         let query = supabase
           .from('audit_logs')
           .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
 
         // Apply filters
+        if (filterUserId) {
+          query = query.eq('user_id', filterUserId);
+        }
+
         if (filters?.action) {
           query = query.eq('action', filters.action)
         }
@@ -92,10 +114,9 @@ export function useAuditLogs(filters?: AuditLogFilters) {
         const rawLogs = (data || []) as AuditLog[]
         if (rawLogs.length === 0) return []
 
-        // Fetch user roles and emails to map to user_id
-        const { data: usersData } = await supabase.rpc('get_admin_users')
+        // Fetch user roles and emails to map to user_id (using previously fetched adminUsers)
         const userMap = new Map<string, { email: string; role: string }>(
-          (usersData || []).map((u: any) => [u.user_id, { email: u.email, role: u.role_name }])
+          adminUsers.map((u: any) => [u.user_id, { email: u.email, role: u.role_name }])
         )
 
         return rawLogs.map((log) => ({

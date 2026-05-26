@@ -316,6 +316,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [adminStatus]);
 
   useEffect(() => {
+    if (!user?.email || !isAdmin) return;
+
+    const channel = supabase.channel('admin-presence', {
+      config: { presence: { key: user.email } },
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ online_at: new Date().toISOString() });
+      }
+    });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.email, isAdmin]);
+
+  useEffect(() => {
     let isMounted = true;
     let isInitializing = true;
     let initialSession: Session | null = null;
