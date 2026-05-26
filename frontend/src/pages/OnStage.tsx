@@ -152,6 +152,7 @@ const OnStage = () => {
   // };
 
   // Trending products auto-scroll
+
   useEffect(() => {
     const slider = trendingSliderRef.current;
     if (!slider) return;
@@ -441,12 +442,13 @@ const OnStage = () => {
           </h2>
           {/* <div className="w-24 md:w-32 h-2 bg-black mx-auto mt-2 rounded-full" /> */}
         </div>
-
-        <img
-          src="/images/landing/TICKET BOARD ENTRANCE website.png"
-          alt="BE A STAR Ticket"
-          className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
-        />
+        <Link to="/booking">
+          <img
+            src="/images/landing/TICKET BOARD ENTRANCE website.png"
+            alt="BE A STAR Ticket"
+            className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+          />
+        </Link>
       </div>
 
       <section className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6 shadow-sm">
@@ -664,14 +666,20 @@ const OnStage = () => {
       </section> */}
 
       {/* News Banner Section */}
-      <section className="w-full bg-black py-16 md:py-24 text-center">
-        <div className="max-w-[1200px] mx-auto px-4 flex flex-col items-center">
-          <h2 className="text-5xl md:text-6xl lg:text-8xl font-black text-white uppercase tracking-tighter mb-4 md:mb-6">
+      <section
+        className="w-full py-16 md:py-24 text-center relative bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/glam page assets/VISUAL 5.jpeg')",
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="max-w-[1200px] mx-auto px-4 flex flex-col items-center relative z-10">
+          <h2 className="text-5xl md:text-6xl lg:text-8xl font-black text-white uppercase tracking-tighter mb-4 md:mb-6 drop-shadow-md">
             LATEST NEWS
           </h2>
           <p className="text-white text-lg md:text-xl lg:text-2xl font-bold italic tracking-widest mb-8 md:mb-12 max-w-2xl px-4">
-            Stay up to date with exciting events, backstage passes, and
-            exclusive charm releases.
+            Stay up to date with exciting events, backstage passes and exclusive
+            charm releases.
           </p>
           <Link
             to="/news"
