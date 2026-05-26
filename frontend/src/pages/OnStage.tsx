@@ -274,9 +274,9 @@ const OnStage = () => {
           )}
 
           {/* Carousel Container */}
-          <div className="relative w-full">
+          <div className="relative w-full max-h-[80vh] lg:px-16 xl:px-24">
             <div
-              className="overflow-hidden w-full relative"
+              className="overflow-hidden w-full relative rounded-none"
               onTouchStart={(e) => { processTouchStartX.current = e.touches[0].clientX; }}
               onTouchMove={(e) => { processTouchEndX.current = e.touches[0].clientX; }}
               onTouchEnd={() => {
