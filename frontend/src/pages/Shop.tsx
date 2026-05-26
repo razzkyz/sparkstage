@@ -210,8 +210,31 @@ const Shop = () => {
     [categories]
   );
 
+  const GLAM_CATEGORY_SLUGS = new Set([
+    'makeup',
+    'eyewear',
+    'glitter',
+    'headliner',
+    'starglitter',
+    'star-glitter',
+    'popsocket',
+    'pop-socket',
+    'popsockets',
+  ]);
+
   const nonCharmBarProducts = useMemo(
-    () => products.filter((p) => !p.categorySlug || !CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug)),
+    () => products.filter((p) => {
+      const nameLower = p.name.toLowerCase();
+      
+      // Filter out specific products by name (in case they don't have a category slug)
+      if (nameLower.includes('headliner') || nameLower.includes('pop socket') || nameLower.includes('popsocket')) {
+        return false;
+      }
+      
+      if (!p.categorySlug) return true;
+      const slugLower = p.categorySlug.toLowerCase();
+      return !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) && !GLAM_CATEGORY_SLUGS.has(slugLower);
+    }),
     [products]
   );
 

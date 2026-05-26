@@ -22,13 +22,28 @@ const CHARM_BAR_ONLY_CATEGORIES = new Set([
   'pets',
 ]);
 
+// Categories that should only appear in Glam, not in Shop
+const GLAM_ONLY_CATEGORIES = new Set([
+  'makeup',
+  'eyewear',
+  'glitter',
+  'headliner',
+  'starglitter',
+  'star-glitter',
+  'popsocket',
+  'pop-socket',
+  'popsockets',
+]);
+
 export function buildShopCategoryIndex(categories: Category[]): ShopCategoryIndex {
   const parents: Category[] = [];
   const childrenByParentId = new Map<number, Category[]>();
 
   for (const category of categories) {
-    // Skip charm-bar-only categories from appearing in Shop
-    if (CHARM_BAR_ONLY_CATEGORIES.has(category.slug)) {
+    const slugLower = category.slug?.toLowerCase() || '';
+    
+    // Skip charm-bar-only and glam-only categories from appearing in Shop
+    if (CHARM_BAR_ONLY_CATEGORIES.has(slugLower) || GLAM_ONLY_CATEGORIES.has(slugLower)) {
       continue;
     }
 
