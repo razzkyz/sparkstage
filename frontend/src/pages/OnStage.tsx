@@ -395,14 +395,14 @@ const OnStage = () => {
                 <button
                   type="button"
                   onClick={prevSlide}
-                  className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-10 bg-black hover:bg-gray-800 active:bg-black text-white p-3 md:p-5 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
+                  className="absolute left-2 md:left-6 top-[40%] -translate-y-1/2 z-10 bg-black/50 hover:bg-gray-800/80 active:bg-black/50 text-white p-3 md:p-4 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
                 >
                   <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
                 <button
                   type="button"
                   onClick={nextSlide}
-                  className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-10 bg-black hover:bg-gray-800 active:bg-black text-white p-3 md:p-5 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
+                  className="absolute right-2 md:right-6 top-[40%] -translate-y-1/2 z-10 bg-black/50 hover:bg-gray-800/80 active:bg-black/50 text-white p-3 md:p-4 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
                 >
                   <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
