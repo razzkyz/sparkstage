@@ -478,7 +478,21 @@ const Navbar = () => {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div
+          className={`flex items-center px-5 py-4 border-b border-gray-100 ${user ? "justify-between" : "justify-end"}`}
+        >
+          {/* Close button — kiri saat tidak login, kanan saat login */}
+          {!user && (
+            <button
+              id="sidebar-close-btn"
+              type="button"
+              aria-label="Tutup menu"
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           {user && (
             <div className="">
               {/* User info row */}
@@ -522,7 +536,7 @@ const Navbar = () => {
             /> */}
             </div>
           )}
-          <div>
+          {user && (
             <button
               id="sidebar-close-btn"
               type="button"
@@ -532,7 +546,7 @@ const Navbar = () => {
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
+          )}
         </div>
 
         {/* Nav items */}

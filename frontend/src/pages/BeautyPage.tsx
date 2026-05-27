@@ -1,42 +1,47 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PageTransition } from '../components/PageTransition';
-import ProductQuickViewModal from '../components/ProductQuickViewModal';
-import { DEFAULT_GLAM_PAGE_SETTINGS, useGlamPageSettings } from '../hooks/useGlamPageSettings';
-import { useProductSummaries } from '../hooks/useProducts';
-import { formatCurrency } from '../utils/formatters';
-import { getCmsFontStyle } from '../lib/cmsTypography';
-import { AppLoadingScreen } from '../app/AppLoadingScreen';
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { PageTransition } from "../components/PageTransition";
+import ProductQuickViewModal from "../components/ProductQuickViewModal";
+import {
+  DEFAULT_GLAM_PAGE_SETTINGS,
+  useGlamPageSettings,
+} from "../hooks/useGlamPageSettings";
+import { useProductSummaries } from "../hooks/useProducts";
+import { formatCurrency } from "../utils/formatters";
+import { getCmsFontStyle } from "../lib/cmsTypography";
+import { AppLoadingScreen } from "../app/AppLoadingScreen";
 
-const GLAM_ASSET_BASE = '/images/glam%20page%20assets';
+const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
-const MAKEUP_SLUGS = new Set(['makeup', 'eyewear', 'glitter', 'headliner']);
+const MAKEUP_SLUGS = new Set(["makeup", "eyewear", "glitter", "headliner"]);
 
 const decorativeStars = [
   {
-    slot: 'pink-rush',
+    slot: "pink-rush",
     src: `${STAR_ASSET_BASE}/PINK%20RUSH.png`,
-    alt: 'Pink glitter star',
-    className: 'left-[2%] top-[5.5rem] w-24 sm:w-28 lg:left-[4%] lg:top-20 lg:w-32',
+    alt: "Pink glitter star",
+    className:
+      "left-[2%] top-[5.5rem] w-24 sm:w-28 lg:left-[4%] lg:top-20 lg:w-32",
   },
   {
-    slot: 'silver-blink',
+    slot: "silver-blink",
     src: `${STAR_ASSET_BASE}/SILVER%20BLINK.png`,
-    alt: 'Silver glitter star',
-    className: 'left-[4%] bottom-6 w-28 sm:w-32 lg:left-[1%] lg:bottom-2 lg:w-36',
+    alt: "Silver glitter star",
+    className:
+      "left-[4%] bottom-6 w-28 sm:w-32 lg:left-[1%] lg:bottom-2 lg:w-36",
   },
   {
-    slot: 'bronze',
+    slot: "bronze",
     src: `${STAR_ASSET_BASE}/BRONZE.png`,
-    alt: 'Bronze glitter star',
-    className: 'left-[30%] bottom-0 w-20 sm:w-24 lg:left-[28%] lg:w-28',
+    alt: "Bronze glitter star",
+    className: "left-[30%] bottom-0 w-20 sm:w-24 lg:left-[28%] lg:w-28",
   },
   {
-    slot: 'aura-pop',
+    slot: "aura-pop",
     src: `${STAR_ASSET_BASE}/AURA%20POP.png`,
-    alt: 'Sparkly mini star',
-    className: 'left-[14%] top-[44%] w-12 sm:w-16 lg:w-20',
+    alt: "Sparkly mini star",
+    className: "left-[14%] top-[44%] w-12 sm:w-16 lg:w-20",
   },
 ];
 
@@ -47,10 +52,17 @@ type QuickViewState = {
 
 export default function BeautyPage() {
   const { settings, error: settingsError } = useGlamPageSettings();
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useProductSummaries();
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    error: productsError,
+  } = useProductSummaries();
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [quickView, setQuickView] = useState<QuickViewState>({ open: false, productId: null });
+  const [quickView, setQuickView] = useState<QuickViewState>({
+    open: false,
+    productId: null,
+  });
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
@@ -64,12 +76,17 @@ export default function BeautyPage() {
   const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
   const starLinkMap = useMemo(
     () => new Map(content.look_star_links.map((link) => [link.slot, link])),
-    [content.look_star_links]
+    [content.look_star_links],
   );
-  const productLookup = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const productLookup = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
+  );
 
   const makeupProducts = useMemo(() => {
-    return products.filter(p => p.categorySlug != null && MAKEUP_SLUGS.has(p.categorySlug));
+    return products.filter(
+      (p) => p.categorySlug != null && MAKEUP_SLUGS.has(p.categorySlug),
+    );
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -85,8 +102,14 @@ export default function BeautyPage() {
   }, [normalizedQuery, makeupProducts]);
 
   const PAGE_SIZE = 6;
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
-  const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / PAGE_SIZE),
+  );
+  const paginatedProducts = filteredProducts.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const hasProductsError = productsError instanceof Error;
   const hasSettingsError = settingsError instanceof Error;
@@ -98,36 +121,41 @@ export default function BeautyPage() {
   return (
     <PageTransition>
       <main className="min-h-[calc(100vh-64px)] bg-white text-black py-5">
-                    {/* ── Shop Section Navigator ──────────────────────────── */}
-            <div className="flex gap-3 justify-center flex-wrap">
+        {/* ── Shop Section Navigator ──────────────────────────── */}
+        <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap overflow-x-auto w-full px-2 sm:px-0 pb-2 -mb-2">
+          {/* Glam — current page (active) */}
+          <Link
+            to="/beauty"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+              auto_awesome
+            </span>
+            Glam
+          </Link>
 
-              {/* Glam — current page (active) */}
-              <Link
-                to="/beauty"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-sm font-bold uppercase tracking-wider shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-                Glam
-              </Link>
+          {/* Charm Bar */}
+          <Link
+            to="/charm-bar"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+          >
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+              diamond
+            </span>
+            Charm
+          </Link>
 
-              {/* Charm Bar */}
-              <Link
-                to="/charm-bar"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[16px]">diamond</span>
-                Charm
-              </Link>
-
-              {/* Spark Club */}
-              <Link
-                to="/shop"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[16px]">storefront</span>
-                Spark
-              </Link>
-            </div>
+          {/* Spark Club */}
+          <Link
+            to="/shop"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+          >
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+              storefront
+            </span>
+            Spark
+          </Link>
+        </div>
         <section className="">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 sm:gap-8 sm:px-8 sm:py-12 md:flex-row md:justify-center md:gap-10 lg:gap-20 lg:px-12 lg:py-16">
             {/* Title for Mobile (Hidden on md and up) */}
@@ -167,7 +195,12 @@ export default function BeautyPage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
-          <h2 className="text-center text-4xl leading-none sm:text-6xl" style={getCmsFontStyle(lookFonts.heading)}>{content.look_heading}</h2>
+          <h2
+            className="text-center text-4xl leading-none sm:text-6xl"
+            style={getCmsFontStyle(lookFonts.heading)}
+          >
+            {content.look_heading}
+          </h2>
 
           <div className="mt-8 grid grid-cols-[1fr_1fr] items-stretch gap-4 border-b border-black/20 pb-8 sm:gap-6 lg:gap-8">
             {/* Left: 2x2 star product grid */}
@@ -175,7 +208,9 @@ export default function BeautyPage() {
               {decorativeStars.map((star) => {
                 const starLink = starLinkMap.get(star.slot) ?? null;
                 const productId = starLink?.product_id ?? null;
-                const linkedProduct = productId ? productLookup.get(productId) ?? null : null;
+                const linkedProduct = productId
+                  ? (productLookup.get(productId) ?? null)
+                  : null;
                 const starImage = (
                   <img
                     src={starLink?.image_url ?? star.src}
@@ -186,7 +221,10 @@ export default function BeautyPage() {
 
                 if (!productId) {
                   return (
-                    <div key={star.slot} className="flex aspect-square items-center justify-center p-4">
+                    <div
+                      key={star.slot}
+                      className="flex aspect-square items-center justify-center p-4"
+                    >
                       {starImage}
                     </div>
                   );
@@ -196,8 +234,16 @@ export default function BeautyPage() {
                   <button
                     key={star.slot}
                     type="button"
-                    title={linkedProduct ? `Open ${linkedProduct.name}` : 'Open linked product'}
-                    aria-label={linkedProduct ? `Open ${linkedProduct.name}` : 'Open linked product'}
+                    title={
+                      linkedProduct
+                        ? `Open ${linkedProduct.name}`
+                        : "Open linked product"
+                    }
+                    aria-label={
+                      linkedProduct
+                        ? `Open ${linkedProduct.name}`
+                        : "Open linked product"
+                    }
                     onClick={() => setQuickView({ open: true, productId })}
                     className="flex aspect-square cursor-pointer items-center justify-center p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff4b86] focus-visible:ring-offset-2"
                   >
@@ -220,10 +266,14 @@ export default function BeautyPage() {
           </div>
         </section>
 
-
         <section className="mx-auto max-w-7xl px-4 pb-5 sm:px-8 lg:px-12">
           <div className="flex flex-col items-center gap-4">
-            <h3 className="text-3xl italic tracking-wide" style={getCmsFontStyle(productFonts.heading)}>{content.product_section_title}</h3>
+            <h3
+              className="text-3xl italic tracking-wide"
+              style={getCmsFontStyle(productFonts.heading)}
+            >
+              {content.product_section_title}
+            </h3>
 
             <label className="relative w-full max-w-[400px]">
               <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40" />
@@ -254,13 +304,25 @@ export default function BeautyPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-black/15">
-                      <span className="material-symbols-outlined text-3xl">{product.placeholder}</span>
+                      <span className="material-symbols-outlined text-3xl">
+                        {product.placeholder}
+                      </span>
                     </div>
                   )}
                 </div>
                 <div className="px-3 py-3 text-left">
-                  <h4 className="text-[11px] font-semibold leading-tight text-black line-clamp-1 sm:text-sm" style={getCmsFontStyle(productFonts.body)}>{product.name}</h4>
-                  <p className="mt-1 text-[10px] font-bold text-[#ff4b86] sm:text-xs" style={getCmsFontStyle(productFonts.body)}>{formatCurrency(product.price)}</p>
+                  <h4
+                    className="text-[11px] font-semibold leading-tight text-black line-clamp-1 sm:text-sm"
+                    style={getCmsFontStyle(productFonts.body)}
+                  >
+                    {product.name}
+                  </h4>
+                  <p
+                    className="mt-1 text-[10px] font-bold text-[#ff4b86] sm:text-xs"
+                    style={getCmsFontStyle(productFonts.body)}
+                  >
+                    {formatCurrency(product.price)}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -268,18 +330,21 @@ export default function BeautyPage() {
 
           <div className="mt-10 flex justify-center items-center gap-6">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="p-2 border border-black/20 rounded-full hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-medium text-black/50 tracking-wide" style={getCmsFontStyle(productFonts.body)}>
+            <span
+              className="text-xs font-medium text-black/50 tracking-wide"
+              style={getCmsFontStyle(productFonts.body)}
+            >
               {page} / {totalPages}
             </span>
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="p-2 border border-black/20 rounded-full hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               aria-label="Next page"
@@ -289,23 +354,38 @@ export default function BeautyPage() {
           </div>
 
           {!productsLoading && filteredProducts.length === 0 ? (
-            <div className="mt-10 border border-dashed border-black/20 px-6 py-12 text-center text-black/55" style={getCmsFontStyle(productFonts.body)}>
+            <div
+              className="mt-10 border border-dashed border-black/20 px-6 py-12 text-center text-black/55"
+              style={getCmsFontStyle(productFonts.body)}
+            >
               No products match your search yet.
             </div>
           ) : null}
 
           {productsLoading ? (
-            <div className="mt-10 text-center text-sm text-black/45" style={getCmsFontStyle(productFonts.body)}>Loading products...</div>
+            <div
+              className="mt-10 text-center text-sm text-black/45"
+              style={getCmsFontStyle(productFonts.body)}
+            >
+              Loading products...
+            </div>
           ) : null}
 
           {hasProductsError ? (
-            <div className="mt-8 text-center text-sm text-red-600" style={getCmsFontStyle(productFonts.body)}>
-              Product catalog failed to load. The page content is still available.
+            <div
+              className="mt-8 text-center text-sm text-red-600"
+              style={getCmsFontStyle(productFonts.body)}
+            >
+              Product catalog failed to load. The page content is still
+              available.
             </div>
           ) : null}
 
           {hasSettingsError ? (
-            <div className="mt-3 text-center text-xs uppercase tracking-[0.2em] text-black/40" style={getCmsFontStyle(productFonts.body)}>
+            <div
+              className="mt-3 text-center text-xs uppercase tracking-[0.2em] text-black/40"
+              style={getCmsFontStyle(productFonts.body)}
+            >
               Using default GLAM content while saved settings are unavailable.
             </div>
           ) : null}
