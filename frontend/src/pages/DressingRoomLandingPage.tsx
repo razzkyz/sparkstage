@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Heart, ShieldCheck, Zap, ArrowRight, Star, Package } from 'lucide-react';
 import { PageTransition } from '../components/PageTransition';
 import { HeroCarousel } from '../components/dressing-room/HeroCarousel';
 import { DRESSING_ROOM_DEMO } from '../mock/dressingRoomDemo';
 import { useDressingRoomCollection } from '../hooks/useDressingRoomCollection';
-import { useDressingRoomProducts, useDressingRoomProductVariants } from '../hooks/useDressingRoomInventory';
-import type { DressingRoomProduct, DressingRoomProductVariant } from '../types/dressingRoom';
+import { useDressingRoomCatalog, useDressingRoomCatalogVariants, useDressingRoomSubcategories } from '../hooks/useDressingRoomCatalog';
+import type { DressingRoomCatalogProduct } from '../hooks/useDressingRoomCatalog';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import RentalFlowModal from '../components/dressing-room/RentalFlowModal';
 
@@ -17,7 +17,7 @@ function DressingRoomProductCard({
   product,
   onClick,
 }: {
-  product: DressingRoomProduct;
+  product: DressingRoomCatalogProduct;
   onClick: () => void;
 }) {
   return (
@@ -68,12 +68,12 @@ function VariantPickerModal({
   onSelect,
   onClose,
 }: {
-  product: DressingRoomProduct;
-  onSelect: (product: DressingRoomProduct, variant: DressingRoomProductVariant) => void;
+  product: DressingRoomCatalogProduct;
+  onSelect: (product: DressingRoomCatalogProduct, variant: any) => void;
   onClose: () => void;
 }) {
-  const { data: variants = [], isLoading } = useDressingRoomProductVariants(product.id);
-  const availableVariants = variants.filter(v => v.available_quantity > 0);
+  const { data: variants = [], isLoading } = useDressingRoomCatalogVariants(product.id);
+  const availableVariants = variants.filter((v: any) => (v.stock || 0) > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -108,12 +108,6 @@ function VariantPickerModal({
                 >
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{variant.name}</p>
-                    {variant.size_label && (
-                      <p className="text-xs text-gray-500">{variant.size_label}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-green-600 font-medium">{variant.available_quantity} tersedia</p>
                     <ArrowRight className="w-4 h-4 text-main-500 opacity-0 group-hover:opacity-100 ml-auto transition-opacity" />
                   </div>
                 </button>
@@ -128,11 +122,12 @@ function VariantPickerModal({
 
 export default function DressingRoomLandingPage() {
   const { collection, looks: dbLooks, isLoading: looksLoading } = useDressingRoomCollection();
-  const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomProducts();
+  const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomCatalog();
+  const { data: subcategories = [] } = useDressingRoomSubcategories(1); // 1 is the parent "Fashion On Demand" category
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [selectedProduct, setSelectedProduct] = useState<DressingRoomProduct | null>(null);
-  const [rentalProduct, setRentalProduct] = useState<DressingRoomProduct | null>(null);
-  const [rentalVariant, setRentalVariant] = useState<DressingRoomProductVariant | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<DressingRoomCatalogProduct | null>(null);
+  const [rentalProduct, setRentalProduct] = useState<DressingRoomCatalogProduct | null>(null);
+  const [rentalVariant, setRentalVariant] = useState<any>(null);
   const [showRentalModal, setShowRentalModal] = useState(false);
 
   const title = collection?.title || DRESSING_ROOM_DEMO.title;
@@ -143,23 +138,19 @@ export default function DressingRoomLandingPage() {
     .map((look) => look.model_image_url)
     .filter((url): url is string => typeof url === 'string' && url.length > 0);
 
-  // Unique categories from products
-  const productCategories = useMemo(() => {
-    const cats = new Set(drProducts.map(p => p.category));
-    return Array.from(cats);
-  }, [drProducts]);
-
-  // Filtered products
+  // Filtered products by selected category
   const filteredDrProducts = useMemo(() => {
     if (activeCategory === 'all') return drProducts;
-    return drProducts.filter(p => p.category === activeCategory);
+    // Match against category_name field, converting to lowercase
+    const categorySlug = activeCategory.toLowerCase();
+    return drProducts.filter(p => (p.category_name || '').toLowerCase() === categorySlug);
   }, [drProducts, activeCategory]);
 
-  const handleProductClick = (product: DressingRoomProduct) => {
+  const handleProductClick = (product: DressingRoomCatalogProduct) => {
     setSelectedProduct(product);
   };
 
-  const handleVariantSelect = (product: DressingRoomProduct, variant: DressingRoomProductVariant) => {
+  const handleVariantSelect = (product: DressingRoomCatalogProduct, variant: any) => {
     setSelectedProduct(null);
     setRentalProduct(product);
     setRentalVariant(variant);
@@ -460,7 +451,7 @@ export default function DressingRoomLandingPage() {
             </div>
 
             {/* Category filter tabs */}
-            {productCategories.length > 1 && (
+            {subcategories.length > 0 && (
               <div className="mb-8 sticky top-0 bg-gray-50 z-40 pt-4 pb-2 -mt-6">
                 <div className="flex overflow-x-auto hide-scrollbar gap-2">
                   <button
@@ -474,18 +465,18 @@ export default function DressingRoomLandingPage() {
                   >
                     Semua
                   </button>
-                  {productCategories.map(cat => (
+                  {subcategories.map(cat => (
                     <button
-                      key={cat}
+                      key={cat.id}
                       type="button"
-                      onClick={() => setActiveCategory(cat)}
+                      onClick={() => setActiveCategory(cat.slug)}
                       className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border capitalize transition-colors ${
-                        activeCategory === cat
+                        activeCategory === cat.slug
                           ? 'bg-main-500 text-white border-main-500 shadow-sm'
                           : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
                       }`}
                     >
-                      {cat}
+                      {cat.name}
                     </button>
                   ))}
                 </div>

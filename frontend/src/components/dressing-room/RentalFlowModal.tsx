@@ -14,8 +14,8 @@ export interface RentalItem {
 }
 
 export interface RentalFormData {
-  product: DressingRoomProduct;
-  variant: DressingRoomProductVariant;
+  product: any;
+  variant: any;
   durationDays: number;
   rentalStartTime: Date;
   rentalEndTime: Date;
@@ -27,8 +27,8 @@ export interface RentalFormData {
 }
 
 interface RentalFlowModalProps {
-  product: DressingRoomProduct;
-  variant: DressingRoomProductVariant;
+  product: any;
+  variant: any;
   isOpen: boolean;
   onClose: () => void;
 }

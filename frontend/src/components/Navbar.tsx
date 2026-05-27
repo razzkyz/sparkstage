@@ -94,17 +94,10 @@ const Navbar = () => {
       isPink: true,
       icon: Ticket,
     },
-<<<<<<< HEAD
     { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
     { key: "shop", label: "SHOP", to: "/glam", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
-=======
-    // { key: 'dressing-room', label: 'Fashion On Demand', to: '/dressing-room' },
-    { key: "shop", label: "Shop", to: "/glam", icon: ShoppingBag },
-    { key: "event", label: "Event", to: "/events", icon: CalendarDays },
-    { key: "news", label: "News", to: "/news", icon: Newspaper },
->>>>>>> 3f95575160d61003340eeb8e8f97a2a379b380fe
   ];
 
   const activeIndex = Math.max(
