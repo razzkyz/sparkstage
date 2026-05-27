@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   ShoppingBag,
   Ticket,
-  UserRound,
+  // UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -261,187 +261,179 @@ const Navbar = () => {
               </div>
 
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
-                {user ? (
-                  <div className="hidden lg:flex items-center gap-5">
-                    <span className="text-sm font-medium text-gray-900">
-                      {getUserDisplayName(user)}
-                    </span>
-
-                    {isAdmin && (
-                      <Link
-                        to="/admin/dashboard"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
-                        title="Admin Dashboard"
-                      >
-                        <span className="material-symbols-outlined text-sm">
-                          dashboard
+                {/* Desktop icons — selalu tampil */}
+                <div className="hidden lg:flex items-center gap-5">
+                  {
+                    user ? (
+                      <>
+                        <span className="text-sm font-medium text-gray-900">
+                          {getUserDisplayName(user)}
                         </span>
-                        Dashboard
-                      </Link>
+
+                        {isAdmin && (
+                          <Link
+                            to="/admin/dashboard"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
+                            title="Admin Dashboard"
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              dashboard
+                            </span>
+                            Dashboard
+                          </Link>
+                        )}
+
+                        <button
+                          onClick={handleSignOutClick}
+                          disabled={loggingOut}
+                          className="text-gray-500 hover:text-primary transition-colors"
+                          title={t("auth.signOut")}
+                        >
+                          <LogOut className="h-5 w-5" />
+                        </button>
+
+                        {/* Loyalty Points Badge — Desktop */}
+                        <Link
+                          to="/my-points"
+                          className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
+                            boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
+                          }}
+                          title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
+                        >
+                          <span className="text-sm leading-none">
+                            {loyaltyRank.icon}
+                          </span>
+                          <span className="text-xs font-black tracking-tight text-white">
+                            {loyaltyPoints.toLocaleString()}
+                          </span>
+                          <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
+                            pts
+                          </span>
+                          <span
+                            className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                            style={{
+                              background:
+                                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                            }}
+                          />
+                        </Link>
+                      </>
+                    ) : null
+                    // {/* nonaktifkan button sign in desktop */}
+                    // <Link
+                    //   to="/login"
+                    //   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                    //   style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
+                    //   aria-label={t("auth.signIn")}
+                    //   title={t("auth.signIn")}
+                    // >
+                    //   <UserRound className="h-4 w-4" />
+                    //   <span>{t("auth.signIn")}</span>
+                    // </Link>
+                  }
+
+                  {/* Cart, My Tickets, My Orders — selalu tampil di desktop */}
+                  <Link
+                    to="/my-tickets"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    title={t("nav.myTickets")}
+                  >
+                    <Ticket className="h-5 w-5" />
+                    {ticketCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                        {ticketCount}
+                      </span>
                     )}
+                  </Link>
 
-                    <button
-                      onClick={handleSignOutClick}
-                      disabled={loggingOut}
-                      className="text-gray-500 hover:text-primary transition-colors"
-                      title={t("auth.signOut")}
-                    >
-                      <LogOut className="h-5 w-5" />
-                    </button>
-
-                    {/* Loyalty Points Badge — Desktop */}
-                    <Link
-                      to="/my-points"
-                      className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
-                        boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
-                      }}
-                      title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
-                    >
-                      {/* Rank icon */}
-                      <span className="text-sm leading-none">
-                        {loyaltyRank.icon}
+                  <Link
+                    to="/my-orders"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    title={t("nav.myOrders")}
+                  >
+                    <ReceiptText className="h-5 w-5" />
+                    {orderCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                        {orderCount}
                       </span>
-                      {/* Points count */}
-                      <span className="text-xs font-black tracking-tight text-white">
-                        {loyaltyPoints.toLocaleString()}
+                    )}
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    aria-label={t("nav.cart")}
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    {totalQuantity > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                        {totalQuantity}
                       </span>
-                      {/* pts label */}
-                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
-                        pts
-                      </span>
-                      {/* Shine on hover */}
-                      <span
-                        className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
-                        }}
-                      />
-                    </Link>
-
-                    <Link
-                      to="/my-tickets"
-                      className="relative text-gray-500 hover:text-main-600 transition-colors"
-                      title={t("nav.myTickets")}
-                    >
-                      <Ticket className="h-5 w-5" />
-                      {ticketCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                          {ticketCount}
-                        </span>
-                      )}
-                    </Link>
-
-                    <Link
-                      to="/my-orders"
-                      className="relative text-gray-500 hover:text-main-600 transition-colors"
-                      title={t("nav.myOrders")}
-                    >
-                      <ReceiptText className="h-5 w-5" />
-                      {orderCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                          {orderCount}
-                        </span>
-                      )}
-                    </Link>
-
-                    <Link
-                      to="/cart"
-                      className="relative text-gray-500 hover:text-main-600 transition-colors"
-                      aria-label={t("nav.cart")}
-                    >
-                      <ShoppingCart className="h-5 w-5" />
-                      {totalQuantity > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                          {totalQuantity}
-                        </span>
-                      )}
-                    </Link>
-
-                    {/* Search disabled */}
-                  </div>
-                ) : (
-                  <div className="hidden lg:flex items-center gap-4">
-                    <Link
-                      to="/login"
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                      style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
-                      aria-label={t("auth.signIn")}
-                      title={t("auth.signIn")}
-                    >
-                      <UserRound className="h-4 w-4" />
-                      <span>{t("auth.signIn")}</span>
-                    </Link>
-
-                    {/* Search disabled */}
-                  </div>
-                )}
+                    )}
+                  </Link>
+                </div>
 
                 <div className="lg:hidden flex items-center gap-0.5">
-                  {!user && (
-                    <Link
-                      to="/login"
-                      className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                      style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
-                      aria-label={t("auth.signIn")}
-                      title={t("auth.signIn")}
-                    >
-                      <UserRound className="h-5 w-5" />
-                    </Link>
-                  )}
+                  {/* nonaktifkan button un-login */}
+                  {/* <Link
+                    to="/login"
+                    className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
+                    style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
+                    aria-label={t("auth.signIn")}
+                    title={t("auth.signIn")}
+                  >
+                    <UserRound className="h-5 w-5" />
+                  </Link> */}
 
                   {/* Mobile: Ticket icon */}
-                  {user && (
-                    <Link
-                      to="/my-tickets"
-                      className="relative p-1.5 text-gray-700 active:text-main-600"
-                      aria-label={t("nav.myTickets")}
-                      title={t("nav.myTickets")}
-                    >
-                      <Ticket className="h-6 w-6" />
-                      {ticketCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                          {ticketCount}
-                        </span>
-                      )}
-                    </Link>
-                  )}
+
+                  <Link
+                    to="/my-tickets"
+                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    aria-label={t("nav.myTickets")}
+                    title={t("nav.myTickets")}
+                  >
+                    <Ticket className="h-6 w-6" />
+                    {ticketCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                        {ticketCount}
+                      </span>
+                    )}
+                  </Link>
 
                   {/* Mobile: Orders icon */}
-                  {user && (
-                    <Link
-                      to="/my-orders"
-                      className="relative p-1.5 text-gray-700 active:text-main-600"
-                      aria-label={t("nav.myOrders")}
-                      title={t("nav.myOrders")}
-                    >
-                      <ReceiptText className="h-6 w-6" />
-                      {orderCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
-                          {orderCount}
-                        </span>
-                      )}
-                    </Link>
-                  )}
+
+                  <Link
+                    to="/my-orders"
+                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    aria-label={t("nav.myOrders")}
+                    title={t("nav.myOrders")}
+                  >
+                    <ReceiptText className="h-6 w-6" />
+                    {orderCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                        {orderCount}
+                      </span>
+                    )}
+                  </Link>
 
                   {/* Mobile: Cart — hanya tampil jika sudah login */}
-                  {user && (
-                    <Link
-                      to="/cart"
-                      className="relative p-1.5 text-gray-700 active:text-main-600"
-                      aria-label={t("nav.cart")}
-                    >
-                      <ShoppingCart className="h-6 w-6" />
-                      {totalQuantity > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
-                          {totalQuantity}
-                        </span>
-                      )}
-                    </Link>
-                  )}
+
+                  <Link
+                    to="/cart"
+                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    aria-label={t("nav.cart")}
+                  >
+                    <ShoppingCart className="h-6 w-6" />
+                    {totalQuantity > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
+                        {totalQuantity}
+                      </span>
+                    )}
+                  </Link>
                 </div>
               </div>
             </div>
