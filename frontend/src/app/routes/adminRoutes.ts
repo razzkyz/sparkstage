@@ -6,6 +6,10 @@ const Dashboard = lazy(() => import('../../pages/admin/Dashboard'));
 const CashierDashboard = lazy(() => import('../../pages/admin/CashierDashboard'));
 const CashierOrders = lazy(() => import('../../pages/admin/CashierOrders'));
 const DressingRoomDashboard = lazy(() => import('../../pages/admin/DressingRoomDashboard'));
+const DressingRoomInventory = lazy(() => import('../../pages/admin/DressingRoomInventory'));
+const DressingRoomProductList = lazy(() => import('../../pages/admin/DressingRoomProductList'));
+const DressingRoomProductCreate = lazy(() => import('../../pages/admin/DressingRoomProductCreate'));
+const DressingRoomProductEdit = lazy(() => import('../../pages/admin/DressingRoomProductEdit'));
 const TicketsManagement = lazy(() => import('../../pages/admin/TicketsManagement'));
 const StoreInventory = lazy(() => import('../../pages/admin/StoreInventory'));
 const StageManager = lazy(() => import('../../pages/admin/StageManager'));
@@ -39,6 +43,10 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/cashier-dashboard', Page: CashierDashboard },
   { path: '/admin/cashier-orders', Page: CashierOrders },
   { path: '/admin/dressing-room-dashboard', Page: DressingRoomDashboard },
+  { path: '/admin/dressing-room-inventory', Page: DressingRoomInventory },
+  { path: '/admin/dressing-room-products', Page: DressingRoomProductList },
+  { path: '/admin/dressing-room-products/create', Page: DressingRoomProductCreate },
+  { path: '/admin/dressing-room-products/:productId/edit', Page: DressingRoomProductEdit },
   { path: '/admin/tickets', Page: TicketsManagement },
   { path: '/admin/store', Page: StoreInventory },
   { path: '/admin/stages', Page: StageManager },

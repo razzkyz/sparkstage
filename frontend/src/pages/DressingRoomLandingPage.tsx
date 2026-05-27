@@ -1,67 +1,141 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Heart, ShieldCheck, Zap, ArrowRight, Star } from 'lucide-react';
+import { CheckCircle2, Heart, ShieldCheck, Zap, ArrowRight, Star, Package } from 'lucide-react';
 import { PageTransition } from '../components/PageTransition';
 import { HeroCarousel } from '../components/dressing-room/HeroCarousel';
-import { ProductImageCarousel } from '../components/dressing-room/ProductImageCarousel';
 import { DRESSING_ROOM_DEMO } from '../mock/dressingRoomDemo';
-import { useDressingRoomCollection, type DressingRoomLook as DBLook } from '../hooks/useDressingRoomCollection';
-import { useProductSummaries, type ProductSummary } from '../hooks/useProducts';
-import { useCategories } from '../hooks/useCategories';
+import { useDressingRoomCollection } from '../hooks/useDressingRoomCollection';
+import { useDressingRoomProducts, useDressingRoomProductVariants } from '../hooks/useDressingRoomInventory';
+import type { DressingRoomProduct, DressingRoomProductVariant } from '../types/dressingRoom';
 import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/cartStore';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
-import { formatCurrency } from '../utils/formatters';
 import RentalFlowModal from '../components/dressing-room/RentalFlowModal';
-import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
-import { filterShopProducts } from './shop/filterShopProducts';
 
-// Helper to convert ProductSummary to DressingRoomLook for single product rental
-function productToLook(product: ProductSummary): DBLook {
-  return {
-    id: 0, // Temporary ID
-    collection_id: 0,
-    look_number: 0,
-    model_image_url: product.image || '',
-    model_name: null,
-    sort_order: 0,
-    items: [
-      {
-        id: product.id,
-        look_id: 0,
-        product_variant_id: product.defaultVariantId || 0,
-        label: product.name,
-        sort_order: 0,
-        resolved_image_url: product.image || null,
-        product_variant: {
-          id: product.defaultVariantId || 0,
-          name: product.defaultVariantName || product.name,
-          sku: '',
-          price: product.price,
-          deposit_amount: 50000, // Fixed 50k deposit per item
-          product: {
-            id: product.id,
-            name: product.name,
-            slug: '',
-            image_url: product.image || null,
-          },
-        },
-      },
-    ],
-  };
+
+
+// ─── Catalog Product Card ────────────────────────────────────────────────────
+function DressingRoomProductCard({
+  product,
+  onClick,
+}: {
+  product: DressingRoomProduct;
+  onClick: () => void;
+}) {
+  return (
+    <motion.div
+      className="group cursor-pointer text-left"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      onClick={onClick}
+    >
+      <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden hover:border-main-500 hover:shadow-lg hover:shadow-pink-100 transition-all duration-300">
+        <div className="relative overflow-hidden aspect-square bg-gray-50">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/neon.png'; }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package className="w-12 h-12 text-gray-300" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+          <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-main-500 text-white text-xs font-bold uppercase tracking-wider py-2 px-3 rounded-lg text-center flex items-center justify-center gap-1">
+              Sewa Sekarang <ArrowRight className="w-3 h-3" />
+            </div>
+          </div>
+        </div>
+        <div className="p-3 sm:p-4">
+          <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2">{product.name}</h3>
+          {product.description && (
+            <p className="text-xs text-gray-500 mt-1 line-clamp-1">{product.description}</p>
+          )}
+          <p className="mt-2 text-sm font-black text-main-600">Rp 35.000<span className="font-normal text-gray-400">/hari</span></p>
+          <p className="text-[10px] text-yellow-600 font-medium mt-0.5">+ Deposit Rp 50.000</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Variant Picker Modal ─────────────────────────────────────────────────────
+function VariantPickerModal({
+  product,
+  onSelect,
+  onClose,
+}: {
+  product: DressingRoomProduct;
+  onSelect: (product: DressingRoomProduct, variant: DressingRoomProductVariant) => void;
+  onClose: () => void;
+}) {
+  const { data: variants = [], isLoading } = useDressingRoomProductVariants(product.id);
+  const availableVariants = variants.filter(v => v.available_quantity > 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h3 className="font-bold text-gray-900">{product.name}</h3>
+            <p className="text-xs text-gray-500">Pilih ukuran / varian</p>
+          </div>
+          <button type="button" onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+            ✕
+          </button>
+        </div>
+        <div className="px-6 py-5 max-h-80 overflow-y-auto">
+          {isLoading ? (
+            <p className="text-center text-sm text-gray-400 py-4">Memuat varian...</p>
+          ) : availableVariants.length === 0 ? (
+            <p className="text-center text-sm text-gray-500 py-4">Stok sedang habis 😔</p>
+          ) : (
+            <div className="space-y-2">
+              {availableVariants.map(variant => (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => onSelect(product, variant)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-main-500 hover:bg-main-50 transition-all text-left group"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{variant.name}</p>
+                    {variant.size_label && (
+                      <p className="text-xs text-gray-500">{variant.size_label}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-green-600 font-medium">{variant.available_quantity} tersedia</p>
+                    <ArrowRight className="w-4 h-4 text-main-500 opacity-0 group-hover:opacity-100 ml-auto transition-opacity" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
 }
 
 export default function DressingRoomLandingPage() {
   const { user } = useAuth();
-  const { clear } = useCart();
   const { collection, looks: dbLooks, isLoading: looksLoading } = useDressingRoomCollection();
-  const { data: allProducts = [], isLoading: productsLoading } = useProductSummaries();
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const [selectedLook, setSelectedLook] = useState<DBLook | null>(null);
+  const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomProducts();
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<DressingRoomProduct | null>(null);
+  const [rentalProduct, setRentalProduct] = useState<DressingRoomProduct | null>(null);
+  const [rentalVariant, setRentalVariant] = useState<DressingRoomProductVariant | null>(null);
   const [showRentalModal, setShowRentalModal] = useState(false);
-  const activeCategory = 'dressing-room';
-  const [activeSubcategory, setActiveSubcategory] = useState<string>('all');
-  const [activeSubSubcategory, setActiveSubSubcategory] = useState<string>('all');
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -70,52 +144,38 @@ export default function DressingRoomLandingPage() {
     }
   }, [user]);
 
-  const displayLooks = dbLooks.length > 0 ? dbLooks : [];
-
   const title = collection?.title || DRESSING_ROOM_DEMO.title;
   const description = collection?.description || DRESSING_ROOM_DEMO.description;
 
-  // Build category index for filtering
-  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } = useMemo(
-    () => buildShopCategoryIndex(categories),
-    [categories]
-  );
-
-  // Get dressing-room category and its subcategories
-  const dressingRoomCategory = parentCategories.find(c => c.slug === 'dressing-room');
-  const dressingRoomSubcategories = useMemo(() => {
-    if (!dressingRoomCategory) return [];
-    return childCategoriesByParentSlug.get(dressingRoomCategory.slug) ?? [];
-  }, [dressingRoomCategory, childCategoriesByParentSlug]);
-
-  // Get sub-subcategories for the active subcategory
-  const activeSubSubcategories = useMemo(() => {
-    if (activeSubcategory === 'all') return [];
-    return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
-  }, [activeSubcategory, childCategoriesByParentSlug]);
-
-  // Filter products based on selected category/subcategory
-  const filteredProducts = useMemo(
-    () =>
-      filterShopProducts({
-        products: allProducts,
-        activeCategory,
-        activeSubcategory,
-        activeSubSubcategory,
-        searchQuery: '',
-        allowedSlugMap,
-        bestSellerIds: [],
-      }),
-    [allProducts, activeCategory, activeSubcategory, activeSubSubcategory, allowedSlugMap]
-  );
-
   // Collect all model images from looks for carousel
-  const carouselImages = displayLooks
+  const carouselImages = dbLooks
     .map((look) => look.model_image_url)
-    .filter((url) => url && typeof url === 'string');
+    .filter((url): url is string => typeof url === 'string' && url.length > 0);
 
+  // Unique categories from products
+  const productCategories = useMemo(() => {
+    const cats = new Set(drProducts.map(p => p.category));
+    return Array.from(cats);
+  }, [drProducts]);
 
-  if (looksLoading || productsLoading || categoriesLoading) {
+  // Filtered products
+  const filteredDrProducts = useMemo(() => {
+    if (activeCategory === 'all') return drProducts;
+    return drProducts.filter(p => p.category === activeCategory);
+  }, [drProducts, activeCategory]);
+
+  const handleProductClick = (product: DressingRoomProduct) => {
+    setSelectedProduct(product);
+  };
+
+  const handleVariantSelect = (product: DressingRoomProduct, variant: DressingRoomProductVariant) => {
+    setSelectedProduct(null);
+    setRentalProduct(product);
+    setRentalVariant(variant);
+    setShowRentalModal(true);
+  };
+
+  if (looksLoading || productsLoading) {
     return <AppLoadingScreen />;
   }
 
@@ -266,8 +326,8 @@ export default function DressingRoomLandingPage() {
                 },
                 {
                   icon: <Zap className="w-6 h-6" />,
-                  title: 'Pengiriman Cepat',
-                  desc: 'Kirim ke seluruh Indonesia. Proses 1-2 hari kerja setelah pembayaran.',
+                  title: 'Ambil di Tempat',
+                  desc: 'Ambil dan kembalikan baju langsung di studio kami. Praktis, cepat, dan pastinya hemat ongkos kirim!',
                 },
                 {
                   icon: <Star className="w-6 h-6" />,
@@ -319,10 +379,10 @@ export default function DressingRoomLandingPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between items-start pb-3 border-b border-main-200">
                     <div>
-                      <p className="font-semibold text-gray-900">Baju A</p>
-                      <p className="text-sm text-gray-600">Harga produk: Rp 100.000</p>
+                      <p className="font-semibold text-gray-900">Baju Pilihanmu</p>
+                      <p className="text-sm text-gray-600">Harga produk asli tidak dihitung</p>
                     </div>
-                    <p className="font-bold text-gray-900">Rp 100.000</p>
+                    <p className="font-bold text-gray-400 line-through">Rp XXX.XXX</p>
                   </div>
 
                   <div className="flex justify-between items-start pb-3 border-b border-main-200">
@@ -342,8 +402,8 @@ export default function DressingRoomLandingPage() {
                   </div>
 
                   <div className="flex justify-between items-start pt-3">
-                    <p className="font-black text-gray-900">TOTAL</p>
-                    <p className="text-2xl font-black text-main-600">Rp 255.000</p>
+                    <p className="font-black text-gray-900">TOTAL DIBAYAR</p>
+                    <p className="text-2xl font-black text-main-600">Rp 155.000</p>
                   </div>
                 </div>
 
@@ -408,127 +468,52 @@ export default function DressingRoomLandingPage() {
               </p>
             </div>
 
-            {/* Category Navigation */}
-            <div className="mb-8 border-b border-gray-100 pb-0 sticky top-0 bg-gray-50 z-40 pt-4 -mt-6">
-              <div className="flex flex-col space-y-4">
-                {/* Subcategories */}
-                {dressingRoomSubcategories.length > 0 ? (
-                  <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-2 px-2">
-                    <div className="flex gap-1.5 md:gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSubcategory('all');
-                          setActiveSubSubcategory('all');
-                        }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
-                          activeSubcategory === 'all'
-                            ? 'bg-main-500 text-white border-main-500 shadow-sm'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
-                        }`}
-                      >
-                        Semua
-                      </button>
-                      {dressingRoomSubcategories.map((subcategory) => (
-                        <button
-                          key={subcategory.slug}
-                          type="button"
-                          onClick={() => {
-                            setActiveSubcategory(subcategory.slug);
-                            setActiveSubSubcategory('all');
-                          }}
-                          className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
-                            activeSubcategory === subcategory.slug
-                              ? 'bg-main-500 text-white border-main-500 shadow-sm'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
-                          }`}
-                        >
-                          {subcategory.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Sub-subcategories */}
-                {activeSubcategory !== 'all' && activeSubSubcategories.length > 0 ? (
-                  <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-3 px-2">
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setActiveSubSubcategory('all')}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border transition-colors ${
-                          activeSubSubcategory === 'all'
-                            ? 'bg-main-500/10 text-main-500 border-main-500/30'
-                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-main-500/50 hover:text-main-500'
-                        }`}
-                      >
-                        Semua {dressingRoomSubcategories.find(s => s.slug === activeSubcategory)?.name || ''}
-                      </button>
-                      {activeSubSubcategories.map((subcategory) => (
-                        <button
-                          key={subcategory.slug}
-                          type="button"
-                          onClick={() => setActiveSubSubcategory(subcategory.slug)}
-                          className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border transition-colors ${
-                            activeSubSubcategory === subcategory.slug
-                              ? 'bg-main-500/10 text-main-500 border-main-500/30'
-                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-main-500/50 hover:text-main-500'
-                          }`}
-                        >
-                          {subcategory.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+            {/* Category filter tabs */}
+            {productCategories.length > 1 && (
+              <div className="mb-8 sticky top-0 bg-gray-50 z-40 pt-4 pb-2 -mt-6">
+                <div className="flex overflow-x-auto hide-scrollbar gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('all')}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
+                      activeCategory === 'all'
+                        ? 'bg-main-500 text-white border-main-500 shadow-sm'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
+                    }`}
+                  >
+                    Semua
+                  </button>
+                  {productCategories.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border capitalize transition-colors ${
+                        activeCategory === cat
+                          ? 'bg-main-500 text-white border-main-500 shadow-sm'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">Tidak ada produk dressing room yang tersedia saat ini.</p>
+            {filteredDrProducts.length === 0 ? (
+              <div className="text-center py-16">
+                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Belum ada produk tersedia saat ini.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredProducts.map((product, idx) => (
-                  <motion.div
+                {filteredDrProducts.map((product) => (
+                  <DressingRoomProductCard
                     key={product.id}
-                    className="group cursor-pointer text-left"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    viewport={{ once: true }}
-                    onClick={() => {
-                      setSelectedLook(productToLook(product));
-                      setShowRentalModal(true);
-                    }}
-                  >
-                    <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 hover:border-main-500 hover:shadow-lg hover:shadow-pink-100 transition-all">
-                      <div className="relative overflow-hidden aspect-square bg-gray-50 group">
-                        <ProductImageCarousel
-                          images={product.images}
-                          primaryImage={product.image}
-                          productName={product.name}
-                          onError={(event) => {
-                            event.currentTarget.src = '/images/landing/neon.png';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
-                      </div>
-                      <div className="p-3 sm:p-4">
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2 h-9">
-                          {product.name}
-                        </h3>
-                        <p className="mt-2 text-sm font-bold text-main-600">
-                          {formatCurrency(product.price)}/hari
-                        </p>
-                        <div className="mt-3 flex items-center gap-1 text-main-600 font-bold text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity">
-                          Sewa <ArrowRight className="w-3 h-3" />
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                    product={product}
+                    onClick={() => handleProductClick(product)}
+                  />
                 ))}
               </div>
             )}
@@ -562,8 +547,8 @@ export default function DressingRoomLandingPage() {
                   a: 'Tentu! Hubungi customer service kami minimal H-1 sebelum tanggal pengembalian. Biaya akan dihitung dan dikirim invoice tambahan.',
                 },
                 {
-                  q: 'Berapa biaya pengiriman?',
-                  a: 'Gratis pengiriman ke seluruh Indonesia untuk pembelian minimal Rp 200.000. Untuk di bawah itu, biaya pengiriman sesuai lokasi.',
+                  q: 'Bagaimana cara pengambilan baju?',
+                  a: 'Sewa baju kami hanya melayani "Ambil di Tempat" (Pickup in Store). Silakan datang langsung ke studio kami pada tanggal sewa yang dipilih untuk mengambil dan mencoba baju Anda.',
                 },
                 {
                   q: 'Apakah ada asuransi kerusakan?',
@@ -601,14 +586,25 @@ export default function DressingRoomLandingPage() {
           </div>
         </section>
 
+        {/* Variant Picker */}
+        {selectedProduct && (
+          <VariantPickerModal
+            product={selectedProduct}
+            onSelect={handleVariantSelect}
+            onClose={() => setSelectedProduct(null)}
+          />
+        )}
+
         {/* Rental Flow Modal */}
-        {selectedLook && (
+        {rentalProduct && rentalVariant && showRentalModal && (
           <RentalFlowModal
-            look={selectedLook}
+            product={rentalProduct}
+            variant={rentalVariant}
             isOpen={showRentalModal}
             onClose={() => {
               setShowRentalModal(false);
-              clear();
+              setRentalProduct(null);
+              setRentalVariant(null);
             }}
           />
         )}

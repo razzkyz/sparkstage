@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag } from 'lucide-react';
+import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 import AdminLayout from '../../components/AdminLayout';
@@ -8,6 +8,9 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { uploadFileToImageKit } from '../../lib/imagekit';
+import { RentalItemStatusTracker } from '../../components/admin/RentalItemStatusTracker';
+import { CreateRentalOrderModal } from '../../components/admin/CreateRentalOrderModal';
+import type { RentalItemStatus } from '../../types/dressingRoom';
 
 type RentalOrderStatus = 'awaiting_payment' | 'paid' | 'active' | 'overdue' | 'returned' | 'cancelled' | 'refunded';
 type PageTab = 'sewa_formal' | 'costume_harian';
@@ -47,6 +50,7 @@ interface RentalOrderItem {
   total_rental_cost: number;
   initial_condition: Record<string, unknown>;
   return_condition: Record<string, unknown>;
+  current_status?: RentalItemStatus;
 }
 
 interface DressingRoomOrderItem {
@@ -101,6 +105,9 @@ export default function RentalOrders() {
   const [dressingRoomOrders, setDressingRoomOrders] = useState<DressingRoomOrder[]>([]);
   const [dressingRoomLoading, setDressingRoomLoading] = useState(false);
   const [costumeActionLoading, setCostumeActionLoading] = useState<number | null>(null);
+  // Create Order modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createSuccessMsg, setCreateSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -516,19 +523,47 @@ export default function RentalOrders() {
       {activePageTab === 'sewa_formal' && (<>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Sewa Dressing Room</h1>
           <p className="text-sm text-gray-600 mt-1">Kelola pesanan sewa baju dan proses pengembalian</p>
         </div>
-        <button
-          onClick={fetchOrders}
-          className="flex items-center gap-2 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Buat Order Baru
+          </button>
+          <button
+            onClick={fetchOrders}
+            className="flex items-center gap-2 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Success toast */}
+      {createSuccessMsg && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+        >
+          <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-800">Order berhasil dibuat!</p>
+            <p className="text-xs text-green-700">{createSuccessMsg}</p>
+          </div>
+          <button
+            onClick={() => setCreateSuccessMsg(null)}
+            className="text-green-500 hover:text-green-700 text-lg leading-none"
+          >✕</button>
+        </motion.div>
+      )}
 
       {/* Info Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -814,20 +849,30 @@ export default function RentalOrders() {
                 )}
               </div>
 
-              {/* Items */}
+              {/* Items with Status Tracker */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">Item yang Disewa</h3>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {orderItems.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.product_name}</p>
-                        <p className="text-xs text-gray-600">Qty: {item.quantity} x {formatCurrency(item.daily_rate)}/hari</p>
+                    <div key={item.id}>
+                      <div className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg mb-3">
+                        <div>
+                          <p className="font-medium text-gray-900">{item.product_name}</p>
+                          <p className="text-xs text-gray-600">Qty: {item.quantity} x {formatCurrency(item.daily_rate)}/hari</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">{formatCurrency(item.total_rental_cost)}</p>
+                          <p className="text-xs text-gray-600">Deposit: {formatCurrency(item.item_deposit_amount)}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">{formatCurrency(item.total_rental_cost)}</p>
-                        <p className="text-xs text-gray-600">Deposit: {formatCurrency(item.item_deposit_amount)}</p>
-                      </div>
+                      {item.current_status && (
+                        <RentalItemStatusTracker
+                          rentalOrderItemId={item.id}
+                          itemName={item.product_name}
+                          currentStatus={item.current_status}
+                          onStatusUpdated={() => fetchOrderItems(selectedOrder!.id)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -962,6 +1007,20 @@ export default function RentalOrders() {
       )}
 
       </div>
+
+      {/* Create Rental Order Modal */}
+      {showCreateModal && (
+        <CreateRentalOrderModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={(orderNumber) => {
+            setShowCreateModal(false);
+            setCreateSuccessMsg(`Order ${orderNumber} berhasil dibuat dan stok telah dikurangi.`);
+            fetchOrders();
+            // Auto-hide toast after 6 seconds
+            setTimeout(() => setCreateSuccessMsg(null), 6000);
+          }}
+        />
+      )}
     </AdminLayout>
   );
 }
@@ -1391,4 +1450,3 @@ function CostumeHarianSection({
     </div>
   );
 }
-

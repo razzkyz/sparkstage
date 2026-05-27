@@ -1,141 +1,135 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import type { DressingRoomLook } from '../../hooks/useDressingRoomCollection';
-import RentalDurationStep from './rental-steps/RentalDurationStep';
-import RentalConditionStep from './rental-steps/RentalConditionStep';
-import RentalCustomerStep from './rental-steps/RentalCustomerStep';
-import RentalSummaryStep from './rental-steps/RentalSummaryStep';
+import type { DressingRoomProduct, DressingRoomProductVariant } from '../../types/dressingRoom';
+
+export interface RentalItem {
+  dressing_room_product_variant_id: number;
+  product_name: string;
+  variant_label: string;
+  quantity: number;
+  daily_rate: number;
+  deposit_amount: number;
+  image_url?: string | null;
+}
 
 export interface RentalFormData {
-  look: DressingRoomLook;
+  product: DressingRoomProduct;
+  variant: DressingRoomProductVariant;
   durationDays: number;
   rentalStartTime: Date;
   rentalEndTime: Date;
-  initialCondition: Record<number, {
-    noStain: boolean;
-    noRip: boolean;
-    noLoose: boolean;
-    notes: string;
-  }>;
   customerData: {
     fullName: string;
     email: string;
     phone: string;
-    address: string;
   };
 }
 
 interface RentalFlowModalProps {
-  look: DressingRoomLook;
+  product: DressingRoomProduct;
+  variant: DressingRoomProductVariant;
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Step = 'duration' | 'condition' | 'customer' | 'summary';
+type Step = 'duration' | 'customer' | 'confirm';
 
-export default function RentalFlowModal({ look, isOpen, onClose }: RentalFlowModalProps) {
+const DAILY_RATE = 35000;
+const DEPOSIT_AMOUNT = 50000;
+
+export default function RentalFlowModal({ product, variant, isOpen, onClose }: RentalFlowModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('duration');
-  
   const [formData, setFormData] = useState<RentalFormData>({
-    look,
+    product,
+    variant,
     durationDays: 1,
     rentalStartTime: new Date(),
     rentalEndTime: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    initialCondition: {},
-    customerData: {
-      fullName: '',
-      email: '',
-      phone: '',
-      address: '',
-    },
+    customerData: { fullName: '', email: '', phone: '' },
   });
 
-  const handleNext = (stepFormData: Partial<RentalFormData>) => {
-    setFormData(prev => ({ ...prev, ...stepFormData }));
-    
-    const steps: Step[] = ['duration', 'condition', 'customer', 'summary'];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
-    }
-  };
+  const STEPS: Step[] = ['duration', 'customer', 'confirm'];
+  const stepIndex = STEPS.indexOf(currentStep);
 
-  const handlePrev = () => {
-    const steps: Step[] = ['duration', 'condition', 'customer', 'summary'];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(steps[currentIndex - 1]);
-    }
+  const handleNext = (patch: Partial<RentalFormData>) => {
+    setFormData(prev => ({ ...prev, ...patch }));
+    setCurrentStep(STEPS[stepIndex + 1]);
   };
+  const handlePrev = () => setCurrentStep(STEPS[stepIndex - 1]);
 
   if (!isOpen) return null;
 
+  const stepLabel = currentStep === 'duration' ? 'Durasi Sewa' :
+    currentStep === 'customer' ? 'Data Diri' : 'Konfirmasi';
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-lg"
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 60 }}
+          className="relative w-full max-w-lg mx-0 sm:mx-4 max-h-[95vh] overflow-y-auto bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl"
         >
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
             <div>
-              <h2 className="text-xl font-black uppercase tracking-tight">
-                Sewa Baju - Look {look.look_number}
+              <h2 className="text-lg font-black uppercase tracking-tight text-gray-900">
+                Sewa: {product.name}
               </h2>
-              <p className="mt-1 text-xs uppercase tracking-widest text-gray-500">
-                {formData.look.items.length} item
+              <p className="mt-0.5 text-xs font-semibold uppercase tracking-widest text-main-500">
+                {stepLabel} ({stepIndex + 1}/{STEPS.length})
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="h-10 w-10 inline-flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
 
+          {/* Progress bar */}
+          <div className="h-1 bg-gray-100">
+            <div
+              className="h-full bg-main-500 transition-all duration-500"
+              style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }}
+            />
+          </div>
+
           {/* Content */}
-          <div className="px-6 py-8">
+          <div className="px-6 py-6">
             <AnimatePresence mode="wait">
               {currentStep === 'duration' && (
-                <RentalDurationStep
+                <DurationStep
                   key="duration"
-                  look={look}
-                  onNext={handleNext}
+                  product={product}
+                  variant={variant}
+                  defaultDays={formData.durationDays}
+                  onNext={(days) => {
+                    const start = new Date();
+                    const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
+                    handleNext({ durationDays: days, rentalStartTime: start, rentalEndTime: end });
+                  }}
                   onClose={onClose}
-                  defaultDuration={formData.durationDays}
                 />
               )}
-
-              {currentStep === 'condition' && (
-                <RentalConditionStep
-                  key="condition"
-                  look={look}
-                  onNext={handleNext}
-                  onPrev={handlePrev}
-                  defaultCondition={formData.initialCondition}
-                />
-              )}
-
               {currentStep === 'customer' && (
-                <RentalCustomerStep
+                <CustomerStep
                   key="customer"
-                  onNext={handleNext}
-                  onPrev={handlePrev}
                   defaultData={formData.customerData}
+                  onNext={(data) => handleNext({ customerData: data })}
+                  onPrev={handlePrev}
                 />
               )}
-
-              {currentStep === 'summary' && (
-                <RentalSummaryStep
-                  key="summary"
-                  rentalData={formData}
+              {currentStep === 'confirm' && (
+                <ConfirmStep
+                  key="confirm"
+                  formData={formData}
                   onPrev={handlePrev}
+                  onClose={onClose}
                 />
               )}
             </AnimatePresence>
@@ -143,5 +137,328 @@ export default function RentalFlowModal({ look, isOpen, onClose }: RentalFlowMod
         </motion.div>
       </div>
     </AnimatePresence>
+  );
+}
+
+// ─── Step 1: Duration ────────────────────────────────────────────────────────
+function DurationStep({
+  product,
+  variant,
+  defaultDays,
+  onNext,
+  onClose,
+}: {
+  product: DressingRoomProduct;
+  variant: DressingRoomProductVariant;
+  defaultDays: number;
+  onNext: (days: number) => void;
+  onClose: () => void;
+}) {
+  const [days, setDays] = useState(defaultDays);
+  const rentalCost = DAILY_RATE * days;
+  const total = rentalCost + DEPOSIT_AMOUNT;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      {/* Product preview */}
+      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+        {product.image_url && (
+          <img src={product.image_url} alt={product.name} className="w-16 h-16 object-cover rounded-lg" />
+        )}
+        <div>
+          <p className="font-bold text-gray-900">{product.name}</p>
+          <p className="text-sm text-gray-500">{variant.name}{variant.size_label ? ` • ${variant.size_label}` : ''}</p>
+        </div>
+      </div>
+
+      {/* Duration picker */}
+      <div>
+        <p className="font-bold text-sm uppercase tracking-wider text-gray-700 mb-3">Pilih Durasi Sewa</p>
+        <div className="grid grid-cols-7 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDays(d)}
+              className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                days === d
+                  ? 'border-main-500 bg-main-50 text-main-600'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              {d}h
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Price summary */}
+      <div className="bg-gradient-to-br from-main-50 to-pink-50 rounded-xl p-5 border border-main-100 space-y-3">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Sewa ({days} hari × Rp 35.000)</span>
+          <span className="font-semibold text-gray-900">Rp {rentalCost.toLocaleString('id-ID')}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Deposit (refundable)</span>
+          <span className="font-semibold text-yellow-700">Rp {DEPOSIT_AMOUNT.toLocaleString('id-ID')}</span>
+        </div>
+        <div className="border-t border-main-200 pt-3 flex justify-between">
+          <span className="font-black text-gray-900">Total Bayar</span>
+          <span className="text-xl font-black text-main-600">Rp {total.toLocaleString('id-ID')}</span>
+        </div>
+        <p className="text-[11px] text-gray-500 italic">* Deposit dikembalikan saat baju kembali dalam kondisi baik</p>
+      </div>
+
+      <div className="flex gap-3">
+        <button type="button" onClick={onClose}
+          className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+          Batal
+        </button>
+        <button type="button" onClick={() => onNext(days)}
+          className="flex-1 py-3 bg-main-500 rounded-xl text-sm font-bold text-white hover:bg-main-600 transition-colors">
+          Lanjut →
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Step 2: Customer Data ────────────────────────────────────────────────────
+function CustomerStep({
+  defaultData,
+  onNext,
+  onPrev,
+}: {
+  defaultData: RentalFormData['customerData'];
+  onNext: (data: RentalFormData['customerData']) => void;
+  onPrev: () => void;
+}) {
+  const [form, setForm] = useState(defaultData);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.fullName.trim()) e.fullName = 'Nama lengkap wajib diisi';
+    if (!form.email.trim() || !form.email.includes('@')) e.email = 'Email tidak valid';
+    if (!form.phone.trim()) e.phone = 'No HP/WA wajib diisi';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const fields = [
+    { key: 'fullName', label: 'Nama Lengkap', type: 'text', placeholder: 'Masukkan nama lengkap' },
+    { key: 'email', label: 'Email', type: 'email', placeholder: 'email@contoh.com' },
+    { key: 'phone', label: 'No HP / WhatsApp', type: 'tel', placeholder: '0812xxxxxxxx' },
+  ] as const;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+      className="space-y-5"
+    >
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900">
+        <p className="font-bold mb-1">📍 Ambil di Tempat</p>
+        <p className="text-xs text-blue-700">Baju diambil dan dikembalikan langsung di studio kami. Data di bawah digunakan untuk konfirmasi pemesanan.</p>
+      </div>
+
+      {fields.map(({ key, label, type, placeholder }) => (
+        <div key={key}>
+          <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+            {label} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type={type}
+            value={form[key]}
+            onChange={(e) => {
+              setForm(p => ({ ...p, [key]: e.target.value }));
+              if (errors[key]) setErrors(p => ({ ...p, [key]: '' }));
+            }}
+            placeholder={placeholder}
+            className={`w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+              errors[key] ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-main-400'
+            }`}
+          />
+          {errors[key] && <p className="text-xs text-red-600 mt-1">{errors[key]}</p>}
+        </div>
+      ))}
+
+      <div className="bg-gray-50 rounded-xl p-4 text-xs text-gray-600 space-y-1">
+        <p className="font-semibold text-gray-800 text-sm">📋 Syarat & Ketentuan Singkat</p>
+        <p>• Deposit <strong>Rp 50.000</strong> dikembalikan jika baju kembali bersih dan lengkap</p>
+        <p>• Terlambat: <strong>Rp 5.000/jam</strong> dari deposit</p>
+        <p>• Rusak/bernoda: deposit dikurangi sesuai kerusakan</p>
+      </div>
+
+      <div className="flex gap-3">
+        <button type="button" onClick={onPrev}
+          className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+          ← Kembali
+        </button>
+        <button type="button" onClick={() => { if (validate()) onNext(form); }}
+          className="flex-1 py-3 bg-main-500 rounded-xl text-sm font-bold text-white hover:bg-main-600 transition-colors">
+          Lanjut →
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Step 3: Confirm & Submit ─────────────────────────────────────────────────
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+
+function ConfirmStep({
+  formData,
+  onPrev,
+  onClose,
+}: {
+  formData: RentalFormData;
+  onPrev: () => void;
+  onClose: () => void;
+}) {
+  const { user } = useAuth();
+  const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ orderNumber: string; totalAmount: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const rentalCost = DAILY_RATE * formData.durationDays;
+  const total = rentalCost + DEPOSIT_AMOUNT;
+
+  const handleSubmit = async () => {
+    if (!agreed || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const items = [{
+        dressing_room_product_variant_id: formData.variant.id,
+        quantity: 1,
+        daily_rate: DAILY_RATE,
+        deposit_amount: DEPOSIT_AMOUNT,
+      }];
+
+      const { data, error: rpcError } = await supabase.rpc('create_rental_order_public', {
+        p_customer_name: formData.customerData.fullName,
+        p_customer_email: formData.customerData.email || (user?.email ?? ''),
+        p_customer_phone: formData.customerData.phone,
+        p_rental_start_time: formData.rentalStartTime.toISOString(),
+        p_duration_days: formData.durationDays,
+        p_items: items,
+        p_notes: null,
+      });
+
+      if (rpcError) throw new Error(rpcError.message);
+      if (data?.error) throw new Error(data.error);
+
+      setResult({ orderNumber: data.order_number, totalAmount: data.total_amount });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Terjadi kesalahan, silakan coba lagi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Success screen
+  if (result) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+        className="text-center space-y-6 py-4"
+      >
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100">
+          <CheckCircle2 className="w-10 h-10 text-green-500" />
+        </div>
+        <div>
+          <h3 className="text-xl font-black text-gray-900">Pesanan Berhasil!</h3>
+          <p className="text-sm text-gray-500 mt-1">Nomor Order: <strong className="text-gray-900">{result.orderNumber}</strong></p>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 text-sm text-left space-y-2">
+          <p className="font-semibold text-gray-800">📋 Langkah Selanjutnya:</p>
+          <p className="text-gray-600">1. Tim kami akan menghubungi Anda di <strong>{formData.customerData.phone}</strong> untuk konfirmasi jadwal pengambilan.</p>
+          <p className="text-gray-600">2. Datang ke studio dan lakukan pembayaran <strong>Rp {result.totalAmount.toLocaleString('id-ID')}</strong> (cash atau transfer).</p>
+          <p className="text-gray-600">3. Baju siap dipakai! 🎉</p>
+        </div>
+        <button type="button" onClick={onClose}
+          className="w-full py-3 bg-main-500 rounded-xl text-sm font-bold text-white hover:bg-main-600 transition-colors">
+          Selesai
+        </button>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+      className="space-y-5"
+    >
+      {/* Order summary */}
+      <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="p-4">
+          <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Detail Pesanan</p>
+          <p className="font-bold text-gray-900">{formData.product.name}</p>
+          <p className="text-sm text-gray-500">{formData.variant.name}{formData.variant.size_label ? ` • ${formData.variant.size_label}` : ''}</p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Data Penyewa</p>
+          <p className="font-semibold text-gray-900">{formData.customerData.fullName}</p>
+          <p className="text-sm text-gray-600">{formData.customerData.phone}</p>
+          <p className="text-sm text-gray-600">{formData.customerData.email}</p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Durasi & Biaya</p>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Sewa {formData.durationDays} hari × Rp 35.000</span>
+              <span className="font-semibold">Rp {rentalCost.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Deposit</span>
+              <span className="font-semibold text-yellow-700">Rp {DEPOSIT_AMOUNT.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between pt-1.5 border-t border-gray-100 font-black text-base">
+              <span>Total Bayar</span>
+              <span className="text-main-600">Rp {total.toLocaleString('id-ID')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Agreement */}
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-main-500" />
+        <span className="text-sm text-gray-600">
+          Saya setuju dengan syarat & ketentuan sewa dan bertanggung jawab atas kondisi barang selama penyewaan.
+        </span>
+      </label>
+
+      <div className="flex gap-3">
+        <button type="button" onClick={onPrev} disabled={loading}
+          className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
+          ← Kembali
+        </button>
+        <button type="button" onClick={handleSubmit} disabled={!agreed || loading}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center gap-2 ${
+            agreed && !loading ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'
+          }`}
+        >
+          {loading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+          ) : (
+            '✓ Konfirmasi Sewa'
+          )}
+        </button>
+      </div>
+    </motion.div>
   );
 }
