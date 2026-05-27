@@ -183,7 +183,7 @@ const Navbar = () => {
         className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : ""}`}
       >
         {/* Top Bar */}
-        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500">
+        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500 py-2">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-2 lg:py-1">
               <div className="w-1/3 flex items-center gap-3">
@@ -411,7 +411,7 @@ const Navbar = () => {
         </div>
 
         {/* Main Navigation - Desktop (inside sticky wrapper) */}
-        <nav className="hidden lg:block w-full relative bg-white border-b border-gray-200">
+        <nav className="hidden py-0.5 lg:block w-full relative bg-white border-b border-gray-200">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Star positioned relative to this wrapper */}
             <div
