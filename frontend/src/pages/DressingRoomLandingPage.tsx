@@ -141,9 +141,8 @@ export default function DressingRoomLandingPage() {
   // Filtered products by selected category
   const filteredDrProducts = useMemo(() => {
     if (activeCategory === 'all') return drProducts;
-    // Match against category_name field, converting to lowercase
-    const categorySlug = activeCategory.toLowerCase();
-    return drProducts.filter(p => (p.category_name || '').toLowerCase() === categorySlug);
+    // Filter products by category field matching the slug
+    return drProducts.filter(p => (p.category || '').toLowerCase() === activeCategory.toLowerCase());
   }, [drProducts, activeCategory]);
 
   const handleProductClick = (product: DressingRoomCatalogProduct) => {

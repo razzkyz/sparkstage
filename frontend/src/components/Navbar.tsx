@@ -429,6 +429,25 @@ const Navbar = () => {
                 {navItems.map((item, idx) => {
                   const isActive = idx === activeIndex;
                   const Icon = item.icon;
+                  const isDisabled = item.key === "dressing-room";
+
+                  if (isDisabled) {
+                    return (
+                      <button
+                        key={item.key}
+                        ref={(el) => (desktopNavItemsRef.current[idx] = el)}
+                        disabled
+                        className="text-sm font-medium px-2 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap text-gray-400 cursor-not-allowed opacity-50 hover:opacity-50"
+                      >
+                        {Icon && item.key === "booking" && (
+                          <div className="bg-main-500 rounded-full p-1">
+                            <Icon className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                        {item.label}
+                      </button>
+                    );
+                  }
 
                   return (
                     <Link
@@ -478,7 +497,21 @@ const Navbar = () => {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div
+          className={`flex items-center px-5 py-4 border-b border-gray-100 ${user ? "justify-between" : "justify-end"}`}
+        >
+          {/* Close button — kiri saat tidak login, kanan saat login */}
+          {!user && (
+            <button
+              id="sidebar-close-btn"
+              type="button"
+              aria-label="Tutup menu"
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           {user && (
             <div className="">
               {/* User info row */}
@@ -522,7 +555,7 @@ const Navbar = () => {
             /> */}
             </div>
           )}
-          <div>
+          {user && (
             <button
               id="sidebar-close-btn"
               type="button"
@@ -532,7 +565,7 @@ const Navbar = () => {
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
+          )}
         </div>
 
         {/* Nav items */}
@@ -540,6 +573,24 @@ const Navbar = () => {
           {navItems.map((item, idx) => {
             const isActive = idx === activeIndex;
             const Icon = item.icon;
+            const isDisabled = item.key === "dressing-room";
+
+            if (isDisabled) {
+              return (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between px-5 py-2.5 transition-colors opacity-50 cursor-not-allowed hover:opacity-50"
+                >
+                  <button
+                    disabled
+                    className="flex-1 flex items-center gap-3 py-1 text-sm font-bold uppercase tracking-wider text-gray-400 cursor-not-allowed"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gray-300" />
+                    {item.label}
+                  </button>
+                </div>
+              );
+            }
 
             if (item.key === "shop") {
               return (

@@ -6,7 +6,8 @@ export interface DressingRoomCatalogProduct {
   name: string;
   description: string | null;
   image_url: string | null;
-  category_name: string | null;
+  category: string;
+  slug: string;
   is_active: boolean;
 }
 
@@ -62,18 +63,16 @@ export function useDressingRoomSubcategories(parentId?: number) {
 }
 
 /**
- * Hook: Fetch dressing room products from products table (category_id = 102)
+ * Hook: Fetch dressing room products from dressing_room_products table
  */
 export function useDressingRoomCatalog() {
   return useQuery({
     queryKey: ['dressing-room-catalog'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('products')
-        .select('id, name, description, image_url, category_name, is_active')
-        .eq('category_id', 102)
+        .from('dressing_room_products')
+        .select('id, name, description, image_url, category, slug, is_active')
         .eq('is_active', true)
-        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -92,11 +91,10 @@ export function useDressingRoomCatalogVariants(productId?: number) {
       if (!productId) return [];
 
       const { data, error } = await supabase
-        .from('product_variants')
-        .select('id, name, sku, price, stock, is_active')
-        .eq('product_id', productId)
+        .from('dressing_room_product_variants')
+        .select('id, name, sku, price, total_quantity, available_quantity, is_active')
+        .eq('dressing_room_product_id', productId)
         .eq('is_active', true)
-        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (error) throw error;
