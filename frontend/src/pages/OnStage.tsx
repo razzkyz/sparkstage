@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-// import { ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useBanners } from "../hooks/useBanners";
-// import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -53,11 +51,7 @@ const OnStage = () => {
 
   // GSAP animation refs
   const processTitleRef = useRef<HTMLDivElement>(null);
-  // const processCarouselRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
-
-  // const processTouchStartX = useRef(0);
-  // const processTouchEndX = useRef(0);
 
   const {
     data: heroBanners = [],
@@ -81,37 +75,6 @@ const OnStage = () => {
     if (currentIndex === processBanners.length + 1) return 0;
     return currentIndex - 1;
   }, [currentIndex, processBanners.length]);
-
-  // const slidesToRender = useMemo(() => {
-  //   if (processBanners.length <= 1) return processBanners;
-  //   return [
-  //     processBanners[processBanners.length - 1],
-  //     ...processBanners,
-  //     processBanners[0],
-  //   ];
-  // }, [processBanners]);
-
-  // const nextSlide = () => {
-  //   if (processBanners.length <= 1) return;
-  //   setIsTransitionEnabled(true);
-  //   setCurrentIndex((prev) => prev + 1);
-  // };
-
-  // const prevSlide = () => {
-  //   if (processBanners.length <= 1) return;
-  //   setIsTransitionEnabled(true);
-  //   setCurrentIndex((prev) => prev - 1);
-  // };
-
-  // const handleTransitionEnd = () => {
-  //   if (currentIndex === 0) {
-  //     setIsTransitionEnabled(false);
-  //     setCurrentIndex(processBanners.length);
-  //   } else if (currentIndex === processBanners.length + 1) {
-  //     setIsTransitionEnabled(false);
-  //     setCurrentIndex(1);
-  //   }
-  // };
 
   useEffect(() => {
     if (!isTransitionEnabled) {
@@ -270,29 +233,36 @@ const OnStage = () => {
           </div>
         </Link>
       </section>
-      <Link
-        to="/news"
-        className="block w-full bg-black hover:bg-neutral-900 transition-colors duration-300 border-t border-neutral-800"
-      >
+      <div className="block w-full bg-black hover:bg-neutral-900 transition-colors duration-300 border-t border-neutral-800">
         <div className="w-full py-4 md:py-0 md:h-[15vh] h-[15hv] flex md:flex-row items-center justify-center gap-6 md:gap-12 px-4">
           {/* Left Text: VIP STAR */}
           <div className="flex items-center gap-3 text-white font-serif font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tighter">
-            <span>VIP</span>
-            <span className="text-4xl md:text-5xl lg:text-6xl pb-2">★</span>
-            <span>STAR</span>
+            <span className="text-5xl md:text-6xl lg:text-7xl pb-2">★</span>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl md:text-4xl lg:text-5xl">VIP</span>
+              <span className="text-3xl md:text-4xl lg:text-5xl">STAR</span>
+            </div>
           </div>
 
           {/* Right Text: Rewards info */}
-          <div className="flex flex-col items-center md:items-start justify-center text-center md:text-left mt-2 md:mt-0">
-            <span className="text-[#D388B2] font-bold text-base md:text-2xl lg:text-3xl uppercase tracking-wide leading-tight">
-              WINS AWARDS &
-            </span>
-            <span className="text-[#D388B2] font-bold text-base md:text-2xl lg:text-3xl uppercase tracking-wide leading-tight">
-              REWARDS UP TO 599K
-            </span>
+          <div className="flex flex-col items-center text-center">
+            <p className="text-pink-400 font-black text-base md:text-md lg:text-xl mb-0.5">
+              POST.SHINE.WIN.
+            </p>
+            <Link
+              to="/news"
+              className="flex flex-col bg-pink-400 px-5 py-1 rounded-full hover:bg-pink-500 hover:px-5.5 hover:py-1.5"
+            >
+              <span className="text-black font-black text-sm md:text-md lg:text-xl uppercase tracking-wide leading-tight">
+                WINS AWARDS &
+              </span>
+              <span className="text-black font-black text-sm md:text-md lg:text-xl uppercase tracking-wide leading-tight">
+                REWARDS UP TO 599K
+              </span>
+            </Link>
           </div>
         </div>
-      </Link>
+      </div>
 
       {/* Ticket Banner */}
       <div className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
