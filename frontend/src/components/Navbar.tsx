@@ -35,8 +35,6 @@ import {
 } from "../hooks/useLoyaltyPoints";
 import { getUserDisplayName } from "../utils/auth";
 
-let previousDesktopStarPosition = 0;
-
 const Navbar = () => {
   const { t } = useTranslation();
   const { user, signOut, isAdmin, loggingOut } = useAuth();
@@ -54,12 +52,6 @@ const Navbar = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
-  const [desktopStarPosition, setDesktopStarPosition] = useState(
-    previousDesktopStarPosition,
-  );
-  const [enableStarTransition, setEnableStarTransition] = useState(
-    previousDesktopStarPosition !== 0,
-  );
 
   const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
@@ -94,37 +86,32 @@ const Navbar = () => {
   })();
 
   const navItems: NavItem[] = [
-    { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
+    { key: "on-stage", label: "On Stage", to: "/on-stage", icon: Camera },
     {
       key: "booking",
-      label: "BOOKING",
+      label: "Booking",
       to: "/booking",
       isPink: true,
       icon: Ticket,
     },
+<<<<<<< HEAD
     { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
     { key: "shop", label: "SHOP", to: "/glam", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
+=======
+    // { key: 'dressing-room', label: 'Fashion On Demand', to: '/dressing-room' },
+    { key: "shop", label: "Shop", to: "/glam", icon: ShoppingBag },
+    { key: "event", label: "Event", to: "/events", icon: CalendarDays },
+    { key: "news", label: "News", to: "/news", icon: Newspaper },
+>>>>>>> 3f95575160d61003340eeb8e8f97a2a379b380fe
   ];
 
   const activeIndex = Math.max(
     0,
     navItems.findIndex((item) => item.key === activeNavKey),
   );
-  // const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en').toLowerCase();
   // const isIndonesian = currentLanguage.startsWith('id');
-
-  const updateDesktopStarPosition = useCallback(() => {
-    const activeItem = desktopNavItemsRef.current[activeIndex];
-    const container = desktopNavContainerRef.current;
-    if (!activeItem || !container) return;
-
-    const itemRect = activeItem.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    const left = itemRect.left - containerRect.left + itemRect.width / 2;
-    setDesktopStarPosition(left);
-  }, [activeIndex]);
 
   const centerMobileActiveItem = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -159,37 +146,21 @@ const Navbar = () => {
   );
 
   useEffect(() => {
-    updateDesktopStarPosition();
     const behavior: ScrollBehavior = hasCenteredMobileItemRef.current
       ? "smooth"
       : "auto";
     centerMobileActiveItem(behavior);
     hasCenteredMobileItemRef.current = true;
-  }, [centerMobileActiveItem, updateDesktopStarPosition]);
-
-  useEffect(() => {
-    if (desktopStarPosition !== 0) {
-      previousDesktopStarPosition = desktopStarPosition;
-    }
-  }, [desktopStarPosition]);
-
-  useEffect(() => {
-    // If it was a fresh load (position 0), enable transitions after initial jump
-    if (previousDesktopStarPosition === 0) {
-      const timer = setTimeout(() => setEnableStarTransition(true), 100);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  }, [centerMobileActiveItem]);
 
   useEffect(() => {
     const onResize = () => {
-      updateDesktopStarPosition();
       centerMobileActiveItem("auto");
     };
 
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [centerMobileActiveItem, updateDesktopStarPosition]);
+  }, [centerMobileActiveItem]);
 
   // const handleMobileLanguageToggle = () => {
   //   void i18n.changeLanguage(isIndonesian ? 'en' : 'id');
@@ -219,9 +190,9 @@ const Navbar = () => {
         className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : ""}`}
       >
         {/* Top Bar */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500 py-2">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between py-2 lg:py-3">
+            <div className="flex items-center justify-between py-2 lg:py-1">
               <div className="w-1/3 flex items-center gap-3">
                 {/* Desktop: Stage 55 logo + Loyalty Points (jika login) */}
                 <Link to="/" className="hidden lg:flex items-center">
@@ -289,7 +260,7 @@ const Navbar = () => {
                       <button
                         onClick={handleSignOutClick}
                         disabled={loggingOut}
-                        className="text-gray-500 hover:text-primary transition-colors"
+                        className="text-gray-600 hover:text-primary transition-colors"
                         title={t("auth.signOut")}
                       >
                         <LogOut className="h-5 w-5" />
@@ -331,7 +302,7 @@ const Navbar = () => {
                   {/* Cart, My Tickets, My Orders — selalu tampil di desktop */}
                   <Link
                     to="/my-tickets"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     title={t("nav.myTickets")}
                   >
                     <Ticket className="h-5 w-5" />
@@ -344,7 +315,7 @@ const Navbar = () => {
 
                   <Link
                     to="/my-orders"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     title={t("nav.myOrders")}
                   >
                     <ReceiptText className="h-5 w-5" />
@@ -357,7 +328,7 @@ const Navbar = () => {
 
                   <Link
                     to="/cart"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     aria-label={t("nav.cart")}
                   >
                     <ShoppingCart className="h-5 w-5" />
@@ -372,7 +343,7 @@ const Navbar = () => {
                   {!user && (
                     <Link
                       to="/login"
-                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      className="relative text-gray-600 hover:text-main-600 transition-colors"
                       aria-label={t("auth.signIn")}
                       title={t("auth.signIn")}
                     >
@@ -386,7 +357,7 @@ const Navbar = () => {
 
                   <Link
                     to="/my-tickets"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     aria-label={t("nav.myTickets")}
                     title={t("nav.myTickets")}
                   >
@@ -402,7 +373,7 @@ const Navbar = () => {
 
                   <Link
                     to="/my-orders"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     aria-label={t("nav.myOrders")}
                     title={t("nav.myOrders")}
                   >
@@ -418,7 +389,7 @@ const Navbar = () => {
 
                   <Link
                     to="/cart"
-                    className="relative text-gray-500 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors"
                     aria-label={t("nav.cart")}
                   >
                     <ShoppingCart className="h-5 w-5" />
@@ -433,7 +404,7 @@ const Navbar = () => {
                   {!user && (
                     <Link
                       to="/login"
-                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      className="relative text-gray-600 hover:text-main-600 transition-colors"
                       aria-label={t("auth.signIn")}
                       title={t("auth.signIn")}
                     >
@@ -447,37 +418,17 @@ const Navbar = () => {
         </div>
 
         {/* Main Navigation - Desktop (inside sticky wrapper) */}
-        <nav className="hidden lg:block w-full relative bg-white border-b border-gray-200">
+        <nav className="hidden py-0.5 lg:block w-full relative bg-white border-b border-gray-200">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Star positioned relative to this wrapper */}
-            <div ref={desktopNavContainerRef} className="relative py-4">
-              {/* Animated star indicator */}
-              <div
-                className={`absolute pointer-events-none ${
-                  enableStarTransition
-                    ? "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                    : ""
-                }`}
-                style={{
-                  left: `${desktopStarPosition}px`,
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "64px",
-                  height: "64px",
-                  zIndex: 0,
-                }}
-              >
-                <img
-                  src="/images/landing/ICON%20STAR-01.svg"
-                  alt="Active"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-
+            <div
+              ref={desktopNavContainerRef}
+              className="flex justify-center items-center relative "
+            >
               {/* Nav items — equal-width grid so the middle item is always centred */}
               <div
                 ref={mobileNavScrollerRef}
-                className="grid relative z-10 w-full"
+                className="grid relative z-10 w-3/5 "
                 style={{
                   gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
                 }}
@@ -491,10 +442,10 @@ const Navbar = () => {
                       key={item.key}
                       ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                       to={item.to}
-                      className={`text-sm font-semibold uppercase px-4 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
+                      className={`text-sm font-medium px-2 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
                         isActive
-                          ? "text-black"
-                          : "text-gray-600 hover:text-[#ff4b86]"
+                          ? "text-main-500"
+                          : "text-black hover:text-main-500"
                       }`}
                     >
                       {Icon && item.key === "booking" && (

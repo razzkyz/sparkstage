@@ -7,7 +7,6 @@ import { DRESSING_ROOM_DEMO } from '../mock/dressingRoomDemo';
 import { useDressingRoomCollection } from '../hooks/useDressingRoomCollection';
 import { useDressingRoomProducts, useDressingRoomProductVariants } from '../hooks/useDressingRoomInventory';
 import type { DressingRoomProduct, DressingRoomProductVariant } from '../types/dressingRoom';
-import { useAuth } from '../contexts/AuthContext';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import RentalFlowModal from '../components/dressing-room/RentalFlowModal';
 
@@ -128,7 +127,6 @@ function VariantPickerModal({
 }
 
 export default function DressingRoomLandingPage() {
-  const { user } = useAuth();
   const { collection, looks: dbLooks, isLoading: looksLoading } = useDressingRoomCollection();
   const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomProducts();
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -136,13 +134,6 @@ export default function DressingRoomLandingPage() {
   const [rentalProduct, setRentalProduct] = useState<DressingRoomProduct | null>(null);
   const [rentalVariant, setRentalVariant] = useState<DressingRoomProductVariant | null>(null);
   const [showRentalModal, setShowRentalModal] = useState(false);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user) {
-      window.location.href = '/login';
-    }
-  }, [user]);
 
   const title = collection?.title || DRESSING_ROOM_DEMO.title;
   const description = collection?.description || DRESSING_ROOM_DEMO.description;

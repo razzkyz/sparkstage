@@ -331,6 +331,13 @@ function ConfirmStep({
 
   const handleSubmit = async () => {
     if (!agreed || loading) return;
+
+    // Redirect to login if not authenticated
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
