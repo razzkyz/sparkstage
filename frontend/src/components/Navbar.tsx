@@ -53,7 +53,7 @@ const Navbar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
 
-  const desktopNavItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
+  const desktopNavItemsRef = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
   const desktopNavContainerRef = useRef<HTMLDivElement | null>(null);
 
