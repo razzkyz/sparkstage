@@ -206,7 +206,7 @@ const Navbar = () => {
                     aria-expanded={sidebarOpen}
                     aria-controls="mobile-sidebar"
                     onClick={() => setSidebarOpen(true)}
-                    className="p-2 -ml-1 rounded-xl bg-gray-50/80 text-black shadow-sm border border-gray-200 hover:text-[#ff4b86] hover:bg-pink-50 hover:border-pink-200 hover:shadow-md active:bg-pink-100 transition-all duration-300 active:scale-90"
+                    className="p-2 -ml-1 rounded-xl bg-gray-50/80 text-black  hover:text-[#ff4b86] hover:text-pink  hover:shadow-md active:bg-pink-100 transition-all duration-300 active:scale-90"
                   >
                     <Menu className="h-6 w-6" strokeWidth={2.5} />
                   </button>

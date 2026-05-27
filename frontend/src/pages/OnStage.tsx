@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+// import { ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useBanners } from "../hooks/useBanners";
@@ -53,11 +53,11 @@ const OnStage = () => {
 
   // GSAP animation refs
   const processTitleRef = useRef<HTMLDivElement>(null);
-  const processCarouselRef = useRef<HTMLDivElement>(null);
+  // const processCarouselRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
 
-  const processTouchStartX = useRef(0);
-  const processTouchEndX = useRef(0);
+  // const processTouchStartX = useRef(0);
+  // const processTouchEndX = useRef(0);
 
   const {
     data: heroBanners = [],
@@ -82,36 +82,36 @@ const OnStage = () => {
     return currentIndex - 1;
   }, [currentIndex, processBanners.length]);
 
-  const slidesToRender = useMemo(() => {
-    if (processBanners.length <= 1) return processBanners;
-    return [
-      processBanners[processBanners.length - 1],
-      ...processBanners,
-      processBanners[0],
-    ];
-  }, [processBanners]);
+  // const slidesToRender = useMemo(() => {
+  //   if (processBanners.length <= 1) return processBanners;
+  //   return [
+  //     processBanners[processBanners.length - 1],
+  //     ...processBanners,
+  //     processBanners[0],
+  //   ];
+  // }, [processBanners]);
 
-  const nextSlide = () => {
-    if (processBanners.length <= 1) return;
-    setIsTransitionEnabled(true);
-    setCurrentIndex((prev) => prev + 1);
-  };
+  // const nextSlide = () => {
+  //   if (processBanners.length <= 1) return;
+  //   setIsTransitionEnabled(true);
+  //   setCurrentIndex((prev) => prev + 1);
+  // };
 
-  const prevSlide = () => {
-    if (processBanners.length <= 1) return;
-    setIsTransitionEnabled(true);
-    setCurrentIndex((prev) => prev - 1);
-  };
+  // const prevSlide = () => {
+  //   if (processBanners.length <= 1) return;
+  //   setIsTransitionEnabled(true);
+  //   setCurrentIndex((prev) => prev - 1);
+  // };
 
-  const handleTransitionEnd = () => {
-    if (currentIndex === 0) {
-      setIsTransitionEnabled(false);
-      setCurrentIndex(processBanners.length);
-    } else if (currentIndex === processBanners.length + 1) {
-      setIsTransitionEnabled(false);
-      setCurrentIndex(1);
-    }
-  };
+  // const handleTransitionEnd = () => {
+  //   if (currentIndex === 0) {
+  //     setIsTransitionEnabled(false);
+  //     setCurrentIndex(processBanners.length);
+  //   } else if (currentIndex === processBanners.length + 1) {
+  //     setIsTransitionEnabled(false);
+  //     setCurrentIndex(1);
+  //   }
+  // };
 
   useEffect(() => {
     if (!isTransitionEnabled) {
@@ -237,202 +237,63 @@ const OnStage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      {/* dinonaktifkan sementara */}
-      {/* <section ref={heroSectionRef} className="relative w-full overflow-hidden bg-black h-72 md:h-[80vh]">
-
-        {heroBanners.length > 0 ? (
-          <HeroBannerCarousel
-            slides={heroBanners}
-            intervalMs={8000}
-            containerClassName="relative w-full h-72 md:h-[80vh]"
-            imageClassName="w-full h-full object-cover"
-            autoHeight={false}
-            prevButtonClassName="absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 bg-white text-black hover:bg-gray-200 active:bg-white p-2 sm:p-3 md:p-4 rounded-full touch-manipulation shadow-lg transition-colors"
-            nextButtonClassName="absolute right-2 sm:right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 bg-white text-black hover:bg-gray-200 active:bg-white p-2 sm:p-3 md:p-4 rounded-full touch-manipulation shadow-lg transition-colors"
-            indicatorActiveClassName="bg-white"
-            indicatorInactiveClassName="bg-white/50 hover:bg-white/80 transition-colors"
-            overlayClassName="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"
-            renderOverlay={(slide) => (
-              <>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 sm:px-6 md:px-8">
-                  <div className="max-w-full md:max-w-4xl mx-auto">
-                    {slide.title && (
-                      <h1 className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter mb-2 sm:mb-3 md:mb-4 drop-shadow-2xl line-clamp-3">{slide.title}</h1>
-                    )}
-                    {slide.subtitle ? (
-                      <p className="text-white/90 text-sm sm:text-base md:text-xl lg:text-2xl tracking-widest uppercase font-bold drop-shadow-lg line-clamp-2">{slide.subtitle}</p>
-                    ) : null}
-                  </div>
-                </div>
-              </>
-            )}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-black flex items-center justify-center px-4 text-center text-white">
-            <p className="text-3xl md:text-6xl font-black tracking-tighter uppercase">✨ SPARK ON STAGE ✨</p>
-          </div>
-        )}
-      </section> */}
-
-      {/* Process Carousel (New Section) */}
-      {processBanners.length > 0 && (
-        <section
-          ref={processCarouselRef}
-          className="w-full relative overflow-hidden bg-white  mb-16 shadow-sm"
+      <section
+        ref={heroSectionRef}
+        className="w-full min-h-[75vh] max-h-[100vh] flex flex-col bg-black"
+      >
+        <img
+          src="/images/heroBanner/homeBannerHeader.webp"
+          alt="The most iconic content wins awards & rewards"
+          className="w-full max-h-[10vh] object-contain"
+        />
+        <Link
+          to="/booking"
+          className="w-full flex-1 relative group cursor-pointer overflow-hidden"
         >
-          {/* Section Header */}
-          {/* dinonaktifkan sementara */}
-          {/* <div className="text-center mb-10 md:mb-16 px-4 relative z-20">
-            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-black uppercase pb-2">
-              PREVIEW STAGE 
-            </h2>
-            <span className="w-24 md:w-32 h-2 bg-black mx-auto mt-4 rounded-full"></span>
-          </div> */}
+          <img
+            src="/images/heroBanner/homeBanner.webp"
+            alt="Become the star"
+            className="absolute inset-0 w-full h-[75vh] max-h-[75vh] object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
-          {/* Title Image Overflow (Only shown for current active slide) */}
-
-          {(processBanners[activeRealIndex]?.title_image_url ||
-            processBanners[activeRealIndex]?.title) && (
-            <div
-              ref={processTitleRef}
-              className="flex justify-center mb-8 md:mb-10 h-24 md:h-32 lg:h-40 transition-all duration-500 text-center relative z-20 px-4"
-            >
-              {processBanners[activeRealIndex]?.title_image_url ? (
-                <img
-                  src={processBanners[activeRealIndex].title_image_url!}
-                  alt={
-                    processBanners[activeRealIndex].title ||
-                    "Process Title Typography"
-                  }
-                  className="h-full w-auto object-contain animate-fade-in drop-shadow-lg hover:drop-shadow-xl transition-all"
-                />
-              ) : (
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tighter text-black self-center animate-fade-in uppercase pt-4">
-                  {processBanners[activeRealIndex].title}
-                </h2>
-              )}
+          {/* Overlay Button */}
+          <div className="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10 pointer-events-none opacity-95 hover:p-5 ">
+            <div className="bg-white rounded-full min-w-[200px]  px-10 py-2 flex flex-col items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.15)] transform transition-transform group-hover:scale-105">
+              <span className="text-[#ff6b9d] font-black text-sm md:text-xl tracking-[0.2em] leading-tight ">
+                BECOME THE
+              </span>
+              <span className="text-[#ff6b9d] font-black text-sm md:text-xl tracking-[0.1em] leading-tight">
+                ★ STAR ★
+              </span>
             </div>
-          )}
-
-          {/* Carousel Container */}
-          <div className="relative w-full  lg:px-16 xl:px-24 shadow-sm">
-            <div
-              className="overflow-hidden w-full relative rounded-none"
-              onTouchStart={(e) => {
-                processTouchStartX.current = e.touches[0].clientX;
-              }}
-              onTouchMove={(e) => {
-                processTouchEndX.current = e.touches[0].clientX;
-              }}
-              onTouchEnd={() => {
-                const swipeThreshold = 50;
-                const diff =
-                  processTouchStartX.current - processTouchEndX.current;
-                if (Math.abs(diff) > swipeThreshold) {
-                  if (diff > 0) nextSlide();
-                  else prevSlide();
-                }
-              }}
-            >
-              <div
-                className="flex"
-                style={{
-                  transform: `translateX(-${currentIndex * 100}%)`,
-                  transition: isTransitionEnabled
-                    ? "transform 700ms ease-in-out"
-                    : "none",
-                }}
-                onTransitionEnd={handleTransitionEnd}
-              >
-                {slidesToRender.map((processBanner, idx) => (
-                  <div
-                    key={`${processBanner.id}-${idx}`}
-                    className="w-full shrink-0"
-                  >
-                    <Link
-                      to={processBanner.link_url || "#"}
-                      className={`block w-full h-full ${!processBanner.link_url ? "cursor-default pointer-events-none" : ""}`}
-                    >
-                      {/* Process Image */}
-                      <div className="relative w-full bg-gray-100 dark:bg-gray-900 group overflow-hidden">
-                        {processBanner.image_url?.match(
-                          /\.(mp4|webm|ogg)(\?.*)?$/i,
-                        ) ? (
-                          <video
-                            src={processBanner.image_url}
-                            className="w-full h-auto object-contain pointer-events-none transition-transform duration-500 group-hover:scale-105"
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            src={processBanner.image_url}
-                            alt={processBanner.title || "Process visual"}
-                            className="w-full h-auto object-contain pointer-events-none transition-transform duration-500 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-
-                      {/* Process Subtitle Text */}
-                      {processBanner.subtitle && (
-                        <div className="p-6 md:p-8 text-center bg-white">
-                          <p className="text-black font-bold uppercase tracking-widest md:text-2xl leading-relaxed whitespace-pre-wrap">
-                            {processBanner.subtitle}
-                          </p>
-                        </div>
-                      )}
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Navigation Buttons for Process Carousel */}
-            {processBanners.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={prevSlide}
-                  className="absolute left-2 md:left-6 top-[40%] -translate-y-1/2 z-10 bg-black/50 hover:bg-gray-800/80 active:bg-black/50 text-white p-3 md:p-4 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
-                >
-                  <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextSlide}
-                  className="absolute right-2 md:right-6 top-[40%] -translate-y-1/2 z-10 bg-black/50 hover:bg-gray-800/80 active:bg-black/50 text-white p-3 md:p-4 rounded-full shadow-lg transition-all touch-manipulation hover:scale-110 active:scale-95"
-                >
-                  <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
-                </button>
-              </>
-            )}
+          </div>
+        </Link>
+      </section>
+      <Link
+        to="/news"
+        className="block w-full bg-black hover:bg-neutral-900 transition-colors duration-300 border-t border-neutral-800"
+      >
+        <div className="w-full py-4 md:py-0 md:h-[15vh] h-[15hv] flex md:flex-row items-center justify-center gap-6 md:gap-12 px-4">
+          {/* Left Text: VIP STAR */}
+          <div className="flex items-center gap-3 text-white font-serif font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tighter">
+            <span>VIP</span>
+            <span className="text-4xl md:text-5xl lg:text-6xl pb-2">★</span>
+            <span>STAR</span>
           </div>
 
-          {/* Process Carousel Indicators */}
-          {/* {processBanners.length > 1 && (
-            <div className="flex justify-center gap-3 mt-2">
-              {processBanners.map((_, idx) => (
-                <button
-                  key={`process-dot-${idx}`}
-                  type="button"
-                  onClick={() => {
-                    setIsTransitionEnabled(true);
-                    setCurrentIndex(idx + 1);
-                  }}
-                  className={`rounded-full touch-manipulation transition-all duration-300 ${
-                    activeRealIndex === idx
-                      ? "bg-pink-500 w-10 h-2"
-                      : "bg-gray-300 hover:bg-gray-400 w-2 h-2 hover:scale-125"
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                />
-              ))}
-            </div>
-          )} */}
-        </section>
-      )}
+          {/* Right Text: Rewards info */}
+          <div className="flex flex-col items-center md:items-start justify-center text-center md:text-left mt-2 md:mt-0">
+            <span className="text-[#D388B2] font-bold text-base md:text-2xl lg:text-3xl uppercase tracking-wide leading-tight">
+              WINS AWARDS &
+            </span>
+            <span className="text-[#D388B2] font-bold text-base md:text-2xl lg:text-3xl uppercase tracking-wide leading-tight">
+              REWARDS UP TO 599K
+            </span>
+          </div>
+        </div>
+      </Link>
+
       {/* Ticket Banner */}
       <div className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
         {/* Ticket Header Title */}
