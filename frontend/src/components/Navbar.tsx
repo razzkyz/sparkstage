@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Logo from "./Logo";
 import {
   Camera,
   CalendarDays,
@@ -11,11 +12,10 @@ import {
   ShoppingCart,
   ShoppingBag,
   Ticket,
-  // UserRound,
+  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
-import Logo from "./Logo";
 
 type NavItem = {
   key: string;
@@ -223,16 +223,15 @@ const Navbar = () => {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-2 lg:py-3">
               <div className="w-1/3 flex items-center gap-3">
-                {/* Desktop: Language Switcher + Stage 55 logo */}
-                <div className="hidden lg:flex items-center">
+                {/* Desktop: Stage 55 logo + Loyalty Points (jika login) */}
+                <Link to="/" className="hidden lg:flex items-center">
+                  <Logo className="h-[2.5rem] md:h-[3.5rem]" />
                   <img
                     src="/images/landing/stage55.png"
                     alt="Stage 55"
                     className="h-10 w-auto md:h-12 object-contain"
                   />
-                  {/* Language switcher disabled */}
-                  {/* <LanguageSwitcher /> */}
-                </div>
+                </Link>
                 {/* Mobile/Tablet: Hamburger */}
                 <div className="lg:hidden flex items-center">
                   {/* Hamburger button — triggers left sidebar */}
@@ -250,90 +249,84 @@ const Navbar = () => {
                 </div>
               </div>
 
-              <div className="w-1/3 flex justify-center">
+              <div className="w-1/3 flex justify-center lg:hidden">
                 <Link
                   to="/"
                   className="inline-flex items-center"
                   aria-label="Home"
                 >
                   <Logo className="h-[2.5rem] md:h-[3.5rem]" />
+                  <img
+                    src="/images/landing/stage55.png"
+                    alt="Stage 55"
+                    className="h-[2.5rem] md:h-[3.5rem] w-auto object-contain"
+                  />
                 </Link>
               </div>
 
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
                 {/* Desktop icons — selalu tampil */}
-                <div className="hidden lg:flex items-center gap-5">
-                  {
-                    user ? (
-                      <>
-                        <span className="text-sm font-medium text-gray-900">
-                          {getUserDisplayName(user)}
-                        </span>
+                <div className="hidden lg:flex items-center gap-3">
+                  {user ? (
+                    <>
+                      <span className="text-sm font-medium text-gray-900">
+                        {getUserDisplayName(user)}
+                      </span>
 
-                        {isAdmin && (
-                          <Link
-                            to="/admin/dashboard"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
-                            title="Admin Dashboard"
-                          >
-                            <span className="material-symbols-outlined text-sm">
-                              dashboard
-                            </span>
-                            Dashboard
-                          </Link>
-                        )}
-
-                        <button
-                          onClick={handleSignOutClick}
-                          disabled={loggingOut}
-                          className="text-gray-500 hover:text-primary transition-colors"
-                          title={t("auth.signOut")}
-                        >
-                          <LogOut className="h-5 w-5" />
-                        </button>
-
-                        {/* Loyalty Points Badge — Desktop */}
+                      {isAdmin && (
                         <Link
-                          to="/my-points"
-                          className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
-                            boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
-                          }}
-                          title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
+                          to="/admin/dashboard"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
+                          title="Admin Dashboard"
                         >
-                          <span className="text-sm leading-none">
-                            {loyaltyRank.icon}
+                          <span className="material-symbols-outlined text-sm">
+                            dashboard
                           </span>
-                          <span className="text-xs font-black tracking-tight text-white">
-                            {loyaltyPoints.toLocaleString()}
-                          </span>
-                          <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
-                            pts
-                          </span>
-                          <span
-                            className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                            style={{
-                              background:
-                                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
-                            }}
-                          />
+                          Dashboard
                         </Link>
-                      </>
-                    ) : null
-                    // {/* nonaktifkan button sign in desktop */}
-                    // <Link
-                    //   to="/login"
-                    //   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                    //   style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
-                    //   aria-label={t("auth.signIn")}
-                    //   title={t("auth.signIn")}
-                    // >
-                    //   <UserRound className="h-4 w-4" />
-                    //   <span>{t("auth.signIn")}</span>
-                    // </Link>
-                  }
+                      )}
+
+                      <button
+                        onClick={handleSignOutClick}
+                        disabled={loggingOut}
+                        className="text-gray-500 hover:text-primary transition-colors"
+                        title={t("auth.signOut")}
+                      >
+                        <LogOut className="h-5 w-5" />
+                      </button>
+                    </>
+                  ) : null}
+
+                  {/* Loyalty Points Badge — hanya saat login */}
+                  {user && (
+                    <Link
+                      to="/my-points"
+                      className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
+                        boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
+                      }}
+                      title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
+                    >
+                      <span className="text-sm leading-none">
+                        {loyaltyRank.icon}
+                      </span>
+                      <span className="text-xs font-black tracking-tight text-white">
+                        {loyaltyPoints.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
+                        pts
+                      </span>
+                      <span
+                        className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                        }}
+                      />
+                    </Link>
+                  )}
 
                   {/* Cart, My Tickets, My Orders — selalu tampil di desktop */}
                   <Link
@@ -374,29 +367,30 @@ const Navbar = () => {
                       </span>
                     )}
                   </Link>
+
+                  {/* UserRound — hanya tampil saat belum login */}
+                  {!user && (
+                    <Link
+                      to="/login"
+                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      aria-label={t("auth.signIn")}
+                      title={t("auth.signIn")}
+                    >
+                      <UserRound className="h-5 w-5" />
+                    </Link>
+                  )}
                 </div>
 
-                <div className="lg:hidden flex items-center gap-0.5">
-                  {/* nonaktifkan button un-login */}
-                  {/* <Link
-                    to="/login"
-                    className="relative p-1.5 rounded-md bg-[#ff4b86] text-white hover:bg-[#e63d75] active:bg-[#cc2f64] animate-pulse-ring transition-all shadow-sm"
-                    style={{ border: "1.5px solid rgba(255, 75, 134, 1)" }}
-                    aria-label={t("auth.signIn")}
-                    title={t("auth.signIn")}
-                  >
-                    <UserRound className="h-5 w-5" />
-                  </Link> */}
-
+                <div className="lg:hidden flex items-center gap-3">
                   {/* Mobile: Ticket icon */}
 
                   <Link
                     to="/my-tickets"
-                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
                     aria-label={t("nav.myTickets")}
                     title={t("nav.myTickets")}
                   >
-                    <Ticket className="h-6 w-6" />
+                    <Ticket className="h-5 w-5" />
                     {ticketCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
                         {ticketCount}
@@ -408,11 +402,11 @@ const Navbar = () => {
 
                   <Link
                     to="/my-orders"
-                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
                     aria-label={t("nav.myOrders")}
                     title={t("nav.myOrders")}
                   >
-                    <ReceiptText className="h-6 w-6" />
+                    <ReceiptText className="h-5 w-5" />
                     {orderCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
                         {orderCount}
@@ -420,20 +414,32 @@ const Navbar = () => {
                     )}
                   </Link>
 
-                  {/* Mobile: Cart — hanya tampil jika sudah login */}
+                  {/* Mobile: Cart */}
 
                   <Link
                     to="/cart"
-                    className="relative p-1.5 text-gray-700 active:text-main-600"
+                    className="relative text-gray-500 hover:text-main-600 transition-colors"
                     aria-label={t("nav.cart")}
                   >
-                    <ShoppingCart className="h-6 w-6" />
+                    <ShoppingCart className="h-5 w-5" />
                     {totalQuantity > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 bg-main-600 text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full">
                         {totalQuantity}
                       </span>
                     )}
                   </Link>
+
+                  {/* Mobile: UserRound — hanya tampil saat belum login */}
+                  {!user && (
+                    <Link
+                      to="/login"
+                      className="relative text-gray-500 hover:text-main-600 transition-colors"
+                      aria-label={t("auth.signIn")}
+                      title={t("auth.signIn")}
+                    >
+                      <UserRound className="h-5 w-5" />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -529,20 +535,60 @@ const Navbar = () => {
       >
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <img
+          {user && (
+            <div className="">
+              {/* User info row */}
+              <div className="flex items-center gap-3">
+                {/* Avatar initial */}
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-black"
+                  style={{
+                    background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                  }}
+                >
+                  {getUserDisplayName(user).charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {getUserDisplayName(user)}
+                  </p>
+                  {/* Points badge */}
+                  <Link
+                    to="/my-points"
+                    onClick={() => setSidebarOpen(false)}
+                    className="inline-flex items-center gap-1 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
+                    style={{
+                      background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                      color: "white",
+                    }}
+                  >
+                    <span>{loyaltyRank.icon}</span>
+                    <span>{loyaltyPoints.toLocaleString()}</span>
+                    <span className="opacity-70 font-semibold text-[9px]">
+                      pts
+                    </span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* <img
             src="/images/landing/stage55.png"
             alt="Stage 55"
             className="h-9 w-auto object-contain"
-          />
-          <button
-            id="sidebar-close-btn"
-            type="button"
-            aria-label="Tutup menu"
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+            /> */}
+            </div>
+          )}
+          <div>
+            <button
+              id="sidebar-close-btn"
+              type="button"
+              aria-label="Tutup menu"
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-50 active:bg-pink-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Nav items */}
@@ -624,7 +670,7 @@ const Navbar = () => {
                         onClick={() => setSidebarOpen(false)}
                         className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
                       >
-                        Spark Products
+                        Stage 55 Products
                       </Link>
                     </div>
                   </div>
@@ -664,40 +710,6 @@ const Navbar = () => {
         {user && (
           <div className="border-t border-gray-100 px-5 py-4 space-y-3">
             <>
-              {/* User info row */}
-              <div className="flex items-center gap-3">
-                {/* Avatar initial */}
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-black"
-                  style={{
-                    background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
-                  }}
-                >
-                  {getUserDisplayName(user).charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">
-                    {getUserDisplayName(user)}
-                  </p>
-                  {/* Points badge */}
-                  <Link
-                    to="/my-points"
-                    onClick={() => setSidebarOpen(false)}
-                    className="inline-flex items-center gap-1 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide active:scale-95 transition-transform"
-                    style={{
-                      background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
-                      color: "white",
-                    }}
-                  >
-                    <span>{loyaltyRank.icon}</span>
-                    <span>{loyaltyPoints.toLocaleString()}</span>
-                    <span className="opacity-70 font-semibold text-[9px]">
-                      pts
-                    </span>
-                  </Link>
-                </div>
-              </div>
-
               {/* Admin Dashboard button */}
               {isAdmin && (
                 <Link
