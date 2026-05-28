@@ -53,7 +53,9 @@ const Navbar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
 
-  const desktopNavItemsRef = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
+  const desktopNavItemsRef = useRef<
+    (HTMLAnchorElement | HTMLButtonElement | null)[]
+  >([]);
   const mobileNavScrollerRef = useRef<HTMLDivElement | null>(null);
   const desktopNavContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -86,15 +88,15 @@ const Navbar = () => {
   })();
 
   const navItems: NavItem[] = [
-    { key: "on-stage", label: "On Stage", to: "/on-stage", icon: Camera },
+    { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
     {
       key: "booking",
-      label: "Booking",
+      label: "BOOKING",
       to: "/booking",
       isPink: true,
       icon: Ticket,
     },
-    { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
+    // { key: "dressing-room", label: "DRESS ROOM", to: "/dressing-room" },
     { key: "shop", label: "SHOP", to: "/glam", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
