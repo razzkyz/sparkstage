@@ -1,37 +1,41 @@
 import { useState, useRef } from 'react';
-import type { ProductDraft } from './ProductFormModal';
+
+export interface DressingRoomProductDraft {
+  id?: number;
+  name: string;
+  slug: string;
+  description: string;
+  dressing_room_category_id: number | null;
+  category: string;
+  image_url: string;
+  is_active: boolean;
+  variants: Array<{
+    name: string;
+    sku: string;
+    size_label: string;
+    color: string;
+    price: number;
+    daily_rental_fee: number;
+    total_quantity: number;
+  }>;
+}
 
 interface CSVProductRow {
   name: string;
   sku: string;
   description?: string;
   price?: string;
+  daily_rental_fee?: string;
   stock?: string;
   variant_name?: string;
   color?: string;
   size?: string;
 }
 
-interface ParsedProduct {
-  name: string;
-  sku: string;
-  slug: string;
-  description: string;
-  is_active: boolean;
-  variants: Array<{
-    name: string;
-    sku: string;
-    price: string;
-    stock: number;
-    color: string;
-    size: string;
-  }>;
-}
-
 interface DressingRoomCSVImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (products: ProductDraft[]) => Promise<void>;
+  onImport: (products: DressingRoomProductDraft[]) => Promise<void>;
   isImporting: boolean;
 }
 
@@ -42,7 +46,7 @@ export function DressingRoomCSVImportModal({
   isImporting,
 }: DressingRoomCSVImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [parsedProducts, setParsedProducts] = useState<ParsedProduct[]>([]);
+  const [parsedProducts, setParsedProducts] = useState<DressingRoomProductDraft[]>([]);
   const [error, setError] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
 
@@ -72,7 +76,7 @@ export function DressingRoomCSVImportModal({
       }
 
       // Parse rows
-      const products: ParsedProduct[] = [];
+      const products: DressingRoomProductDraft[] = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
         const row: Partial<CSVProductRow> = {};
@@ -83,23 +87,27 @@ export function DressingRoomCSVImportModal({
 
         if (!row.name || !row.sku) continue;
 
-        const price = row.price || '15000'; // Default rental price
+        const price = parseFloat(row.price || '0');
+        const dailyRentalFee = parseFloat(row.daily_rental_fee || '15000');
         const stock = parseInt(row.stock || '1', 10) || 1;
 
         products.push({
           name: row.name,
-          sku: row.sku,
           slug: row.name.toLowerCase().replace(/\s+/g, '-'),
           description: row.description || '',
+          category: 'clothing',
+          dressing_room_category_id: null,
+          image_url: '',
           is_active: true,
           variants: [
             {
               name: row.variant_name || 'Default',
               sku: row.sku,
               price: price,
-              stock: stock,
+              daily_rental_fee: dailyRentalFee,
+              total_quantity: stock,
               color: row.color || '',
-              size: row.size || '',
+              size_label: row.size || '',
             },
           ],
         });
@@ -120,20 +128,7 @@ export function DressingRoomCSVImportModal({
     if (parsedProducts.length === 0) return;
 
     try {
-      // We do not set category_id here. The parent component will set it
-      // when it fetches the "Dressing Room" category.
-      const drafts: ProductDraft[] = parsedProducts.map((p) => ({
-        id: undefined,
-        name: p.name,
-        slug: p.slug,
-        description: p.description,
-        category_id: null, // to be populated
-        sku: p.sku,
-        is_active: p.is_active,
-        variants: p.variants,
-      }));
-
-      await onImport(drafts);
+      await onImport(parsedProducts);
       setParsedProducts([]);
       setFileName('');
       setError('');
@@ -164,7 +159,7 @@ export function DressingRoomCSVImportModal({
         <div className="mb-6 rounded-lg bg-pink-50 border border-pink-200 p-4">
           <p className="text-sm text-pink-900 font-medium mb-2">Format CSV:</p>
           <p className="text-xs text-pink-800 font-mono mb-2">
-            name, sku, description, price, stock, variant_name, color, size
+            name, sku, description, price, daily_rental_fee, stock, variant_name, color, size
           </p>
           <p className="text-xs text-pink-800">
             Wajib: name, sku | Opsional: yang lainnya
@@ -205,7 +200,7 @@ export function DressingRoomCSVImportModal({
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Nama</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">SKU</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Harga Sewa</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Biaya Sewa</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Stok</th>
                   </tr>
                 </thead>
@@ -213,9 +208,9 @@ export function DressingRoomCSVImportModal({
                   {parsedProducts.map((p, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-gray-900">{p.name}</td>
-                      <td className="px-4 py-2 text-gray-600 text-xs font-mono">{p.sku}</td>
-                      <td className="px-4 py-2 text-gray-600">Rp {p.variants[0].price}</td>
-                      <td className="px-4 py-2 text-gray-600">{p.variants[0].stock}</td>
+                      <td className="px-4 py-2 text-gray-600 text-xs font-mono">{p.variants[0].sku}</td>
+                      <td className="px-4 py-2 text-gray-600">Rp {p.variants[0].daily_rental_fee}</td>
+                      <td className="px-4 py-2 text-gray-600">{p.variants[0].total_quantity}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -35,9 +35,6 @@ interface RentalFlowModalProps {
 
 type Step = 'duration' | 'customer' | 'confirm';
 
-const DAILY_RATE = 35000;
-const DEPOSIT_AMOUNT = 50000;
-
 export default function RentalFlowModal({ product, variant, isOpen, onClose }: RentalFlowModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('duration');
   const [formData, setFormData] = useState<RentalFormData>({
@@ -51,6 +48,10 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
 
   const STEPS: Step[] = ['duration', 'customer', 'confirm'];
   const stepIndex = STEPS.indexOf(currentStep);
+  
+  // Use dynamic pricing from variant, fallback to defaults
+  const dailyRate = variant?.daily_rental_fee ?? 35000;
+  const depositAmount = variant?.deposit_amount ?? 50000;
 
   const handleNext = (patch: Partial<RentalFormData>) => {
     setFormData(prev => ({ ...prev, ...patch }));
@@ -108,6 +109,8 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
                   product={product}
                   variant={variant}
                   defaultDays={formData.durationDays}
+                  dailyRate={dailyRate}
+                  depositAmount={depositAmount}
                   onNext={(days) => {
                     const start = new Date();
                     const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
@@ -120,6 +123,7 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
                 <CustomerStep
                   key="customer"
                   defaultData={formData.customerData}
+                  depositAmount={depositAmount}
                   onNext={(data) => handleNext({ customerData: data })}
                   onPrev={handlePrev}
                 />
@@ -128,6 +132,8 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
                 <ConfirmStep
                   key="confirm"
                   formData={formData}
+                  dailyRate={dailyRate}
+                  depositAmount={depositAmount}
                   onPrev={handlePrev}
                   onClose={onClose}
                 />
@@ -145,18 +151,22 @@ function DurationStep({
   product,
   variant,
   defaultDays,
+  dailyRate,
+  depositAmount,
   onNext,
   onClose,
 }: {
   product: DressingRoomProduct;
   variant: DressingRoomProductVariant;
   defaultDays: number;
+  dailyRate: number;
+  depositAmount: number;
   onNext: (days: number) => void;
   onClose: () => void;
 }) {
   const [days, setDays] = useState(defaultDays);
-  const rentalCost = DAILY_RATE * days;
-  const total = rentalCost + DEPOSIT_AMOUNT;
+  const rentalCost = dailyRate * days;
+  const total = rentalCost + depositAmount;
 
   return (
     <motion.div
@@ -198,12 +208,12 @@ function DurationStep({
       {/* Price summary */}
       <div className="bg-gradient-to-br from-main-50 to-pink-50 rounded-xl p-5 border border-main-100 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Sewa ({days} hari × Rp 35.000)</span>
+          <span className="text-gray-600">Sewa ({days} hari × Rp {dailyRate.toLocaleString('id-ID')})</span>
           <span className="font-semibold text-gray-900">Rp {rentalCost.toLocaleString('id-ID')}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Deposit (refundable)</span>
-          <span className="font-semibold text-yellow-700">Rp {DEPOSIT_AMOUNT.toLocaleString('id-ID')}</span>
+          <span className="font-semibold text-yellow-700">Rp {depositAmount.toLocaleString('id-ID')}</span>
         </div>
         <div className="border-t border-main-200 pt-3 flex justify-between">
           <span className="font-black text-gray-900">Total Bayar</span>
@@ -229,10 +239,12 @@ function DurationStep({
 // ─── Step 2: Customer Data ────────────────────────────────────────────────────
 function CustomerStep({
   defaultData,
+  depositAmount,
   onNext,
   onPrev,
 }: {
   defaultData: RentalFormData['customerData'];
+  depositAmount: number;
   onNext: (data: RentalFormData['customerData']) => void;
   onPrev: () => void;
 }) {
@@ -271,7 +283,7 @@ function CustomerStep({
           </label>
           <input
             type={type}
-            value={form[key]}
+            value={form[key as keyof typeof form]}
             onChange={(e) => {
               setForm(p => ({ ...p, [key]: e.target.value }));
               if (errors[key]) setErrors(p => ({ ...p, [key]: '' }));
@@ -287,7 +299,7 @@ function CustomerStep({
 
       <div className="bg-gray-50 rounded-xl p-4 text-xs text-gray-600 space-y-1">
         <p className="font-semibold text-gray-800 text-sm">📋 Syarat & Ketentuan Singkat</p>
-        <p>• Deposit <strong>Rp 50.000</strong> dikembalikan jika baju kembali bersih dan lengkap</p>
+        <p>• Deposit <strong>Rp {depositAmount.toLocaleString('id-ID')}</strong> dikembalikan jika baju kembali bersih dan lengkap</p>
         <p>• Terlambat: <strong>Rp 5.000/jam</strong> dari deposit</p>
         <p>• Rusak/bernoda: deposit dikurangi sesuai kerusakan</p>
       </div>
@@ -313,10 +325,14 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 
 function ConfirmStep({
   formData,
+  dailyRate,
+  depositAmount,
   onPrev,
   onClose,
 }: {
   formData: RentalFormData;
+  dailyRate: number;
+  depositAmount: number;
   onPrev: () => void;
   onClose: () => void;
 }) {
@@ -326,8 +342,8 @@ function ConfirmStep({
   const [result, setResult] = useState<{ orderNumber: string; totalAmount: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const rentalCost = DAILY_RATE * formData.durationDays;
-  const total = rentalCost + DEPOSIT_AMOUNT;
+  const rentalCost = dailyRate * formData.durationDays;
+  const total = rentalCost + depositAmount;
 
   const handleSubmit = async () => {
     if (!agreed || loading) return;
@@ -344,8 +360,8 @@ function ConfirmStep({
       const items = [{
         dressing_room_product_variant_id: formData.variant.id,
         quantity: 1,
-        daily_rate: DAILY_RATE,
-        deposit_amount: DEPOSIT_AMOUNT,
+        daily_rate: dailyRate,
+        deposit_amount: depositAmount,
       }];
 
       const { data, error: rpcError } = await supabase.rpc('create_rental_order_public', {
@@ -419,12 +435,12 @@ function ConfirmStep({
           <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Durasi & Biaya</p>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Sewa {formData.durationDays} hari × Rp 35.000</span>
+              <span className="text-gray-600">Sewa {formData.durationDays} hari × Rp {dailyRate.toLocaleString('id-ID')}</span>
               <span className="font-semibold">Rp {rentalCost.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Deposit</span>
-              <span className="font-semibold text-yellow-700">Rp {DEPOSIT_AMOUNT.toLocaleString('id-ID')}</span>
+              <span className="font-semibold text-yellow-700">Rp {depositAmount.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between pt-1.5 border-t border-gray-100 font-black text-base">
               <span>Total Bayar</span>

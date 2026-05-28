@@ -114,9 +114,9 @@ CREATE OR REPLACE FUNCTION public.generate_rental_order_number()
 RETURNS TEXT AS $$
 DECLARE
   order_num TEXT;
-  prefix TEXT := 'RNT';
+  prefix TEXT := 'RTL';
 BEGIN
-  -- Format: RNT-YYYYMMDD-XXXX
+  -- Format: RTL-YYYYMMDD-XXXX
   SELECT prefix || '-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(nextval('rental_order_seq')::TEXT, 4, '0')
   INTO order_num;
   RETURN order_num;

@@ -65,7 +65,7 @@ BEGIN
   v_rental_end_time := p_rental_start_time + (p_duration_days || ' days')::INTERVAL;
 
   -- Generate unique order number
-  v_order_number := 'RNT-' || to_char(NOW(), 'YYYYMMDD') || '-' ||
+  v_order_number := 'RTL-' || to_char(NOW(), 'YYYYMMDD') || '-' ||
                     upper(substr(md5(random()::TEXT || clock_timestamp()::TEXT), 1, 6));
 
   -- Validate all items & compute totals BEFORE inserting anything

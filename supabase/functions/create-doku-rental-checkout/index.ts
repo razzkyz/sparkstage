@@ -226,7 +226,7 @@ serve(async (req) => {
     );
     const totalAmount = totalRentalCost + totalDeposit;
 
-    const orderNumber = `RNT-${Date.now()}-${
+    const orderNumber = `RTL-${Date.now()}-${
       Math.random().toString(36).substring(2, 7).toUpperCase()
     }`;
     const appUrl = getPublicAppUrl() ?? req.headers.get("origin") ?? "";

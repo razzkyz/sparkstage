@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { AlertCircle, Loader2, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, Plus, Trash2, Upload, X } from 'lucide-react';
+import { uploadPublicAssetToImageKit } from '@/lib/publicImagekitUpload';
+import { useDressingRoomSubcategories } from '@/hooks/useDressingRoomCatalog';
 
 interface DressingRoomProductFormProps {
   productId?: string;
@@ -26,8 +28,11 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
     slug: '',
     image_url: '',
     category: 'clothing',
+    dressing_room_category_id: null as number | null,
     is_active: true,
   });
+
+  const { data: categories = [] } = useDressingRoomSubcategories(1);
 
   const [variants, setVariants] = useState<Variant[]>([
     {
@@ -42,6 +47,8 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
   ]);
 
   const [error, setError] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   // Fetch existing product if editing
   const { isLoading: isLoadingProduct } = useQuery({
@@ -63,6 +70,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
         slug: data.slug || '',
         image_url: data.image_url || '',
         category: data.category || 'clothing',
+        dressing_room_category_id: data.dressing_room_category_id || null,
         is_active: data.is_active !== false,
       });
 
@@ -144,6 +152,58 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
     setVariants(variants.filter((_, i) => i !== index));
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('File harus berupa gambar');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Ukuran gambar maksimal 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      const fileName = `dressing-room-product-${Date.now()}-${file.name}`;
+      const imageUrl = await uploadPublicAssetToImageKit({
+        file,
+        fileName,
+        folderPath: 'dressing-room-products',
+      });
+      setFormData({ ...formData, image_url: imageUrl });
+    } catch (err: any) {
+      setError(err.message || 'Gagal upload gambar');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      handleImageUpload(files[0]);
+    }
+  };
+
   const handleVariantChange = (index: number, field: keyof Variant, value: any) => {
     const newVariants = [...variants];
     newVariants[index] = {
@@ -158,6 +218,11 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
 
     if (!formData.name || !formData.slug) {
       setError('Name and slug are required');
+      return;
+    }
+
+    if (!formData.dressing_room_category_id) {
+      setError('Category selection is required');
       return;
     }
 
@@ -199,7 +264,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
             value={formData.name}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Contoh: Gaun Pengantin Putih"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-main-500"
           />
         </div>
 
@@ -217,7 +282,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
               })
             }
             placeholder="gaun-pengantin-putih"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-main-500"
           />
         </div>
 
@@ -230,20 +295,94 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Deskripsi detail produk..."
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-main-500"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            URL Gambar
+            Kategori *
           </label>
+          <select
+            value={formData.dressing_room_category_id || ''}
+            onChange={(e) => setFormData({
+              ...formData,
+              dressing_room_category_id: e.target.value ? parseInt(e.target.value) : null,
+            })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-main-500"
+          >
+            <option value="">Pilih Kategori</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gambar Produk
+          </label>
+          
+          {formData.image_url ? (
+            <div className="relative rounded-lg overflow-hidden bg-gray-100 h-64 flex items-center justify-center mb-3">
+              <img
+                src={formData.image_url}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, image_url: '' })}
+                className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                title="Hapus gambar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : null}
+
+          <div
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+            } ${uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+              className="hidden"
+              id="image-upload"
+              disabled={uploadingImage}
+            />
+            <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+              {uploadingImage ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                  <p className="text-sm text-gray-600">Upload sedang berlangsung...</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-gray-400" />
+                  <p className="text-sm font-medium text-gray-700">Drag gambar atau klik untuk upload</p>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF (Max 5MB)</p>
+                </>
+              )}
+            </label>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-2">Atau masukkan URL gambar secara manual:</p>
           <input
             type="text"
             value={formData.image_url}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, image_url: e.target.value })}
             placeholder="https://..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-main-500 mt-2"
           />
         </div>
 
@@ -267,7 +406,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
           <button
             type="button"
             onClick={handleAddVariant}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-main-100 text-main-700 rounded-lg text-sm font-medium hover:bg-main-200 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Tambah Varian
@@ -302,7 +441,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                   value={variant.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariantChange(index, 'name', e.target.value)}
                   placeholder="Contoh: Size S"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -315,7 +454,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                   value={variant.sku}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariantChange(index, 'sku', e.target.value)}
                   placeholder="SKU123"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -328,7 +467,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                   value={variant.size_label}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariantChange(index, 'size_label', e.target.value)}
                   placeholder="S, M, L"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -341,7 +480,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                   value={variant.color}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariantChange(index, 'color', e.target.value)}
                   placeholder="Putih, Biru, dll"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -354,7 +493,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                   value={variant.price}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariantChange(index, 'price', parseFloat(e.target.value))}
                   placeholder="0"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -369,7 +508,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                     handleVariantChange(index, 'daily_rental_fee', parseFloat(e.target.value))
                   }
                   placeholder="15000"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
 
@@ -384,7 +523,7 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
                     handleVariantChange(index, 'total_quantity', parseInt(e.target.value))
                   }
                   placeholder="0"
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-main-500"
                 />
               </div>
             </div>
@@ -402,8 +541,8 @@ export function DressingRoomProductForm({ productId, onSuccess }: DressingRoomPr
         </button>
         <button
           type="submit"
-          disabled={saveMutation.isPending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          disabled={saveMutation.isPending || uploadingImage}
+          className="px-4 py-2 bg-main-600 text-white rounded-lg font-medium hover:bg-main-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
           {productId ? 'Update Produk' : 'Buat Produk'}

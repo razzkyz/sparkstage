@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag, Plus, CheckCircle } from 'lucide-react';
+import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag, Plus, CheckCircle, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 import AdminLayout from '../../components/AdminLayout';
@@ -10,10 +10,11 @@ import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { uploadFileToImageKit } from '../../lib/imagekit';
 import { RentalItemStatusTracker } from '../../components/admin/RentalItemStatusTracker';
 import { CreateRentalOrderModal } from '../../components/admin/CreateRentalOrderModal';
+import { DRReturnModal } from '../../components/admin/DRReturnModal';
 import type { RentalItemStatus } from '../../types/dressingRoom';
 
 type RentalOrderStatus = 'awaiting_payment' | 'paid' | 'active' | 'overdue' | 'returned' | 'cancelled' | 'refunded';
-type PageTab = 'sewa_formal' | 'costume_harian';
+type PageTab = 'sewa_formal' | 'costume_harian' | 'dr_rental';
 type CostumeReturnStatus = 'in_laundry' | 'returned' | null;
 
 interface RentalOrder {
@@ -79,6 +80,17 @@ interface DressingRoomOrder {
   order_product_items: DressingRoomOrderItem[];
 }
 
+function damageDeduction(condition: string): number {
+  if (condition === 'severely_damaged') return 50000;
+  if (['stained', 'button_missing', 'damaged'].includes(condition)) return 10000;
+  return 0;
+}
+
+function lateFeeCalc(endIso: string, returnIso: string): number {
+  const diff = new Date(returnIso).getTime() - new Date(endIso).getTime();
+  return diff > 0 ? Math.ceil(diff / 86400000) * 50000 : 0;
+}
+
 export default function RentalOrders() {
   const { signOut, getValidAccessToken } = useAuth();
   const menuSections = useAdminMenuSections();
@@ -108,6 +120,15 @@ export default function RentalOrders() {
   // Create Order modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createSuccessMsg, setCreateSuccessMsg] = useState<string | null>(null);
+  // DR Rental tab state
+  const [drRentalOrders, setDrRentalOrders] = useState<RentalOrder[]>([]);
+  const [drRentalLoading, setDrRentalLoading] = useState(false);
+  const [selectedDrOrder, setSelectedDrOrder] = useState<RentalOrder | null>(null);
+  const [drOrderItems, setDrOrderItems] = useState<RentalOrderItem[]>([]);
+  const [showDrReturnModal, setShowDrReturnModal] = useState(false);
+  const [showDrRefundModal, setShowDrRefundModal] = useState(false);
+  const [drSearchQuery, setDrSearchQuery] = useState('');
+  const [drStatusFilter, setDrStatusFilter] = useState<RentalOrderStatus | 'all'>('all');
 
   useEffect(() => {
     fetchOrders();
@@ -115,6 +136,7 @@ export default function RentalOrders() {
 
   useEffect(() => {
     if (activePageTab === 'costume_harian') fetchDressingRoomOrders();
+    if (activePageTab === 'dr_rental') fetchDRRentalOrders();
   }, [activePageTab]);
 
   const fetchOrders = async () => {
@@ -170,8 +192,8 @@ export default function RentalOrders() {
     if (!selectedOrder) return;
 
     try {
-      // Calculate late fee
-      const lateFee = await calculateLateFee(selectedOrder.rental_end_time, returnTime.toISOString());
+      // Calculate late fee (Rp 50.000 per day overdue)
+      const lateFee = lateFeeCalc(selectedOrder.rental_end_time, returnTime.toISOString());
 
       // Update order
       const { error: orderError } = await supabase
@@ -216,7 +238,7 @@ export default function RentalOrders() {
 
       // Calculate total damage deduction
       const totalDamageDeduction = Object.values(conditions).reduce(
-        (sum, cond) => sum + getDamageDeduction(cond),
+        (sum, cond) => sum + damageDeduction(cond),
         0
       );
 
@@ -298,6 +320,151 @@ export default function RentalOrders() {
     }
   }, []);
 
+  const fetchDRRentalOrders = async () => {
+    setDrRentalLoading(true);
+    try {
+      // Fetch rental_orders that have at least one item with dressing_room_product_variant_id
+      const { data: itemsWithDR } = await supabase
+        .from('rental_order_items')
+        .select('rental_order_id')
+        .not('dressing_room_product_variant_id', 'is', null);
+
+      const drOrderIds = [...new Set((itemsWithDR || []).map((i: any) => i.rental_order_id))];
+      if (drOrderIds.length === 0) { setDrRentalOrders([]); setDrRentalLoading(false); return; }
+
+      const { data, error } = await supabase
+        .from('rental_orders')
+        .select('*')
+        .in('id', drOrderIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDrRentalOrders(data || []);
+    } catch (err) {
+      console.error('Failed to fetch DR rental orders:', err);
+    } finally {
+      setDrRentalLoading(false);
+    }
+  };
+
+  const fetchDrOrderItems = async (orderId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('rental_order_items')
+        .select('*')
+        .eq('rental_order_id', orderId);
+      if (error) throw error;
+      setDrOrderItems(data || []);
+    } catch (err) {
+      console.error('Failed to fetch DR order items:', err);
+    }
+  };
+
+  const handleDrOrderClick = (order: RentalOrder) => {
+    setSelectedDrOrder(order);
+    setShowDrReturnModal(false);
+    setShowDrRefundModal(false);
+    fetchDrOrderItems(order.id);
+  };
+
+  const handleDRReturn = async (
+    returnTime: Date,
+    conditions: Record<number, string>,
+    itemStatuses: Record<number, string>,
+    rejectPhotos: Record<number, File>
+  ) => {
+    if (!selectedDrOrder) return;
+    try {
+      const lateFee = lateFeeCalc(selectedDrOrder.rental_end_time, returnTime.toISOString());
+
+      // Update order
+      const { error: orderErr } = await supabase
+        .from('rental_orders')
+        .update({ return_time: returnTime.toISOString(), late_fee_amount: lateFee, status: 'returned' })
+        .eq('id', selectedDrOrder.id);
+      if (orderErr) throw orderErr;
+
+      // Upload reject photos to ImageKit
+      const uploadedUrls: Record<number, string> = {};
+      const accessToken = await getValidAccessToken();
+      for (const [itemIdStr, file] of Object.entries(rejectPhotos)) {
+        if (accessToken) {
+          const result = await uploadFileToImageKit({
+            accessToken, file,
+            fileName: `dr-reject-${itemIdStr}-${Date.now()}`,
+            folderPath: `/public/dressing-room/rejects/${selectedDrOrder.id}`
+          });
+          uploadedUrls[parseInt(itemIdStr)] = result.image_url;
+        }
+      }
+
+      // Update each item + restore DR inventory
+      let totalDamage = 0;
+      for (const item of drOrderItems) {
+        const status = itemStatuses[item.id] || 'returned';
+        const cond = conditions[item.id] || 'normal';
+        const deduction = damageDeduction(cond);
+        totalDamage += deduction;
+
+        await supabase.from('rental_order_items').update({
+          return_condition: { condition: cond },
+          item_status: status,
+          current_status: status === 'laundry' ? 'in_laundry' : (status === 'rejected' ? 'damaged' : 'returned'),
+          reject_photo_url: uploadedUrls[item.id] || null,
+          status_updated_at: new Date().toISOString(),
+        }).eq('id', item.id);
+
+        // Update DR variant inventory using the RPC
+        const variantId = (item as any).dressing_room_product_variant_id;
+        if (variantId) {
+          if (status === 'returned') {
+            await supabase.rpc('update_dressing_room_variant_inventory', {
+              p_variant_id: variantId,
+              p_available_qty: null, // We'll do +1 via direct update
+              p_reserved_qty: null,
+              p_damaged_qty: null,
+              p_in_laundry_qty: null,
+              p_total_qty: null,
+            });
+            // Increment available_quantity
+            await supabase.rpc('increment_dr_variant_available', { p_variant_id: variantId, p_qty: item.quantity });
+          } else if (status === 'laundry') {
+            await supabase.rpc('increment_dr_variant_laundry', { p_variant_id: variantId, p_qty: item.quantity });
+          } else if (status === 'rejected') {
+            await supabase.rpc('increment_dr_variant_damaged', { p_variant_id: variantId, p_qty: item.quantity });
+          }
+        }
+      }
+
+      await supabase.from('rental_orders').update({ damage_fee_amount: totalDamage }).eq('id', selectedDrOrder.id);
+
+      setShowDrReturnModal(false);
+      fetchDRRentalOrders();
+      setSelectedDrOrder(null);
+    } catch (err) {
+      console.error('Failed to process DR return:', err);
+      alert('Gagal memproses pengembalian. Cek console.');
+    }
+  };
+
+  const handleDRRefund = async () => {
+    if (!selectedDrOrder) return;
+    try {
+      const { error } = await supabase.from('rental_orders').update({
+        refund_processed: true,
+        refund_amount: selectedDrOrder.total_deposit - selectedDrOrder.late_fee_amount - selectedDrOrder.damage_fee_amount,
+        status: 'refunded',
+      }).eq('id', selectedDrOrder.id);
+      if (error) throw error;
+      setShowDrRefundModal(false);
+      fetchDRRentalOrders();
+      setSelectedDrOrder(null);
+    } catch (err) {
+      console.error('Failed to process DR refund:', err);
+      alert('Gagal memproses refund.');
+    }
+  };
+
   const handleSendLaundry = async (orderId: number) => {
     setCostumeActionLoading(orderId);
     try {
@@ -331,33 +498,6 @@ export default function RentalOrders() {
       alert('Gagal mengembalikan stok. Periksa console untuk detail.');
     } finally {
       setCostumeActionLoading(null);
-    }
-  };
-
-  const calculateLateFee = async (endTime: string, returnTime: string): Promise<number> => {
-    const { data, error } = await supabase.rpc('calculate_late_fee', {
-      end_time: endTime,
-      return_time: returnTime,
-    });
-
-    if (error) throw error;
-    return data || 0;
-  };
-
-  const getDamageDeduction = (condition: string): number => {
-    switch (condition) {
-      case 'normal':
-        return 0;
-      case 'stained':
-        return 10000;
-      case 'button_missing':
-        return 10000;
-      case 'damaged':
-        return 10000;
-      case 'severely_damaged':
-        return 0; // Deposit hangus, handled separately
-      default:
-        return 0;
     }
   };
 
@@ -516,6 +656,17 @@ export default function RentalOrders() {
         >
           <ShoppingBag className="w-4 h-4" />
           Costume Harian
+        </button>
+        <button
+          onClick={() => setActivePageTab('dr_rental')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+            activePageTab === 'dr_rental'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          DR Rental
         </button>
       </div>
 
@@ -994,6 +1145,139 @@ export default function RentalOrders() {
       )}
       </> )/* end sewa_formal */}
 
+      {/* ══ DR RENTAL TAB ══ */}
+      {activePageTab === 'dr_rental' && (
+        <DRRentalSection
+          orders={drRentalOrders}
+          loading={drRentalLoading}
+          searchQuery={drSearchQuery}
+          statusFilter={drStatusFilter}
+          onSearchChange={setDrSearchQuery}
+          onStatusFilterChange={setDrStatusFilter}
+          onOrderClick={handleDrOrderClick}
+          onRefresh={fetchDRRentalOrders}
+          getStatusColor={getStatusColor}
+          getStatusLabel={getStatusLabel}
+        />
+      )}
+
+      {/* DR Order Detail Modal */}
+      {selectedDrOrder && activePageTab === 'dr_rental' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedDrOrder(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{selectedDrOrder.order_number}</h2>
+                <p className="text-sm text-gray-500">{selectedDrOrder.customer_name} · {selectedDrOrder.customer_phone}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedDrOrder.status)}`}>
+                  {getStatusLabel(selectedDrOrder.status)}
+                </span>
+                <button onClick={() => setSelectedDrOrder(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              </div>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Timing */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Mulai Sewa</p>
+                  <p className="font-semibold">{new Date(selectedDrOrder.rental_start_time).toLocaleString('id-ID')}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Batas Kembali</p>
+                  <p className="font-semibold">{new Date(selectedDrOrder.rental_end_time).toLocaleString('id-ID')}</p>
+                </div>
+              </div>
+              {/* Items */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">Item yang Disewa</h3>
+                <div className="space-y-2">
+                  {drOrderItems.map(item => (
+                    <div key={item.id} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm text-gray-900">{item.product_name}</p>
+                        <p className="text-xs text-gray-500">{item.quantity}× @ {formatCurrency(item.daily_rate)}/hari</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">{formatCurrency(item.total_rental_cost)}</p>
+                        {item.current_status && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            item.current_status === 'rented' ? 'bg-green-100 text-green-700'
+                            : item.current_status === 'returned' ? 'bg-purple-100 text-purple-700'
+                            : item.current_status === 'in_laundry' ? 'bg-blue-100 text-blue-700'
+                            : item.current_status === 'damaged' ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-100 text-gray-600'
+                          }`}>{item.current_status}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Summary */}
+              <div className="bg-gradient-to-br from-main-50 to-pink-50 rounded-xl p-4 border border-main-100 space-y-2">
+                <div className="flex justify-between text-sm"><span className="text-gray-600">Biaya Sewa</span><span className="font-semibold">{formatCurrency(selectedDrOrder.total_rental_cost)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-600">Total Deposit</span><span className="font-semibold text-yellow-700">{formatCurrency(selectedDrOrder.total_deposit)}</span></div>
+                {selectedDrOrder.late_fee_amount > 0 && <div className="flex justify-between text-sm"><span className="text-red-600">Denda Telat</span><span className="font-semibold text-red-700">- {formatCurrency(selectedDrOrder.late_fee_amount)}</span></div>}
+                {selectedDrOrder.damage_fee_amount > 0 && <div className="flex justify-between text-sm"><span className="text-red-600">Denda Kerusakan</span><span className="font-semibold text-red-700">- {formatCurrency(selectedDrOrder.damage_fee_amount)}</span></div>}
+                <div className="border-t border-main-200 pt-2 flex justify-between"><span className="font-black text-gray-900">Total Bayar</span><span className="text-lg font-black text-main-600">{formatCurrency(selectedDrOrder.total_amount)}</span></div>
+              </div>
+              {/* Return info */}
+              {selectedDrOrder.status === 'returned' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 space-y-2 text-sm">
+                  <p className="font-semibold text-yellow-900">Info Pengembalian</p>
+                  <div className="flex justify-between"><span>Waktu Kembali</span><span className="font-semibold">{selectedDrOrder.return_time ? new Date(selectedDrOrder.return_time).toLocaleString('id-ID') : '-'}</span></div>
+                  <div className="flex justify-between"><span>Denda Telat</span><span className="font-semibold">{formatCurrency(selectedDrOrder.late_fee_amount)}</span></div>
+                  <div className="flex justify-between"><span>Denda Kerusakan</span><span className="font-semibold">{formatCurrency(selectedDrOrder.damage_fee_amount)}</span></div>
+                  <div className="flex justify-between border-t border-yellow-300 pt-2"><span className="font-bold">Refund Deposit</span><span className="font-black text-green-700 text-base">{formatCurrency(Math.max(0, selectedDrOrder.total_deposit - selectedDrOrder.late_fee_amount - selectedDrOrder.damage_fee_amount))}</span></div>
+                </div>
+              )}
+              {/* Actions */}
+              <div className="flex gap-3">
+                {(selectedDrOrder.status === 'active' || selectedDrOrder.status === 'overdue') && (
+                  <button onClick={() => setShowDrReturnModal(true)} className="flex-1 py-3 bg-main-600 text-white rounded-xl font-bold hover:bg-main-700 transition-colors">Proses Pengembalian</button>
+                )}
+                {selectedDrOrder.status === 'paid' && (
+                  <button onClick={async () => { await supabase.from('rental_orders').update({ status: 'active' }).eq('id', selectedDrOrder.id); fetchDRRentalOrders(); setSelectedDrOrder(null); }} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors">Konfirmasi Pengambilan</button>
+                )}
+                {selectedDrOrder.status === 'returned' && !selectedDrOrder.refund_processed && (
+                  <button onClick={() => setShowDrRefundModal(true)} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors">Proses Refund Deposit</button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* DR Return Modal */}
+      <DRReturnModal
+        isOpen={showDrReturnModal && !!selectedDrOrder}
+        order={selectedDrOrder}
+        items={drOrderItems}
+        onClose={() => setShowDrReturnModal(false)}
+        onSubmit={handleDRReturn}
+      />
+
+      {/* DR Refund Modal */}
+      {showDrRefundModal && selectedDrOrder && (
+        <RefundModal
+          order={selectedDrOrder}
+          onClose={() => setShowDrRefundModal(false)}
+          onSubmit={handleDRRefund}
+        />
+      )}
+
       {/* ══ COSTUME HARIAN TAB ══ */}
       {activePageTab === 'costume_harian' && (
         <CostumeHarianSection
@@ -1445,6 +1729,182 @@ function CostumeHarianSection({
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DR Rental Section ────────────────────────────────────────────────────────
+
+type DRRentalSectionProps = {
+  orders: RentalOrder[];
+  loading: boolean;
+  searchQuery: string;
+  statusFilter: RentalOrderStatus | 'all';
+  onSearchChange: (v: string) => void;
+  onStatusFilterChange: (v: RentalOrderStatus | 'all') => void;
+  onOrderClick: (o: RentalOrder) => void;
+  onRefresh: () => void;
+  getStatusColor: (s: RentalOrderStatus) => string;
+  getStatusLabel: (s: RentalOrderStatus) => string;
+};
+
+function DRRentalSection({
+  orders,
+  loading,
+  searchQuery,
+  statusFilter,
+  onSearchChange,
+  onStatusFilterChange,
+  onOrderClick,
+  onRefresh,
+  getStatusColor,
+  getStatusLabel,
+}: DRRentalSectionProps) {
+  const filtered = orders.filter((o) => {
+    const matchSearch =
+      o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.customer_phone.includes(searchQuery);
+    const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">DR Rental Orders</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Order sewa dari katalog Dressing Room — kelola pengembalian & refund deposit
+          </p>
+        </div>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Info banner */}
+      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-sm text-purple-800">
+        <p className="font-semibold mb-1">📋 Alur DR Rental</p>
+        <div className="flex flex-wrap gap-x-6 gap-y-1">
+          <span>1️⃣ Customer pesan online → status <strong>paid</strong></span>
+          <span>2️⃣ Scan QR di halaman <strong>Scan &amp; Pickup</strong> → status <strong>active</strong></span>
+          <span>3️⃣ Baju dikembalikan → klik <strong>Proses Pengembalian</strong></span>
+          <span>4️⃣ Cek kondisi → <strong>Proses Refund Deposit</strong></span>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 flex-wrap">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cari nomor order, nama, atau no HP..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => onStatusFilterChange(e.target.value as RentalOrderStatus | 'all')}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+        >
+          <option value="all">Semua Status</option>
+          <option value="awaiting_payment">Menunggu Pembayaran</option>
+          <option value="paid">Siap Ambil</option>
+          <option value="active">Aktif (Sedang Disewa)</option>
+          <option value="overdue">Telat Kembalikan</option>
+          <option value="returned">Dikembalikan</option>
+          <option value="cancelled">Dibatalkan</option>
+          <option value="refunded">Refund</option>
+        </select>
+      </div>
+
+      {/* Orders list */}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <Package className="w-10 h-10 mx-auto mb-3 opacity-40" />
+          <p className="font-medium">Belum ada order DR Rental</p>
+          <p className="text-xs mt-1">
+            {searchQuery || statusFilter !== 'all'
+              ? 'Coba ubah filter pencarian'
+              : 'Order akan muncul setelah customer memesan melalui halaman Dressing Room'}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Order</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Durasi</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total / Deposit</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map((order) => (
+                <tr
+                  key={order.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => onOrderClick(order)}
+                >
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-gray-900 text-sm">{order.order_number}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString('id-ID')}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-900 text-sm">{order.customer_name}</p>
+                    <p className="text-xs text-gray-400">{order.customer_phone}</p>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>{order.duration_days} hari</span>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      s/d {new Date(order.rental_end_time).toLocaleDateString('id-ID')}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-gray-900 text-sm">{formatCurrency(order.total_amount)}</p>
+                    <p className="text-xs text-yellow-600">Deposit {formatCurrency(order.total_deposit)}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onOrderClick(order); }}
+                      className="text-main-600 hover:text-main-700"
+                    >
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

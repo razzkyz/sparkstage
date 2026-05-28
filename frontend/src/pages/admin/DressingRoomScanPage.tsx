@@ -1,550 +1,391 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, User, Phone, CreditCard, Share, FileText, CheckCircle, CameraOff } from 'lucide-react';
+import { Search, User, Phone, Calendar, Clock, Package, CheckCircle2, XCircle, Loader2, RefreshCw, Scan } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import { useToast } from '../../components/Toast';
 import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
+import { supabase } from '../../lib/supabase';
+import { formatCurrency } from '../../utils/formatters';
 
-interface CustomerData {
-  qrCode: string;
-  customerName: string;
-  customerPhone: string;
-  bankEwallet: string;
-  socialMedia: string;
-  ktpPhoto?: string;
-  conditionChecklist: {
-    noStain: boolean;
-    noRip: boolean;
-    noLoose: boolean;
-    accessoriesComplete: boolean;
-    goodCondition: boolean;
-  };
-  notes: string;
+interface RentalOrderItem {
+  id: number;
+  product_name: string;
+  quantity: number;
+  daily_rate: number;
+  item_deposit_amount: number;
+  total_rental_cost: number;
+  current_status: string | null;
 }
+
+interface FoundOrder {
+  id: number;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  status: string;
+  rental_start_time: string;
+  rental_end_time: string;
+  duration_days: number;
+  total_rental_cost: number;
+  total_deposit: number;
+  total_amount: number;
+  items: RentalOrderItem[];
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  awaiting_payment: { label: 'Menunggu Bayar', color: 'bg-yellow-100 text-yellow-800' },
+  paid:             { label: 'Sudah Bayar – Siap Ambil', color: 'bg-blue-100 text-blue-800' },
+  active:           { label: 'Aktif (Sedang Disewa)', color: 'bg-green-100 text-green-800' },
+  overdue:          { label: 'Telat Kembalikan', color: 'bg-red-100 text-red-800' },
+  returned:         { label: 'Sudah Dikembalikan', color: 'bg-purple-100 text-purple-800' },
+  cancelled:        { label: 'Dibatalkan', color: 'bg-gray-100 text-gray-800' },
+};
 
 export default function DressingRoomScanPage() {
   const { signOut } = useAuth();
   const { showToast } = useToast();
   const menuSections = useAdminMenuSections();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [showScanner, setShowScanner] = useState(false);
-  const [scannedData, setScannedData] = useState<string>('');
-  const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [customerData, setCustomerData] = useState<CustomerData>({
-    qrCode: '',
-    customerName: '',
-    customerPhone: '',
-    bankEwallet: '',
-    socialMedia: '',
-    conditionChecklist: {
-      noStain: false,
-      noRip: false,
-      noLoose: false,
-      accessoriesComplete: false,
-      goodCondition: false,
-    },
-    notes: '',
-  });
 
-  // QR Scanner handler
-  const handleScanSuccess = useCallback((result: string) => {
-    setScannedData(result);
-    setCustomerData(prev => ({ ...prev, qrCode: result }));
-    setShowScanner(false);
-    setShowCustomerForm(true);
-    showToast('success', 'Berhasil! QR Code berhasil di-scan.');
+  const [showScanner, setShowScanner] = useState(false);
+  const [manualInput, setManualInput] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [foundOrder, setFoundOrder] = useState<FoundOrder | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [activateSuccess, setActivateSuccess] = useState(false);
+
+  // ─── Lookup order by order_number ──────────────────────────────────────────
+  const lookupOrder = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    setIsSearching(true);
+    setFoundOrder(null);
+    setNotFound(false);
+    setActivateSuccess(false);
+
+    try {
+      const { data, error } = await supabase
+        .from('rental_orders')
+        .select('id, order_number, customer_name, customer_phone, customer_email, status, rental_start_time, rental_end_time, duration_days, total_rental_cost, total_deposit, total_amount')
+        .or(`order_number.ilike.%${trimmed}%,customer_phone.ilike.%${trimmed}%`)
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        setNotFound(true);
+        return;
+      }
+
+      // Fetch items
+      const { data: itemsData } = await supabase
+        .from('rental_order_items')
+        .select('id, product_name, quantity, daily_rate, item_deposit_amount, total_rental_cost, current_status')
+        .eq('rental_order_id', data.id);
+
+      setFoundOrder({ ...data, items: itemsData || [] });
+    } catch (err) {
+      showToast('error', 'Gagal mencari order. Coba lagi.');
+    } finally {
+      setIsSearching(false);
+    }
   }, [showToast]);
 
-  // File upload handler
-  const handleKtpUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setCustomerData(prev => ({ ...prev, ktpPhoto: result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
+  const handleScanSuccess = useCallback((result: string) => {
+    setShowScanner(false);
+    setManualInput(result);
+    lookupOrder(result);
+    showToast('success', `QR berhasil di-scan: ${result}`);
+  }, [lookupOrder, showToast]);
 
-  // Form handlers
-  const handleInputChange = useCallback((field: keyof CustomerData, value: string) => {
-    setCustomerData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  // ─── Confirm Pickup: status → active, items → rented ───────────────────────
+  const handleConfirmPickup = async () => {
+    if (!foundOrder) return;
 
-  const handleConditionCheck = useCallback((field: keyof CustomerData['conditionChecklist']) => {
-    setCustomerData(prev => ({
-      ...prev,
-      conditionChecklist: {
-        ...prev.conditionChecklist,
-        [field]: !prev.conditionChecklist[field]
-      }
-    }));
-  }, []);
-
-  const handleSubmit = useCallback(async () => {
-    // Validate required fields
-    if (!customerData.customerName || !customerData.customerPhone || !customerData.bankEwallet) {
-      showToast('error', 'Mohon lengkapi semua field yang wajib diisi');
+    if (foundOrder.status !== 'paid' && foundOrder.status !== 'awaiting_payment') {
+      showToast('error', `Order tidak bisa diaktifkan. Status saat ini: ${STATUS_CONFIG[foundOrder.status]?.label ?? foundOrder.status}`);
       return;
     }
 
-    // Validate condition checklist
-    const allConditionsChecked = Object.values(customerData.conditionChecklist).every(Boolean);
-    if (!allConditionsChecked) {
-      showToast('error', 'Mohon centang semua checklist kondisi barang');
-      return;
-    }
-
-    setIsSubmitting(true);
-    
+    setIsActivating(true);
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('Customer data submitted:', customerData);
-      showToast('success', 'Data customer berhasil disimpan!');
-      
-      // Reset form
-      setCustomerData({
-        qrCode: '',
-        customerName: '',
-        customerPhone: '',
-        bankEwallet: '',
-        socialMedia: '',
-        conditionChecklist: {
-          noStain: false,
-          noRip: false,
-          noLoose: false,
-          accessoriesComplete: false,
-          goodCondition: false,
-        },
-        notes: '',
-      });
-      setScannedData('');
-      setShowCustomerForm(false);
-      
-    } catch (error) {
-      console.error('Error submitting data:', error);
-      showToast('error', 'Terjadi kesalahan saat menyimpan data');
+      // 1. Update order status to active
+      const { error: orderErr } = await supabase
+        .from('rental_orders')
+        .update({ status: 'active' })
+        .eq('id', foundOrder.id);
+
+      if (orderErr) throw orderErr;
+
+      // 2. Update all items current_status to 'rented'
+      const { error: itemsErr } = await supabase
+        .from('rental_order_items')
+        .update({ current_status: 'rented', status_updated_at: new Date().toISOString() })
+        .eq('rental_order_id', foundOrder.id);
+
+      if (itemsErr) throw itemsErr;
+
+      // 3. Insert status history for each item
+      for (const item of foundOrder.items) {
+        await supabase.from('rental_item_status_history').insert({
+          rental_order_id: foundOrder.id,
+          rental_order_item_id: item.id,
+          status: 'rented',
+          previous_status: item.current_status,
+          reason: 'Barang diambil oleh customer',
+        });
+      }
+
+      setActivateSuccess(true);
+      setFoundOrder(prev => prev ? { ...prev, status: 'active', items: prev.items.map(i => ({ ...i, current_status: 'rented' })) } : null);
+      showToast('success', `Order ${foundOrder.order_number} berhasil diaktifkan! Baju sudah diambil.`);
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Gagal mengaktifkan order. Periksa console.');
     } finally {
-      setIsSubmitting(false);
+      setIsActivating(false);
     }
-  }, [customerData, showToast]);
+  };
+
+  const handleReset = () => {
+    setFoundOrder(null);
+    setNotFound(false);
+    setManualInput('');
+    setActivateSuccess(false);
+  };
 
   return (
     <AdminLayout
-      title="Scan QR Customer"
-      subtitle="Scan QR dan input data customer dressing room"
+      title="Scan & Pickup Dressing Room"
+      subtitle="Scan QR atau cari nomor order untuk konfirmasi pengambilan baju"
       menuItems={ADMIN_MENU_ITEMS}
       menuSections={menuSections}
       defaultActiveMenuId="dressing-room-scan"
       onLogout={signOut}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
+
         {/* QR Scanner Modal */}
         <QRScannerModal
           isOpen={showScanner}
-          title="Scan QR Code Customer"
+          title="Scan QR Code Order"
           closeOnSuccess={true}
           closeOnError={false}
           onScan={handleScanSuccess}
           onClose={() => setShowScanner(false)}
         />
-        <AnimatePresence mode="wait">
-          {!showCustomerForm ? (
-            // QR Scanner View
-            <motion.div
-              key="scanner"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+
+        {/* ── Search Panel ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Scan className="w-5 h-5 text-main-600" />
+            Cari Order
+          </h3>
+
+          <div className="flex gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="flex items-center gap-2 px-5 py-3 bg-main-600 text-white rounded-xl font-semibold hover:bg-main-700 transition-colors shadow-sm"
             >
-              {/* Scanner Section */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-main-600" />
-                  Scan QR Code Customer
-                </h3>
-                
-                {/* Scanner Controls */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowScanner(true)}
-                    className="flex-1 bg-main-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-main-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Upload className="w-5 h-5" />
-                    Mulai Scan
-                  </button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Upload className="w-5 h-5" />
-                    Upload QR
-                  </button>
-                </div>
+              <Scan className="w-5 h-5" />
+              Scan QR
+            </button>
+          </div>
 
-                {/* Manual QR Input */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Atau masukkan QR Code secara manual:
-                  </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={scannedData}
-                      onChange={(e) => setScannedData(e.target.value)}
-                      placeholder="Masukkan QR Code (contoh: PRD-001)..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                    />
-                    <button
-                      onClick={() => handleScanSuccess(scannedData)}
-                      disabled={!scannedData.trim()}
-                      className="bg-main-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-main-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Lanjut
-                    </button>
-                  </div>
-                </div>
-              </div>
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={manualInput}
+                onChange={e => setManualInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && lookupOrder(manualInput)}
+                placeholder="Nomor order atau No. HP customer..."
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-main-500 text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => lookupOrder(manualInput)}
+              disabled={!manualInput.trim() || isSearching}
+              className="px-5 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Cari'}
+            </button>
+          </div>
+        </div>
 
-              {/* Tabel Data Customer */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5 text-main-600" />
-                  Data Customer
-                </h4>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">QR Code</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Nama</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">No. Telepon</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Bank/E-wallet</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Social Media</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-3 font-mono text-xs">{scannedData || '-'}</td>
-                        <td className="py-3 px-3">{customerData.customerName || '-'}</td>
-                        <td className="py-3 px-3">{customerData.customerPhone || '-'}</td>
-                        <td className="py-3 px-3">{customerData.bankEwallet || '-'}</td>
-                        <td className="py-3 px-3">{customerData.socialMedia || '-'}</td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                            Pending
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Customer Data Table & Invoice */}
-              {scannedData && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  {/* Customer Data Table */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <User className="w-5 h-5 text-main-600" />
-                      Data Customer
-                    </h4>
-                    
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-200">
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">QR Code</th>
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Nama</th>
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">No. Telepon</th>
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Bank/E-wallet</th>
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Social Media</th>
-                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-3 font-mono text-xs">{scannedData}</td>
-                            <td className="py-3 px-3">{customerData.customerName || '-'}</td>
-                            <td className="py-3 px-3">{customerData.customerPhone || '-'}</td>
-                            <td className="py-3 px-3">{customerData.bankEwallet || '-'}</td>
-                            <td className="py-3 px-3">{customerData.socialMedia || '-'}</td>
-                            <td className="py-3 px-3">
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                                Pending
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Invoice Card */}
-                  <div className="bg-gradient-to-br from-main-50 to-pink-50 rounded-xl shadow-sm border border-main-200 p-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-main-600" />
-                      Invoice
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center pb-3 border-b border-main-200">
-                        <div>
-                          <p className="font-semibold text-gray-900">PRD-{scannedData.slice(-3) || '001'}</p>
-                          <p className="text-sm text-gray-600">Sewa Dressing Room</p>
-                        </div>
-                        <p className="font-bold text-gray-900">Rp 100.000</p>
-                      </div>
-
-                      <div className="flex justify-between items-center pb-3 border-b border-main-200">
-                        <div>
-                          <p className="font-semibold text-gray-900">Deposit</p>
-                          <p className="text-sm text-gray-600">Jaminan pengembalian</p>
-                        </div>
-                        <p className="font-bold text-yellow-700">Rp 50.000</p>
-                      </div>
-
-                      <div className="flex justify-between items-start pt-3">
-                        <p className="font-black text-gray-900">TOTAL PEMBAYARAN</p>
-                        <p className="text-xl font-black text-main-600">Rp 150.000</p>
-                      </div>
-
-                      <div className="bg-white rounded-lg p-3 text-xs text-gray-600 space-y-1 mt-3">
-                        <p>💰 Total pengembalian deposit: <span className="font-bold text-green-700">Rp 50.000</span></p>
-                        <p>📝 Syarat: Barang dikembalikan dalam kondisi baik</p>
-                        <p>⏰ Batas waktu: Sesuai durasi sewa</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+        {/* ── Loading ── */}
+        <AnimatePresence>
+          {isSearching && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex items-center justify-center gap-3 py-8 text-gray-500"
+            >
+              <Loader2 className="w-6 h-6 animate-spin text-main-500" />
+              <span>Mencari order...</span>
             </motion.div>
-          ) : (
-            // Customer Form View
+          )}
+
+          {/* ── Not Found ── */}
+          {notFound && !isSearching && (
             <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center gap-4"
             >
-              {/* Form Header */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <User className="w-5 h-5 text-main-600" />
-                    Form Data Customer
-                  </h3>
-                  <button
-                    onClick={() => setShowCustomerForm(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <CameraOff className="w-5 h-5" />
+              <XCircle className="w-8 h-8 text-red-500 shrink-0" />
+              <div>
+                <p className="font-bold text-red-900">Order tidak ditemukan</p>
+                <p className="text-sm text-red-700 mt-1">Pastikan nomor order atau no. HP benar. Coba scan ulang QR.</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Found Order ── */}
+          {foundOrder && !isSearching && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">Order Ditemukan</p>
+                  <h2 className="text-xl font-black text-gray-900">{foundOrder.order_number}</h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_CONFIG[foundOrder.status]?.color ?? 'bg-gray-100 text-gray-800'}`}>
+                    {STATUS_CONFIG[foundOrder.status]?.label ?? foundOrder.status}
+                  </span>
+                  <button type="button" onClick={handleReset} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <RefreshCw className="w-5 h-5" />
                   </button>
                 </div>
-                
-                <div className="bg-gray-50 px-3 py-2 rounded-lg">
-                  <p className="text-sm text-gray-600">QR Code: <span className="font-mono text-gray-900">{scannedData}</span></p>
-                </div>
               </div>
 
-              {/* Customer Information Form */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h4 className="text-md font-semibold text-gray-900 mb-4">Informasi Customer</h4>
-                
-                <div className="space-y-4">
-                  {/* Customer Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nama Customer <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={customerData.customerName}
-                        onChange={(e) => handleInputChange('customerName', e.target.value)}
-                        placeholder="Masukkan nama lengkap"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                      />
-                    </div>
+              <div className="p-6 space-y-5">
+                {/* Customer Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <User className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="font-semibold">{foundOrder.customer_name}</span>
                   </div>
-
-                  {/* Customer Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      No. Telepon <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="tel"
-                        value={customerData.customerPhone}
-                        onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-                        placeholder="Masukkan nomor telepon"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                      />
-                    </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span>{foundOrder.customer_phone}</span>
                   </div>
-
-                  {/* Bank/E-wallet */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bank/E-wallet <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <select
-                        value={customerData.bankEwallet}
-                        onChange={(e) => handleInputChange('bankEwallet', e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                      >
-                        <option value="">Pilih Bank/E-wallet</option>
-                        <option value="bca">BCA</option>
-                        <option value="bni">BNI</option>
-                        <option value="bri">BRI</option>
-                        <option value="mandiri">Mandiri</option>
-                        <option value="gopay">GoPay</option>
-                        <option value="ovo">OVO</option>
-                        <option value="dana">DANA</option>
-                        <option value="shopeepay">ShopeePay</option>
-                      </select>
-                    </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span>Mulai: {new Date(foundOrder.rental_start_time).toLocaleString('id-ID')}</span>
                   </div>
-
-                  {/* Social Media */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Social Media
-                    </label>
-                    <div className="relative">
-                      <Share className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={customerData.socialMedia}
-                        onChange={(e) => handleInputChange('socialMedia', e.target.value)}
-                        placeholder="Instagram, TikTok, dll (opsional)"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                      />
-                    </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-700">
+                    <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span>Kembali: {new Date(foundOrder.rental_end_time).toLocaleString('id-ID')}</span>
                   </div>
+                </div>
 
-                  {/* KTP Photo */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Foto KTP <span className="text-gray-400">(opsional)</span>
-                    </label>
-                    <div className="relative">
-                      <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleKtpUpload}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-main-50 file:text-main-700 hover:file:bg-main-100"
-                      />
-                    </div>
-                    {customerData.ktpPhoto && (
-                      <div className="mt-2">
-                        <img
-                          src={customerData.ktpPhoto}
-                          alt="KTP Preview"
-                          className="h-32 w-auto rounded-lg border border-gray-200"
-                        />
+                {/* Items */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Item yang Disewa</p>
+                  <div className="space-y-2">
+                    {foundOrder.items.length === 0 ? (
+                      <p className="text-sm text-gray-400 italic">Tidak ada item ditemukan.</p>
+                    ) : foundOrder.items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Package className="w-4 h-4 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{item.product_name}</p>
+                            <p className="text-xs text-gray-500">Qty {item.quantity} × {formatCurrency(item.daily_rate)}/hari</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900">{formatCurrency(item.total_rental_cost)}</p>
+                          {item.current_status && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              item.current_status === 'rented' ? 'bg-green-100 text-green-700'
+                              : item.current_status === 'returned' ? 'bg-purple-100 text-purple-700'
+                              : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {item.current_status}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Condition Checklist */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h4 className="text-md font-semibold text-gray-900 mb-4">Checklist Kondisi Barang</h4>
-                
-                <div className="space-y-3">
-                  {[
-                    { key: 'noStain', label: 'Tidak ada noda/kotoran' },
-                    { key: 'noRip', label: 'Tidak ada sobekan/robek' },
-                    { key: 'noLoose', label: 'Tidak ada kancing longgar' },
-                    { key: 'accessoriesComplete', label: 'Aksesoris lengkap' },
-                    { key: 'goodCondition', label: 'Kondisi baik secara keseluruhan' },
-                  ].map((item) => (
-                    <label
-                      key={item.key}
-                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={customerData.conditionChecklist[item.key as keyof typeof customerData.conditionChecklist]}
-                        onChange={() => handleConditionCheck(item.key as keyof typeof customerData.conditionChecklist)}
-                        className="w-5 h-5 text-main-600 border-gray-300 rounded focus:ring-main-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                      {customerData.conditionChecklist[item.key as keyof typeof customerData.conditionChecklist] && (
-                        <CheckCircle className="w-5 h-5 text-green-500 ml-auto" />
-                      )}
-                    </label>
-                  ))}
+                {/* Cost Summary */}
+                <div className="bg-gradient-to-br from-main-50 to-pink-50 rounded-xl p-4 border border-main-100 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total Sewa</span>
+                    <span className="font-semibold">{formatCurrency(foundOrder.total_rental_cost)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Deposit</span>
+                    <span className="font-semibold text-yellow-700">{formatCurrency(foundOrder.total_deposit)}</span>
+                  </div>
+                  <div className="border-t border-main-200 pt-2 flex justify-between">
+                    <span className="font-black text-gray-900">Total Bayar</span>
+                    <span className="text-lg font-black text-main-600">{formatCurrency(foundOrder.total_amount)}</span>
+                  </div>
                 </div>
 
-                {/* Notes */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Catatan Tambahan
-                  </label>
-                  <textarea
-                    value={customerData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="Catatan kondisi barang atau informasi lainnya..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-main-500 focus:border-main-500"
-                  />
-                </div>
-              </div>
+                {/* Activate Success */}
+                {activateSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4"
+                  >
+                    <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0" />
+                    <div>
+                      <p className="font-bold text-green-900">Pengambilan Berhasil Dikonfirmasi!</p>
+                      <p className="text-sm text-green-700">Status order diubah ke <strong>Aktif</strong>. Semua item sudah berstatus <strong>Rented</strong>.</p>
+                    </div>
+                  </motion.div>
+                )}
 
-              {/* Submit Button */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCustomerForm(false)}
-                  className="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Kembali
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-main-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-main-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      Submit Data
-                    </>
-                  )}
-                </button>
+                {/* Action: Confirm Pickup */}
+                {(foundOrder.status === 'paid' || foundOrder.status === 'awaiting_payment') && !activateSuccess && (
+                  <button
+                    type="button"
+                    onClick={handleConfirmPickup}
+                    disabled={isActivating}
+                    className="w-full py-4 bg-green-600 text-white rounded-xl font-black text-base hover:bg-green-700 transition-colors flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-green-200"
+                  >
+                    {isActivating
+                      ? <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</>
+                      : <><CheckCircle2 className="w-5 h-5" /> Konfirmasi Pengambilan Baju</>
+                    }
+                  </button>
+                )}
+
+                {foundOrder.status === 'active' && !activateSuccess && (
+                  <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />
+                    <p className="text-sm text-blue-800 font-semibold">Order ini sudah aktif – baju sudah diambil.</p>
+                  </div>
+                )}
+
+                {(foundOrder.status === 'returned' || foundOrder.status === 'refunded') && (
+                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <XCircle className="w-5 h-5 text-gray-400 shrink-0" />
+                    <p className="text-sm text-gray-600 font-semibold">Order ini sudah selesai / dikembalikan.</p>
+                  </div>
+                )}
+
+                {foundOrder.status === 'cancelled' && (
+                  <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+                    <XCircle className="w-5 h-5 text-red-400 shrink-0" />
+                    <p className="text-sm text-red-700 font-semibold">Order ini telah dibatalkan.</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

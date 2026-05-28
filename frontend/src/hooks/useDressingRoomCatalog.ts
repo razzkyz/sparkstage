@@ -9,6 +9,11 @@ export interface DressingRoomCatalogProduct {
   category: string;
   slug: string;
   is_active: boolean;
+  dressing_room_category_id: number | null;
+  dressing_room_product_variants?: {
+    daily_rental_fee: number;
+    deposit_amount: number;
+  }[];
 }
 
 export interface DressingRoomCategory {
@@ -71,7 +76,10 @@ export function useDressingRoomCatalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('dressing_room_products')
-        .select('id, name, description, image_url, category, slug, is_active')
+        .select(`
+          id, name, description, image_url, category, slug, is_active, dressing_room_category_id,
+          dressing_room_product_variants(daily_rental_fee, deposit_amount)
+        `)
         .eq('is_active', true)
         .order('name', { ascending: true });
 
@@ -92,7 +100,7 @@ export function useDressingRoomCatalogVariants(productId?: number) {
 
       const { data, error } = await supabase
         .from('dressing_room_product_variants')
-        .select('id, name, sku, price, total_quantity, available_quantity, is_active')
+        .select('id, name, sku, price, deposit_amount, daily_rental_fee, total_quantity, available_quantity, is_active')
         .eq('dressing_room_product_id', productId)
         .eq('is_active', true)
         .order('name', { ascending: true });
@@ -101,5 +109,31 @@ export function useDressingRoomCatalogVariants(productId?: number) {
       return data || [];
     },
     enabled: !!productId,
+  });
+}
+
+/**
+ * Hook: Fetch products filtered by category ID
+ */
+export function useDressingRoomProductsByCategory(categoryId?: number) {
+  return useQuery({
+    queryKey: ['dressing-room-products-by-category', categoryId],
+    queryFn: async () => {
+      if (!categoryId) return [];
+
+      const { data, error } = await supabase
+        .from('dressing_room_products')
+        .select(`
+          id, name, description, image_url, category, slug, is_active, dressing_room_category_id,
+          dressing_room_product_variants(daily_rental_fee, deposit_amount)
+        `)
+        .eq('dressing_room_category_id', categoryId)
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as DressingRoomCatalogProduct[];
+    },
+    enabled: !!categoryId,
   });
 }

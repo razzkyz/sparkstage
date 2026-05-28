@@ -20,21 +20,21 @@ function DressingRoomProductCard({
   product: DressingRoomCatalogProduct;
   onClick: () => void;
 }) {
+  const dailyFee = product.dressing_room_product_variants?.[0]?.daily_rental_fee ?? 35000;
+  const deposit = product.dressing_room_product_variants?.[0]?.deposit_amount ?? 50000;
+
   return (
-    <motion.div
-      className="group cursor-pointer text-left"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+    <div
+      className="group cursor-pointer flex flex-col h-full"
       onClick={onClick}
     >
-      <div className="rounded-xl border-2 border-gray-100 bg-white overflow-hidden hover:border-main-500 hover:shadow-lg hover:shadow-pink-100 transition-all duration-300">
-        <div className="relative overflow-hidden aspect-square bg-gray-50">
+      <div className="flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
+        <div className="relative overflow-hidden aspect-square bg-gray-50 shrink-0">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover duration-500 group-hover:scale-[1.03]"
               onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/neon.png'; }}
             />
           ) : (
@@ -42,23 +42,31 @@ function DressingRoomProductCard({
               <Package className="w-12 h-12 text-gray-300" />
             </div>
           )}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
-          <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="bg-main-500 text-white text-xs font-bold uppercase tracking-wider py-2 px-3 rounded-lg text-center flex items-center justify-center gap-1">
-              Sewa Sekarang <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+            className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] transition-all duration-300"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
-        <div className="p-3 sm:p-4">
-          <h3 className="text-sm sm:text-base font-bold text-gray-900 line-clamp-2">{product.name}</h3>
-          {product.description && (
-            <p className="text-xs text-gray-500 mt-1 line-clamp-1">{product.description}</p>
-          )}
-          <p className="mt-2 text-sm font-black text-main-600">Rp 35.000<span className="font-normal text-gray-400">/hari</span></p>
-          <p className="text-[10px] text-yellow-600 font-medium mt-0.5">+ Deposit Rp 50.000</p>
+        <div className="p-3 flex flex-col flex-grow">
+          <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 group-hover:text-[#ff4b86] transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]">
+            {product.description || '\u00A0'}
+          </p>
+          <div className="flex items-center gap-2 mt-auto">
+            <span className="text-base font-black text-[#ff4b86]">Rp {dailyFee.toLocaleString('id-ID')}</span>
+            <span className="text-[10px] text-gray-400 font-light">/hari</span>
+          </div>
+          <p className="text-[10px] text-gray-400 font-light mt-1">+ Deposit Rp {deposit.toLocaleString('id-ID')}</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -125,6 +133,7 @@ export default function DressingRoomLandingPage() {
   const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomCatalog();
   const { data: subcategories = [] } = useDressingRoomSubcategories(1); // 1 is the parent "Fashion On Demand" category
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<DressingRoomCatalogProduct | null>(null);
   const [rentalProduct, setRentalProduct] = useState<DressingRoomCatalogProduct | null>(null);
   const [rentalVariant, setRentalVariant] = useState<any>(null);
@@ -141,12 +150,20 @@ export default function DressingRoomLandingPage() {
   // Filtered products by selected category
   const filteredDrProducts = useMemo(() => {
     if (activeCategory === 'all') return drProducts;
-    // Filter products by category field matching the slug
-    return drProducts.filter(p => (p.category || '').toLowerCase() === activeCategory.toLowerCase());
-  }, [drProducts, activeCategory]);
+    // Filter products by category_id matching the selected category
+    return drProducts.filter(p => {
+      if (!selectedCategoryId) return false;
+      return p.dressing_room_category_id === selectedCategoryId;
+    });
+  }, [drProducts, activeCategory, selectedCategoryId]);
 
   const handleProductClick = (product: DressingRoomCatalogProduct) => {
     setSelectedProduct(product);
+  };
+
+  const handleCategoryClick = (categorySlug: string, categoryId?: number) => {
+    setActiveCategory(categorySlug);
+    setSelectedCategoryId(categoryId || null);
   };
 
   const handleVariantSelect = (product: DressingRoomCatalogProduct, variant: any) => {
@@ -455,11 +472,11 @@ export default function DressingRoomLandingPage() {
                 <div className="flex overflow-x-auto hide-scrollbar gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveCategory('all')}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
+                    onClick={() => handleCategoryClick('all')}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-all duration-300 ${
                       activeCategory === 'all'
-                        ? 'bg-main-500 text-white border-main-500 shadow-sm'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
+                        ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-lg shadow-pink-200'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
                     }`}
                   >
                     Semua
@@ -468,11 +485,11 @@ export default function DressingRoomLandingPage() {
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => setActiveCategory(cat.slug)}
-                      className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border capitalize transition-colors ${
+                      onClick={() => handleCategoryClick(cat.slug, cat.id)}
+                      className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap border capitalize transition-all duration-300 ${
                         activeCategory === cat.slug
-                          ? 'bg-main-500 text-white border-main-500 shadow-sm'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-main-500 hover:text-main-500'
+                          ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-lg shadow-pink-200'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
                       }`}
                     >
                       {cat.name}
@@ -488,7 +505,7 @@ export default function DressingRoomLandingPage() {
                 <p className="text-gray-500">Belum ada produk tersedia saat ini.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {filteredDrProducts.map((product) => (
                   <DressingRoomProductCard
                     key={product.id}
