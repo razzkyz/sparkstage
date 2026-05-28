@@ -418,21 +418,21 @@ const OnStage = () => {
   const processTitleRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
 
-  const {
-    data: heroBanners = [],
-    isLoading: heroLoading,
-    error: heroError,
-  } = useBanners("hero");
+  // const {
+  //   data: heroBanners = [],
+  //   // isLoading: heroLoading,
+  //   // error: heroError,
+  // } = useBanners("hero");
   const {
     data: processBanners = [],
-    isLoading: processLoading,
-    error: processError,
-    refetch: refetchProcess,
+    // isLoading: processLoading,
+    // error: processError,
+    // refetch: refetchProcess,
   } = useBanners("process");
 
-  const hasData = heroBanners.length > 0 || processBanners.length > 0;
-  const loading = (heroLoading || processLoading) && !hasData;
-  const error = heroError || processError;
+  // const hasData = heroBanners.length > 0 || processBanners.length > 0;
+  // const loading = (heroLoading || processLoading) && !hasData;
+  // const error = heroError || processError;
 
   const activeRealIndex = useMemo(() => {
     if (processBanners.length <= 1) return 0;
@@ -483,35 +483,35 @@ const OnStage = () => {
     }
   }, []);
 
-  if (loading) {
-    return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="bg-white min-h-screen flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
+  //     </div>
+  //   );
+  // }
 
-  if (error && !hasData) {
-    return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="text-center px-6 py-12 bg-white rounded-none border-2 border-black">
-          <div className="mb-4 text-4xl">⚠️</div>
-          <p className="text-lg text-black mb-6 font-bold uppercase tracking-widest">
-            Gagal memuat konten. Coba lagi.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              refetchProcess();
-            }}
-            className="inline-flex items-center justify-center rounded-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 px-10 py-4 text-white font-black uppercase tracking-widest transition-colors duration-300 hover:scale-105 active:scale-95"
-          >
-            🔄 Muat ulang
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // if (error && !hasData) {
+  //   return (
+  //     <div className="bg-white min-h-screen flex items-center justify-center">
+  //       <div className="text-center px-6 py-12 bg-white rounded-none border-2 border-black">
+  //         <div className="mb-4 text-4xl">⚠️</div>
+  //         <p className="text-lg text-black mb-6 font-bold uppercase tracking-widest">
+  //           Gagal memuat konten. Coba lagi.
+  //         </p>
+  //         <button
+  //           type="button"
+  //           onClick={() => {
+  //             refetchProcess();
+  //           }}
+  //           className="inline-flex items-center justify-center rounded-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 px-10 py-4 text-white font-black uppercase tracking-widest transition-colors duration-300 hover:scale-105 active:scale-95"
+  //         >
+  //           🔄 Muat ulang
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="bg-white min-h-screen">
@@ -521,6 +521,11 @@ const OnStage = () => {
           src="/images/heroBanner/homeBannerHeader.webp"
           alt="The most iconic content wins awards & rewards"
           className="w-full max-h-[10vh] object-contain"
+          fetchPriority="high"
+          loading="eager"
+          decoding="sync"
+          width={1920}
+          height={108}
         />
         <Link
           to="/booking"
@@ -530,6 +535,9 @@ const OnStage = () => {
             src="/images/heroBanner/homeBanner.webp"
             alt="Become the star"
             className="absolute inset-0 w-full h-full object-cover object-center"
+            fetchPriority="high"
+            loading="eager"
+            decoding="sync"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
@@ -587,9 +595,11 @@ const OnStage = () => {
         </div>
         <Link to="/booking">
           <img
-            src="/images/landing/TICKET BOARD ENTRANCE website.png"
+            src="/images/landing/TICKET BOARD ENTRANCE website.webp"
             alt="BE A STAR Ticket"
             className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            decoding="async"
           />
         </Link>
       </div>
@@ -764,7 +774,7 @@ const OnStage = () => {
 
       {/* News Banner Section */}
       <section
-        className="w-full py-16 md:py-24 text-center relative bg-cover bg-center bg-no-repeat"
+        className="w-full py-12 md:py-18 text-center relative bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/images/glam page assets/VISUAL 5.webp')",
         }}

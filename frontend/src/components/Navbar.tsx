@@ -196,6 +196,9 @@ const Navbar = () => {
                     src="/images/landing/stage55.png"
                     alt="Stage 55"
                     className="h-10 w-auto md:h-12 object-contain"
+                    fetchPriority="high"
+                    width={150}
+                    height={48}
                   />
                 </Link>
                 {/* Mobile/Tablet: Hamburger */}
@@ -226,6 +229,9 @@ const Navbar = () => {
                     src="/images/landing/stage55.png"
                     alt="Stage 55"
                     className="h-[2.5rem] md:h-[3.5rem] w-auto object-contain"
+                    fetchPriority="high"
+                    width={150}
+                    height={48}
                   />
                 </Link>
               </div>
