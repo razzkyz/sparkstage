@@ -1,53 +1,418 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useBanners } from "../hooks/useBanners";
+import { useProductSummaries } from "../hooks/useProducts";
+import { formatCurrency } from "../utils/formatters";
+import { buildImageKitThumbUrl } from "../lib/imagekit";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCart } from "../contexts/cartStore";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toast";
+import { useNavigate } from "react-router-dom";
+import type { Product } from "../hooks/useProducts";
+import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
-// const trendingProducts = [
-//   {
-//     id: 1,
-//     image: "/images/Charm Bar assets/CHARM VISUAL 1.png",
-//     link: "/charm-bar",
-//   },
-//   {
-//     id: 2,
-//     image: "/images/Charm Bar assets/CHARM VISUAL 2.png",
-//     link: "/charm-bar",
-//   },
-//   {
-//     id: 3,
-//     image: "/images/Charm Bar assets/CHARM VISUAL 3.png",
-//     link: "/charm-bar",
-//   },
-//   {
-//     id: 4,
-//     image: "/images/Charm Bar assets/43620168072.png",
-//     link: "/charm-bar",
-//   },
-//   {
-//     id: 5,
-//     image: "/images/Charm Bar assets/CHARM VISUAL 1.png",
-//     link: "/charm-bar",
-//   },
-//   {
-//     id: 6,
-//     image: "/images/Charm Bar assets/CHARM VISUAL 2.png",
-//     link: "/charm-bar",
-//   },
-// ];
+// ─── Infinite Product Slider ──────────────────────────────────────────────────
+const CARD_CLASS =
+  "shrink-0 w-[72%] sm:w-[48%] md:w-[31%] lg:w-[21%] xl:w-[19%] group relative flex flex-col";
+
+function ProductCard({
+  product,
+  onAddToCart,
+}: {
+  product: Product;
+  onAddToCart: (p: Product) => void;
+}) {
+  return (
+    <Link
+      to={`/shop/product/${product.id}`}
+      className="group cursor-pointer flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100"
+    >
+      <div className="relative overflow-hidden aspect-square bg-gray-50 shrink-0">
+        {product.image ? (
+          <img
+            src={buildImageKitThumbUrl(product.image, {
+              width: 480,
+              quality: 60,
+            })}
+            alt={product.name}
+            className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+            <span className="material-symbols-outlined text-5xl">
+              {product.placeholder}
+            </span>
+          </div>
+        )}
+        {!product.defaultVariantId && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+            <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
+              Out of Stock
+            </span>
+          </div>
+        )}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAddToCart(product);
+          }}
+          disabled={!product.defaultVariantId}
+          className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
+        >
+          <span className="material-symbols-outlined text-lg">
+            add_shopping_cart
+          </span>
+        </button>
+        {product.badge && (
+          <span className="absolute top-3 left-3 bg-[#ff4b86] text-white px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm">
+            {product.badge}
+          </span>
+        )}
+      </div>
+      <div className="p-3 flex flex-col flex-grow">
+        <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
+          {product.name}
+        </h3>
+        <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]">
+          {product.description || "\u00A0"}
+        </p>
+        <div className="flex items-center gap-2 mt-auto">
+          <span className="text-base font-black text-[#ff4b86]">
+            {formatCurrency(product.price)}
+          </span>
+          {product.originalPrice ? (
+            <span className="text-xs text-gray-400 line-through font-light">
+              {formatCurrency(product.originalPrice)}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function InfiniteProductSlider({
+  title,
+  viewAllLink,
+  products: rawProducts,
+  loading,
+  onAddToCart,
+}: {
+  title: string;
+  viewAllLink: string;
+  products: Product[];
+  loading: boolean;
+  onAddToCart: (p: Product) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);
+  const rafRef = useRef<number>(0);
+  const isHoveredRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartPosRef = useRef(0);
+
+  // Clone array: [last3 ... originals ... first3]
+  const CLONE = 3;
+  const clonedProducts = useMemo(() => {
+    if (rawProducts.length === 0) return [];
+    const tail = rawProducts.slice(-CLONE);
+    const head = rawProducts.slice(0, CLONE);
+    return [...tail, ...rawProducts, ...head];
+  }, [rawProducts]);
+
+  // Get item width dynamically from the DOM
+  const getItemWidth = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return 300;
+    const firstChild = track.firstElementChild as HTMLElement | null;
+    if (!firstChild) return 300;
+    return firstChild.getBoundingClientRect().width + 16; // 16 = gap-4
+  }, []);
+
+  // Jump to real-items zone on mount (skip the clones at start)
+  useEffect(() => {
+    if (rawProducts.length === 0) return;
+    const track = trackRef.current;
+    if (!track) return;
+    // Wait one frame so layout is settled
+    const raf = requestAnimationFrame(() => {
+      const itemW = getItemWidth();
+      posRef.current = -(itemW * CLONE);
+      track.style.transform = `translateX(${posRef.current}px)`;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [rawProducts.length, getItemWidth]);
+
+  // Infinite auto-scroll loop
+  useEffect(() => {
+    if (rawProducts.length === 0) return;
+    const SPEED = 0.6; // px per frame
+
+    const tick = () => {
+      if (!isHoveredRef.current && !isDraggingRef.current) {
+        const track = trackRef.current;
+        if (!track) return;
+        const itemW = getItemWidth();
+        const totalReal = rawProducts.length * itemW;
+        const cloneWidth = CLONE * itemW;
+
+        posRef.current -= SPEED;
+
+        // When we've scrolled into the tail clones, jump back
+        if (posRef.current < -(cloneWidth + totalReal)) {
+          posRef.current += totalReal;
+        }
+        // When we've scrolled into the head clones (going backward), jump forward
+        if (posRef.current > -cloneWidth) {
+          posRef.current -= totalReal;
+        }
+
+        track.style.transform = `translateX(${posRef.current}px)`;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [rawProducts.length, getItemWidth]);
+
+  // Drag/swipe support
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartPosRef.current = posRef.current;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const track = trackRef.current;
+    if (!track) return;
+    const dx = e.clientX - dragStartXRef.current;
+    const itemW = getItemWidth();
+    const totalReal = rawProducts.length * itemW;
+    const cloneWidth = CLONE * itemW;
+    let next = dragStartPosRef.current + dx;
+    if (next < -(cloneWidth + totalReal)) next += totalReal;
+    if (next > -cloneWidth) next -= totalReal;
+    posRef.current = next;
+    track.style.transform = `translateX(${next}px)`;
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+  };
+
+  // Step one card on button click
+  const step = (dir: 1 | -1) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const itemW = getItemWidth();
+    const totalReal = rawProducts.length * itemW;
+    const cloneWidth = CLONE * itemW;
+    const target = posRef.current + dir * -itemW;
+    const duration = 350;
+    const start = performance.now();
+    const from = posRef.current;
+
+    const ease = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+
+    const animate = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      let val = from + (target - from) * ease(t);
+
+      // wrap
+      if (val < -(cloneWidth + totalReal)) val += totalReal;
+      if (val > -cloneWidth) val -= totalReal;
+
+      posRef.current = val;
+      track.style.transform = `translateX(${val}px)`;
+      if (t < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  };
+
+  if (!loading && rawProducts.length === 0) return null;
+
+  return (
+    <section className="w-full bg-white pb-12 md:pb-16 mt-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-black uppercase tracking-tighter leading-none drop-shadow-sm">
+            {title}
+          </h2>
+          <Link
+            to={viewAllLink}
+            className="text-black font-bold uppercase tracking-widest border-b-2 border-black pb-0.5 hover:text-pink-400 transition-color whitespace-nowrap text-xs md:text-sm mb-1"
+          >
+            View More
+          </Link>
+        </div>
+
+        {/* Track wrapper */}
+        <div className="relative group/slider">
+          {/* Left arrow */}
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            className="absolute left-0 md:-left-5 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white text-black p-2.5 md:p-3 rounded-full shadow-md opacity-0 group-hover/slider:opacity-100 transition-opacity duration-200"
+          >
+            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+          {/* Right arrow */}
+          <button
+            type="button"
+            onClick={() => step(1)}
+            className="absolute right-0 md:-right-5 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white text-black p-2.5 md:p-3 rounded-full shadow-md opacity-0 group-hover/slider:opacity-100 transition-opacity duration-200"
+          >
+            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+
+          {/* Overflow mask */}
+          <div
+            className="overflow-hidden"
+            onMouseEnter={() => {
+              isHoveredRef.current = true;
+            }}
+            onMouseLeave={() => {
+              isHoveredRef.current = false;
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{ cursor: isDraggingRef.current ? "grabbing" : "grab" }}
+          >
+            {loading ? (
+              <div className="flex gap-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="shrink-0 w-[72%] sm:w-[48%] md:w-[31%] lg:w-[21%] xl:w-[19%] bg-gray-100 animate-pulse aspect-square rounded-xl"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                ref={trackRef}
+                className="flex gap-4 will-change-transform select-none"
+                style={{ transform: `translateX(0px)` }}
+              >
+                {clonedProducts.map((product, i) => (
+                  <div key={`${product.id}-${i}`} className={CARD_CLASS}>
+                    <ProductCard product={product} onAddToCart={onAddToCart} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const OnStage = () => {
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
-  // const [likedProducts, setLikedProducts] = useState<Record<number, boolean>>(
-  //   {},
-  // );
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
-  const trendingSliderRef = useRef<HTMLDivElement>(null);
+  const { data: products = [], isLoading: productsLoading } =
+    useProductSummaries();
+
+  const GLAM_SLUGS = useMemo(
+    () =>
+      new Set([
+        "makeup",
+        "eyewear",
+        "glitter",
+        "headliner",
+        "starglitter",
+        "star-glitter",
+        "popsocket",
+        "pop-socket",
+        "popsockets",
+      ]),
+    [],
+  );
+
+  const featuredProducts = useMemo(() => {
+    if (!products.length) return [];
+    return products
+      .filter(
+        (p) =>
+          p.defaultVariantId &&
+          !CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug?.toLowerCase() || "") &&
+          !GLAM_SLUGS.has(p.categorySlug?.toLowerCase() || "") &&
+          !p.name.toLowerCase().includes("headliner") &&
+          !p.name.toLowerCase().includes("pop socket") &&
+          !p.name.toLowerCase().includes("popsocket"),
+      )
+      .slice(0, 10);
+  }, [products, GLAM_SLUGS]);
+
+  const glamProducts = useMemo(() => {
+    if (!products.length) return [];
+    return products
+      .filter(
+        (p) =>
+          p.defaultVariantId &&
+          (GLAM_SLUGS.has(p.categorySlug?.toLowerCase() || "") ||
+            p.name.toLowerCase().includes("headliner") ||
+            p.name.toLowerCase().includes("pop socket") ||
+            p.name.toLowerCase().includes("popsocket")),
+      )
+      .slice(0, 10);
+  }, [products, GLAM_SLUGS]);
+
+  const charmProducts = useMemo(() => {
+    if (!products.length) return [];
+    return products
+      .filter(
+        (p) =>
+          p.defaultVariantId &&
+          CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug?.toLowerCase() || ""),
+      )
+      .slice(0, 10);
+  }, [products]);
+
+  const handleAddToCart = (product: Product) => {
+    if (!user) {
+      showToast("error", "Please login to add items to cart");
+      navigate("/login", { state: { from: window.location.pathname } });
+      return;
+    }
+    if (!product.defaultVariantId || !product.defaultVariantName) return;
+
+    try {
+      addItem(
+        {
+          productId: product.id,
+          productName: product.name,
+          productImageUrl: product.image,
+          variantId: product.defaultVariantId,
+          variantName: product.defaultVariantName,
+          unitPrice: product.price,
+        },
+        1,
+      );
+      showToast("success", "Berhasil memasukkan ke keranjang");
+    } catch {
+      showToast("error", "Gagal menambahkan ke keranjang");
+    }
+  };
 
   // GSAP animation refs
   const processTitleRef = useRef<HTMLDivElement>(null);
@@ -86,55 +451,6 @@ const OnStage = () => {
       return () => cancelAnimationFrame(raf);
     }
   }, [isTransitionEnabled]);
-
-  // const toggleLike = (e: React.MouseEvent, id: number) => {
-  //   e.preventDefault();
-  //   e.stopPropagation();
-  //   setLikedProducts((prev) => ({ ...prev, [id]: !prev[id] }));
-  // };
-
-  // const scrollTrending = (direction: "left" | "right") => {
-  //   const slider = trendingSliderRef.current;
-  //   if (!slider) return;
-  //   const firstChild = slider.firstElementChild as HTMLElement;
-  //   const itemWidth = firstChild ? firstChild.offsetWidth + 16 : 300;
-
-  //   if (direction === "right") {
-  //     if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 10) {
-  //       slider.scrollTo({ left: 0, behavior: "smooth" });
-  //     } else {
-  //       slider.scrollBy({ left: itemWidth, behavior: "smooth" });
-  //     }
-  //   } else {
-  //     if (slider.scrollLeft <= 10) {
-  //       slider.scrollTo({ left: slider.scrollWidth, behavior: "smooth" });
-  //     } else {
-  //       slider.scrollBy({ left: -itemWidth, behavior: "smooth" });
-  //     }
-  //   }
-  // };
-
-  // Trending products auto-scroll
-
-  useEffect(() => {
-    const slider = trendingSliderRef.current;
-    if (!slider) return;
-    const autoScroll = setInterval(() => {
-      if (!slider) return;
-      const firstChild = slider.firstElementChild as HTMLElement;
-      if (!firstChild) return;
-      const itemWidth = firstChild.offsetWidth + 16;
-      if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 10) {
-        slider.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        slider.scrollTo({
-          left: slider.scrollLeft + itemWidth,
-          behavior: "smooth",
-        });
-      }
-    }, 3000);
-    return () => clearInterval(autoScroll);
-  }, []);
 
   // Process banner auto-slide timer
   useEffect(() => {
@@ -200,10 +516,7 @@ const OnStage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section
-        ref={heroSectionRef}
-        className="w-full min-h-[75vh] max-h-[100vh] flex flex-col bg-black"
-      >
+      <section ref={heroSectionRef} className="w-full flex flex-col bg-black">
         <img
           src="/images/heroBanner/homeBannerHeader.webp"
           alt="The most iconic content wins awards & rewards"
@@ -211,12 +524,12 @@ const OnStage = () => {
         />
         <Link
           to="/booking"
-          className="w-full flex-1 relative group cursor-pointer overflow-hidden"
+          className="w-full h-[75vh] relative group cursor-pointer overflow-hidden block"
         >
           <img
             src="/images/heroBanner/homeBanner.webp"
             alt="Become the star"
-            className="absolute inset-0 w-full h-[75vh] max-h-[75vh] object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
@@ -265,13 +578,12 @@ const OnStage = () => {
       </div>
 
       {/* Ticket Banner */}
-      <div className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
+      <div className="w-full py-8 shadow-sm mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
         {/* Ticket Header Title */}
         <div className="text-center mb-4 lg:mb-6 px-4 relative z-20">
-          <h2 className="text-xl italic md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
-            GET YOUR TIKET NOW
+          <h2 className="text-xl md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
+            GET YOUR <span className="text-pink-400">TIKET</span> NOW
           </h2>
-          {/* <div className="w-24 md:w-32 h-2 bg-black mx-auto mt-2 rounded-full" /> */}
         </div>
         <Link to="/booking">
           <img
@@ -281,21 +593,20 @@ const OnStage = () => {
           />
         </Link>
       </div>
-
-      <section className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6 shadow-sm">
-        {/* MERCHANDISE Header Title */}
-        <div className="text-center px-4 py-6 lg:mb-6 relative z-20">
+      {/* MERCHANDISE Header Title */}
+      {/* <div className="text-center px-4 py-6 lg:mb-6 relative z-20">
           <h2 className="text-xl italic md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
-            MERCHANDISE SHOP
+          MERCHANDISE SHOP
           </h2>
-          {/* <div className="w-24 md:w-32 h-2 bg-black mx-auto mt-2 rounded-full" /> */}
-        </div>
+          
+          </div> */}
 
-        {/*  Grid Section */}
+      {/*  Grid Section dinonaktifkan*/}
+      {/* <section className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6 shadow-sm">
         <section className="w-full bg-white pb-12 md:pb-16 flex justify-center">
           <div className="w-full mx-auto px-4 sm:px-6 md:px-8 max-w-[1600px] flex justify-center ">
             <div className="grid grid-cols-1 sm:grid-cols-3   gap-4 md:gap-6">
-              {/* Grid 1 */}
+              
               <Link
                 to="/glam"
                 className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
@@ -316,7 +627,7 @@ const OnStage = () => {
                 </div>
               </Link>
 
-              {/* Grid 2 */}
+
               <Link
                 to="/charm-bar"
                 className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
@@ -337,7 +648,7 @@ const OnStage = () => {
                 </div>
               </Link>
 
-              {/* Grid 3 */}
+
               <Link
                 to="/shop"
                 className="group block relative w-full aspect-[4/4]  xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
@@ -360,79 +671,44 @@ const OnStage = () => {
             </div>
           </div>
         </section>
-      </section>
+      </section> */}
 
-      {/* Trending Section (Slider) */}
-      {/* <section className="w-full bg-white pb-12 md:pb-16">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
-          {/* Section Header */}
-      {/* <div className="flex items-end justify-between mb-6 md:mb-8">
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-black uppercase tracking-tighter leading-none drop-shadow-sm">
-              NOW TRENDING
-            </h2>
-            <Link
-              to="/charm-bar"
-              className="text-black font-bold uppercase tracking-widest border-b-2 border-black pb-0.5 hover:opacity-70 transition-opacity whitespace-nowrap text-xs md:text-sm mb-1"
-            >
-              View All
-            </Link>
-          </div> */}
+      {/* Slider Card Product All */}
+      <div className="py-10 shadow-sm">
+        <div className="text-center px-4 py-6 relative z-20">
+          <h2 className="text-5xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
+            Store Collection
+          </h2>
+          <div className="w-32 md:w-40 h-2 bg-black mx-auto mt-2 rounded-full" />
+        </div>
 
-      {/* Slider Container */}
-      {/* <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0 group/slider"> */}
-      {/* Manual Navigation Arrows */}
-      {/* <button
-              type="button"
-              onClick={() => scrollTrending("left")}
-              className="absolute left-2 md:-left-4 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white text-black p-2 md:p-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.1)] opacity-0 group-hover/slider:opacity-100 transition-opacity"
-            >
-              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-            </button>
+        {/* Glam Room Slider */}
+        <InfiniteProductSlider
+          title="GLAM ROOM"
+          viewAllLink="/glam"
+          products={glamProducts}
+          loading={productsLoading}
+          onAddToCart={handleAddToCart}
+        />
 
-            <button
-              type="button"
-              onClick={() => scrollTrending("right")}
-              className="absolute right-2 md:-right-4 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white text-black p-2 md:p-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.1)] opacity-0 group-hover/slider:opacity-100 transition-opacity"
-            >
-              <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-            </button>
+        {/* Charm Bar Slider */}
+        <InfiniteProductSlider
+          title="CHARM BAR"
+          viewAllLink="/charm-bar"
+          products={charmProducts}
+          loading={productsLoading}
+          onAddToCart={handleAddToCart}
+        />
 
-            <div
-              ref={trendingSliderRef}
-              className="flex overflow-x-auto snap-x snap-mandatory gap-4 md:gap-6 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-            >
-              {trendingProducts.map((product, index) => (
-                <div
-                  key={`${product.id}-${index}`}
-                  className="snap-start shrink-0 w-[65%] sm:w-[45%] md:w-[30%] lg:w-[22%] group relative"
-                >
-                  <Link
-                    to={product.link}
-                    className="block relative bg-[#f1f1f1] aspect-[3/4] overflow-hidden group-hover:shadow-xl transition-shadow duration-300"
-                  >
-                    <img
-                      src={product.image}
-                      alt="Trending Product"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => toggleLike(e, product.id)}
-                      className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/50 transition-colors z-20 cursor-pointer"
-                    >
-                      <Heart
-                        className={`w-5 h-5 transition-colors ${likedProducts[product.id] ? "fill-pink-500 text-pink-500" : "text-black hover:text-pink-500"}`}
-                        strokeWidth={1.5}
-                      />
-                    </button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div> */}
-      {/* </section> */}
-
+        {/* Spark Club Slider */}
+        <InfiniteProductSlider
+          title="SPARK CLUB"
+          viewAllLink="/shop"
+          products={featuredProducts}
+          loading={productsLoading}
+          onAddToCart={handleAddToCart}
+        />
+      </div>
       {/* Instagram Feed Section */}
       {/* <section className="w-full bg-white py-16 md:py-24">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 text-center mb-10 md:mb-16">
