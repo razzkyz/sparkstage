@@ -6,7 +6,7 @@ import { useBanners } from "../hooks/useBanners";
 import { useProductSummaries } from "../hooks/useProducts";
 import { formatCurrency } from "../utils/formatters";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCart } from "../contexts/cartStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
@@ -322,8 +322,21 @@ function InfiniteProductSlider({
 }
 
 const OnStage = () => {
+  const [showModal, setShowModal] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowModal(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { user } = useAuth();
@@ -515,6 +528,43 @@ const OnStage = () => {
 
   return (
     <div className="bg-white min-h-screen">
+      {/* Landing Modal */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="relative w-[95vw] sm:w-full max-w-3xl bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 p-1.5 sm:p-2 bg-black/20 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4 sm:w-6 sm:h-6" />
+            </button>
+            <Link
+              to="/news"
+              onClick={handleCloseModal}
+              className="w-full flex flex-row bg-white items-center justify-center"
+            >
+              <img
+                src="/images/landing/POP UP WEB VIP STAR 1.jpg.webp"
+                alt="Welcome to Spark - VIP Star"
+                className="w-1/2 h-auto max-h-[85vh] object-contain"
+              />
+              <img
+                src="/images/landing/POP UP WEB VIP STAR 2.jpg.webp"
+                alt="Welcome to Spark - VIP Star"
+                className="w-1/2 h-auto max-h-[85vh] object-contain"
+              />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section ref={heroSectionRef} className="w-full flex flex-col bg-black">
         <img
