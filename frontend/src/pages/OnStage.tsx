@@ -295,23 +295,13 @@ const OnStage = () => {
         <section className="w-full bg-white pb-12 md:pb-16 flex justify-center">
           <div className="w-full mx-auto px-4 sm:px-6 md:px-8 max-w-[1600px] flex justify-center ">
             <div className="grid grid-cols-1 sm:grid-cols-3   gap-4 md:gap-6">
-              {/* Grid 1
-            <Link to="/booking" className="group block relative w-full aspect-[4/5] sm:aspect-square lg:aspect-[4/4] xl:aspect-[4/5]  max-w-[500px] overflow-hidden bg-gray-100 rounded-lg">
-              <img src="/images/landing/TICKET FIX.PNG" alt="Booking Tiket" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-              <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
-                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">ON STAGE TIKET</h3>
-                <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">BOOKING SEKARANG</span>
-              </div>
-            </Link> */}
-
-              {/* Grid 2 */}
+              {/* Grid 1 */}
               <Link
                 to="/glam"
                 className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
               >
                 <img
-                  src="/images/glam page assets/VISUAL 1.png"
+                  src="/images/glam page assets/VISUAL 1.webp"
                   alt="Glam Room"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -326,13 +316,13 @@ const OnStage = () => {
                 </div>
               </Link>
 
-              {/* Grid 3 */}
+              {/* Grid 2 */}
               <Link
                 to="/charm-bar"
                 className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
               >
                 <img
-                  src="/images/Charm Bar assets/CHARM VISUAL 1.png"
+                  src="/images/Charm Bar assets/CHARM VISUAL 1.webp"
                   alt="CharmBar"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -347,13 +337,13 @@ const OnStage = () => {
                 </div>
               </Link>
 
-              {/* grid 4 */}
+              {/* Grid 3 */}
               <Link
                 to="/shop"
                 className="group block relative w-full aspect-[4/4]  xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
               >
                 <img
-                  src="/images/Charm Bar assets/CHARM VISUAL 2.png"
+                  src="/images/Charm Bar assets/CHARM VISUAL 2.webp"
                   alt="Merchandise"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -500,7 +490,7 @@ const OnStage = () => {
       <section
         className="w-full py-16 md:py-24 text-center relative bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/glam page assets/VISUAL 5.jpeg')",
+          backgroundImage: "url('/images/glam page assets/VISUAL 5.webp')",
         }}
       >
         <div className="absolute inset-0 bg-black/60" />
