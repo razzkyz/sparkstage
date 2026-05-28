@@ -66,6 +66,10 @@ export default function BeautyPage() {
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     setPage(1);
   }, [deferredSearchQuery]);
 
