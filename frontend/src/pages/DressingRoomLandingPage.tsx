@@ -5,7 +5,7 @@ import { PageTransition } from '../components/PageTransition';
 import { HeroCarousel } from '../components/dressing-room/HeroCarousel';
 import { DRESSING_ROOM_DEMO } from '../mock/dressingRoomDemo';
 import { useDressingRoomCollection } from '../hooks/useDressingRoomCollection';
-import { useDressingRoomCatalog, useDressingRoomCatalogVariants, useDressingRoomSubcategories } from '../hooks/useDressingRoomCatalog';
+import { useDressingRoomCatalog, useDressingRoomCatalogVariants, useDressingRoomSubcategoriesBySlug } from '../hooks/useDressingRoomCatalog';
 import type { DressingRoomCatalogProduct } from '../hooks/useDressingRoomCatalog';
 import { AppLoadingScreen } from '../app/AppLoadingScreen';
 import RentalFlowModal from '../components/dressing-room/RentalFlowModal';
@@ -131,7 +131,7 @@ function VariantPickerModal({
 export default function DressingRoomLandingPage() {
   const { collection, looks: dbLooks, isLoading: looksLoading } = useDressingRoomCollection();
   const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomCatalog();
-  const { data: subcategories = [] } = useDressingRoomSubcategories(1); // 1 is the parent "Fashion On Demand" category
+  const { data: subcategories = [] } = useDressingRoomSubcategoriesBySlug('dressing-room');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<DressingRoomCatalogProduct | null>(null);

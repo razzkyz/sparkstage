@@ -68,6 +68,39 @@ export function useDressingRoomSubcategories(parentId?: number) {
 }
 
 /**
+ * Hook: Fetch subcategories by parent slug (resilient to ID changes)
+ */
+export function useDressingRoomSubcategoriesBySlug(parentSlug: string) {
+  return useQuery({
+    queryKey: ['dressing-room-subcategories-by-slug', parentSlug],
+    queryFn: async () => {
+      // Fetch parent ID by slug
+      const { data: parent, error: parentError } = await supabase
+        .from('dressing_room_categories')
+        .select('id')
+        .eq('slug', parentSlug)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (parentError) throw parentError;
+      if (!parent) return [];
+
+      // Fetch subcategories under that parent
+      const { data, error } = await supabase
+        .from('dressing_room_categories')
+        .select('*')
+        .eq('parent_id', parent.id)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as DressingRoomCategory[];
+    },
+    enabled: !!parentSlug,
+  });
+}
+
+/**
  * Hook: Fetch dressing room products from dressing_room_products table
  */
 export function useDressingRoomCatalog() {
