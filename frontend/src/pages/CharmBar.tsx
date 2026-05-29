@@ -205,10 +205,10 @@ export default function CharmBar() {
       gsap.fromTo(
         Array.from(buttons),
         { opacity: 0, x: -20 },
-        { 
-          opacity: 1, 
-          x: 0, 
-          duration: 0.4, 
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.4,
           stagger: 0.05,
           ease: 'power2.out',
           delay: 0.2
@@ -224,12 +224,12 @@ export default function CharmBar() {
 
   const filteredProducts = useMemo(() => {
     if (!products || !categories) return [];
-    
+
     // Filter to only show active Charm Bar specific categories
     const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
     const charmBarProducts = products.filter((product) => {
       if (!product.categorySlug) return false;
-      
+
       // Check if category is in Charm Bar categories
       return charmBarSlugs.includes(product.categorySlug);
     });
@@ -252,10 +252,10 @@ export default function CharmBar() {
       gsap.fromTo(
         Array.from(productCards),
         { opacity: 0, y: 20 },
-        { 
-          opacity: 1, 
-          y: 0, 
-          duration: 0.5, 
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
           stagger: 0.03,
           ease: 'back.out'
         }
@@ -266,7 +266,7 @@ export default function CharmBar() {
   // Get available categories for Charm Bar
   // const availableCategories = useMemo(() => {
   //   if (!categories) return [];
-    
+
   //   const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map(cat => cat.slug);
   //   return categories.filter((cat) => charmBarSlugs.includes(cat.slug));
   // }, [categories]);
@@ -351,7 +351,7 @@ export default function CharmBar() {
 
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
-          <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap overflow-x-auto w-full px-2 sm:px-0 pb-2 -mb-2">
+            <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
 
               {/* Glam — current page (active) */}
               <Link
@@ -384,31 +384,31 @@ export default function CharmBar() {
 
           <h3 className="text-2xl italic tracking-wide text-center mb-4">Charm Bar</h3>
 
-              <div className="relative w-full max-w-md mx-auto mb-2 px-2">
-                <div className="relative mb-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      updateFilters({ q: e.target.value });
-                    }}
-                    placeholder="Search Charm Bar products..."
-                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
-                  />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  {searchQuery ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({ q: null });
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
+          <div className="relative w-full max-w-md mx-auto mb-2 px-2">
+            <div className="relative mb-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  updateFilters({ q: e.target.value });
+                }}
+                placeholder="Search Charm Bar products..."
+                className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateFilters({ q: null });
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              ) : null}
+            </div>
+          </div>
 
           {/* Category Image Grid */}
           <div className="mb-5">
@@ -425,11 +425,11 @@ export default function CharmBar() {
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
-              
+
               <div
                 ref={categoryContainerRef}
                 id="category-grid-container"
-                className="flex gap-4 overflow-x-auto hide-scrollbar px-12 py-4 scroll-smooth"
+                className="flex gap-4 overflow-x-auto hide-scrollbar px-4 md:px-12 py-4 scroll-smooth"
               >
                 {CHARM_BAR_CATEGORIES.filter(cat => cat.isActive).map((category, index) => {
                   const isActive = activeCategory === category.slug;
@@ -447,11 +447,10 @@ export default function CharmBar() {
                       }}
                       className="group flex-shrink-0 text-center w-24 sm:w-28 md:w-32 lg:w-36"
                     >
-                      <div className={`relative aspect-square overflow-hidden rounded-[20%] border-2 transition-all duration-300 ${
-                        isActive
+                      <div className={`relative aspect-square overflow-hidden rounded-[20%] border-2 transition-all duration-300 ${isActive
                           ? 'border-[#ff4b86] shadow-lg scale-105'
                           : 'border-gray-200 hover:border-[#ff4b86] hover:scale-105'
-                      }`}>
+                        }`}>
                         <img
                           src={buildImageKitThumbUrl(categoryImage, { width: 320, quality: 60 })}
                           alt={category.name}
@@ -473,7 +472,7 @@ export default function CharmBar() {
                   );
                 })}
               </div>
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -488,9 +487,9 @@ export default function CharmBar() {
               </button>
             </div>
           </div>
-          
-              
-          
+
+
+
           {/* <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
             <div className="flex flex-col space-y-4">
 
@@ -669,7 +668,7 @@ export default function CharmBar() {
             onAddToCart={handleAddToCart}
           />
 
-       
+
         </main>
       </div>
     </PageTransition>

@@ -132,7 +132,7 @@ export default function BeautyPage() {
     <PageTransition>
       <main className="min-h-[calc(100vh-64px)] bg-white text-black py-5">
         {/* ── Shop Section Navigator ──────────────────────────── */}
-        <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap overflow-x-auto w-full px-2 sm:px-0 pb-2 -mb-2">
+        <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
           {/* Glam — current page (active) */}
           <Link
             to="/beauty"

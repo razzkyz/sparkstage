@@ -225,12 +225,12 @@ const Shop = () => {
   const nonCharmBarProducts = useMemo(
     () => products.filter((p) => {
       const nameLower = p.name.toLowerCase();
-      
+
       // Filter out specific products by name (in case they don't have a category slug)
       if (nameLower.includes('headliner') || nameLower.includes('pop socket') || nameLower.includes('popsocket')) {
         return false;
       }
-      
+
       if (!p.categorySlug) return true;
       const slugLower = p.categorySlug.toLowerCase();
       return !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) && !GLAM_CATEGORY_SLUGS.has(slugLower);
@@ -374,7 +374,7 @@ const Shop = () => {
 
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
-            <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap overflow-x-auto w-full px-2 sm:px-0 pb-2 -mb-2">
+            <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
 
               {/* Glam — current page (active) */}
               <Link
@@ -412,28 +412,28 @@ const Shop = () => {
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">
                 <div className="relative mb-3">
                   <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        updateFilters({ q: e.target.value });
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      updateFilters({ q: e.target.value });
+                    }}
+                    placeholder="Search products..."
+                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
+                  />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        updateFilters({ q: null });
                       }}
-                      placeholder="Search products..."
-                      className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
-                    />
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    {searchQuery ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchQuery('');
-                          updateFilters({ q: null });
-                        }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    ) : null}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
@@ -451,10 +451,10 @@ const Shop = () => {
                   >
                     <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
                   </button>
-                  
-                  <div 
+
+                  <div
                     id="category-scroll-container"
-                    className="flex space-x-4 md:space-x-6 overflow-x-auto w-full pb-0 hide-scrollbar px-8 md:px-12 justify-center md:justify-start scroll-smooth"
+                    className="flex space-x-4 md:space-x-6 overflow-x-auto w-full pb-0 hide-scrollbar px-4 md:px-12 justify-start md:justify-center scroll-smooth"
                   >
                     <button
                       type="button"
@@ -466,11 +466,10 @@ const Shop = () => {
                         });
                         scrollToCategory(0);
                       }}
-                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                        activeCategory === 'all'
+                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${activeCategory === 'all'
                           ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
                           : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
-                      }`}
+                        }`}
                     >
                       All Products
                     </button>
@@ -487,17 +486,16 @@ const Shop = () => {
                           });
                           scrollToCategory(index + 1);
                         }}
-                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                          activeCategory === category.slug
+                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${activeCategory === category.slug
                             ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
                             : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
-                        }`}
+                          }`}
                       >
                         {category.name}
                       </button>
                     ))}
                   </div>
-                  
+
                   <button
                     type="button"
                     onClick={() => {
@@ -514,7 +512,7 @@ const Shop = () => {
               </div>
 
               {activeCategory !== 'all' && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-2 px-2">
+                <div className="w-full justify-start md:justify-center flex overflow-x-auto hide-scrollbar pb-2 px-2">
                   <div className="flex gap-1.5 md:gap-2">
                     <button
                       type="button"
@@ -524,11 +522,10 @@ const Shop = () => {
                           subsubcategory: null,
                         });
                       }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === 'all'
+                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${activeSubcategory === 'all'
                           ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
                           : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                      }`}
+                        }`}
                     >
                       All
                     </button>
@@ -542,11 +539,10 @@ const Shop = () => {
                             subsubcategory: null,
                           });
                         }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
+                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${activeSubcategory === subcategory.slug
                             ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
                             : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                        }`}
+                          }`}
                       >
                         {subcategory.name}
                       </button>
@@ -556,16 +552,15 @@ const Shop = () => {
               ) : null}
 
               {activeCategory !== 'all' && activeSubcategory !== 'all' && activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-3 px-2">
+                <div className="w-full justify-start md:justify-center flex overflow-x-auto hide-scrollbar pb-3 px-2">
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === 'all'
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${activeSubSubcategory === 'all'
                           ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
                           : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                      }`}
+                        }`}
                     >
                       All {activeSubcategories.find(s => s.slug === activeSubcategory)?.name || ''}
                     </button>
@@ -574,11 +569,10 @@ const Shop = () => {
                         key={subcategory.slug}
                         type="button"
                         onClick={() => updateFilters({ subsubcategory: subcategory.slug })}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${activeSubSubcategory === subcategory.slug
                             ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
                             : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                        }`}
+                          }`}
                       >
                         {subcategory.name}
                       </button>
