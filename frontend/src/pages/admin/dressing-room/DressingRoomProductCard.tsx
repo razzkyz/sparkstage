@@ -15,7 +15,6 @@ export function DressingRoomProductCard({ product, onEdit, onDelete, onToggleAct
   
   // Calculate aggregated stats
   const minPrice = variants.length > 0 ? Math.min(...variants.map((v: any) => v.daily_rental_fee || 0)) : 0;
-  const maxPrice = variants.length > 0 ? Math.max(...variants.map((v: any) => v.daily_rental_fee || 0)) : 0;
   const totalStock = variants.reduce((sum: number, v: any) => sum + (v.total_quantity || 0), 0);
   
   const stockStatus = totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'ok';
