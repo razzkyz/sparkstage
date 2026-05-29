@@ -42,7 +42,8 @@ function ProductCard({
             })}
             alt={product.name}
             className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
-            loading="lazy"
+            loading="eager"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
@@ -120,12 +121,20 @@ function InfiniteProductSlider({
   const dragStartXRef = useRef(0);
   const dragStartPosRef = useRef(0);
 
-  // Clone array: [last3 ... originals ... first3]
-  const CLONE = 3;
+  // Clone array: [last6 ... originals ... first6]
+  // We need enough clones to fill the screen on ultra-wide / 5-column views (xl:w-[19%])
+  const CLONE = 6;
   const clonedProducts = useMemo(() => {
     if (rawProducts.length === 0) return [];
-    const tail = rawProducts.slice(-CLONE);
-    const head = rawProducts.slice(0, CLONE);
+
+    // If we have fewer products than clones, we wrap the remainder safely
+    let extended = [...rawProducts];
+    while (extended.length < CLONE) {
+      extended = [...extended, ...rawProducts];
+    }
+
+    const tail = extended.slice(-CLONE);
+    const head = extended.slice(0, CLONE);
     return [...tail, ...rawProducts, ...head];
   }, [rawProducts]);
 
@@ -185,18 +194,23 @@ function InfiniteProductSlider({
   }, [rawProducts.length, getItemWidth]);
 
   // Drag/swipe support
+  const isMovedRef = useRef(false);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
+    isMovedRef.current = false;
     dragStartXRef.current = e.clientX;
     dragStartPosRef.current = posRef.current;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDraggingRef.current) return;
+    const dx = e.clientX - dragStartXRef.current;
+    if (Math.abs(dx) > 5) {
+      isMovedRef.current = true;
+    }
     const track = trackRef.current;
     if (!track) return;
-    const dx = e.clientX - dragStartXRef.current;
     const itemW = getItemWidth();
     const totalReal = rawProducts.length * itemW;
     const cloneWidth = CLONE * itemW;
@@ -209,6 +223,13 @@ function InfiniteProductSlider({
 
   const handlePointerUp = () => {
     isDraggingRef.current = false;
+  };
+
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (isMovedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   };
 
   // Step one card on button click
@@ -285,11 +306,13 @@ function InfiniteProductSlider({
             }}
             onMouseLeave={() => {
               isHoveredRef.current = false;
+              isDraggingRef.current = false;
             }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
+            onClickCapture={handleClickCapture}
             style={{ cursor: isDraggingRef.current ? "grabbing" : "grab" }}
           >
             {loading ? (
@@ -558,11 +581,15 @@ const OnStage = () => {
                 src="/images/landing/POP UP WEB VIP STAR 1.jpg.webp"
                 alt="Welcome to Spark - VIP Star"
                 className="w-1/2 h-auto max-h-[85vh] object-contain"
+                loading="eager"
+                decoding="async"
               />
               <img
                 src="/images/landing/POP UP WEB VIP STAR 2.jpg.webp"
                 alt="Welcome to Spark - VIP Star"
                 className="w-1/2 h-auto max-h-[85vh] object-contain"
+                loading="eager"
+                decoding="async"
               />
             </Link>
           </div>

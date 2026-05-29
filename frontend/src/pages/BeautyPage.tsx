@@ -14,7 +14,16 @@ import { AppLoadingScreen } from "../app/AppLoadingScreen";
 
 const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
-const MAKEUP_SLUGS = new Set(["makeup", "eyewear", "glitter", "headliner"]);
+const MAKEUP_SLUGS = new Set([
+  "makeup",
+  "eyewear",
+  "glitter",
+  "headliner",
+  "popsocket",
+  "pop-socket",
+  "popsockets",
+  "body-glitter",
+]);
 
 const decorativeStars = [
   {
