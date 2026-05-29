@@ -659,7 +659,7 @@ const Navbar = () => {
                         onClick={() => setSidebarOpen(false)}
                         className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
                       >
-                        Glam Collection
+                        Glam Room
                       </Link>
                       <Link
                         to="/charm-bar"
@@ -673,7 +673,7 @@ const Navbar = () => {
                         onClick={() => setSidebarOpen(false)}
                         className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
                       >
-                        Stage 55 Products
+                        Spark Club
                       </Link>
                     </div>
                   </div>

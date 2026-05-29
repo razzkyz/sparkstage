@@ -1,16 +1,16 @@
-import { useMemo, useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { formatCurrency } from '../utils/formatters';
-import { useCart } from '../contexts/cartStore';
-import { useProduct, type ProductDetail } from '../hooks/useProduct';
-import { useToast } from '../components/Toast';
-import { useAuth } from '../contexts/AuthContext';
-import { PageTransition } from '../components/PageTransition';
-import { LazyMotion, m } from 'framer-motion';
-import { ProductImageCarousel } from '../components/ProductImageCarousel';
-import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../lib/queryKeys';
-import { ShoppingBag, ChevronLeft, ShieldCheck, Truck } from 'lucide-react';
+import { useMemo, useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { formatCurrency } from "../utils/formatters";
+import { useCart } from "../contexts/cartStore";
+import { useProduct, type ProductDetail } from "../hooks/useProduct";
+import { useToast } from "../components/Toast";
+import { useAuth } from "../contexts/AuthContext";
+import { PageTransition } from "../components/PageTransition";
+import { LazyMotion, m } from "framer-motion";
+import { ProductImageCarousel } from "../components/ProductImageCarousel";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../lib/queryKeys";
+import { ShoppingBag, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -20,7 +20,9 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: product, error, isLoading } = useProduct(productId);
-  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
+    null,
+  );
   const [imageIndex, setImageIndex] = useState(0);
   const loading = isLoading;
 
@@ -30,7 +32,10 @@ export default function ProductDetailPage() {
       setImageIndex(0);
       return;
     }
-    const firstAvailable = product.variants.find((v) => v.available > 0) ?? product.variants[0] ?? null;
+    const firstAvailable =
+      product.variants.find((v) => v.available > 0) ??
+      product.variants[0] ??
+      null;
     setSelectedVariantId(firstAvailable ? firstAvailable.id : null);
     setImageIndex(0);
   }, [product]);
@@ -42,8 +47,8 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!user) {
-      showToast('error', 'Please login to add items to cart');
-      navigate('/login', { state: { from: window.location.pathname } });
+      showToast("error", "Please login to add items to cart");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
     if (!product || !selectedVariant) return;
@@ -51,57 +56,71 @@ export default function ProductDetailPage() {
 
     // Optimistic Update
     const numericId = Number(productId);
-    const queryKey = Number.isFinite(numericId) ? queryKeys.product(numericId) : null;
-    const previous = queryKey ? queryClient.getQueryData<ProductDetail | null>(queryKey) : null;
+    const queryKey = Number.isFinite(numericId)
+      ? queryKeys.product(numericId)
+      : null;
+    const previous = queryKey
+      ? queryClient.getQueryData<ProductDetail | null>(queryKey)
+      : null;
 
     const optimistic: ProductDetail = {
       ...product,
       variants: product.variants.map((variant) =>
         variant.id === selectedVariant.id
           ? { ...variant, available: Math.max(0, variant.available - 1) }
-          : variant
+          : variant,
       ),
     };
 
     if (queryKey) queryClient.setQueryData(queryKey, optimistic);
 
     try {
-      const fallbackImages = product.imageUrls.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : [];
+      const fallbackImages = product.imageUrls.length
+        ? product.imageUrls
+        : product.imageUrl
+          ? [product.imageUrl]
+          : [];
       const imageFromCarousel = fallbackImages[imageIndex] ?? null;
       addItem(
         {
           productId: product.id,
           productName: product.name,
-          productImageUrl: selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
+          productImageUrl:
+            selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
           variantId: selectedVariant.id,
           variantName: selectedVariant.name,
           unitPrice: selectedVariant.price,
         },
-        1
+        1,
       );
-      showToast('success', 'Added to shopping bag');
+      showToast("success", "Added to shopping bag");
     } catch {
-      showToast('error', 'Failed to add to cart');
+      showToast("error", "Failed to add to cart");
       if (queryKey) queryClient.setQueryData(queryKey, previous);
     }
   };
 
   const handleBuyNow = () => {
     if (!user) {
-      showToast('error', 'Please login to checkout');
-      navigate('/login', { state: { from: window.location.pathname } });
+      showToast("error", "Please login to checkout");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
     if (!product || !selectedVariant) return;
     if (selectedVariant.available <= 0) return;
 
-    const fallbackImages = product.imageUrls.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : [];
+    const fallbackImages = product.imageUrls.length
+      ? product.imageUrls
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [];
     const imageFromCarousel = fallbackImages[imageIndex] ?? null;
 
     const directItem = {
       productId: product.id,
       productName: product.name,
-      productImageUrl: selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
+      productImageUrl:
+        selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
       variantId: selectedVariant.id,
       variantName: selectedVariant.name,
       unitPrice: selectedVariant.price,
@@ -109,7 +128,7 @@ export default function ProductDetailPage() {
       isRental: false,
     };
 
-    navigate('/checkout/product', { state: { directItem } });
+    navigate("/checkout/product", { state: { directItem } });
   };
 
   return (
@@ -118,18 +137,22 @@ export default function ProductDetailPage() {
         <main className="max-w-7xl mx-auto px-6 lg:px-12 py-12 w-full">
           {/* Breadcrumb */}
           <div className="mb-8">
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 text-gray-500 hover:text-[#e63d75] transition-colors text-sm font-medium uppercase tracking-widest group"
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-gray-500 hover:text-[#e63d75] transition-colors text-sm font-medium uppercase tracking-widest group bg-transparent border-none cursor-pointer p-0"
             >
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              Back to Shop
-            </Link>
+              Back
+            </button>
           </div>
 
           {error && (
             <div className="mb-12 rounded-xl border border-red-500/20 bg-red-50 p-6 text-center">
-              <p className="text-red-600 font-medium">{error instanceof Error ? error.message : 'Failed to load product'}</p>
+              <p className="text-red-600 font-medium">
+                {error instanceof Error
+                  ? error.message
+                  : "Failed to load product"}
+              </p>
             </div>
           )}
 
@@ -151,9 +174,15 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
               {/* Product Gallery */}
               <div>
-                <div className="sticky top-28">
+                <div className="sticky top-28 flex flex-col items-center justify-center">
                   <ProductImageCarousel
-                    images={product.imageUrls.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : []}
+                    images={
+                      product.imageUrls.length
+                        ? product.imageUrls
+                        : product.imageUrl
+                          ? [product.imageUrl]
+                          : []
+                    }
                     alt={product.name}
                     onIndexChange={setImageIndex}
                     currentIndex={imageIndex}
@@ -166,7 +195,9 @@ export default function ProductDetailPage() {
                         <ShieldCheck className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-gray-900">Original</p>
+                        <p className="font-bold text-sm text-gray-900">
+                          Original
+                        </p>
                         <p className="text-xs text-gray-500">100% Authentic</p>
                       </div>
                     </div>
@@ -175,8 +206,12 @@ export default function ProductDetailPage() {
                         <Truck className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-gray-900">Store Pickup</p>
-                        <p className="text-xs text-gray-500">Pick up at studio</p>
+                        <p className="font-bold text-sm text-gray-900">
+                          Store Pickup
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Pick up at studio
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -206,16 +241,22 @@ export default function ProductDetailPage() {
                 <div className="space-y-8">
                   {/* Price */}
                   <div>
-                    <p className="text-xs uppercase tracking-widest text-[#e63d75] font-bold mb-2">Price</p>
+                    <p className="text-xs uppercase tracking-widest text-[#e63d75] font-bold mb-2">
+                      Price
+                    </p>
                     <p className="font-serif text-4xl text-gray-900">
-                      {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
+                      {formatCurrency(
+                        selectedVariant ? selectedVariant.price : 0,
+                      )}
                     </p>
                   </div>
 
                   {/* Variants */}
                   <div>
                     <div className="flex justify-between items-center mb-4">
-                      <p className="text-xs uppercase tracking-widest text-gray-500 font-bold">Select Variant</p>
+                      <p className="text-xs uppercase tracking-widest text-gray-500 font-bold">
+                        Select Variant
+                      </p>
                       {/* {selectedVariant && (
                         <span className={`text-xs font-medium ${selectedVariant.available < 5 ? 'text-red-500' : 'text-green-600'}`}>
                           {selectedVariant.available > 0
@@ -237,11 +278,12 @@ export default function ProductDetailPage() {
                               disabled={isDisabled}
                               className={`
                                 min-w-[3rem] px-4 py-3 rounded-lg text-sm font-medium border ux-transition-color relative overflow-hidden
-                                ${isSelected
-                                  ? 'border-[#e63d75] bg-[#e63d75] text-white shadow-lg shadow-pink-200'
-                                  : isDisabled
-                                    ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice'
-                                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                                ${
+                                  isSelected
+                                    ? "border-[#e63d75] bg-[#e63d75] text-white shadow-lg shadow-pink-200"
+                                    : isDisabled
+                                      ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice"
+                                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                                 }
                               `}
                             >
@@ -258,38 +300,62 @@ export default function ProductDetailPage() {
                     ) : (
                       <div className="relative">
                         <select
-                          value={selectedVariantId ?? ''}
-                          onChange={(e) => setSelectedVariantId(Number(e.target.value))}
+                          value={selectedVariantId ?? ""}
+                          onChange={(e) =>
+                            setSelectedVariantId(Number(e.target.value))
+                          }
                           className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-5 py-4 text-gray-900 outline-none focus:border-[#e63d75] focus:ring-1 focus:ring-[#e63d75] ux-transition-color cursor-pointer"
                         >
-                          {product.variants.length === 0 && <option value="">No variants available</option>}
+                          {product.variants.length === 0 && (
+                            <option value="">No variants available</option>
+                          )}
                           {product.variants.map((variant) => (
-                            <option key={variant.id} value={variant.id} disabled={variant.available <= 0}>
-                              {variant.name} {variant.available <= 0 ? '(Out of Stock)' : ''}
+                            <option
+                              key={variant.id}
+                              value={variant.id}
+                              disabled={variant.available <= 0}
+                            >
+                              {variant.name}{" "}
+                              {variant.available <= 0 ? "(Out of Stock)" : ""}
                             </option>
                           ))}
                         </select>
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                          <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                          <svg
+                            className="w-4 h-4 fill-current"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                          </svg>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Actions */}
-                  <LazyMotion features={() => import('framer-motion').then((mod) => mod.domAnimation)}>
+                  <LazyMotion
+                    features={() =>
+                      import("framer-motion").then((mod) => mod.domAnimation)
+                    }
+                  >
                     <div className="pt-4 flex flex-col gap-3">
                       <m.button
                         onClick={handleBuyNow}
-                        disabled={!selectedVariant || selectedVariant.available <= 0}
+                        disabled={
+                          !selectedVariant || selectedVariant.available <= 0
+                        }
                         className="w-full bg-[#e63d75] text-white py-5 rounded-xl uppercase tracking-widest text-sm font-bold shadow-xl shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 active:bg-[#a32550] ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 disabled:bg-gray-400"
                       >
-                        {!selectedVariant || selectedVariant.available <= 0 ? 'Out of Stock' : `Pay ${formatCurrency(selectedVariant?.price ?? 0)}`}
+                        {!selectedVariant || selectedVariant.available <= 0
+                          ? "Out of Stock"
+                          : `Pay ${formatCurrency(selectedVariant?.price ?? 0)}`}
                       </m.button>
 
                       <m.button
                         onClick={handleAddToCart}
-                        disabled={!selectedVariant || selectedVariant.available <= 0}
+                        disabled={
+                          !selectedVariant || selectedVariant.available <= 0
+                        }
                         className="w-full bg-[#e63d75] text-white py-5 rounded-xl uppercase tracking-widest text-sm font-bold shadow-xl shadow-pink-200 hover:bg-[#cc2f64] hover:shadow-pink-300 active:bg-[#a32550] ux-transition-color disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 disabled:bg-gray-400"
                       >
                         <ShoppingBag className="w-5 h-5" />
@@ -319,8 +385,13 @@ export default function ProductDetailPage() {
               <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                 <ShoppingBag className="w-10 h-10 text-gray-300" />
               </div>
-              <h2 className="font-serif text-3xl text-gray-900 mb-2">Product Not Found</h2>
-              <p className="text-gray-500 mb-8">The product you are looking for might have been removed or is unavailable.</p>
+              <h2 className="font-serif text-3xl text-gray-900 mb-2">
+                Product Not Found
+              </h2>
+              <p className="text-gray-500 mb-8">
+                The product you are looking for might have been removed or is
+                unavailable.
+              </p>
               <Link
                 to="/shop"
                 className="bg-gray-900 text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-widest hover:bg-black transition-colors"
