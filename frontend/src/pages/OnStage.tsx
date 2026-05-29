@@ -327,10 +327,14 @@ const OnStage = () => {
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowModal(true);
-    }, 500);
-    return () => clearTimeout(timer);
+    const hasSeenModal = sessionStorage.getItem("hasSeenWelcomeModal");
+    if (!hasSeenModal) {
+      const timer = setTimeout(() => {
+        setShowModal(true);
+        sessionStorage.setItem("hasSeenWelcomeModal", "true");
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleCloseModal = () => {
@@ -530,11 +534,11 @@ const OnStage = () => {
     <div className="bg-white min-h-screen">
       {/* Landing Modal */}
       {showModal && (
-        <div 
+        <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={handleCloseModal}
         >
-          <div 
+          <div
             className="relative w-[95vw] sm:w-full max-w-3xl bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500"
             onClick={(e) => e.stopPropagation()}
           >
@@ -546,7 +550,7 @@ const OnStage = () => {
               <X className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
             <Link
-              to="/news"
+              to="/booking"
               onClick={handleCloseModal}
               className="w-full flex flex-row bg-white items-center justify-center"
             >
@@ -621,7 +625,7 @@ const OnStage = () => {
               POST.SHINE.WIN.
             </p>
             <Link
-              to="/news"
+              to="/booking"
               className="flex flex-col bg-pink-400 px-5 py-1 rounded-full hover:bg-pink-500 hover:px-5.5 hover:py-1.5"
             >
               <span className="text-black font-black text-sm md:text-md lg:text-xl uppercase tracking-wide leading-tight">
