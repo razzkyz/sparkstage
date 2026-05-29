@@ -5,6 +5,7 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { useStageAnalytics, type StageAnalyticsTimeFilter, type StageAnalyticsData } from '../../hooks/useStageAnalytics';
+import { useCurrentUserStageLocations } from '../../hooks/useCurrentUserStageLocations';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
@@ -21,12 +22,17 @@ const StageAnalytics = () => {
         enabled: isAdmin,
     });
 
+    const { data: liveVisitors, isLoading: isLiveLoading, refetch: refetchLive } = useCurrentUserStageLocations({
+        enabled: isAdmin,
+    });
+
     const stages = data ?? EMPTY_STAGES;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const handleTabReturn = () => {
             refetch();
+            refetchLive();
         };
         window.addEventListener(TAB_RETURN_EVENT, handleTabReturn);
         return () => {
@@ -259,6 +265,53 @@ const StageAnalytics = () => {
                             <span className={`material-symbols-outlined text-lg ${isFetching ? 'animate-spin' : ''}`}>{isFetching ? 'progress_activity' : 'refresh'}</span>
                             Refresh Data
                         </button>
+                    </div>
+                </div>
+
+                {/* Live Visitors Panel */}
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden mt-6">
+                    <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-bold text-gray-900">Live Visitors</h3>
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
+                                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                                <span className="text-xs font-bold text-green-700">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="p-6">
+                        {isLiveLoading ? (
+                            <div className="flex justify-center p-8">
+                                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+                            </div>
+                        ) : !liveVisitors || liveVisitors.length === 0 ? (
+                            <div className="text-center py-8">
+                                <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">sensor_door</span>
+                                <p className="text-sm text-gray-500">Belum ada user yang terdeteksi scan di stage manapun dalam 4 jam terakhir.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {liveVisitors.map((v) => (
+                                    <div key={v.user_id} className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center flex-shrink-0 border border-pink-200 text-pink-600 font-bold uppercase">
+                                            {v.display_name.charAt(0)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-gray-900 truncate">{v.display_name}</p>
+                                            <p className="text-xs text-gray-500 truncate mb-2">{v.email}</p>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                                                <span className="text-sm font-semibold text-gray-700">{v.stage_name}</span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 mt-1">
+                                                Scanned at {new Date(v.scanned_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

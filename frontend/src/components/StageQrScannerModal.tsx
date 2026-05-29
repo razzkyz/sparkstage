@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { useQrScannerController } from './admin/qr-scanner-modal/useQrScannerController';
 import { QrScannerViewport } from './admin/qr-scanner-modal/QrScannerViewport';
 
@@ -18,6 +19,7 @@ type Props = {
 
 export function StageQrScannerModal({ isOpen, onClose }: Props) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
 
   const handleScan = useCallback(
@@ -50,10 +52,11 @@ export function StageQrScannerModal({ isOpen, onClose }: Props) {
         throw new Error(`Stage ini sedang dalam ${stageData.status}. Coba stage lain.`);
       }
 
-      // Record scan (anonymous)
+      // Record scan — include user_id if logged in for tracking
       await supabase.from('stage_scans').insert({
         stage_id: stageData.id,
         user_agent: navigator.userAgent,
+        ...(user?.id ? { user_id: user.id } : {}),
       });
 
       setLastScan({
