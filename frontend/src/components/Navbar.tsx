@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { StageQrScannerModal } from "./StageQrScannerModal";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Logo from "./Logo";
@@ -52,6 +53,7 @@ const Navbar = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const desktopNavItemsRef = useRef<
     (HTMLAnchorElement | HTMLButtonElement | null)[]
@@ -239,6 +241,41 @@ const Navbar = () => {
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
                 {/* Desktop icons — selalu tampil */}
                 <div className="hidden lg:flex items-center gap-3">
+                  {/* QR Scanner button — hanya saat login */}
+                  {user && (
+                    <button
+                      id="navbar-qr-scanner-btn"
+                      type="button"
+                      onClick={() => setScannerOpen(true)}
+                      title="Scan Stage QR"
+                      aria-label="Scan Stage QR Code"
+                      className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40 flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)',
+                        boxShadow: '0 2px 8px rgba(255,75,134,0.45)',
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4"
+                      >
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <rect x="7" y="7" width="3" height="3" />
+                        <rect x="14" y="7" width="3" height="3" />
+                        <rect x="7" y="14" width="3" height="3" />
+                        <path d="M14 14h3v3" />
+                      </svg>
+                    </button>
+                  )}
                   {user ? (
                     <>
                       <span className="text-sm font-medium text-gray-900">
@@ -354,6 +391,40 @@ const Navbar = () => {
                 </div>
 
                 <div className="lg:hidden flex items-center gap-3">
+                  {/* Mobile: QR Scanner button — hanya saat login */}
+                  {user && (
+                    <button
+                      id="navbar-qr-scanner-btn-mobile"
+                      type="button"
+                      onClick={() => setScannerOpen(true)}
+                      aria-label="Scan Stage QR Code"
+                      className="relative flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all duration-200 flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)',
+                        boxShadow: '0 2px 8px rgba(255,75,134,0.45)',
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4"
+                      >
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <rect x="7" y="7" width="3" height="3" />
+                        <rect x="14" y="7" width="3" height="3" />
+                        <rect x="7" y="14" width="3" height="3" />
+                        <path d="M14 14h3v3" />
+                      </svg>
+                    </button>
+                  )}
                   {/* Mobile: Ticket icon */}
 
                   <Link
@@ -745,6 +816,12 @@ const Navbar = () => {
           </div>
         )}
       </aside>
+
+      {/* Stage QR Scanner Modal */}
+      <StageQrScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+      />
 
       {showLogoutConfirm && (
         <>
