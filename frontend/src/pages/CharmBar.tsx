@@ -186,9 +186,6 @@ export default function CharmBar() {
     updateFilters,
   } = useShopFilters();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   // GSAP hero fade-in animation
   useEffect(() => {

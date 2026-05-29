@@ -253,10 +253,6 @@ const SparkClub = () => {
   const error = productsError || categoriesError;
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
     if (error) {
       showToast(
         "error",

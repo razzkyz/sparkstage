@@ -1,13 +1,8 @@
-import { useEffect } from 'react';
-import { PageTransition } from '../components/PageTransition';
-import { useNewsSettings } from '../hooks/useNewsSettings';
+import { PageTransition } from "../components/PageTransition";
+import { useNewsSettings } from "../hooks/useNewsSettings";
 
 export default function News() {
   const { settings, isLoading } = useNewsSettings();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   if (isLoading || !settings) {
     return (
@@ -32,20 +27,29 @@ export default function News() {
                 <span className="inline-block px-4 py-2 bg-black text-white text-xs font-bold uppercase tracking-widest mb-6">
                   {settings.section_1_category}
                 </span>
-                <h1 
+                <h1
                   className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight"
-                  style={{ fontFamily: settings.section_fonts.section_1?.heading || 'serif' }}
+                  style={{
+                    fontFamily:
+                      settings.section_fonts.section_1?.heading || "serif",
+                  }}
                 >
                   {settings.section_1_title}
                 </h1>
-                <p className="text-xl text-gray-600 mb-4">{settings.section_1_excerpt}</p>
-                <p className="text-gray-500 leading-relaxed">{settings.section_1_description}</p>
-                <p className="text-sm text-gray-400 mt-4 italic">{settings.section_1_author}</p>
+                <p className="text-xl text-gray-600 mb-4">
+                  {settings.section_1_excerpt}
+                </p>
+                <p className="text-gray-500 leading-relaxed">
+                  {settings.section_1_description}
+                </p>
+                <p className="text-sm text-gray-400 mt-4 italic">
+                  {settings.section_1_author}
+                </p>
               </div>
               {settings.section_1_image && (
                 <div className="bg-gray-100 rounded-2xl overflow-hidden">
-                  <img 
-                    src={settings.section_1_image} 
+                  <img
+                    src={settings.section_1_image}
                     alt={settings.section_1_title}
                     className="w-full h-auto object-contain"
                   />
@@ -61,24 +65,33 @@ export default function News() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               {settings.section_2_image && (
                 <div className="bg-gray-100 rounded-2xl overflow-hidden order-2 lg:order-1">
-                  <img 
-                    src={settings.section_2_image} 
+                  <img
+                    src={settings.section_2_image}
                     alt={settings.section_2_title}
                     className="w-full h-auto object-contain"
                   />
                 </div>
               )}
               <div className="order-1 lg:order-2">
-                <h2 
+                <h2
                   className="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight whitespace-pre-line"
-                  style={{ fontFamily: settings.section_fonts.section_2?.heading || 'serif' }}
+                  style={{
+                    fontFamily:
+                      settings.section_fonts.section_2?.heading || "serif",
+                  }}
                 >
                   {settings.section_2_title}
                 </h2>
-                <p className="text-2xl text-gray-700 mb-2">{settings.section_2_subtitle1}</p>
-                <p className="text-xl text-gray-500 mb-6">{settings.section_2_subtitle2}</p>
+                <p className="text-2xl text-gray-700 mb-2">
+                  {settings.section_2_subtitle1}
+                </p>
+                <p className="text-xl text-gray-500 mb-6">
+                  {settings.section_2_subtitle2}
+                </p>
                 <blockquote className="border-l-4 border-black pl-6 py-4">
-                  <p className="text-lg text-gray-900 italic whitespace-pre-line">{settings.section_2_quotes}</p>
+                  <p className="text-lg text-gray-900 italic whitespace-pre-line">
+                    {settings.section_2_quotes}
+                  </p>
                 </blockquote>
               </div>
             </div>
@@ -88,9 +101,12 @@ export default function News() {
         {/* Section 3 */}
         <section className="py-20 px-6 md:px-12 lg:px-20">
           <div className="max-w-7xl mx-auto">
-            <h2 
+            <h2
               className="text-3xl md:text-4xl font-black text-gray-900 mb-12 text-center"
-              style={{ fontFamily: settings.section_fonts.section_3?.heading || 'serif' }}
+              style={{
+                fontFamily:
+                  settings.section_fonts.section_3?.heading || "serif",
+              }}
             >
               {settings.section_3_title}
             </h2>
@@ -99,18 +115,22 @@ export default function News() {
                 <div key={index} className="bg-gray-50 rounded-2xl p-6">
                   {product.image && (
                     <div className="bg-gray-100 rounded-xl overflow-hidden mb-4">
-                      <img 
-                        src={product.image} 
+                      <img
+                        src={product.image}
                         alt={product.name}
                         className="w-full h-auto object-contain"
                       />
                     </div>
                   )}
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{product.brand}</p>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{product.name}</h3>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    {product.brand}
+                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {product.name}
+                  </h3>
                   <p className="text-gray-600 mb-4">{product.price}</p>
                   {product.link && (
-                    <a 
+                    <a
                       href={product.link}
                       target="_blank"
                       rel="noopener noreferrer"
