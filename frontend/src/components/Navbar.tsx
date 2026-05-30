@@ -399,7 +399,7 @@ const Navbar = () => {
                       type="button"
                       onClick={() => setScannerOpen(true)}
                       aria-label="Scan Stage QR Code"
-                      className="relative flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all duration-200 flex-shrink-0"
+                      className="relative hidden flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all duration-200 flex-shrink-0"
                       style={{
                         background:
                           "linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)",

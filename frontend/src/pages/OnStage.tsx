@@ -19,7 +19,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // ─── Infinite Product Slider ──────────────────────────────────────────────────
 const CARD_CLASS =
-  "shrink-0 w-[72%] sm:w-[48%] md:w-[31%] lg:w-[21%] xl:w-[19%] group relative flex flex-col";
+  "shrink-0 w-[65%] sm:w-[42%] md:w-[31%] lg:w-[21%] xl:w-[19%] group relative flex flex-col";
 
 function ProductCard({
   product,
@@ -335,7 +335,7 @@ function InfiniteProductSlider({
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div
                     key={i}
-                    className="shrink-0 w-[72%] sm:w-[48%] md:w-[31%] lg:w-[21%] xl:w-[19%] bg-gray-100 animate-pulse aspect-square rounded-xl"
+                    className="shrink-0 w-[68%] sm:w-[42%] md:w-[31%] lg:w-[21%] xl:w-[19%] bg-gray-100 animate-pulse aspect-square rounded-xl"
                   />
                 ))}
               </div>

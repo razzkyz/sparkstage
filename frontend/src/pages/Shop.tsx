@@ -1,27 +1,27 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCart } from '../contexts/cartStore';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCart } from "../contexts/cartStore";
+import { useAuth } from "../contexts/AuthContext";
 
-import { formatCurrency } from '../utils/formatters';
-import { useProductSummaries, type Product } from '../hooks/useProducts';
-import { useCategories } from '../hooks/useCategories';
+import { formatCurrency } from "../utils/formatters";
+import { useProductSummaries, type Product } from "../hooks/useProducts";
+import { useCategories } from "../hooks/useCategories";
 // import { useBanners } from '../hooks/useBanners';
-import { fetchProductDetail } from '../hooks/useProduct';
-import { useCharmBarSettings } from '../hooks/useCharmBarSettings';
-import { useToast } from '../components/Toast';
-import { PageTransition } from '../components/PageTransition';
-import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
-import { queryKeys } from '../lib/queryKeys';
+import { fetchProductDetail } from "../hooks/useProduct";
+import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
+import { useToast } from "../components/Toast";
+import { PageTransition } from "../components/PageTransition";
+import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
+import { queryKeys } from "../lib/queryKeys";
 // import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
-import { buildShopCategoryIndex } from './shop/buildShopCategoryIndex';
-import { filterShopProducts } from './shop/filterShopProducts';
-import { useShopFilters } from './shop/useShopFilters';
-import { CHARM_BAR_CATEGORY_SLUGS } from './shop/charmBarSlugs';
-import { AppLoadingScreen } from '../app/AppLoadingScreen';
-import { buildImageKitThumbUrl } from '../lib/imagekit';
+import { buildShopCategoryIndex } from "./shop/buildShopCategoryIndex";
+import { filterShopProducts } from "./shop/filterShopProducts";
+import { useShopFilters } from "./shop/useShopFilters";
+import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
+import { AppLoadingScreen } from "../app/AppLoadingScreen";
+import { buildImageKitThumbUrl } from "../lib/imagekit";
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -33,7 +33,13 @@ type ShopResultsProps = {
   onAddToCart: (product: Product) => void;
 };
 
-function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct, onAddToCart }: ShopResultsProps) {
+function ShopResults({
+  filteredProducts,
+  loading,
+  resetSignal,
+  onPrefetchProduct,
+  onAddToCart,
+}: ShopResultsProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const totalProducts = filteredProducts.length;
@@ -53,7 +59,18 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
   }, [filteredProducts, page]);
 
   if (loading) {
-    const skeletonKeys = ['product-skeleton-1', 'product-skeleton-2', 'product-skeleton-3', 'product-skeleton-4', 'product-skeleton-5', 'product-skeleton-6', 'product-skeleton-7', 'product-skeleton-8', 'product-skeleton-9', 'product-skeleton-10'];
+    const skeletonKeys = [
+      "product-skeleton-1",
+      "product-skeleton-2",
+      "product-skeleton-3",
+      "product-skeleton-4",
+      "product-skeleton-5",
+      "product-skeleton-6",
+      "product-skeleton-7",
+      "product-skeleton-8",
+      "product-skeleton-9",
+      "product-skeleton-10",
+    ];
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {skeletonKeys.map((skeletonKey) => (
@@ -67,10 +84,14 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
     <>
       {totalProducts === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-10 text-center">
-          <p className="text-sm text-gray-500">No products found for this filter.</p>
+          <p className="text-sm text-gray-500">
+            No products found for this filter.
+          </p>
         </div>
       ) : (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 transition-opacity duration-300 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 transition-opacity duration-300 ${isAnimating ? "opacity-0" : "opacity-100"}`}
+        >
           {paginatedProducts.map((product, index) => (
             <Link
               key={product.id}
@@ -78,7 +99,9 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
               className="group cursor-pointer flex flex-col h-full"
               onMouseEnter={() => onPrefetchProduct(product.id)}
               style={{
-                animation: isAnimating ? `fadeInUp 0.5s ease-out ${index * 0.05}s both` : 'none'
+                animation: isAnimating
+                  ? `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                  : "none",
               }}
             >
               <div className="flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100">
@@ -87,12 +110,17 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
                     <img
                       alt={product.name}
                       className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
-                      src={buildImageKitThumbUrl(product.image, { width: 480, quality: 60 })}
+                      src={buildImageKitThumbUrl(product.image, {
+                        width: 480,
+                        quality: 60,
+                      })}
                       loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
-                      <span className="material-symbols-outlined text-5xl">{product.placeholder}</span>
+                      <span className="material-symbols-outlined text-5xl">
+                        {product.placeholder}
+                      </span>
                     </div>
                   )}
                   {!product.defaultVariantId && (
@@ -111,7 +139,9 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
                     disabled={!product.defaultVariantId}
                     className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+                    <span className="material-symbols-outlined text-lg">
+                      add_shopping_cart
+                    </span>
                   </button>
                   {product.badge && (
                     <span className="absolute top-3 left-3 bg-[#ff4b86] text-white px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm">
@@ -124,10 +154,12 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
                     {product.name}
                   </h3>
                   <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]">
-                    {product.description || '\u00A0'}
+                    {product.description || "\u00A0"}
                   </p>
                   <div className="flex items-center gap-2 mt-auto">
-                    <span className="text-base font-black text-[#ff4b86]">{formatCurrency(product.price)}</span>
+                    <span className="text-base font-black text-[#ff4b86]">
+                      {formatCurrency(product.price)}
+                    </span>
                     {product.originalPrice ? (
                       <span className="text-xs text-gray-400 line-through font-light">
                         {formatCurrency(product.originalPrice)}
@@ -149,7 +181,11 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setCurrentPage((prev) => Math.max(1, Math.min(totalPages, prev - 1)))}
+              onClick={() =>
+                setCurrentPage((prev) =>
+                  Math.max(1, Math.min(totalPages, prev - 1)),
+                )
+              }
               disabled={page <= 1}
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 duration-200 ux-transition-color hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -158,7 +194,9 @@ function ShopResults({ filteredProducts, loading, resetSignal, onPrefetchProduct
             </button>
             <button
               type="button"
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
               disabled={page >= totalPages}
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 duration-200 ux-transition-color hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -191,51 +229,73 @@ const Shop = () => {
     resultsResetSignal,
   } = useShopFilters();
 
-  const { data: products = [], error: productsError, isLoading: productsLoading, refetch: refetchProducts } = useProductSummaries();
-  const { data: categories = [], error: categoriesError, isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
+  const {
+    data: products = [],
+    error: productsError,
+    isLoading: productsLoading,
+    refetch: refetchProducts,
+  } = useProductSummaries();
+  const {
+    data: categories = [],
+    error: categoriesError,
+    isLoading: categoriesLoading,
+    refetch: refetchCategories,
+  } = useCategories();
   // const { data: shopBanners = [] } = useBanners('shop');
-  const { settings: charmBarSettings, isLoading: charmBarLoading } = useCharmBarSettings();
+  const { settings: charmBarSettings, isLoading: charmBarLoading } =
+    useCharmBarSettings();
 
-  const loading = (productsLoading || categoriesLoading || charmBarLoading) && products.length === 0;
+  const loading =
+    (productsLoading || categoriesLoading || charmBarLoading) &&
+    products.length === 0;
   const error = productsError || categoriesError;
 
   useEffect(() => {
     if (error) {
-      showToast('error', error instanceof Error ? error.message : 'Failed to load shop data');
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Failed to load shop data",
+      );
     }
   }, [error, showToast]);
 
-  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } = useMemo(
-    () => buildShopCategoryIndex(categories),
-    [categories]
-  );
+  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
+    useMemo(() => buildShopCategoryIndex(categories), [categories]);
 
   const GLAM_CATEGORY_SLUGS = new Set([
-    'makeup',
-    'eyewear',
-    'glitter',
-    'headliner',
-    'starglitter',
-    'star-glitter',
-    'popsocket',
-    'pop-socket',
-    'popsockets',
+    "makeup",
+    "eyewear",
+    "glitter",
+    "headliner",
+    "starglitter",
+    "star-glitter",
+    "popsocket",
+    "pop-socket",
+    "popsockets",
   ]);
 
   const nonCharmBarProducts = useMemo(
-    () => products.filter((p) => {
-      const nameLower = p.name.toLowerCase();
+    () =>
+      products.filter((p) => {
+        const nameLower = p.name.toLowerCase();
 
-      // Filter out specific products by name (in case they don't have a category slug)
-      if (nameLower.includes('headliner') || nameLower.includes('pop socket') || nameLower.includes('popsocket')) {
-        return false;
-      }
+        // Filter out specific products by name (in case they don't have a category slug)
+        if (
+          nameLower.includes("headliner") ||
+          nameLower.includes("pop socket") ||
+          nameLower.includes("popsocket")
+        ) {
+          return false;
+        }
 
-      if (!p.categorySlug) return true;
-      const slugLower = p.categorySlug.toLowerCase();
-      return !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) && !GLAM_CATEGORY_SLUGS.has(slugLower);
-    }),
-    [products]
+        if (!p.categorySlug) return true;
+        const slugLower = p.categorySlug.toLowerCase();
+        return (
+          !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) &&
+          !GLAM_CATEGORY_SLUGS.has(slugLower)
+        );
+      }),
+    [products],
   );
 
   const filteredProducts = useMemo(
@@ -249,23 +309,31 @@ const Shop = () => {
         allowedSlugMap,
         bestSellerIds: charmBarSettings?.best_seller_charms || [],
       }),
-    [nonCharmBarProducts, activeCategory, activeSubcategory, activeSubSubcategory, deferredSearchQuery, allowedSlugMap, charmBarSettings]
+    [
+      nonCharmBarProducts,
+      activeCategory,
+      activeSubcategory,
+      activeSubSubcategory,
+      deferredSearchQuery,
+      allowedSlugMap,
+      charmBarSettings,
+    ],
   );
 
   const activeSubcategories = useMemo(() => {
-    if (activeCategory === 'all') return [];
+    if (activeCategory === "all") return [];
     return childCategoriesByParentSlug.get(activeCategory) ?? [];
   }, [activeCategory, childCategoriesByParentSlug]);
 
   const activeSubSubcategories = useMemo(() => {
-    if (activeSubcategory === 'all') return [];
+    if (activeSubcategory === "all") return [];
     return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
   }, [activeSubcategory, childCategoriesByParentSlug]);
 
   const handleAddToCart = (product: Product) => {
     if (!user) {
-      showToast('error', 'Please login to add items to cart');
-      navigate('/login', { state: { from: window.location.pathname } });
+      showToast("error", "Please login to add items to cart");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
     if (!product.defaultVariantId || !product.defaultVariantName) return;
@@ -280,28 +348,35 @@ const Shop = () => {
           variantName: product.defaultVariantName,
           unitPrice: product.price,
         },
-        1
+        1,
       );
-      showToast('success', 'Berhasil memasukkan ke keranjang');
+      showToast("success", "Berhasil memasukkan ke keranjang");
     } catch {
-      showToast('error', 'Gagal menambahkan ke keranjang');
+      showToast("error", "Gagal menambahkan ke keranjang");
     }
   };
 
   const scrollToCategory = (index: number) => {
-    const container = document.getElementById('category-scroll-container');
+    const container = document.getElementById("category-scroll-container");
     if (container) {
-      const buttons = container.querySelectorAll('button');
+      const buttons = container.querySelectorAll("button");
       const targetButton = buttons[index];
       if (targetButton) {
-        targetButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        targetButton.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
       }
     }
   };
 
   const scrollToProducts = () => {
     if (productsRef.current) {
-      productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      productsRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   };
 
@@ -328,8 +403,6 @@ const Shop = () => {
   return (
     <PageTransition>
       <div className="bg-white min-h-screen">
-
-
         {/* menonaktidakn sementara banner */}
         {/* <header className="relative w-full overflow-hidden">
           {shopBanners.length > 0 ? (
@@ -371,17 +444,17 @@ const Shop = () => {
         </header> */}
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
-            <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-
+            <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
               {/* Glam — current page (active) */}
               <Link
                 to="/beauty"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">auto_awesome</span>
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+                  auto_awesome
+                </span>
                 Glam
               </Link>
 
@@ -390,7 +463,9 @@ const Shop = () => {
                 to="/charm-bar"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">diamond</span>
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+                  diamond
+                </span>
                 Charm
               </Link>
 
@@ -399,15 +474,22 @@ const Shop = () => {
                 to="/shop"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">storefront</span>
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+                  storefront
+                </span>
                 Spark
               </Link>
             </div>
           </div>
 
-          <h3 className="text-2xl italic tracking-wide text-center mb-6">Spark Club</h3>
+          <h3 className="text-2xl italic tracking-wide text-center mb-6">
+            Spark Club
+          </h3>
 
-          <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
+          <div
+            ref={productsRef}
+            className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6"
+          >
             <div className="flex flex-col space-y-4">
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">
                 <div className="relative mb-3">
@@ -426,7 +508,7 @@ const Shop = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        setSearchQuery('');
+                        setSearchQuery("");
                         updateFilters({ q: null });
                       }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
@@ -442,9 +524,11 @@ const Shop = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const container = document.getElementById('category-scroll-container');
+                      const container = document.getElementById(
+                        "category-scroll-container",
+                      );
                       if (container) {
-                        container.scrollBy({ left: -200, behavior: 'smooth' });
+                        container.scrollBy({ left: -200, behavior: "smooth" });
                       }
                     }}
                     className="absolute left-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden -mt-2"
@@ -466,10 +550,11 @@ const Shop = () => {
                         });
                         scrollToCategory(0);
                       }}
-                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${activeCategory === 'all'
-                          ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
-                          : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
-                        }`}
+                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
+                        activeCategory === "all"
+                          ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                          : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                      }`}
                     >
                       All Products
                     </button>
@@ -486,10 +571,11 @@ const Shop = () => {
                           });
                           scrollToCategory(index + 1);
                         }}
-                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${activeCategory === category.slug
-                            ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
-                            : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
-                          }`}
+                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
+                          activeCategory === category.slug
+                            ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                            : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                        }`}
                       >
                         {category.name}
                       </button>
@@ -499,9 +585,11 @@ const Shop = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const container = document.getElementById('category-scroll-container');
+                      const container = document.getElementById(
+                        "category-scroll-container",
+                      );
                       if (container) {
-                        container.scrollBy({ left: 200, behavior: 'smooth' });
+                        container.scrollBy({ left: 200, behavior: "smooth" });
                       }
                     }}
                     className="absolute right-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden -mt-2"
@@ -511,8 +599,8 @@ const Shop = () => {
                 </div>
               </div>
 
-              {activeCategory !== 'all' && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-start md:justify-center flex overflow-x-auto hide-scrollbar pb-2 px-2">
+              {activeCategory !== "all" && activeSubcategories.length > 0 ? (
+                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-2 px-2">
                   <div className="flex gap-1.5 md:gap-2">
                     <button
                       type="button"
@@ -522,10 +610,11 @@ const Shop = () => {
                           subsubcategory: null,
                         });
                       }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${activeSubcategory === 'all'
-                          ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                        }`}
+                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
+                        activeSubcategory === "all"
+                          ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
+                          : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
+                      }`}
                     >
                       All
                     </button>
@@ -539,10 +628,11 @@ const Shop = () => {
                             subsubcategory: null,
                           });
                         }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${activeSubcategory === subcategory.slug
-                            ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                          }`}
+                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
+                          activeSubcategory === subcategory.slug
+                            ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
+                            : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
+                        }`}
                       >
                         {subcategory.name}
                       </button>
@@ -551,28 +641,37 @@ const Shop = () => {
                 </div>
               ) : null}
 
-              {activeCategory !== 'all' && activeSubcategory !== 'all' && activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-start md:justify-center flex overflow-x-auto hide-scrollbar pb-3 px-2">
+              {activeCategory !== "all" &&
+              activeSubcategory !== "all" &&
+              activeSubSubcategories.length > 0 ? (
+                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-3 px-2">
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${activeSubSubcategory === 'all'
-                          ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
-                          : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                        }`}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
+                        activeSubSubcategory === "all"
+                          ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
+                      }`}
                     >
-                      All {activeSubcategories.find(s => s.slug === activeSubcategory)?.name || ''}
+                      All{" "}
+                      {activeSubcategories.find(
+                        (s) => s.slug === activeSubcategory,
+                      )?.name || ""}
                     </button>
                     {activeSubSubcategories.map((subcategory) => (
                       <button
                         key={subcategory.slug}
                         type="button"
-                        onClick={() => updateFilters({ subsubcategory: subcategory.slug })}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${activeSubSubcategory === subcategory.slug
-                            ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
-                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                          }`}
+                        onClick={() =>
+                          updateFilters({ subsubcategory: subcategory.slug })
+                        }
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
+                          activeSubSubcategory === subcategory.slug
+                            ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
+                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
+                        }`}
                       >
                         {subcategory.name}
                       </button>
@@ -586,7 +685,9 @@ const Shop = () => {
           {error ? (
             <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
               <p className="text-sm text-red-700 mb-4">
-                {error instanceof Error ? error.message : 'Failed to load shop data'}
+                {error instanceof Error
+                  ? error.message
+                  : "Failed to load shop data"}
               </p>
               <button
                 type="button"

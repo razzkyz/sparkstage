@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageTransition } from "../components/PageTransition";
 import ProductQuickViewModal from "../components/ProductQuickViewModal";
@@ -11,6 +11,11 @@ import { useProductSummaries } from "../hooks/useProducts";
 import { formatCurrency } from "../utils/formatters";
 import { getCmsFontStyle } from "../lib/cmsTypography";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
+import { buildImageKitThumbUrl } from "../lib/imagekit";
+import { useCart } from "../contexts/cartStore";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toast";
+import type { Product } from "../hooks/useProducts";
 
 const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
@@ -74,6 +79,36 @@ export default function BeautyPage() {
   });
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  const handleAddToCart = (product: Product) => {
+    if (!user) {
+      showToast("error", "Please login to add items to cart");
+      navigate("/login", { state: { from: window.location.pathname } });
+      return;
+    }
+    if (!product.defaultVariantId || !product.defaultVariantName) return;
+
+    try {
+      addItem(
+        {
+          productId: product.id,
+          productName: product.name,
+          productImageUrl: product.image,
+          variantId: product.defaultVariantId,
+          variantName: product.defaultVariantName,
+          unitPrice: product.price,
+        },
+        1,
+      );
+      showToast("success", "Berhasil memasukkan ke keranjang");
+    } catch {
+      showToast("error", "Gagal menambahkan ke keranjang");
+    }
+  };
 
   useEffect(() => {
     setPage(1);
@@ -132,7 +167,7 @@ export default function BeautyPage() {
     <PageTransition>
       <main className="min-h-[calc(100vh-64px)] bg-white text-black py-5">
         {/* ── Shop Section Navigator ──────────────────────────── */}
-        <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
+        <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
           {/* Glam — current page (active) */}
           <Link
             to="/beauty"
@@ -297,42 +332,87 @@ export default function BeautyPage() {
             </label>
           </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mx-auto">
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mx-auto">
             {paginatedProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/shop/product/${product.id}`}
-                className="group flex flex-col border border-black/20 bg-white transition-opacity hover:opacity-80"
+                className="group cursor-pointer flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100"
               >
-                <div className="aspect-[3/4] overflow-hidden bg-[#faf7f8]">
+                <div className="relative overflow-hidden aspect-square bg-gray-50 shrink-0">
                   {product.image ? (
                     <img
-                      src={product.image}
+                      src={buildImageKitThumbUrl(product.image, {
+                        width: 480,
+                        quality: 60,
+                      })}
                       alt={product.name}
-                      className="h-full w-full object-cover"
+                      className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
                       loading="lazy"
+                      decoding="async"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-black/15">
-                      <span className="material-symbols-outlined text-3xl">
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                      <span className="material-symbols-outlined text-5xl">
                         {product.placeholder}
                       </span>
                     </div>
                   )}
+                  {!product.defaultVariantId && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                      <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
+                    disabled={!product.defaultVariantId}
+                    className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      add_shopping_cart
+                    </span>
+                  </button>
+                  {product.badge && (
+                    <span className="absolute top-3 left-3 bg-[#ff4b86] text-white px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm">
+                      {product.badge}
+                    </span>
+                  )}
                 </div>
-                <div className="px-3 py-3 text-left">
-                  <h4
-                    className="text-[11px] font-semibold leading-tight text-black line-clamp-1 sm:text-sm"
+                <div className="p-3 flex flex-col flex-grow">
+                  <h3
+                    className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]"
                     style={getCmsFontStyle(productFonts.body)}
                   >
                     {product.name}
-                  </h4>
+                  </h3>
                   <p
-                    className="mt-1 text-[10px] font-bold text-[#ff4b86] sm:text-xs"
+                    className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]"
                     style={getCmsFontStyle(productFonts.body)}
                   >
-                    {formatCurrency(product.price)}
+                    {product.description || "\u00A0"}
                   </p>
+                  <div className="flex items-center gap-2 mt-auto">
+                    <span
+                      className="text-base font-black text-[#ff4b86]"
+                      style={getCmsFontStyle(productFonts.body)}
+                    >
+                      {formatCurrency(product.price)}
+                    </span>
+                    {product.originalPrice ? (
+                      <span
+                        className="text-xs text-gray-400 line-through font-light"
+                        style={getCmsFontStyle(productFonts.body)}
+                      >
+                        {formatCurrency(product.originalPrice)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </Link>
             ))}
