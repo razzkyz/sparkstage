@@ -613,13 +613,23 @@ const OnStage = () => {
           className="w-full h-[75vh] relative group cursor-pointer overflow-hidden block"
         >
           <img
-            src="/images/heroBanner/homeBanner.webp"
+            src="/images/heroBanner/NewHeroBanner.webp"
             alt="Become the star"
-            className="absolute inset-0 w-full h-full object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center sm:hidden"
             fetchPriority="high"
             loading="eager"
             decoding="sync"
           />
+
+          <img
+            src="/images/heroBanner/LandscapeHeroBanner.webp"
+            alt="Become the star"
+            className="absolute inset-0 w-full h-full object-cover object-center hidden sm:block"
+            fetchPriority="high"
+            loading="eager"
+            decoding="sync"
+          />
+
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
           {/* Overlay Button */}
@@ -667,7 +677,7 @@ const OnStage = () => {
       </div>
 
       {/* Ticket Banner */}
-      <div className="w-full py-8 shadow-sm mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
+      <div className="w-full py-8  mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
         {/* Ticket Header Title */}
         <div className="text-center mb-4 lg:mb-6 px-4 relative z-20">
           <h2 className="text-xl md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
@@ -684,13 +694,6 @@ const OnStage = () => {
           />
         </Link>
       </div>
-      {/* MERCHANDISE Header Title */}
-      {/* <div className="text-center px-4 py-6 lg:mb-6 relative z-20">
-          <h2 className="text-xl italic md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
-          MERCHANDISE SHOP
-          </h2>
-          
-          </div> */}
 
       {/*  Grid Section dinonaktifkan*/}
       {/* <section className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6 shadow-sm">
@@ -765,14 +768,7 @@ const OnStage = () => {
       </section> */}
 
       {/* Slider Card Product All */}
-      <div className="py-10 shadow-sm">
-        <div className="text-center px-4 py-6 relative z-20">
-          <h2 className="text-5xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
-            Store Collection
-          </h2>
-          <div className="w-32 md:w-40 h-2 bg-black mx-auto mt-2 rounded-full" />
-        </div>
-
+      <div className="py-7 shadow-sm">
         {/* Glam Room Slider */}
         <InfiniteProductSlider
           title="GLAM ROOM"
