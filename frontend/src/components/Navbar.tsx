@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StageQrScannerModal } from "./StageQrScannerModal";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import Logo from "./Logo";
+// import Logo from "./Logo";
 import {
   Camera,
   CalendarDays,
@@ -187,17 +187,25 @@ const Navbar = () => {
         className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : ""}`}
       >
         {/* Top Bar */}
-        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500 py-2">
+        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-2 lg:py-1">
               <div className="w-1/3 flex items-center gap-3">
                 {/* Desktop: Stage 55 logo + Loyalty Points (jika login) */}
                 <Link to="/" className="hidden lg:flex items-center">
-                  <Logo className="h-[2.5rem] md:h-[3.5rem]" />
+                  {/* <Logo className="h-[2.5rem] md:h-[3.5rem]" /> */}
+                  <img
+                    src="/images/landing/HeaderLogo.webp"
+                    alt="Stage 55"
+                    className="h-15 w-auto md:h-18 object-contain "
+                    fetchPriority="high"
+                    width={150}
+                    height={48}
+                  />
                   <img
                     src="/images/landing/stage55.png"
                     alt="Stage 55"
-                    className="h-10 w-auto md:h-12 object-contain"
+                    className="h-10 w-auto md:h-12 object-contain "
                     fetchPriority="high"
                     width={150}
                     height={48}
@@ -226,7 +234,15 @@ const Navbar = () => {
                   className="inline-flex items-center"
                   aria-label="Home"
                 >
-                  <Logo className="h-[2.5rem] md:h-[3.5rem]" />
+                  {/* <Logo className="h-[2.5rem] md:h-[3.5rem]" /> */}
+                  <img
+                    src="/images/landing/HeaderLogo.webp"
+                    alt="Stage 55"
+                    className="h-[4rem] md:h-[5rem] w-auto object-cover"
+                    fetchPriority="high"
+                    width={200}
+                    height={64}
+                  />
                   <img
                     src="/images/landing/stage55.png"
                     alt="Stage 55"
@@ -354,7 +370,7 @@ const Navbar = () => {
 
                   <Link
                     to="/my-orders"
-                    className="relative text-gray-600 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors hidden"
                     title={t("nav.myOrders")}
                   >
                     <ReceiptText className="h-5 w-5" />
@@ -447,7 +463,7 @@ const Navbar = () => {
 
                   <Link
                     to="/my-orders"
-                    className="relative text-gray-600 hover:text-main-600 transition-colors"
+                    className="relative text-gray-600 hover:text-main-600 transition-colors hidden"
                     aria-label={t("nav.myOrders")}
                     title={t("nav.myOrders")}
                   >
