@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-// import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toLocalDateString } from "../utils/timezone";
 import {
@@ -55,10 +55,10 @@ const Booking = () => {
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
 
-  // const processCarouselRef = useRef<HTMLElement>(null);
-  // const processTitleRef = useRef<HTMLDivElement>(null);
-  // const processTouchStartX = useRef<number>(0);
-  // const processTouchEndX = useRef<number>(0);
+  const processCarouselRef = useRef<HTMLElement>(null);
+  const processTitleRef = useRef<HTMLDivElement>(null);
+  const processTouchStartX = useRef<number>(0);
+  const processTouchEndX = useRef<number>(0);
 
   const { data: processBanners = [] } = useBanners("process");
 
@@ -69,35 +69,35 @@ const Booking = () => {
     return currentIndex - 1;
   }, [currentIndex, processBanners.length]);
 
-  // const slidesToRender = useMemo(() => {
-  //   if (processBanners.length === 0) return [];
-  //   if (processBanners.length === 1) return processBanners;
-  //   return [
-  //     processBanners[processBanners.length - 1],
-  //     ...processBanners,
-  //     processBanners[0],
-  //   ];
-  // }, [processBanners]);
+  const slidesToRender = useMemo(() => {
+    if (processBanners.length === 0) return [];
+    if (processBanners.length === 1) return processBanners;
+    return [
+      processBanners[processBanners.length - 1],
+      ...processBanners,
+      processBanners[0],
+    ];
+  }, [processBanners]);
 
-  // const nextSlide = () => {
-  //   if (!isTransitionEnabled) return;
-  //   setCurrentIndex((prev) => prev + 1);
-  // };
+  const nextSlide = () => {
+    if (!isTransitionEnabled) return;
+    setCurrentIndex((prev) => prev + 1);
+  };
 
-  // const prevSlide = () => {
-  //   if (!isTransitionEnabled) return;
-  //   setCurrentIndex((prev) => prev - 1);
-  // };
+  const prevSlide = () => {
+    if (!isTransitionEnabled) return;
+    setCurrentIndex((prev) => prev - 1);
+  };
 
-  // const handleTransitionEnd = () => {
-  //   if (currentIndex === 0) {
-  //     setIsTransitionEnabled(false);
-  //     setCurrentIndex(processBanners.length);
-  //   } else if (currentIndex === processBanners.length + 1) {
-  //     setIsTransitionEnabled(false);
-  //     setCurrentIndex(1);
-  //   }
-  // };
+  const handleTransitionEnd = () => {
+    if (currentIndex === 0) {
+      setIsTransitionEnabled(false);
+      setCurrentIndex(processBanners.length);
+    } else if (currentIndex === processBanners.length + 1) {
+      setIsTransitionEnabled(false);
+      setCurrentIndex(1);
+    }
+  };
 
   useEffect(() => {
     if (!isTransitionEnabled) {
@@ -162,10 +162,10 @@ const Booking = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       {/* Banner OnStage Dinonaktikan*/}
-      {/* {processBanners.length > 0 && (
+      {processBanners.length > 0 && (
         <section
           ref={processCarouselRef}
-          className="w-full relative overflow-hidden bg-white mb-16 shadow-sm"
+          className="w-full relative overflow-hidden bg-white mb-16"
         >
           {(processBanners[activeRealIndex]?.title_image_url ||
             processBanners[activeRealIndex]?.title) && (
@@ -188,10 +188,10 @@ const Booking = () => {
                 </h2>
               )}
             </div>
-          )} */}
+          )}
 
-      {/* Carousel Container */}
-      {/* <div className="relative w-full lg:px-16 xl:px-24 shadow-sm">
+          {/* Carousel Container */}
+          <div className="relative w-full lg:px-16 xl:px-24">
             <div
               className="overflow-hidden w-full relative rounded-none"
               onTouchStart={(e) => {
@@ -230,7 +230,7 @@ const Booking = () => {
                       className={`block w-full h-full ${!processBanner.link_url ? "cursor-default pointer-events-none" : ""}`}
                     >
                       {/* Process Image */}
-      {/* <div className="relative w-full bg-gray-100 dark:bg-gray-900 group overflow-hidden">
+                      <div className="relative w-full bg-gray-100 dark:bg-gray-900 group overflow-hidden">
                         {processBanner.image_url?.match(
                           /\.(mp4|webm|ogg)(\?.*)?$/i,
                         ) ? (
@@ -249,10 +249,10 @@ const Booking = () => {
                             className="w-full h-auto object-contain pointer-events-none transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
-                      </div> */}
+                      </div>
 
-      {/* Process Subtitle Text */}
-      {/* {processBanner.subtitle && (
+                      {/* Process Subtitle Text */}
+                      {processBanner.subtitle && (
                         <div className="p-6 md:p-8 text-center bg-white">
                           <p className="text-black font-bold uppercase tracking-widest md:text-2xl leading-relaxed whitespace-pre-wrap">
                             {processBanner.subtitle}
@@ -263,10 +263,10 @@ const Booking = () => {
                   </div>
                 ))}
               </div>
-            </div> */}
+            </div>
 
-      {/* Navigation Buttons for Process Carousel */}
-      {/* {processBanners.length > 1 && (
+            {/* Navigation Buttons for Process Carousel */}
+            {processBanners.length > 1 && (
               <>
                 <button
                   type="button"
@@ -284,10 +284,10 @@ const Booking = () => {
                 </button>
               </>
             )}
-          </div> */}
+          </div>
 
-      {/* Process Carousel Indicators */}
-      {/* {processBanners.length > 1 && (
+          {/* Process Carousel Indicators */}
+          {processBanners.length > 1 && (
             <div className="flex justify-center gap-3 mt-2">
               {processBanners.map((_, idx) => (
                 <button
@@ -307,9 +307,8 @@ const Booking = () => {
               ))}
             </div>
           )}
+        </section>
       )}
-        </section> */}
-
       {/* Header */}
       <section className="py-12 px-6 md:px-12 lg:px-20 border-b border-gray-200">
         <div className="max-w-7xl mx-auto">

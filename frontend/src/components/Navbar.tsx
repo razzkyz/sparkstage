@@ -249,7 +249,7 @@ const Navbar = () => {
                       onClick={() => setScannerOpen(true)}
                       title="Scan Stage QR"
                       aria-label="Scan Stage QR Code"
-                      className="relative hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40 flex-shrink-0"
+                      className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40 flex-shrink-0"
                       style={{
                         background:
                           "linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)",
@@ -399,7 +399,7 @@ const Navbar = () => {
                       type="button"
                       onClick={() => setScannerOpen(true)}
                       aria-label="Scan Stage QR Code"
-                      className="relative hidden flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all duration-200 flex-shrink-0"
+                      className="relative  flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all duration-200 flex-shrink-0"
                       style={{
                         background:
                           "linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)",
