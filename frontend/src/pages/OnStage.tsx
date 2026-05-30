@@ -102,12 +102,16 @@ function ProductCard({
 
 function InfiniteProductSlider({
   title,
+  titleImage,
+  titleImageClassName,
   viewAllLink,
   products: rawProducts,
   loading,
   onAddToCart,
 }: {
-  title: string;
+  title?: string;
+  titleImage?: string;
+  titleImageClassName?: string;
   viewAllLink: string;
   products: Product[];
   loading: boolean;
@@ -268,9 +272,20 @@ function InfiniteProductSlider({
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Header */}
         <div className="flex items-end justify-between mb-6 md:mb-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-black uppercase tracking-tighter leading-none drop-shadow-sm">
-            {title}
-          </h2>
+          {titleImage ? (
+            <img
+              src={titleImage}
+              alt={title || "Section Title"}
+              className={
+                titleImageClassName ||
+                "h-8 sm:h-10 md:h-12 lg:h-16 object-contain drop-shadow-sm"
+              }
+            />
+          ) : (
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-black uppercase tracking-tighter leading-none drop-shadow-sm">
+              {title}
+            </h2>
+          )}
           <Link
             to={viewAllLink}
             className="text-black font-bold uppercase tracking-widest border-b-2 border-black pb-0.5 hover:text-pink-400 transition-color whitespace-nowrap text-xs md:text-sm mb-1"
@@ -695,83 +710,13 @@ const OnStage = () => {
         </Link>
       </div>
 
-      {/*  Grid Section dinonaktifkan*/}
-      {/* <section className="w-full py-4 mt-2 flex flex-col items-center  justify-center px-4 sm:px-6 shadow-sm">
-        <section className="w-full bg-white pb-12 md:pb-16 flex justify-center">
-          <div className="w-full mx-auto px-4 sm:px-6 md:px-8 max-w-[1600px] flex justify-center ">
-            <div className="grid grid-cols-1 sm:grid-cols-3   gap-4 md:gap-6">
-              
-              <Link
-                to="/glam"
-                className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
-              >
-                <img
-                  src="/images/glam page assets/VISUAL 1.webp"
-                  alt="Glam Room"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-                <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
-                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">
-                    GLAM ROOM
-                  </h3>
-                  <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">
-                    LIHAT KOLEKSI
-                  </span>
-                </div>
-              </Link>
-
-
-              <Link
-                to="/charm-bar"
-                className="group block relative w-full aspect-[4/4] xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
-              >
-                <img
-                  src="/images/Charm Bar assets/CHARM VISUAL 1.webp"
-                  alt="CharmBar"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-                <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
-                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">
-                    CHARM BAR
-                  </h3>
-                  <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">
-                    LIHAT KOLEKSI
-                  </span>
-                </div>
-              </Link>
-
-
-              <Link
-                to="/shop"
-                className="group block relative w-full aspect-[4/4]  xl:aspect-[4/5] max-w-[500px] overflow-hidden bg-gray-100 rounded-lg"
-              >
-                <img
-                  src="/images/Charm Bar assets/CHARM VISUAL 2.webp"
-                  alt="Merchandise"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300"></div>
-                <div className="absolute bottom-6 left-0 w-full text-center z-10 px-4">
-                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-lg mb-2">
-                    SPARK CLUB
-                  </h3>
-                  <span className="inline-block text-white font-bold uppercase tracking-widest border-b-2 border-white pb-1 drop-shadow-md text-xs md:text-sm">
-                    LIHAT KOLEKSI
-                  </span>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </section>
-      </section> */}
-
       {/* Slider Card Product All */}
       <div className="py-7 shadow-sm">
         {/* Glam Room Slider */}
         <InfiniteProductSlider
           title="GLAM ROOM"
+          titleImage="/images/landing/Glam.webp"
+          titleImageClassName="h-18 sm:h-24 md:h-28 lg:h-36 object-cover drop-shadow-sm"
           viewAllLink="/glam"
           products={glamProducts}
           loading={productsLoading}
@@ -781,6 +726,8 @@ const OnStage = () => {
         {/* Charm Bar Slider */}
         <InfiniteProductSlider
           title="CHARM BAR"
+          titleImage="/images/landing/Lucky Charm Bar.webp"
+          titleImageClassName="h-16 sm:h-20 md:h-24 lg:h-32 object-cover drop-shadow-sm"
           viewAllLink="/charm-bar"
           products={charmProducts}
           loading={productsLoading}
@@ -790,64 +737,14 @@ const OnStage = () => {
         {/* Spark Club Slider */}
         <InfiniteProductSlider
           title="SPARK CLUB"
+          titleImage="/images/landing/SPARK CLUB.webp"
+          titleImageClassName="h-16 sm:h-20 md:h-22 lg:h-30 object-cover drop-shadow-sm"
           viewAllLink="/shop"
           products={featuredProducts}
           loading={productsLoading}
           onAddToCart={handleAddToCart}
         />
       </div>
-      {/* Instagram Feed Section */}
-      {/* <section className="w-full bg-white py-16 md:py-24">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 text-center mb-10 md:mb-16">
-          <p className="text-xl md:text-2xl font-bold italic tracking-widest mb-4">
-            Follow Us On IG
-          </p>
-          <a
-            href="https://instagram.com/Spark_Stage55"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block hover:opacity-80 transition-opacity w-full"
-          >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-black uppercase tracking-tighter leading-none break-all sm:break-normal px-4">
-              @SPARK_STAGE55
-            </h2>
-          </a>
-        </div>
-
-        <div className="w-full mx-auto max-w-[1800px] px-2 md:px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-            {[
-              "/images/glam page assets/STAR GLITTER TRANSPARENT BG/AURA POP.png",
-              "/images/landing/READY TO BE A STAR.PNG",
-              "/images/glam page assets/STAR GLITTER TRANSPARENT BG/PINK RUSH.png",
-              "/images/Charm Bar assets/CHARM VISUAL 3.png",
-              "/images/glam page assets/STAR GLITTER TRANSPARENT BG/GOLD DRIP.png",
-              "/images/landing/neon.png",
-              "/images/glam page assets/STAR GLITTER TRANSPARENT BG/SILVER BLINK.png",
-              "/images/glam page assets/STAR GLITTER TRANSPARENT BG/MIDNIGHT FX.png",
-            ].map((imgUrl, idx) => (
-              <a
-                key={idx}
-                href="https://instagram.com/Spark_Stage55"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block relative aspect-square overflow-hidden bg-gray-100 group"
-              >
-                <img
-                  src={imgUrl}
-                  alt={`Instagram feed ${idx + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                  <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-bold tracking-widest uppercase text-sm md:text-base">
-                    View on IG
-                  </span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section> */}
 
       {/* News Banner Section */}
       <section
