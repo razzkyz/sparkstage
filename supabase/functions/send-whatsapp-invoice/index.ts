@@ -310,24 +310,7 @@ serve(async (req) => {
     const { url: supabaseUrl, serviceRoleKey: supabaseServiceKey } = getSupabaseEnv();
     const supabase = createServiceClient(supabaseUrl, supabaseServiceKey);
 
-    // Get device token (primary) or fall back to account token
-    let fontneToken = Deno.env.get("FONNTE_DEVICE_TOKEN");
-    if (!fontneToken) {
-      fontneToken = Deno.env.get("FONNTE_API_TOKEN");
-    }
-    
-    if (!fontneToken) {
-      console.error("[WhatsApp] Missing FONNTE_DEVICE_TOKEN or FONNTE_API_TOKEN");
-      return jsonErrorWithDetails(
-        req,
-        500,
-        {
-          error: "WhatsApp service not configured",
-          code: "MISSING_CONFIG",
-        },
-        { allowAllOrigins: true },
-      );
-    }
+    // Fonnte token check removed. n8n will handle WhatsApp delivery.
 
     // Parse request body
     const body = (await req.json()) as WhatsAppInvoiceParams;
@@ -487,15 +470,46 @@ serve(async (req) => {
       messageLength: invoiceMessage.length,
     });
 
-    // Send via Fonnte
-    const fontneResult: SendWhatsAppResult = await sendWhatsAppViaFonnte({
-      deviceToken: fontneToken,
-      destinationPhone: phoneNumber,
-      message: invoiceMessage,
-    });
+    // Send via n8n Webhook
+    let n8nSuccess = false;
+    let n8nError = "";
+    let n8nMessageId = `n8n_${Date.now()}`;
+    
+    try {
+      const n8nPayload = {
+        customer_name: customerName,
+        phone_number: phoneNumber,
+        invoice_number: orderNumber,
+        visit_date: bookingDate,
+        visit_time: sessionTime,
+        payment_status: "PAID",
+        ticket_code: ticketCode
+      };
+
+      const n8nWebhookUrl = "https://sparkland.app.n8n.cloud/webhook/spark-stage-paid-ticket";
+      const response = await fetch(n8nWebhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(n8nPayload),
+      });
+
+      if (response.ok) {
+        n8nSuccess = true;
+        console.log("[WhatsApp] Successfully sent payload to n8n webhook");
+      } else {
+        const errText = await response.text();
+        n8nError = `n8n API Error: ${response.status} - ${errText}`;
+        console.error("[WhatsApp]", n8nError);
+      }
+    } catch (err) {
+      n8nError = err instanceof Error ? err.message : String(err);
+      console.error("[WhatsApp] Exception calling n8n webhook:", n8nError);
+    }
 
     // Save WhatsApp message record regardless of result
-    const deliveryStatus = fontneResult.success ? "submitted" : "failed";
+    const deliveryStatus = n8nSuccess ? "submitted" : "failed";
     await saveWhatsAppMessage(supabase, {
       orderId: order.id,
       orderNumber: order.order_number,
@@ -506,14 +520,14 @@ serve(async (req) => {
       bookingDate,
       sessionTime,
       quantity,
-      fontneMessageId: fontneResult.messageId || `fonnte_error_${Date.now()}`,
+      fontneMessageId: n8nSuccess ? n8nMessageId : `n8n_error_${Date.now()}`,
       deliveryStatus,
-      errorMessage: fontneResult.error || undefined,
+      errorMessage: n8nError || undefined,
     });
 
-    if (!fontneResult.success) {
-      console.error("[WhatsApp] Failed to send invoice:", {
-        error: fontneResult.error,
+    if (!n8nSuccess) {
+      console.error("[WhatsApp] Failed to trigger n8n webhook:", {
+        error: n8nError,
         orderNumber,
       });
 
@@ -521,20 +535,19 @@ serve(async (req) => {
         req,
         500,
         {
-          error: "Failed to send WhatsApp message",
+          error: "Failed to trigger n8n webhook",
           code: "SEND_FAILED",
           details: {
-            fonnte_error: fontneResult.error,
-            fonnte_details: fontneResult.details,
+            n8n_error: n8nError,
           },
         },
         { allowAllOrigins: true },
       );
     }
 
-    console.log("[WhatsApp] Invoice sent successfully:", {
+    console.log("[WhatsApp] Invoice sent successfully via n8n:", {
       orderNumber,
-      messageId: fontneResult.messageId,
+      messageId: n8nMessageId,
       phoneNumber: phoneNumber.substring(0, 5) + "***",
     });
 
