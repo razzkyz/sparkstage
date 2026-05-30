@@ -25,7 +25,16 @@ const StageScanPage = () => {
         try {
             setLoading(true);
             setScanStatus('scanning');
-            // Fetch stage info
+
+            // 1. User HARUS login agar nama & email tercatat di admin analytics
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user?.id) {
+                // Belum login → redirect ke login, setelah login kembali ke halaman scan ini
+                navigate('/login', { replace: true, state: { returnTo: `/scan/${stageCode}` } });
+                return;
+            }
+
+            // 2. Ambil data stage berdasarkan kode QR
             const { data: stageData, error: stageError } = await supabase
                 .from('stages')
                 .select('*')
@@ -41,17 +50,18 @@ const StageScanPage = () => {
 
             setStage(stageData);
 
-            // Check if stage is active
+            // 3. Cek apakah stage aktif
             if (stageData.status !== 'active') {
                 setErrorMessage(`This stage is currently under ${stageData.status}. Please try another stage.`);
                 setScanStatus('error');
                 return;
             }
 
-            // Record the scan (anonymous - no auth required for foot traffic tracking)
+            // 4. Rekam scan beserta user_id yang sudah login
             const { error: scanError } = await supabase.from('stage_scans').insert({
                 stage_id: stageData.id,
                 user_agent: navigator.userAgent,
+                user_id: session.user.id,
             }).abortSignal(timeoutSignal);
 
             if (scanError) {
@@ -71,7 +81,7 @@ const StageScanPage = () => {
             cleanup();
             setLoading(false);
         }
-    }, [stageCode]);
+    }, [stageCode, navigate]);
 
     useEffect(() => {
         if (stageCode) {

@@ -6,6 +6,7 @@ import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { useStageAnalytics, type StageAnalyticsTimeFilter, type StageAnalyticsData } from '../../hooks/useStageAnalytics';
 import { useCurrentUserStageLocations } from '../../hooks/useCurrentUserStageLocations';
+import { useRecentStageScans } from '../../hooks/useRecentStageScans';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
@@ -25,6 +26,21 @@ const StageAnalytics = () => {
     const { data: liveVisitors, isLoading: isLiveLoading, refetch: refetchLive } = useCurrentUserStageLocations({
         enabled: isAdmin,
     });
+
+    const { data: recentScans, isLoading: isRecentScansLoading } = useRecentStageScans({
+        enabled: isAdmin,
+    });
+
+    const getRelativeTime = (dateStr: string) => {
+        const diffMs = Date.now() - new Date(dateStr).getTime();
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffSecs < 30) return 'Just now';
+        if (diffMins < 1) return `${diffSecs}s ago`;
+        if (diffMins < 60) return `${diffMins}m ago`;
+        return `${diffHours}h ago`;
+    };
 
     const stages = data ?? EMPTY_STAGES;
 
@@ -313,6 +329,91 @@ const StageAnalytics = () => {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Recent Scans Activity Feed */}
+                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden mt-6">
+                    <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-bold text-gray-900">Recent Scans Activity</h3>
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+                                <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                <span className="text-xs font-bold text-blue-700">Auto-refresh 10s</span>
+                            </div>
+                        </div>
+                        <span className="text-xs text-gray-400">50 scan terbaru dari semua stage</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                                <tr>
+                                    <th className="px-6 py-4 font-semibold">User</th>
+                                    <th className="px-6 py-4 font-semibold">Email</th>
+                                    <th className="px-6 py-4 font-semibold">Stage</th>
+                                    <th className="px-6 py-4 font-semibold text-right">Waktu Scan</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {isRecentScansLoading ? (
+                                    Array.from({ length: 8 }).map((_, idx) => (
+                                        <TableRowSkeleton key={`recent-scan-skel-${idx}`} columns={4} />
+                                    ))
+                                ) : !recentScans || recentScans.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4}>
+                                            <div className="text-center py-12">
+                                                <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">qr_code_scanner</span>
+                                                <p className="text-sm text-gray-400">Belum ada scan yang tercatat.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    recentScans.map((scan) => (
+                                        <tr key={scan.scan_id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center flex-shrink-0 border border-pink-200 text-pink-600 font-bold uppercase text-xs">
+                                                        {scan.display_name.charAt(0)}
+                                                    </div>
+                                                    <span className="font-semibold text-gray-900 truncate max-w-[160px]">{scan.display_name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <span className="text-gray-500 text-xs truncate max-w-[200px] block">{scan.email}</span>
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                                                    <span className="font-semibold text-gray-800">{scan.stage_name}</span>
+                                                    {scan.stage_zone && (
+                                                        <span className="text-xs text-gray-400">· {scan.stage_zone}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-3 text-right">
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-xs font-semibold text-gray-700">{getRelativeTime(scan.scanned_at)}</span>
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {new Date(scan.scanned_at).toLocaleString('id-ID', {
+                                                            day: '2-digit', month: 'short',
+                                                            hour: '2-digit', minute: '2-digit',
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {recentScans && recentScans.length > 0 && (
+                        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
+                            <p className="text-xs text-gray-400">Menampilkan {recentScans.length} scan terbaru · Refresh otomatis setiap 10 detik</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>
