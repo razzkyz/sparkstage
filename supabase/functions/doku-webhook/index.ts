@@ -7,10 +7,10 @@ import {
   processProductOrderTransition,
   processTicketOrderTransition,
 } from '../_shared/payment-processors.ts'
-import { 
-  logWebhookEvent, 
+import {
+  logWebhookEvent,
   sendWhatsAppInvoiceViaFontneIfNeeded,
-  type TicketOrderItem 
+  type TicketOrderItem
 } from '../_shared/payment-effects.ts'
 
 type PaymentType = 'ticket' | 'product'
@@ -352,14 +352,14 @@ serve(async (req) => {
     const matchedSignatureTarget =
       requestId && requestTimestamp && providedSignature
         ? await verifyDokuSignatureCandidates({
-            clientId,
-            requestId,
-            requestTimestamp,
-            requestTargets: requestTargetCandidates,
-            secretKey: dokuEnv.secretKey,
-            rawBody,
-            providedSignature,
-          })
+          clientId,
+          requestId,
+          requestTimestamp,
+          requestTargets: requestTargetCandidates,
+          secretKey: dokuEnv.secretKey,
+          rawBody,
+          providedSignature,
+        })
         : null
 
     console.log('[DOKU WEBHOOK] Signature verification result:', {
@@ -725,7 +725,7 @@ serve(async (req) => {
     }
 
     const orderItemsRows = (order as { order_items?: unknown }).order_items
-    
+
     // CRITICAL: Validate payment type isolation before processing
     // Ensure ticket invoice (SPK-) is only used for ticket orders
     const isPaymentTypeValid = validatePaymentTypeMatch('ticket', invoicePaymentType, orderNumber)

@@ -57,17 +57,23 @@ const StageScanPage = () => {
                 return;
             }
 
-            // 4. Rekam scan beserta user_id yang sudah login
-            const { error: scanError } = await supabase.from('stage_scans').insert({
+            // 4. Rekam scan ke stage_scan_logs (tabel baru, UUID pk, user wajib login)
+            const { error: scanError } = await supabase.from('stage_scan_logs').insert({
+                user_id: session.user.id,
+                stage_id: stageData.id,
+                scanned_at: new Date().toISOString(),
+            }).abortSignal(timeoutSignal);
+
+            if (scanError) {
+                console.error('Error recording scan log:', scanError);
+            }
+
+            // Juga tetap catat di stage_scans untuk foot-traffic counter yang sudah ada
+            await supabase.from('stage_scans').insert({
                 stage_id: stageData.id,
                 user_agent: navigator.userAgent,
                 user_id: session.user.id,
             }).abortSignal(timeoutSignal);
-
-            if (scanError) {
-                console.error('Error recording scan:', scanError);
-                // Don't show error to user - scan tracking is secondary
-            }
 
             setScanStatus('success');
         } catch (error) {

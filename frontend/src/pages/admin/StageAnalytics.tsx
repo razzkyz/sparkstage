@@ -6,7 +6,7 @@ import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { useStageAnalytics, type StageAnalyticsTimeFilter, type StageAnalyticsData } from '../../hooks/useStageAnalytics';
 import { useCurrentUserStageLocations } from '../../hooks/useCurrentUserStageLocations';
-import { useRecentStageScans } from '../../hooks/useRecentStageScans';
+import { useStageScanLogs } from '../../hooks/useStageScanLogs';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
@@ -27,7 +27,7 @@ const StageAnalytics = () => {
         enabled: isAdmin,
     });
 
-    const { data: recentScans, isLoading: isRecentScansLoading } = useRecentStageScans({
+    const { data: recentScans, isLoading: isRecentScansLoading } = useStageScanLogs({
         enabled: isAdmin,
     });
 
@@ -370,7 +370,7 @@ const StageAnalytics = () => {
                                     </tr>
                                 ) : (
                                     recentScans.map((scan) => (
-                                        <tr key={scan.scan_id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={scan.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center flex-shrink-0 border border-pink-200 text-pink-600 font-bold uppercase text-xs">
@@ -411,7 +411,7 @@ const StageAnalytics = () => {
 
                     {recentScans && recentScans.length > 0 && (
                         <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-                            <p className="text-xs text-gray-400">Menampilkan {recentScans.length} scan terbaru · Refresh otomatis setiap 10 detik</p>
+                            <p className="text-xs text-gray-400">Menampilkan {recentScans.length} scan terbaru · Data dari <strong>stage_scan_logs</strong> · Refresh otomatis setiap 10 detik</p>
                         </div>
                     )}
                 </div>
