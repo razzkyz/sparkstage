@@ -5,8 +5,8 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { TAB_RETURN_EVENT } from '../../constants/browserEvents';
 import { useStageAnalytics, type StageAnalyticsTimeFilter, type StageAnalyticsData } from '../../hooks/useStageAnalytics';
-import { useCurrentUserStageLocations } from '../../hooks/useCurrentUserStageLocations';
-import { useStageScanLogs } from '../../hooks/useStageScanLogs';
+// import { useCurrentUserStageLocations } from '../../hooks/useCurrentUserStageLocations';
+// import { useStageScanLogs } from '../../hooks/useStageScanLogs';
 import DashboardStatSkeleton from '../../components/skeletons/DashboardStatSkeleton';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
 import { useToast } from '../../components/Toast';
@@ -23,6 +23,7 @@ const StageAnalytics = () => {
         enabled: isAdmin,
     });
 
+    /* 
     const { data: liveVisitors, isLoading: isLiveLoading, refetch: refetchLive } = useCurrentUserStageLocations({
         enabled: false, // temporarily disabled
     });
@@ -41,6 +42,7 @@ const StageAnalytics = () => {
         if (diffMins < 60) return `${diffMins}m ago`;
         return `${diffHours}h ago`;
     };
+    */
 
     const stages = data ?? EMPTY_STAGES;
 
