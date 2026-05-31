@@ -35,6 +35,7 @@ const TabletQRScanner = lazy(() => import('../../pages/admin/TabletQRScanner'));
 const SalesReport = lazy(() => import('../../pages/admin/SalesReport'));
 const AuditLogsPage = lazy(() => import('../../pages/admin/AuditLogsPage'));
 const AdminPointsManager = lazy(() => import('../../pages/admin/AdminPointsManager'));
+const ScanTrackerPage = lazy(() => import('../../pages/admin/ScanTrackerPage'));
 
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/dashboard', Page: Dashboard },
@@ -70,4 +71,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: '/admin/audit-logs', Page: AuditLogsPage },
   { path: '/admin/loyalty-points', Page: AdminPointsManager },
   { path: '/admin/divisions', Page: DivisionManager },
+  { path: '/admin/scan-tracker', Page: ScanTrackerPage },
 ];
