@@ -618,10 +618,9 @@ serve(async (req) => {
       })
     }
 
-    console.log('[DOKU WEBHOOK] Looking up ticket order:', orderNumber)
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, user_id, order_number, status, tickets_issued_at, capacity_released_at, order_items(*)')
+      .select('id, user_id, order_number, status, tickets_issued_at, capacity_released_at, customer_name, customer_phone, order_items(*)')
       .eq('order_number', orderNumber)
       .single()
 
@@ -828,37 +827,75 @@ serve(async (req) => {
     // Send WhatsApp invoice if payment is successful
     if (providerStatus === 'paid' && result.applied) {
       console.log('[DOKU WEBHOOK] Sending WhatsApp invoice for ticket order:', orderNumber)
-      try {
-        const whatsappResult = await sendWhatsAppInvoiceViaFontneIfNeeded({
-          supabase,
-          order: order as {
-            id: number
-            order_number: string
-            user_id: string | null
-            status?: string | null
-            tickets_issued_at?: string | null
-            capacity_released_at?: string | null
-          },
-          orderType: 'ticket',
-          nowIso,
-        })
+      
+      // ─────────────────────────────────────────────
+      // Trigger n8n → kirim WhatsApp invoice
+      // ─────────────────────────────────────────────
+      const N8N_WEBHOOK_URL = Deno.env.get("N8N_INVOICE_WEBHOOK_URL");
 
-        console.log('[DOKU WEBHOOK] WhatsApp invoice result:', whatsappResult)
-      } catch (whatsappError) {
-        // Log WhatsApp error but don't fail the webhook
-        const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError)
-        console.error('[DOKU WEBHOOK] WhatsApp invoice failed (non-fatal):', errorMsg)
-        await logWebhookEvent(supabase, {
-          orderNumber,
-          eventType: 'whatsapp_invoice_send_error',
-          payload: {
-            error: errorMsg,
-            order_number: orderNumber,
-          },
-          success: false,
-          errorMessage: errorMsg,
-          processedAt: nowIso,
-        })
+      // Normalize phone: 08xxx → 628xxx, +628xxx → 628xxx
+      function normalizePhoneID(raw: string): string {
+        let phone = (raw || '').replace(/[\s\-+]/g, ""); // hapus spasi, dash, plus
+        if (phone.startsWith("0")) phone = "62" + phone.slice(1);
+        if (phone.startsWith("8")) phone = "62" + phone; // edge case
+        return phone;
+      }
+
+      try {
+        if (N8N_WEBHOOK_URL) {
+          const orderItemsRows = (order as any).order_items || [];
+          const firstItem = Array.isArray(orderItemsRows) && orderItemsRows.length > 0 ? orderItemsRows[0] : null;
+          const visit_date = firstItem?.selected_date || '';
+          let visit_time = 'TBA';
+          if (firstItem?.selected_time_slots && Array.isArray(firstItem.selected_time_slots) && firstItem.selected_time_slots.length > 0) {
+            const timeStr = String(firstItem.selected_time_slots[0]);
+            const match = timeStr.match(/^\d{2}:\d{2}/);
+            if (match) visit_time = `${match[0]} WIB`;
+          }
+
+          let ticket_code = '';
+          if (firstItem?.id) {
+            const { data: tktData } = await supabase
+              .from('purchased_tickets')
+              .select('ticket_code')
+              .eq('order_item_id', firstItem.id)
+              .limit(1)
+              .single();
+            if (tktData?.ticket_code) ticket_code = tktData.ticket_code;
+          }
+
+          const n8nPayload = {
+            customer_name: (order as any).customer_name || 'Customer',
+            phone_number: normalizePhoneID((order as any).customer_phone || ''),
+            invoice_number: orderNumber,
+            visit_date: visit_date,        // sesuaikan format dari DB
+            visit_time: visit_time,        // sesuaikan format dari DB
+            payment_status: "PAID",
+            ticket_code: ticket_code || orderNumber,
+          };
+
+          const n8nResp = await fetch(N8N_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(n8nPayload),
+          });
+
+          if (!n8nResp.ok) {
+            console.error("[n8n] webhook failed", {
+              status: n8nResp.status,
+              body: await n8nResp.text(),
+              invoice: orderNumber,
+            });
+            // JANGAN throw — biar response ke DOKU tetap 200 OK (transaksi tetap sukses)
+          } else {
+            console.log("[n8n] invoice WhatsApp queued", { invoice: orderNumber });
+          }
+        } else {
+          console.warn("[n8n] N8N_INVOICE_WEBHOOK_URL is not set, skipping n8n trigger");
+        }
+      } catch (err) {
+        console.error("[n8n] webhook error", { error: (err as Error).message, invoice: orderNumber });
+        // JANGAN throw — DOKU tidak peduli soal WA, mereka cuma butuh 200 OK
       }
     }
 
