@@ -50,7 +50,7 @@ const StageAnalytics = () => {
         if (typeof window === 'undefined') return;
         const handleTabReturn = () => {
             refetch();
-            refetchLive();
+            // refetchLive();
         };
         window.addEventListener(TAB_RETURN_EVENT, handleTabReturn);
         return () => {
