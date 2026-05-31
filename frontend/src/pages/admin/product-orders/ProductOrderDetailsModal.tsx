@@ -44,6 +44,12 @@ export function ProductOrderDetailsModal({
 
           <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="grid grid-cols-2 gap-4 text-sm">
+              {details.order.sales_staff_name && (
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Sales Staff</p>
+                  <p className="font-medium text-gray-900">{details.order.sales_staff_name}</p>
+                </div>
+              )}
               {details.order.paid_at && (
                 <div>
                   <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Pembayaran</p>

@@ -3,6 +3,9 @@ import { lazy } from "react";
 import type { AppRouteConfig } from "./routeTypes";
 
 const Dashboard = lazy(() => import("../../pages/admin/Dashboard"));
+const RetailDashboard = lazy(
+  () => import("../../pages/admin/RetailDashboard"),
+);
 const CashierDashboard = lazy(
   () => import("../../pages/admin/CashierDashboard"),
 );
@@ -70,6 +73,7 @@ const AdminPointsManager = lazy(
 
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
+  { path: "/admin/retail-dashboard", Page: RetailDashboard },
   { path: "/admin/cashier-dashboard", Page: CashierDashboard },
   { path: "/admin/cashier-orders", Page: CashierOrders },
   { path: "/admin/dressing-room-dashboard", Page: DressingRoomDashboard },

@@ -121,8 +121,13 @@ export function ProductOrdersListSection({
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-neutral-900 truncate">{order.pickup_code ?? '-'}</p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-neutral-900 truncate">{order.pickup_code ?? '-'}</p>
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono border border-gray-200">
+                          {order.order_number}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
                         {order.profiles?.name ?? order.profiles?.email ?? 'Customer'}
                       </p>
                     </div>
@@ -147,22 +152,33 @@ export function ProductOrdersListSection({
                   )}
 
                   {order.order_product_items && order.order_product_items.length > 0 && (
-                    <div className="pl-2 border-l-2 border-gray-200 space-y-1">
+                    <div className="pl-2 border-l-2 border-gray-200 space-y-2 mt-2">
                       {order.order_product_items.map((item) => {
                         const productName = item.product_variants?.products?.name ?? 'Product';
                         const variantName = item.product_variants?.name ?? 'Variant';
                         const category = item.product_variants?.products?.categories?.name ?? '';
+                        const images = item.product_variants?.products?.product_images || [];
+                        const primaryImage = images.find(img => img.is_primary)?.image_url || images[0]?.image_url;
 
                         return (
-                          <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
-                            <div className="min-w-0 flex-1">
-                              <span className="text-gray-700 font-medium">{productName}</span>
-                              {category && <span className="text-gray-400 ml-1">({category})</span>}
-                              <span className="text-gray-500 mx-1">•</span>
-                              <span className="text-gray-500">{variantName}</span>
+                          <div key={item.id} className="flex items-center justify-between gap-3 text-xs py-1">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {primaryImage ? (
+                                <img src={primaryImage} alt={productName} className="w-10 h-10 object-cover rounded-md border border-gray-200 shadow-sm" />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded-md border border-gray-200">
+                                  <span className="material-symbols-outlined text-gray-400 text-[18px]">inventory_2</span>
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="text-gray-700 font-bold block truncate">{productName}</span>
+                                <span className="text-gray-500 truncate block mt-0.5">
+                                  {category && `(${category}) `}{variantName}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <span>
+                            <div className="flex flex-col items-end gap-0.5 text-gray-600 whitespace-nowrap pl-2">
+                              <span className="font-medium text-gray-900">
                                 {item.quantity}× {formatCurrency(Number(item.price))}
                               </span>
                             </div>

@@ -54,11 +54,18 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
     label: "Penjualan",
     items: [
       {
+        id: "retail-dashboard",
+        label: "Sales Back Office",
+        icon: "point_of_sale",
+        path: "/admin/retail-dashboard",
+        highlight: true,
+      },
+      {
         id: "cashier-dashboard",
         label: "Dashboard Penjualan",
         icon: "dashboard",
         path: "/admin/cashier-dashboard",
-        highlight: true,
+        highlight: false,
       },
       {
         id: "cashier-orders",

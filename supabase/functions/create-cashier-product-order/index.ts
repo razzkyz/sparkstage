@@ -18,6 +18,7 @@ type CreateCashierOrderRequest = {
   customerPhone?: string
   voucherCode?: string  // NEW: Optional voucher code for discount
   pointsRedeemed?: number  // NEW: Optional loyalty points to redeem (1 point = Rp 1 discount)
+  staffName?: string    // NEW: Optional staff name for sales tracking
 }
 
 function generatePickupCode() {
@@ -296,8 +297,9 @@ serve(async (req) => {
         order_number: orderNumber,
         user_id: userId,
         channel: 'cashier',
-        status: 'awaiting_payment',
-        payment_status: 'unpaid',
+        status: 'processing',
+        payment_status: 'paid',
+        paid_at: now.toISOString(),
         subtotal: totalAmount,
         discount_amount: totalDiscount,
         shipping_cost: 0,
@@ -307,6 +309,7 @@ serve(async (req) => {
         voucher_code: voucherCode,
         payment_expired_at: cashierQrExpiresAt,
         pickup_code: pickupCode,
+        sales_staff_name: payload.staffName?.trim() || null,
         pickup_status: 'pending_pickup',
         pickup_expires_at: cashierQrExpiresAt,
         created_at: now.toISOString(),
@@ -381,6 +384,16 @@ serve(async (req) => {
       if (voucherUsageError) {
         console.error('[CashierOrder] Failed to create voucher usage:', voucherUsageError.message)
       }
+    }
+
+    // Auto-complete the order since this is an offline POS transaction (paid immediately)
+    const { data: completeResult, error: completeError } = await supabase.rpc('complete_product_pickup_atomic', {
+      p_pickup_code: pickupCode,
+      p_picked_up_by: userId,
+    })
+
+    if (completeError || (completeResult && typeof completeResult === 'object' && completeResult.ok === false)) {
+      console.error('[CashierOrder] Failed to auto-complete POS order:', completeError || completeResult)
     }
 
     return json(req, { order_number: orderNumber, discount_amount: discountAmount }, { status: 200 })
