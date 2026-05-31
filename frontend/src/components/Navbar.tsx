@@ -257,8 +257,8 @@ const Navbar = () => {
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
                 {/* Desktop icons — selalu tampil */}
                 <div className="hidden lg:flex items-center gap-3">
-                  {/* QR Scanner button — hanya saat login */}
-                  {user && (
+                  {/* QR Scanner button — temporarily disabled */}
+                  {false && user && (
                     <button
                       id="navbar-qr-scanner-btn"
                       type="button"
@@ -408,8 +408,8 @@ const Navbar = () => {
                 </div>
 
                 <div className="lg:hidden flex items-center gap-3">
-                  {/* Mobile: QR Scanner button — hanya saat login */}
-                  {user && (
+                  {/* Mobile: QR Scanner button — temporarily disabled */}
+                  {false && user && (
                     <button
                       id="navbar-qr-scanner-btn-mobile"
                       type="button"
