@@ -151,7 +151,16 @@ export function formatTimeWIB(date: Date): string {
  * Format datetime for display in WIB
  */
 export function formatDateTimeWIB(date: Date | string): string {
-  const target = typeof date === 'string' ? new Date(date) : date;
+  let target: Date;
+  
+  if (typeof date === 'string') {
+    // If it's a DB string without timezone, treat it as UTC
+    const isUTC = !date.includes('Z') && !date.includes('+') && date.includes('T');
+    target = new Date(isUTC ? `${date}Z` : date);
+  } else {
+    target = date;
+  }
+
   return target.toLocaleString('id-ID', {
     timeZone: 'Asia/Jakarta',
     year: 'numeric',
