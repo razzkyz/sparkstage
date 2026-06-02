@@ -3,7 +3,7 @@ import type { Banner, BannerFormData, BannerGroups, BannerType } from './bannerM
 
 export const REQUEST_TIMEOUT_MS = 60000;
 export const UPLOAD_TIMEOUT_MS = 120000;
-export const bannerTypeOrder: BannerType[] = ['hero', 'process', 'stage', 'promo', 'events', 'shop', 'spark-map', 'spark-club'];
+export const bannerTypeOrder: BannerType[] = ['hero', 'portrait-hero', 'process', 'stage', 'promo', 'events', 'shop', 'spark-map', 'spark-club'];
 
 export function createInitialBannerFormData(): BannerFormData {
   return {
@@ -38,6 +38,7 @@ export function getStageBanners(banners: Banner[]): Banner[] {
 export function groupBanners(banners: Banner[], stageBannersOrder: Banner[]): BannerGroups {
   return {
     hero: banners.filter((banner) => banner.banner_type === 'hero'),
+    'portrait-hero': banners.filter((banner) => banner.banner_type === 'portrait-hero'),
     stage: stageBannersOrder,
     promo: banners.filter((banner) => banner.banner_type === 'promo'),
     events: banners.filter((banner) => banner.banner_type === 'events'),

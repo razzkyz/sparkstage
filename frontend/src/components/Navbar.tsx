@@ -234,7 +234,6 @@ const Navbar = () => {
                   className="inline-flex items-center"
                   aria-label="Home"
                 >
-                  {/* <Logo className="h-[2.5rem] md:h-[3.5rem]" /> */}
                   <img
                     src="/images/landing/HeaderLogo.webp"
                     alt="Stage 55"

@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import { createQuerySignal } from '../lib/fetchers';
-import { queryKeys } from '../lib/queryKeys';
-import { resolvePublicAssetUrl } from '../lib/publicAssetUrl';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { createQuerySignal } from "../lib/fetchers";
+import { queryKeys } from "../lib/queryKeys";
+import { resolvePublicAssetUrl } from "../lib/publicAssetUrl";
 
 export interface Banner {
   id: number;
@@ -11,20 +11,41 @@ export interface Banner {
   image_url: string;
   title_image_url: string | null;
   link_url: string | null;
-  banner_type: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club';
+  banner_type:
+    | "hero"
+    | "portrait-hero"
+    | "stage"
+    | "promo"
+    | "events"
+    | "shop"
+    | "process"
+    | "spark-map"
+    | "spark-club";
   display_order: number;
   is_active: boolean;
 }
 
-async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club', signal?: AbortSignal): Promise<Banner[]> {
+async function fetchBanners(
+  type?:
+    | "hero"
+    | "portrait-hero"
+    | "stage"
+    | "promo"
+    | "events"
+    | "shop"
+    | "process"
+    | "spark-map"
+    | "spark-club",
+  signal?: AbortSignal,
+): Promise<Banner[]> {
   let query = supabase
-    .from('banners')
-    .select('*')
-    .eq('is_active', true)
-    .order('display_order', { ascending: true });
+    .from("banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
 
   if (type) {
-    query = query.eq('banner_type', type);
+    query = query.eq("banner_type", type);
   }
 
   const { data, error } = signal
@@ -39,16 +60,31 @@ async function fetchBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop
   }));
 }
 
-export function useBanners(type?: 'hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club') {
+export function useBanners(
+  type?:
+    | "hero"
+    | "portrait-hero"
+    | "stage"
+    | "promo"
+    | "events"
+    | "shop"
+    | "process"
+    | "spark-map"
+    | "spark-club",
+) {
   return useQuery({
     queryKey: queryKeys.banners(type),
     queryFn: async ({ signal }) => {
-      const { signal: timeoutSignal, cleanup, didTimeout } = createQuerySignal(signal);
+      const {
+        signal: timeoutSignal,
+        cleanup,
+        didTimeout,
+      } = createQuerySignal(signal);
       try {
         return await fetchBanners(type, timeoutSignal);
       } catch (error) {
         if (didTimeout()) {
-          throw new Error('Request timeout');
+          throw new Error("Request timeout");
         }
         throw error;
       } finally {

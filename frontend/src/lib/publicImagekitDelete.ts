@@ -31,7 +31,14 @@ export function getImageKitFilePathFromUrl(imageUrl: string): string | null {
 
   try {
     const url = new URL(imageUrl);
-    const normalizedPath = decodeURIComponent(url.pathname).replace(/\/{2,}/g, '/').trim();
+    let normalizedPath = decodeURIComponent(url.pathname).replace(/\/{2,}/g, '/').trim();
+    
+    // Strip the ImageKit endpoint ID (e.g., /my_id/public/...)
+    const publicIndex = normalizedPath.indexOf('/public/');
+    if (publicIndex !== -1) {
+      normalizedPath = normalizedPath.substring(publicIndex);
+    }
+    
     return normalizedPath || null;
   } catch {
     return null;

@@ -75,6 +75,7 @@ export function BannerFormModal({
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-neutral-900"
             >
               <option value="hero">Hero (Main Slider)</option>
+              <option value="portrait-hero">Portrait Hero (Mobile Main Slider)</option>
               <option value="process">Process (Hero Slider)</option>
               <option value="stage">Stage (Carousel)</option>
               <option value="promo">Promo</option>
@@ -97,7 +98,13 @@ export function BannerFormModal({
                     {formData.banner_type === 'hero' ? (
                       <>
                         <li>• Resolution: <span className="font-semibold">1920 x 1080px</span> (16:9 aspect ratio)</li>
-                        <li>• Best for: Full-width hero sliders on OnStage page</li>
+                        <li>• Best for: Full-width hero sliders on OnStage page (Desktop)</li>
+                      </>
+                    ) : null}
+                    {formData.banner_type === 'portrait-hero' ? (
+                      <>
+                        <li>• Resolution: <span className="font-semibold">1080 x 1920px</span> (9:16 aspect ratio)</li>
+                        <li>• Best for: Full-width hero sliders on OnStage page (Mobile)</li>
                       </>
                     ) : null}
                     {formData.banner_type === 'process' ? (

@@ -473,21 +473,10 @@ const OnStage = () => {
   const processTitleRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
 
-  // const {
-  //   data: heroBanners = [],
-  //   // isLoading: heroLoading,
-  //   // error: heroError,
-  // } = useBanners("hero");
-  const {
-    data: processBanners = [],
-    // isLoading: processLoading,
-    // error: processError,
-    // refetch: refetchProcess,
-  } = useBanners("process");
+  const { data: heroBanners = [] } = useBanners("hero");
+  const { data: portraitHeroBanners = [] } = useBanners("portrait-hero");
 
-  // const hasData = heroBanners.length > 0 || processBanners.length > 0;
-  // const loading = (heroLoading || processLoading) && !hasData;
-  // const error = heroError || processError;
+  const { data: processBanners = [] } = useBanners("process");
 
   const activeRealIndex = useMemo(() => {
     if (processBanners.length <= 1) return 0;
@@ -627,17 +616,26 @@ const OnStage = () => {
           to="/booking"
           className="w-full h-[75vh] relative group cursor-pointer overflow-hidden block"
         >
+          {/* Mobile Banner */}
           <img
-            src="/images/heroBanner/NewHeroBanner.webp"
+            src={
+              portraitHeroBanners.length > 0
+                ? portraitHeroBanners[0].image_url
+                : "/images/heroBanner/NewHeroBanner.webp"
+            }
             alt="Become the star"
             className="absolute inset-0 w-full h-full object-cover object-center sm:hidden"
             fetchPriority="high"
             loading="eager"
             decoding="sync"
           />
-
+          {/* Desktop Banner */}
           <img
-            src="/images/heroBanner/LandscapeHeroBanner.webp"
+            src={
+              heroBanners.length > 0
+                ? heroBanners[0].image_url
+                : "/images/heroBanner/LandscapeHeroBanner.webp"
+            }
             alt="Become the star"
             className="absolute inset-0 w-full h-full object-cover object-center hidden sm:block"
             fetchPriority="high"
