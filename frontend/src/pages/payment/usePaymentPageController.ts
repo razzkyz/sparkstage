@@ -103,12 +103,12 @@ export function usePaymentPageController({
     }
 
     if (!customerName.trim()) {
-      setError('Please enter your name');
+      setError('Harap isi nama Anda untuk melanjutkan');
       return;
     }
 
     if (!customerPhone.trim()) {
-      setError('Please enter your WhatsApp number');
+      setError('Harap isi nomor WhatsApp untuk mendapatkan invoice');
       return;
     }
 

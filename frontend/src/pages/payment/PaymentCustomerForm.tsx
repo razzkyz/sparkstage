@@ -28,6 +28,24 @@ export function PaymentCustomerForm({
   const phoneInputId = 'payment-customer-phone';
   const emailInputId = 'payment-customer-email';
 
+  // Check which fields are missing
+  const isNameMissing = !customerName.trim();
+  const isPhoneMissing = !customerPhone.trim();
+  const isFormComplete = !isNameMissing && !isPhoneMissing;
+  
+  // Build helpful error message for missing fields
+  const getMissingFieldsMessage = (): string => {
+    const missing: string[] = [];
+    if (isNameMissing) missing.push('nama');
+    if (isPhoneMissing) missing.push('nomor WhatsApp');
+    
+    if (missing.length === 0) return '';
+    if (missing.length === 1) return `Harap isi ${missing[0]} untuk mendapatkan invoice`;
+    return `Harap isi ${missing.join(' dan ')} untuk mendapatkan invoice`;
+  };
+
+  const missingFieldsMessage = getMissingFieldsMessage();
+
   return (
     <div className="bg-white p-6 rounded-xl border border-rose-100 shadow-sm">
       <h1 className="text-2xl font-bold mb-6">Complete Payment</h1>
@@ -117,8 +135,9 @@ export function PaymentCustomerForm({
           !bookingDetails.ticketId ||
           !bookingDetails.price ||
           !checkoutReady ||
-          !customerPhone.trim()
+          !isFormComplete
         }
+        title={missingFieldsMessage || 'Proceed to payment'}
         className="w-full bg-[#ff4b86] hover:bg-[#e63d75] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
       >
         {loading ? (
@@ -133,6 +152,17 @@ export function PaymentCustomerForm({
           </>
         )}
       </button>
+
+      {missingFieldsMessage && (
+        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-600 text-[18px]">info</span>
+            <p className="text-sm text-amber-800 font-medium">
+              {missingFieldsMessage}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 pt-6 border-t border-rose-100">
         <p className="text-xs text-center text-rose-700 mb-3">Supported Payment Methods</p>
