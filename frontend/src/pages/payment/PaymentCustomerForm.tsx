@@ -50,7 +50,7 @@ export function PaymentCustomerForm({
 
         <div className="space-y-1.5">
           <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">
-            WhatsApp Number <span className="text-amber-500">*Untuk Reminder</span>
+            WhatsApp Number <span className="text-red-500">*</span>
           </label>
           <input
             id={phoneInputId}
@@ -60,6 +60,7 @@ export function PaymentCustomerForm({
             className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 px-4"
             placeholder="628XXXXXXXX"
             disabled={loading}
+            required
           />
           <p className="text-xs text-amber-600">
             Masukan +628xxxx. Kami akan mengirim reminder ke WhatsApp ini untuk datang lebih awal.
@@ -111,7 +112,13 @@ export function PaymentCustomerForm({
 
       <button
         onClick={onPay}
-        disabled={loading || !bookingDetails.ticketId || !bookingDetails.price || !checkoutReady}
+        disabled={
+          loading ||
+          !bookingDetails.ticketId ||
+          !bookingDetails.price ||
+          !checkoutReady ||
+          !customerPhone.trim()
+        }
         className="w-full bg-[#ff4b86] hover:bg-[#e63d75] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
       >
         {loading ? (

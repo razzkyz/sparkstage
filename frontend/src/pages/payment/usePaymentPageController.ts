@@ -107,6 +107,11 @@ export function usePaymentPageController({
       return;
     }
 
+    if (!customerPhone.trim()) {
+      setError('Please enter your WhatsApp number');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
