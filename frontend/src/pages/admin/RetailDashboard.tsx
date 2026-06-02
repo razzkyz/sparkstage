@@ -12,6 +12,7 @@ export default function RetailDashboard() {
   const { signOut } = useAuth();
   
   const [activeTab, setActiveTab] = useState<'pos' | 'claim' | 'report'>('claim');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Ambil data pesanan selesai dari hook useProductOrders
   // Hook ini sudah meng-handle cache dan real-time subscriptions
@@ -86,12 +87,22 @@ export default function RetailDashboard() {
           <span className="material-symbols-outlined text-[20px]">leaderboard</span>
           Laporan Staff
         </button>
+
+        <div className="ml-auto w-full sm:w-auto mt-3 sm:mt-0">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari produk terjual..."
+            className="pl-3 pr-3 py-2 w-full sm:w-64 rounded-2xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#ff4b86] transition-colors"
+          />
+        </div>
       </div>
 
       <div className="mt-4">
         {/* POS Tab - dinonaktifkan sementara */}
         {/* {activeTab === 'pos' && <PosTab session={session} />} */}
-        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} />}
+        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
         {activeTab === 'report' && <ReportTab orders={reportOrders} isLoading={isLoadingOrders} />}
       </div>
     </AdminLayout>

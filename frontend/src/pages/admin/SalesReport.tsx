@@ -5,6 +5,7 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { supabase } from '../../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 
 const TICKET_PRICE = 85_000;
 
@@ -145,7 +146,7 @@ function useProductSales(enabled: boolean) {
 
 function usePrintSales(enabled: boolean) {
   return useQuery({
-    queryKey: ['sales-report-print'],
+    queryKey: queryKeys.printOrders(),
     enabled,
     queryFn: async () => {
       // First check: get count of ALL rows

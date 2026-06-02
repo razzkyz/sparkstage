@@ -28,8 +28,9 @@ export const queryKeys = {
   dashboardStats: () => ['dashboard-stats'] as const,
   cashierSalesStats: () => ['cashier-sales-stats'] as const,
   productOrders: () => ['admin-product-orders'] as const,
-  productOrderDetails: () => ['admin-product-order-detail'] as const,
-  productOrderDetail: (pickupCode: string) => ['admin-product-order-detail', pickupCode] as const,
+    productOrderDetails: () => ['admin-product-order-detail'] as const,
+    productOrderDetail: (pickupCode: string) => ['admin-product-order-detail', pickupCode] as const,
+    printOrders: (statusFilter: string | string[] | null = 'paid') => ['admin-print-orders', statusFilter ?? 'all'] as const,
 
   stages: () => ['stages-with-stats'] as const,
   stageQrCodes: () => ['stage-qr-codes'] as const,
