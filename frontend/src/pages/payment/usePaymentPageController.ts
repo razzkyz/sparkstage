@@ -107,10 +107,6 @@ export function usePaymentPageController({
       return;
     }
 
-    if (!customerPhone.trim()) {
-      setError('Harap isi nomor WhatsApp untuk mendapatkan invoice');
-      return;
-    }
 
     setLoading(true);
     setError(null);

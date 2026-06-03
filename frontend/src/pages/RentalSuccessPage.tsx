@@ -94,117 +94,125 @@ export default function RentalSuccessPage() {
   const qrValue  = `${window.location.origin}/admin/rental-scanner?order_number=${order.order_number}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-
-          {/* Header */}
-          <div className={`p-6 text-center ${isActive ? 'bg-blue-600' : isPaid ? 'bg-green-500' : 'bg-yellow-500'} text-white`}>
-            <span className="material-symbols-outlined text-5xl mb-2">
+    <div className="min-h-screen bg-[#fcf9f9] py-12 px-4">
+      <div className="max-w-[800px] mx-auto">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-4 mb-5 rounded-full bg-main-50 text-main-500 shadow-sm border border-main-100">
+            <span className="material-symbols-outlined text-5xl">
               {isActive ? 'checkroom' : isPaid ? 'check_circle' : 'hourglass_empty'}
             </span>
-            <h1 className="text-2xl font-black mb-1">
-              {isActive
-                ? 'Sedang Disewa!'
-                : isPaid
-                  ? 'Pembayaran Berhasil!'
-                  : 'Menunggu Pembayaran'}
-            </h1>
-            <p className="text-white/80 font-medium">Order: {order.order_number}</p>
           </div>
+          <h1 className="text-[#1c0d0d] tracking-tight text-3xl md:text-4xl font-bold leading-tight pb-2 font-display">
+            {isActive
+              ? 'Pakaian Sedang Disewa'
+              : isPaid
+                ? 'Pembayaran Berhasil'
+                : 'Menunggu Pembayaran'}
+          </h1>
+          <p className="text-main-700 text-base md:text-lg font-medium px-4">
+            Order ID: {order.order_number}
+          </p>
+        </div>
 
+        <div className="bg-white rounded-3xl shadow-sm border border-[#f4e7e7] overflow-hidden max-w-lg mx-auto">
           <div className="p-8">
 
             {/* Pending indicator */}
             {!isPaid && (
-              <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500 flex-shrink-0" />
-                <p className="text-sm text-yellow-800 font-medium">
-                  Menunggu konfirmasi pembayaran dari DOKU...
+              <div className="flex flex-col items-center justify-center mb-8 p-6 bg-main-50 border border-main-100 rounded-2xl">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-main-500 mb-4" />
+                <p className="text-main-800 font-semibold text-center">
+                  Menunggu konfirmasi dari DOKU...
+                </p>
+                <p className="text-main-600 text-sm text-center mt-1">
+                  Selesaikan pembayaran Anda di layar DOKU. Halaman ini akan otomatis diperbarui.
                 </p>
               </div>
             )}
 
-            <p className="text-center text-gray-600 mb-6">
-              Hai <strong className="text-gray-900">{order.customer_name}</strong>,{' '}
-              {isActive
-                ? 'Barang sedang dalam masa sewa. Kembalikan tepat waktu ya!'
-                : isPaid
-                  ? 'Terima kasih! Tunjukkan QR di bawah kepada admin studio saat mengambil baju.'
-                  : 'Selesaikan pembayaran Anda. QR pickup akan muncul setelah pembayaran berhasil.'}
-            </p>
+            {isPaid && !isActive && (
+              <p className="text-center text-[#9c4949] mb-6 font-medium">
+                Hai <strong className="text-[#1c0d0d]">{order.customer_name}</strong>, pembayaran Anda telah diterima. Tunjukkan QR Code di bawah kepada Admin Studio saat mengambil pakaian.
+              </p>
+            )}
+
+            {isActive && (
+              <p className="text-center text-[#9c4949] mb-6 font-medium">
+                Hai <strong className="text-[#1c0d0d]">{order.customer_name}</strong>, pakaian sudah berhasil diambil. Jangan lupa kembalikan sesuai durasi sewa ya!
+              </p>
+            )}
 
             {/* QR Code – only shown after payment confirmed */}
             {isPaid && !isActive && (
-              <div className="flex flex-col items-center mb-8">
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                  QR Pickup
-                </p>
-                <p className="text-xs text-gray-400 mb-4 text-center">
-                  Tunjukkan kepada admin saat mengambil baju sewaan
-                </p>
-                <div className="bg-white p-5 rounded-2xl shadow-md border-2 border-main-100 inline-block">
-                  <QRCode value={qrValue} size={200} />
+              <div className="flex flex-col items-center mb-10">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-main-100 inline-block mb-3">
+                  <QRCode value={qrValue} size={200} fgColor="#1c0d0d" />
                 </div>
-                <div className="mt-4 bg-main-50 border border-main-200 rounded-xl px-4 py-3 text-center">
-                  <p className="text-xs font-bold text-main-700 uppercase tracking-wider mb-1">Status</p>
-                  <p className="text-sm font-semibold text-main-800">Menunggu Validasi Admin</p>
+                <div className="bg-main-50 rounded-full px-4 py-1.5 text-main-700 text-xs font-bold tracking-widest uppercase border border-main-100">
+                  Siap Diambil
                 </div>
               </div>
             )}
 
             {/* Active / Disewa state */}
             {isActive && (
-              <div className="flex flex-col items-center mb-8">
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center w-full">
-                  <span className="material-symbols-outlined text-4xl text-blue-600 mb-2">checkroom</span>
-                  <p className="text-lg font-black text-blue-800">Barang Sudah Diambil</p>
-                  <p className="text-sm text-blue-600 mt-1">Status: <strong>DISEWA</strong></p>
+              <div className="flex flex-col items-center mb-10">
+                <div className="bg-main-50 border border-main-200 rounded-2xl p-6 text-center w-full">
+                  <span className="material-symbols-outlined text-4xl text-main-600 mb-2">inventory_2</span>
+                  <p className="text-lg font-black text-main-900">Pakaian ada pada Anda</p>
+                  <p className="text-sm text-main-700 mt-1">Status: <strong>Sedang Disewa</strong></p>
                 </div>
               </div>
             )}
 
             {/* Order summary */}
-            <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-3">
-              <div className="flex justify-between border-b border-gray-200 pb-3">
-                <span className="text-gray-500">Nama</span>
-                <span className="font-semibold text-gray-900">{order.customer_name}</span>
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-100 pb-2">Detail Pesanan</h3>
+              
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#9c4949]">Nama Penyewa</span>
+                <span className="font-bold text-[#1c0d0d]">{order.customer_name}</span>
               </div>
               {order.customer_phone && (
-                <div className="flex justify-between border-b border-gray-200 pb-3">
-                  <span className="text-gray-500">No HP</span>
-                  <span className="font-semibold text-gray-900">{order.customer_phone}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-[#9c4949]">No Handphone</span>
+                  <span className="font-bold text-[#1c0d0d]">{order.customer_phone}</span>
                 </div>
               )}
-              <div className="flex justify-between border-b border-gray-200 pb-3">
-                <span className="text-gray-500">Tanggal Mulai</span>
-                <span className="font-semibold text-gray-900">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#9c4949]">Mulai Sewa</span>
+                <span className="font-bold text-[#1c0d0d]">
                   {new Date(order.start_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-gray-200 pb-3">
-                <span className="text-gray-500">Tanggal Selesai</span>
-                <span className="font-semibold text-gray-900">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#9c4949]">Selesai Sewa</span>
+                <span className="font-bold text-[#1c0d0d]">
                   {new Date(order.end_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-gray-200 pb-3">
-                <span className="text-gray-500">Deposit (Refundable)</span>
-                <span className="font-semibold text-yellow-700">Rp {(order.total_deposit ?? 0).toLocaleString('id-ID')}</span>
+              <div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-gray-200">
+                <span className="text-[#9c4949]">Deposit (Refundable)</span>
+                <span className="font-bold text-main-500">Rp {(order.total_deposit ?? 0).toLocaleString('id-ID')}</span>
               </div>
-              <div className="flex justify-between font-bold">
-                <span className="text-gray-900">Total Pembayaran</span>
-                <span className="text-main-600">Rp {(order.total_amount ?? 0).toLocaleString('id-ID')}</span>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-[#1c0d0d] font-bold text-base">Total Bayar</span>
+                <span className="text-main-600 font-black text-xl">Rp {(order.total_amount ?? 0).toLocaleString('id-ID')}</span>
               </div>
             </div>
 
             <button
               onClick={() => navigate('/dressing-room')}
-              className="w-full mt-8 py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
+              className="w-full mt-10 py-4 bg-main-500 text-white rounded-xl font-bold hover:bg-main-600 transition-colors shadow-sm"
             >
-              Kembali ke Katalog
+              Kembali ke Katalog Pakaian
             </button>
           </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="text-center mt-12 text-[#9c4949]/60 text-xs tracking-widest uppercase px-4">
+          Spark Stage • Premium Dressing Room
         </div>
       </div>
     </div>

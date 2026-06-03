@@ -30,18 +30,12 @@ export function PaymentCustomerForm({
 
   // Check which fields are missing
   const isNameMissing = !customerName.trim();
-  const isPhoneMissing = !customerPhone.trim();
-  const isFormComplete = !isNameMissing && !isPhoneMissing;
+  const isFormComplete = !isNameMissing;
   
   // Build helpful error message for missing fields
   const getMissingFieldsMessage = (): string => {
-    const missing: string[] = [];
-    if (isNameMissing) missing.push('nama');
-    if (isPhoneMissing) missing.push('nomor WhatsApp');
-    
-    if (missing.length === 0) return '';
-    if (missing.length === 1) return `Harap isi ${missing[0]} untuk mendapatkan invoice`;
-    return `Harap isi ${missing.join(' dan ')} untuk mendapatkan invoice`;
+    if (isNameMissing) return 'Harap isi nama Anda untuk melanjutkan pembayaran';
+    return '';
   };
 
   const missingFieldsMessage = getMissingFieldsMessage();
@@ -68,7 +62,7 @@ export function PaymentCustomerForm({
 
         <div className="space-y-1.5">
           <label htmlFor={phoneInputId} className="text-sm font-semibold text-neutral-950">
-            WhatsApp Number <span className="text-red-500">*</span>
+            WhatsApp Number <span className="text-gray-400 font-normal ml-1">(Opsional)</span>
           </label>
           <input
             id={phoneInputId}
@@ -78,10 +72,9 @@ export function PaymentCustomerForm({
             className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 px-4"
             placeholder="628XXXXXXXX"
             disabled={loading}
-            required
           />
           <p className="text-xs text-amber-600">
-            Masukan +628xxxx. Kami akan mengirim reminder ke WhatsApp ini untuk datang lebih awal.
+            Opsional. Jika diisi (+628xxxx), kami akan mengirimkan invoice tiket dan reminder ke WhatsApp ini.
           </p>
         </div>
 
