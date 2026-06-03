@@ -584,7 +584,7 @@ export default function RentalOrders() {
       case 'paid':
         return 'Sudah Bayar';
       case 'active':
-        return 'Aktif';
+        return 'Disewa';
       case 'overdue':
         return 'Telat';
       case 'returned':
@@ -1822,7 +1822,7 @@ function DRRentalSection({
           <option value="all">Semua Status</option>
           <option value="awaiting_payment">Menunggu Pembayaran</option>
           <option value="paid">Siap Ambil</option>
-          <option value="active">Aktif (Sedang Disewa)</option>
+          <option value="active">Disewa</option>
           <option value="overdue">Telat Kembalikan</option>
           <option value="returned">Dikembalikan</option>
           <option value="cancelled">Dibatalkan</option>

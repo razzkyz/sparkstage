@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import type { DressingRoomProduct, DressingRoomProductVariant } from '../../types/dressingRoom';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState } from '../../utils/dokuCheckout';
 
 export interface RentalItem {
   dressing_room_product_variant_id: number;
@@ -318,9 +322,6 @@ function CustomerStep({
 }
 
 // ─── Step 3: Confirm & Submit ─────────────────────────────────────────────────
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Loader2 } from 'lucide-react';
 
 function ConfirmStep({
   formData,
@@ -334,12 +335,24 @@ function ConfirmStep({
   onPrev: () => void;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const rentalCost = dailyRate * formData.durationDays;
   const total = rentalCost + depositAmount;
+
+  // Preload DOKU SDK when confirm step mounts
+  useEffect(() => {
+    loadDokuCheckoutScript().catch(err =>
+      console.warn('[RentalFlow] Failed to preload DOKU SDK:', err)
+    );
+    return () => {
+      // clean up any lingering DOKU popup when modal closes
+      resetDokuCheckoutState();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!agreed || loading) return;
@@ -377,9 +390,20 @@ function ConfirmStep({
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
 
-      // Redirect to DOKU Payment Gateway
+      // Open DOKU checkout as an embedded widget (modal popup)
       if (data?.payment_url) {
-        window.location.href = data.payment_url;
+        // Ensure SDK is loaded (might not be ready yet)
+        await loadDokuCheckoutScript();
+        // Open DOKU payment widget – customer stays on SparkStage
+        openDokuCheckout(data.payment_url);
+        // Navigate to pending page so user sees order status after payment
+        navigate(`/rental/success/${encodeURIComponent(data.order_number)}?pending=1`, {
+          state: {
+            orderNumber: data.order_number,
+            orderId: data.order_id,
+            isPending: true,
+          },
+        });
       } else {
         throw new Error('Gagal mendapatkan link pembayaran dari DOKU');
       }
