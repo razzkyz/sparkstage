@@ -446,38 +446,38 @@ const Shop = () => {
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
-            <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam — current page (active) */}
+            <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
+              {/* Glam */}
               <Link
                 to="/beauty"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+                title="Glam Makeup"
+                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  auto_awesome
+                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+                  face_retouching_natural
                 </span>
-                Glam
               </Link>
 
               {/* Charm Bar */}
               <Link
                 to="/charm-bar"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+                title="Charm Rings"
+                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
                   diamond
                 </span>
-                Charm
               </Link>
 
-              {/* Spark Club */}
+              {/* Spark Club (Active) */}
               <Link
                 to="/shop"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
+                title="Spark Shop"
+                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white shadow-sm transition-all duration-200 hover:scale-105"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  storefront
+                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+                  shopping_bag
                 </span>
-                Spark
               </Link>
             </div>
           </div>
