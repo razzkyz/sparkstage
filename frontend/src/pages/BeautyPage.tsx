@@ -345,7 +345,7 @@ const BASE_MAKEUP_SLUGS = [
                 to={`/shop/product/${product.id}`}
                 className="group cursor-pointer flex flex-col h-full rounded-2xl bg-white overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_15px_35px_-10px_rgba(255,75,134,0.25)] border border-gray-100 hover:border-pink-200"
               >
-                <div className="relative overflow-hidden aspect-square bg-[#faf9f9] shrink-0">
+                <div className="relative overflow-hidden bg-[#faf9f9] shrink-0">
                   {product.image ? (
                     <>
                       <img
@@ -354,7 +354,7 @@ const BASE_MAKEUP_SLUGS = [
                           quality: 75,
                         })}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        className="w-full h-auto min-h-[200px] object-contain transition-transform duration-700 ease-out group-hover:scale-105"
                         loading="lazy"
                         decoding="async"
                       />
