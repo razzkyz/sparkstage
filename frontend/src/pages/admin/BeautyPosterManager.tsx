@@ -256,6 +256,7 @@ export default function BeautyPosterManager() {
   const [productSectionTitle, setProductSectionTitle] = useState(DEFAULT_GLAM_PAGE_SETTINGS.product_section_title);
   const [productSearchPlaceholder, setProductSearchPlaceholder] = useState(DEFAULT_GLAM_PAGE_SETTINGS.product_search_placeholder);
   const [sectionFonts, setSectionFonts] = useState<GlamSectionFonts>(DEFAULT_GLAM_PAGE_SETTINGS.section_fonts);
+  const [productCategories, setProductCategories] = useState(DEFAULT_GLAM_PAGE_SETTINGS.product_categories.join(', '));
 
   useEffect(() => {
     const next = settings ?? DEFAULT_GLAM_PAGE_SETTINGS;
@@ -268,6 +269,7 @@ export default function BeautyPosterManager() {
     setProductSectionTitle(next.product_section_title);
     setProductSearchPlaceholder(next.product_search_placeholder);
     setSectionFonts(next.section_fonts);
+    setProductCategories(next.product_categories.join(', '));
   }, [settings]);
 
   const handleUploadImage = useCallback(
@@ -340,6 +342,7 @@ export default function BeautyPosterManager() {
         product_section_title: productSectionTitle,
         product_search_placeholder: productSearchPlaceholder,
         section_fonts: sectionFonts,
+        product_categories: productCategories.split(',').map((s) => s.trim()).filter(Boolean),
       });
 
       const changedUrls: Array<string | null> = [];
@@ -584,6 +587,17 @@ export default function BeautyPosterManager() {
                 type="text"
                 value={productSearchPlaceholder}
                 onChange={(event) => setProductSearchPlaceholder(event.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-black focus:outline-none"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">Categories to display (comma separated slugs)</label>
+              <input
+                type="text"
+                value={productCategories}
+                onChange={(event) => setProductCategories(event.target.value)}
+                placeholder="makeup, patches, speckles, etc"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-black focus:outline-none"
               />
             </div>

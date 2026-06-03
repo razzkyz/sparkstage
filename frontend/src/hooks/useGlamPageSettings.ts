@@ -21,6 +21,7 @@ export interface GlamPageSettings {
   product_section_title: string;
   product_search_placeholder: string;
   section_fonts: GlamSectionFonts;
+  product_categories: string[];
 }
 
 export interface GlamStarLink {
@@ -50,6 +51,20 @@ export const DEFAULT_GLAM_PAGE_SETTINGS: GlamPageSettings = {
     look: { heading: 'great_vibes', body: 'nunito_sans' },
     products: { heading: 'cardo', body: 'nunito_sans' },
   },
+  product_categories: [
+    'makeup',
+    'eyewear',
+    'glitter',
+    'headliner',
+    'popsocket',
+    'pop-socket',
+    'popsockets',
+    'body-glitter',
+    'patches',
+    'patch',
+    'speckles',
+    'freckles',
+  ],
 };
 
 function normalizeStarLinks(value: unknown): GlamStarLink[] {
@@ -120,6 +135,9 @@ export function useGlamPageSettings() {
           ? data.product_search_placeholder
           : DEFAULT_GLAM_PAGE_SETTINGS.product_search_placeholder,
       section_fonts: normalizeSectionFontMap(data.section_fonts, DEFAULT_GLAM_PAGE_SETTINGS.section_fonts),
+      product_categories: Array.isArray(data.product_categories)
+        ? data.product_categories.filter((c): c is string => typeof c === 'string')
+        : DEFAULT_GLAM_PAGE_SETTINGS.product_categories,
     }),
     errorLabel: 'glam page settings',
   });

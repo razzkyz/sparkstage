@@ -33,6 +33,10 @@ const GLAM_ONLY_CATEGORIES = new Set([
   'popsocket',
   'pop-socket',
   'popsockets',
+  'patches',
+  'patch',
+  'speckles',
+  'freckles'
 ]);
 
 export function buildShopCategoryIndex(categories: Category[]): ShopCategoryIndex {

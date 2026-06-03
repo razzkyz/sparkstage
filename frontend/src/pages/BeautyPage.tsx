@@ -19,16 +19,6 @@ import type { Product } from "../hooks/useProducts";
 
 const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
-const MAKEUP_SLUGS = new Set([
-  "makeup",
-  "eyewear",
-  "glitter",
-  "headliner",
-  "popsocket",
-  "pop-socket",
-  "popsockets",
-  "body-glitter",
-]);
 
 const decorativeStars = [
   {
@@ -128,11 +118,20 @@ export default function BeautyPage() {
     [products],
   );
 
+const BASE_MAKEUP_SLUGS = [
+  "makeup", "eyewear", "glitter", "headliner", 
+  "popsocket", "pop-socket", "popsockets", "body-glitter"
+];
+
   const makeupProducts = useMemo(() => {
+    const slugs = new Set([...BASE_MAKEUP_SLUGS, ...(content.product_categories || [])]);
     return products.filter(
-      (p) => p.categorySlug != null && MAKEUP_SLUGS.has(p.categorySlug),
+      (p) => 
+        (p.categorySlug != null && slugs.has(p.categorySlug)) ||
+        p.name.toLowerCase().includes('speckles') ||
+        p.name.toLowerCase().includes('patch')
     );
-  }, [products]);
+  }, [products, content.product_categories]);
 
   const filteredProducts = useMemo(() => {
     const matches = makeupProducts.filter((product) => {
@@ -143,10 +142,17 @@ export default function BeautyPage() {
       );
     });
 
-    return matches;
+    // Sort to put Speckles/Patch products first so they appear together side-by-side
+    return matches.sort((a, b) => {
+      const aIsSpeckles = a.name.toLowerCase().includes('speckles') || a.name.toLowerCase().includes('patch');
+      const bIsSpeckles = b.name.toLowerCase().includes('speckles') || b.name.toLowerCase().includes('patch');
+      if (aIsSpeckles && !bIsSpeckles) return -1;
+      if (!aIsSpeckles && bIsSpeckles) return 1;
+      return 0;
+    });
   }, [normalizedQuery, makeupProducts]);
 
-  const PAGE_SIZE = 6;
+  const PAGE_SIZE = 8;
   const totalPages = Math.max(
     1,
     Math.ceil(filteredProducts.length / PAGE_SIZE),
@@ -332,35 +338,38 @@ export default function BeautyPage() {
             </label>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mx-auto">
+          <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mx-auto">
             {paginatedProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/shop/product/${product.id}`}
-                className="group cursor-pointer flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 ux-transition-color hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100"
+                className="group cursor-pointer flex flex-col h-full rounded-2xl bg-white overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_15px_35px_-10px_rgba(255,75,134,0.25)] border border-gray-100 hover:border-pink-200"
               >
-                <div className="relative overflow-hidden aspect-square bg-gray-50 shrink-0">
+                <div className="relative overflow-hidden aspect-square bg-[#faf9f9] shrink-0">
                   {product.image ? (
-                    <img
-                      src={buildImageKitThumbUrl(product.image, {
-                        width: 480,
-                        quality: 60,
-                      })}
-                      alt={product.name}
-                      className="w-full h-full object-cover duration-500 ux-transition-transform ux-motion-safe group-hover:scale-[1.03]"
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    <>
+                      <img
+                        src={buildImageKitThumbUrl(product.image, {
+                          width: 480,
+                          quality: 75,
+                        })}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                    </>
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
                       <span className="material-symbols-outlined text-5xl">
                         {product.placeholder}
                       </span>
                     </div>
                   )}
                   {!product.defaultVariantId && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                      <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1 border border-white/50 bg-black/20 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                      <span className="text-[#ff4b86] text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 bg-white/90 rounded-full shadow-sm">
                         Out of Stock
                       </span>
                     </div>
@@ -372,41 +381,41 @@ export default function BeautyPage() {
                       handleAddToCart(product);
                     }}
                     disabled={!product.defaultVariantId}
-                    className="absolute bottom-3 right-3 bg-[#ff4b86] text-white p-2.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 shadow-lg hover:bg-[#e63d75] ux-transition-color ux-transition-opacity ux-transition-transform ux-motion-safe disabled:opacity-0 disabled:cursor-not-allowed"
+                    className="absolute bottom-4 right-4 flex items-center justify-center w-10 h-10 bg-[#ff4b86] shadow-[0_4px_12px_rgba(255,75,134,0.3)] text-white rounded-full opacity-0 translate-y-4 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-100 group-hover:translate-y-0 hover:bg-[#e63d75] hover:scale-110 hover:shadow-pink-500/40 disabled:opacity-0 disabled:cursor-not-allowed z-20"
                   >
-                    <span className="material-symbols-outlined text-lg">
+                    <span className="material-symbols-outlined text-[20px]">
                       add_shopping_cart
                     </span>
                   </button>
                   {product.badge && (
-                    <span className="absolute top-3 left-3 bg-[#ff4b86] text-white px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm">
+                    <span className="absolute top-4 left-4 bg-[#ff4b86] text-white px-3 py-1.5 text-[10px] uppercase tracking-[0.15em] font-bold rounded-full shadow-md z-20">
                       {product.badge}
                     </span>
                   )}
                 </div>
-                <div className="p-3 flex flex-col flex-grow">
+                <div className="p-4 flex flex-col flex-grow bg-white z-10 relative">
                   <h3
-                    className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]"
+                    className="font-bold text-[14px] text-gray-900 mb-1 line-clamp-1 transition-colors duration-300 group-hover:text-[#ff4b86]"
                     style={getCmsFontStyle(productFonts.body)}
                   >
                     {product.name}
                   </h3>
                   <p
-                    className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]"
+                    className="text-[12px] text-gray-400 mb-3 line-clamp-2 leading-relaxed min-h-[2.25rem]"
                     style={getCmsFontStyle(productFonts.body)}
                   >
                     {product.description || "\u00A0"}
                   </p>
-                  <div className="flex items-center gap-2 mt-auto">
+                  <div className="flex items-end gap-2 mt-auto">
                     <span
-                      className="text-base font-black text-[#ff4b86]"
+                      className="text-[15px] font-black tracking-tight text-[#ff4b86]"
                       style={getCmsFontStyle(productFonts.body)}
                     >
                       {formatCurrency(product.price)}
                     </span>
                     {product.originalPrice ? (
                       <span
-                        className="text-xs text-gray-400 line-through font-light"
+                        className="text-[11px] text-gray-400 line-through font-medium mb-[2px]"
                         style={getCmsFontStyle(productFonts.body)}
                       >
                         {formatCurrency(product.originalPrice)}
