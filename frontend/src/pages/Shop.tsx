@@ -447,44 +447,48 @@ const Shop = () => {
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
             <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam */}
+              {/* Glam — current page (active) */}
               <Link
                 to="/beauty"
-                title="Glam Makeup"
-                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
-                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
                   face_retouching_natural
                 </span>
+                Glam
               </Link>
 
               {/* Charm Bar */}
               <Link
                 to="/charm-bar"
-                title="Charm Rings"
-                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
-                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
                   diamond
                 </span>
+                Charm
               </Link>
 
-              {/* Spark Club (Active) */}
+              {/* Spark Club */}
               <Link
                 to="/shop"
-                title="Spark Shop"
-                className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white shadow-sm transition-all duration-200 hover:scale-105"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
               >
-                <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
                   shopping_bag
                 </span>
+                Spark
               </Link>
             </div>
           </div>
 
-          <h3 className="text-2xl italic tracking-wide text-center mb-6">
-            Spark Club
-          </h3>
+          <div className="flex justify-center mb-6 mt-4">
+            <img
+              src="/images/landing/SPARK CLUB.webp"
+              alt="Charm Bar"
+              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
+            />
+          </div>
 
           <div
             ref={productsRef}

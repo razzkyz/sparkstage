@@ -118,18 +118,27 @@ export default function BeautyPage() {
     [products],
   );
 
-const BASE_MAKEUP_SLUGS = [
-  "makeup", "eyewear", "glitter", "headliner", 
-  "popsocket", "pop-socket", "popsockets", "body-glitter"
-];
+  const BASE_MAKEUP_SLUGS = [
+    "makeup",
+    "eyewear",
+    "glitter",
+    "headliner",
+    "popsocket",
+    "pop-socket",
+    "popsockets",
+    "body-glitter",
+  ];
 
   const makeupProducts = useMemo(() => {
-    const slugs = new Set([...BASE_MAKEUP_SLUGS, ...(content.product_categories || [])]);
+    const slugs = new Set([
+      ...BASE_MAKEUP_SLUGS,
+      ...(content.product_categories || []),
+    ]);
     return products.filter(
-      (p) => 
+      (p) =>
         (p.categorySlug != null && slugs.has(p.categorySlug)) ||
-        p.name.toLowerCase().includes('speckles') ||
-        p.name.toLowerCase().includes('patch')
+        p.name.toLowerCase().includes("speckles") ||
+        p.name.toLowerCase().includes("patch"),
     );
   }, [products, content.product_categories]);
 
@@ -144,8 +153,12 @@ const BASE_MAKEUP_SLUGS = [
 
     // Sort to put Speckles/Patch products first so they appear together side-by-side
     return matches.sort((a, b) => {
-      const aIsSpeckles = a.name.toLowerCase().includes('speckles') || a.name.toLowerCase().includes('patch');
-      const bIsSpeckles = b.name.toLowerCase().includes('speckles') || b.name.toLowerCase().includes('patch');
+      const aIsSpeckles =
+        a.name.toLowerCase().includes("speckles") ||
+        a.name.toLowerCase().includes("patch");
+      const bIsSpeckles =
+        b.name.toLowerCase().includes("speckles") ||
+        b.name.toLowerCase().includes("patch");
       if (aIsSpeckles && !bIsSpeckles) return -1;
       if (!aIsSpeckles && bIsSpeckles) return 1;
       return 0;
@@ -177,34 +190,34 @@ const BASE_MAKEUP_SLUGS = [
           {/* Glam — current page (active) */}
           <Link
             to="/beauty"
-            title="Glam Makeup"
-            className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white shadow-sm transition-all duration-200 hover:scale-105"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
           >
-            <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
               face_retouching_natural
             </span>
+            Glam
           </Link>
 
           {/* Charm Bar */}
           <Link
             to="/charm-bar"
-            title="Charm Rings"
-            className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
           >
-            <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
               diamond
             </span>
+            Charm
           </Link>
 
           {/* Spark Club */}
           <Link
             to="/shop"
-            title="Spark Shop"
-            className="flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 text-gray-600 bg-white hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200 hover:scale-105"
+            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
           >
-            <span className="material-symbols-outlined text-[24px] sm:text-[28px]">
-              local_mall
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+              shopping_bag
             </span>
+            Spark
           </Link>
         </div>
         <section className="">
@@ -345,7 +358,7 @@ const BASE_MAKEUP_SLUGS = [
                 to={`/shop/product/${product.id}`}
                 className="group cursor-pointer flex flex-col h-full rounded-2xl bg-white overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_15px_35px_-10px_rgba(255,75,134,0.25)] border border-gray-100 hover:border-pink-200"
               >
-                <div className="relative overflow-hidden bg-[#faf9f9] shrink-0">
+                <div className="relative overflow-hidden  bg-[#faf9f9] shrink-0">
                   {product.image ? (
                     <>
                       <img
@@ -354,7 +367,7 @@ const BASE_MAKEUP_SLUGS = [
                           quality: 75,
                         })}
                         alt={product.name}
-                        className="w-full h-auto min-h-[200px] object-contain transition-transform duration-700 ease-out group-hover:scale-105"
+                        className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         loading="lazy"
                         decoding="async"
                       />
