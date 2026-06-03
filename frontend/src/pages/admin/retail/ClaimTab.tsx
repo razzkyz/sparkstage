@@ -129,11 +129,34 @@ export default function ClaimTab({ orders, isLoading, searchQuery: propsSearchQu
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-4 text-sm text-yellow-800 shadow-sm">
-        <p className="font-bold">Perhatian Klaim Penjualan</p>
-        <p className="mt-1 leading-tight">
-          Pastikan isi nama staff dan produk yang dipilih dengan benar. Jika tidak, akan dikenakan penalty!
-        </p>
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900 shadow-sm mb-2">
+        <div className="flex items-start gap-3 mb-3">
+          <span className="material-symbols-outlined text-blue-600 mt-0.5">info</span>
+          <div>
+            <h3 className="font-bold text-base text-blue-950">Tata Cara Menggunakan Klaim Penjualan</h3>
+            <p className="mt-1 text-blue-800 leading-relaxed">
+              Ikuti langkah berikut agar komisi penjualan tercatat dengan akurat. <span className="font-semibold text-red-600 bg-red-50 px-1 rounded">Dilarang keras mengklaim pesanan milik staff lain atau melakukan klaim fiktif.</span> Sistem akan melakukan audit silang dan pelanggaran akan dikenakan penalty.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-2 ml-9">
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold mt-0.5">1</span>
+            <p>Gunakan fitur <b>Pencarian</b> di bawah untuk mencari produk yang baru saja Anda bantu jual.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold mt-0.5">2</span>
+            <p>Centang kotak pada transaksi yang benar-benar Anda tangani. Pastikan jenis produk & jumlahnya cocok.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold mt-0.5">3</span>
+            <p>Isi <b>Nama Staff</b> Anda dengan benar pada kolom yang tersedia.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold mt-0.5">4</span>
+            <p>Klik tombol <b>Klaim Sekarang</b> untuk merekam klaim Anda ke sistem komisi.</p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
