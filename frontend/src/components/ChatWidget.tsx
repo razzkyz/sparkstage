@@ -1,26 +1,29 @@
 import { useEffect } from 'react';
-import { createChat } from '@n8n/chat';
 
 export default function ChatWidget() {
   useEffect(() => {
-    createChat({
-      webhookUrl: 'https://sparkland.app.n8n.cloud/webhook/e916a394-f8ea-4714-a32b-ea769da02cc2/chat',
-      mode: 'window',
-      showWelcomeScreen: false,
-      initialMessages: [
-        'Hai! 👋 Aku Spark Assistant ✨',
-        'Tanya apa saja seputar Spark Stage 55 ya — booking, aturan sesi, atau info paket!'
-      ],
-      i18n: {
-        en: {
-          title: 'Spark Stage 55 ✨',
-          subtitle: 'Tanya apa saja seputar self-photo studio kami!',
-          footer: '',
-          getStarted: 'Mulai chat',
-          inputPlaceholder: 'Tulis pertanyaanmu...',
-          closeButtonTooltip: 'Tutup',
+    // Lazy load @n8n/chat — hanya dimuat saat komponen mount,
+    // tidak masuk ke main bundle → website tetap cepat
+    import('@n8n/chat').then(({ createChat }) => {
+      createChat({
+        webhookUrl: 'https://sparkland.app.n8n.cloud/webhook/e916a394-f8ea-4714-a32b-ea769da02cc2/chat',
+        mode: 'window',
+        showWelcomeScreen: false,
+        initialMessages: [
+          'Hai! 👋 Aku Spark Assistant ✨',
+          'Tanya apa saja seputar Spark Stage 55 ya — booking, aturan sesi, atau info paket!'
+        ],
+        i18n: {
+          en: {
+            title: 'Spark Stage 55 ✨',
+            subtitle: 'Tanya apa saja seputar self-photo studio kami!',
+            footer: '',
+            getStarted: 'Mulai chat',
+            inputPlaceholder: 'Tulis pertanyaanmu...',
+            closeButtonTooltip: 'Tutup',
+          },
         },
-      },
+      });
     });
   }, []);
 
