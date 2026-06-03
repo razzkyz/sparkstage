@@ -66,7 +66,7 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
@@ -135,7 +135,6 @@ export default function RentalFlowModal({ product, variant, isOpen, onClose }: R
                   dailyRate={dailyRate}
                   depositAmount={depositAmount}
                   onPrev={handlePrev}
-                  onClose={onClose}
                 />
               )}
             </AnimatePresence>
@@ -321,25 +320,22 @@ function CustomerStep({
 // ─── Step 3: Confirm & Submit ─────────────────────────────────────────────────
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 function ConfirmStep({
   formData,
   dailyRate,
   depositAmount,
   onPrev,
-  onClose,
 }: {
   formData: RentalFormData;
   dailyRate: number;
   depositAmount: number;
   onPrev: () => void;
-  onClose: () => void;
 }) {
   const { user } = useAuth();
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ orderNumber: string; totalAmount: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const rentalCost = dailyRate * formData.durationDays;
@@ -358,60 +354,41 @@ function ConfirmStep({
     setError(null);
     try {
       const items = [{
-        dressing_room_product_variant_id: formData.variant.id,
+        productVariantId: formData.variant.id,
+        productName: formData.product.name,
         quantity: 1,
-        daily_rate: dailyRate,
-        deposit_amount: depositAmount,
+        dailyRate: dailyRate,
+        depositAmount: depositAmount,
       }];
 
-      const { data, error: rpcError } = await supabase.rpc('create_rental_order_public', {
-        p_customer_name: formData.customerData.fullName,
-        p_customer_email: formData.customerData.email || (user?.email ?? ''),
-        p_customer_phone: formData.customerData.phone,
-        p_rental_start_time: formData.rentalStartTime.toISOString(),
-        p_duration_days: formData.durationDays,
-        p_items: items,
-        p_notes: null,
+      const { data, error: fnError } = await supabase.functions.invoke('create-doku-rental-checkout', {
+        body: {
+          customerName: formData.customerData.fullName,
+          customerEmail: formData.customerData.email || (user?.email ?? ''),
+          customerPhone: formData.customerData.phone,
+          rentalStartTime: formData.rentalStartTime.toISOString(),
+          rentalEndTime: formData.rentalEndTime.toISOString(),
+          durationDays: formData.durationDays,
+          items: items,
+          customerAddress: '-', // Required by DOKU but we might not have it in this simple form
+        }
       });
 
-      if (rpcError) throw new Error(rpcError.message);
+      if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
 
-      setResult({ orderNumber: data.order_number, totalAmount: data.total_amount });
+      // Redirect to DOKU Payment Gateway
+      if (data?.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error('Gagal mendapatkan link pembayaran dari DOKU');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Terjadi kesalahan, silakan coba lagi');
     } finally {
       setLoading(false);
     }
   };
-
-  // Success screen
-  if (result) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-        className="text-center space-y-6 py-4"
-      >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100">
-          <CheckCircle2 className="w-10 h-10 text-green-500" />
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-gray-900">Pesanan Berhasil!</h3>
-          <p className="text-sm text-gray-500 mt-1">Nomor Order: <strong className="text-gray-900">{result.orderNumber}</strong></p>
-        </div>
-        <div className="bg-gray-50 rounded-xl p-4 text-sm text-left space-y-2">
-          <p className="font-semibold text-gray-800">📋 Langkah Selanjutnya:</p>
-          <p className="text-gray-600">1. Tim kami akan menghubungi Anda di <strong>{formData.customerData.phone}</strong> untuk konfirmasi jadwal pengambilan.</p>
-          <p className="text-gray-600">2. Datang ke studio dan lakukan pembayaran <strong>Rp {result.totalAmount.toLocaleString('id-ID')}</strong> (cash atau transfer).</p>
-          <p className="text-gray-600">3. Baju siap dipakai! 🎉</p>
-        </div>
-        <button type="button" onClick={onClose}
-          className="w-full py-3 bg-main-500 rounded-xl text-sm font-bold text-white hover:bg-main-600 transition-colors">
-          Selesai
-        </button>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div

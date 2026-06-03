@@ -22,6 +22,8 @@ function DressingRoomProductCard({
 }) {
   const dailyFee = product.dressing_room_product_variants?.[0]?.daily_rental_fee ?? 35000;
   const deposit = product.dressing_room_product_variants?.[0]?.deposit_amount ?? 50000;
+  const totalAvailable = product.dressing_room_product_variants?.reduce((sum, v) => sum + ((v as any).available_quantity || 0), 0) || 0;
+  const isOutOfStock = totalAvailable <= 0;
 
   return (
     <div
@@ -34,12 +36,20 @@ function DressingRoomProductCard({
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-full h-full object-cover duration-500 group-hover:scale-[1.03]"
+              className={`w-full h-full object-cover duration-500 group-hover:scale-[1.03] ${isOutOfStock ? 'grayscale opacity-60' : ''}`}
               onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/neon.png'; }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className={`w-full h-full flex items-center justify-center ${isOutOfStock ? 'grayscale opacity-60' : ''}`}>
               <Package className="w-12 h-12 text-gray-300" />
+            </div>
+          )}
+          
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-black/70 text-white font-bold py-1.5 px-4 rounded-md uppercase tracking-wider text-sm">
+                Stok Habis
+              </span>
             </div>
           )}
           <button
@@ -81,7 +91,7 @@ function VariantPickerModal({
   onClose: () => void;
 }) {
   const { data: variants = [], isLoading } = useDressingRoomCatalogVariants(product.id);
-  const availableVariants = variants.filter((v: any) => (v.stock || 0) > 0);
+  const availableVariants = variants.filter((v: any) => (v.available_quantity || 0) > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">

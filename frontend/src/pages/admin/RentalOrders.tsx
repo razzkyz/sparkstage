@@ -24,8 +24,8 @@ interface RentalOrder {
   customer_email: string;
   customer_phone: string;
   customer_address: string | null;
-  rental_start_time: string;
-  rental_end_time: string;
+  start_time: string;
+  end_time: string;
   duration_days: number;
   total_rental_cost: number;
   total_deposit: number;
@@ -193,7 +193,7 @@ export default function RentalOrders() {
 
     try {
       // Calculate late fee (Rp 50.000 per day overdue)
-      const lateFee = lateFeeCalc(selectedOrder.rental_end_time, returnTime.toISOString());
+      const lateFee = lateFeeCalc(selectedOrder.end_time, returnTime.toISOString());
 
       // Update order
       const { error: orderError } = await supabase
@@ -375,7 +375,7 @@ export default function RentalOrders() {
   ) => {
     if (!selectedDrOrder) return;
     try {
-      const lateFee = lateFeeCalc(selectedDrOrder.rental_end_time, returnTime.toISOString());
+      const lateFee = lateFeeCalc(selectedDrOrder.end_time, returnTime.toISOString());
 
       // Update order
       const { error: orderErr } = await supabase
@@ -789,7 +789,7 @@ export default function RentalOrders() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Calendar className="w-3 h-3" />
-                    {new Date(order.rental_start_time).toLocaleDateString('id-ID')}
+                    {new Date(order.start_time).toLocaleDateString('id-ID')}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Clock className="w-3 h-3" />
@@ -985,11 +985,11 @@ export default function RentalOrders() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="w-4 h-4" />
-                        <span>Mulai: {new Date(selectedOrder.rental_start_time).toLocaleString('id-ID')}</span>
+                        <span>Mulai: {new Date(selectedOrder.start_time).toLocaleString('id-ID')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Clock className="w-4 h-4" />
-                        <span>Kembali: {new Date(selectedOrder.rental_end_time).toLocaleString('id-ID')}</span>
+                        <span>Kembali: {new Date(selectedOrder.end_time).toLocaleString('id-ID')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FileText className="w-4 h-4" />
@@ -1192,11 +1192,11 @@ export default function RentalOrders() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 mb-1">Mulai Sewa</p>
-                  <p className="font-semibold">{new Date(selectedDrOrder.rental_start_time).toLocaleString('id-ID')}</p>
+                  <p className="font-semibold">{new Date(selectedDrOrder.start_time).toLocaleString('id-ID')}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 mb-1">Batas Kembali</p>
-                  <p className="font-semibold">{new Date(selectedDrOrder.rental_end_time).toLocaleString('id-ID')}</p>
+                  <p className="font-semibold">{new Date(selectedDrOrder.end_time).toLocaleString('id-ID')}</p>
                 </div>
               </div>
               {/* Items */}
@@ -1881,7 +1881,7 @@ function DRRentalSection({
                       <span>{order.duration_days} hari</span>
                     </div>
                     <p className="text-xs text-gray-400">
-                      s/d {new Date(order.rental_end_time).toLocaleDateString('id-ID')}
+                      s/d {new Date(order.end_time).toLocaleDateString('id-ID')}
                     </p>
                   </td>
                   <td className="px-4 py-3">

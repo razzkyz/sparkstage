@@ -14,6 +14,7 @@ const DressingRoomLookPage = lazy(() => import('../../pages/DressingRoomLookPage
 const DressingRoomCollectionPage = lazy(() => import('../../pages/DressingRoomCollectionPage'));
 const BeautyPage = lazy(() => import('../../pages/BeautyPage'));
 const Booking = lazy(() => import('../../pages/Booking'));
+const RentalSuccessPage = lazy(() => import('../../pages/RentalSuccessPage'));
 
 export const publicRouteConfigs: AppRouteConfig[] = [
   { path: 'shop', Page: Shop },
@@ -28,4 +29,5 @@ export const publicRouteConfigs: AppRouteConfig[] = [
   { path: 'news', Page: News },
   { path: 'journey', Page: JourneySelectionPage },
   { path: 'booking', Page: Booking },
+  { path: 'rental/success/:orderNumber', Page: RentalSuccessPage },
 ];

@@ -111,7 +111,7 @@ export function useDressingRoomCatalog() {
         .from('dressing_room_products')
         .select(`
           id, name, description, image_url, category, slug, is_active, dressing_room_category_id,
-          dressing_room_product_variants(daily_rental_fee, deposit_amount)
+          dressing_room_product_variants(daily_rental_fee, deposit_amount, available_quantity)
         `)
         .eq('is_active', true)
         .order('name', { ascending: true });
@@ -158,7 +158,7 @@ export function useDressingRoomProductsByCategory(categoryId?: number) {
         .from('dressing_room_products')
         .select(`
           id, name, description, image_url, category, slug, is_active, dressing_room_category_id,
-          dressing_room_product_variants(daily_rental_fee, deposit_amount)
+          dressing_room_product_variants(daily_rental_fee, deposit_amount, available_quantity)
         `)
         .eq('dressing_room_category_id', categoryId)
         .eq('is_active', true)

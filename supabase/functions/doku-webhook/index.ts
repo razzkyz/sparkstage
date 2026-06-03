@@ -12,8 +12,9 @@ import {
   sendWhatsAppInvoiceViaFontneIfNeeded,
   type TicketOrderItem
 } from '../_shared/payment-effects.ts'
+import { processRentalOrderTransition } from '../_shared/payment-processors.ts'
 
-type PaymentType = 'ticket' | 'product'
+type PaymentType = 'ticket' | 'product' | 'rental'
 
 /**
  * Extract payment type from invoice number prefix
@@ -25,6 +26,7 @@ function extractPaymentTypeFromInvoice(invoiceNumber: string): PaymentType | nul
   const prefix = invoiceNumber.substring(0, 4)
   if (prefix === 'PRD-') return 'product'
   if (prefix === 'SPK-') return 'ticket'
+  if (prefix === 'RTL-') return 'rental'
   return null
 }
 
@@ -47,12 +49,16 @@ function validatePaymentTypeMatch(
 
   const match = foundOrderType === invoicePaymentType
   if (!match) {
+    let expectedPrefix = 'SPK-'
+    if (foundOrderType === 'product') expectedPrefix = 'PRD-'
+    else if (foundOrderType === 'rental') expectedPrefix = 'RTL-'
+    
     console.error(
       `[DOKU WEBHOOK] CRITICAL: Payment type mismatch for ${orderNumber}`,
       {
         invoiceType: invoicePaymentType,
         foundOrderType,
-        expectedInvoicePrefix: foundOrderType === 'product' ? 'PRD-' : 'SPK-',
+        expectedInvoicePrefix: expectedPrefix,
       },
     )
   }
@@ -718,6 +724,102 @@ serve(async (req) => {
       })
 
       console.log('[DOKU WEBHOOK] Print order processed successfully')
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    
+    // Check if it's a rental order
+    const { data: rentalOrder, error: rentalError } = await supabase
+      .from('rental_orders')
+      .select('id, user_id, order_number, status, payment_status')
+      .eq('order_number', orderNumber)
+      .maybeSingle()
+      
+    if (rentalOrder) {
+      const isPaymentTypeValid = validatePaymentTypeMatch('rental', invoicePaymentType, orderNumber)
+
+      if (!isPaymentTypeValid) {
+        console.error('[DOKU WEBHOOK] CRITICAL ERROR: Payment type mismatch detected', {
+          orderNumber,
+          invoicePaymentType,
+          foundOrderType: 'rental',
+          expectedPrefix: 'RTL-',
+        })
+
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'payment_type_mismatch',
+          payload: {
+            notification,
+            error: 'Rental invoice being applied to wrong order type',
+            invoicePaymentType,
+            foundOrderType: 'rental',
+          },
+          success: false,
+          errorMessage: `Payment type mismatch: invoice has type ${invoicePaymentType} but found rental order`,
+          processedAt: nowIso,
+        })
+
+        return jsonErrorWithDetails(
+          req,
+          422,
+          {
+            error: 'Payment type mismatch',
+            code: 'PAYMENT_TYPE_MISMATCH',
+            details: `Invoice type ${invoicePaymentType} does not match found order type rental`,
+          },
+          { allowAllOrigins: true }
+        )
+      }
+
+      console.log('[DOKU WEBHOOK] Processing rental order transition to:', providerStatus)
+      const result = await processRentalOrderTransition({
+        supabase,
+        order: rentalOrder,
+        nextStatus: providerStatus,
+        paymentData: notification,
+        nowIso,
+      })
+
+      await logWebhookEvent(supabase, {
+        orderNumber,
+        eventType: 'rental_order_processed',
+        payload: {
+          notification,
+          next_status: providerStatus,
+          applied: result.applied,
+          skipped_reason: result.skippedReason,
+        },
+        success: !result.updateError && !result.effectError,
+        errorMessage: result.updateError ?? result.effectError,
+        processedAt: nowIso,
+      })
+
+      await logWebhookEvent(supabase, {
+        orderNumber,
+        eventType: idempotencyEventType,
+        payload: notification,
+        success: !result.updateError && !result.effectError,
+        errorMessage: result.updateError ?? result.effectError,
+        processedAt: nowIso,
+      })
+
+      if (result.updateError || result.effectError) {
+        console.log('[DOKU WEBHOOK] ERROR: Rental order transition failed')
+        return jsonErrorWithDetails(
+          req,
+          500,
+          {
+            error: 'Failed to process rental payment webhook',
+            code: 'RENTAL_WEBHOOK_FAILED',
+            details: result.updateError ?? result.effectError,
+          },
+          { allowAllOrigins: true }
+        )
+      }
+
+      console.log('[DOKU WEBHOOK] Rental order processed successfully')
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

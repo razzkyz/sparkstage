@@ -156,8 +156,8 @@ serve(async (req) => {
     const variantIds = normalizedItems.map((item) => item.productVariantId);
 
     const { data: variantRows, error: variantsError } = await supabase
-      .from("product_variants")
-      .select("id, price, stock, reserved_stock, is_active, deposit_amount")
+      .from("dressing_room_product_variants")
+      .select("id, price, available_quantity, reserved_quantity, is_active, deposit_amount, daily_rental_fee")
       .in("id", variantIds);
 
     if (variantsError || !Array.isArray(variantRows)) {
@@ -276,19 +276,18 @@ serve(async (req) => {
         order_number: orderNumber,
         user_id: userId,
         duration_days: payload.durationDays,
-        rental_start_time: rentalStartTime.toISOString(),
-        rental_end_time: rentalEndTime.toISOString(),
+        start_time: rentalStartTime.toISOString(),
+        end_time: rentalEndTime.toISOString(),
         customer_name: payload.customerName.trim(),
         customer_email: payload.customerEmail.trim(),
         customer_phone: payload.customerPhone?.trim(),
         customer_address: payload.customerAddress.trim(),
-        initial_condition: payload.initialCondition || {},
-        subtotal: totalRentalCost,
-        deposit_amount: totalDeposit,
-        total: totalAmount,
+        total_rental_cost: totalRentalCost,
+        total_deposit: totalDeposit,
+        total_amount: totalAmount,
         status: "awaiting_payment",
         payment_status: "unpaid",
-        payment_expired_at: paymentExpiredAt.toISOString(),
+        source: "online",
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
       })
@@ -313,13 +312,13 @@ serve(async (req) => {
     // Create rental order items
     const orderItems = resolvedItems.map((item) => ({
       rental_order_id: orderId,
-      product_variant_id: item.productVariantId,
+      dressing_room_product_variant_id: item.productVariantId,
       product_name: item.productName,
       quantity: item.quantity,
       daily_rate: item.dailyRate,
       item_deposit_amount: item.itemDepositAmount,
       total_rental_cost: item.totalRentalCost,
-      initial_condition: payload.initialCondition?.[item.productVariantId] || {},
+      current_status: 'reserved',
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
     }));

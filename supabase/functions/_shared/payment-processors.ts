@@ -14,12 +14,23 @@ import {
   type TicketOrderItem,
 } from "./payment-effects.ts";
 
+export type RentalOrderTransitionOrder = {
+  id: number;
+  user_id?: string | null;
+  order_number: string;
+  status?: string | null;
+  payment_status?: string | null;
+  payment_data?: unknown;
+};
+
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
 const TICKET_ORDER_SELECT =
   "id, user_id, order_number, status, tickets_issued_at, capacity_released_at";
 const PRODUCT_ORDER_SELECT =
   "id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, paid_at, total, stock_released_at, voucher_id, voucher_code, discount_amount";
+const RENTAL_ORDER_SELECT =
+  "id, user_id, order_number, status, payment_status";
 
 export type ProductOrderTransitionOrder = ProductOrder & {
   user_id?: string | null;
@@ -53,6 +64,14 @@ function mapProductOrderStatus(nextStatus: string, currentStatus: string) {
   if (nextStatus === "paid") return "processing";
   if (nextStatus === "expired") return "expired";
   if (nextStatus === "failed") return "cancelled";
+  return currentStatus || "awaiting_payment";
+}
+
+function mapRentalOrderStatus(nextStatus: string, currentStatus: string) {
+  if (nextStatus === "paid") return "paid"; // Will become 'active' upon pickup
+  if (nextStatus === "expired") return "cancelled"; // No expired in rental status
+  if (nextStatus === "failed") return "cancelled";
+  if (nextStatus === "refunded") return "refunded";
   return currentStatus || "awaiting_payment";
 }
 
@@ -128,6 +147,24 @@ function getProductTransitionSkipReason(
   return null;
 }
 
+function getRentalTransitionSkipReason(
+  currentPaymentStatus: string,
+  currentStatus: string,
+  nextStatus: string,
+) {
+  if (!nextStatus) return "missing_next_status";
+  if (currentPaymentStatus === "paid" && (nextStatus === "pending" || nextStatus === "failed" || nextStatus === "expired")) {
+    return `blocked_${nextStatus}_after_paid`;
+  }
+  if (currentPaymentStatus === "refunded" && nextStatus !== "refunded") {
+    return `blocked_${nextStatus}_after_refunded`;
+  }
+  if (currentStatus === "cancelled" && (nextStatus === "pending" || nextStatus === "paid")) {
+    return `blocked_${nextStatus}_after_cancelled`;
+  }
+  return null;
+}
+
 function extractProviderStatusSnapshot(paymentData: unknown) {
   const payload = typeof paymentData === "object" && paymentData !== null
     ? (paymentData as Record<string, unknown>)
@@ -156,7 +193,7 @@ function extractProviderStatusSnapshot(paymentData: unknown) {
 
 async function fetchCurrentPaymentData(params: {
   supabase: ServiceClient;
-  table: "orders" | "order_products";
+  table: "orders" | "order_products" | "rental_orders";
   orderId: number;
 }) {
   const { data } = await params.supabase
@@ -174,7 +211,7 @@ async function fetchCurrentPaymentData(params: {
 
 async function buildMergedPaymentData(params: {
   supabase: ServiceClient;
-  table: "orders" | "order_products";
+  table: "orders" | "order_products" | "rental_orders";
   orderId: number;
   paymentData: unknown;
   nextStatus: string;
@@ -238,6 +275,22 @@ async function fetchProductOrderById(
   }
 
   return data as ProductOrderTransitionOrder;
+}
+
+async function fetchRentalOrderById(
+  params: { supabase: ServiceClient; orderId: number },
+) {
+  const { data, error } = await params.supabase
+    .from("rental_orders")
+    .select(RENTAL_ORDER_SELECT)
+    .eq("id", params.orderId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as RentalOrderTransitionOrder;
 }
 
 async function markTicketOrderRequiresReview(params: {
@@ -682,6 +735,137 @@ export async function processProductOrderTransition(params: {
 
   return {
     order: finalOrder ?? (updatedOrder as ProductOrderTransitionOrder),
+    updateError: null,
+    effectError: null,
+    applied: true,
+    skippedReason: null,
+  };
+}
+
+export async function processRentalOrderTransition(params: {
+  supabase: ServiceClient;
+  order: RentalOrderTransitionOrder;
+  nextStatus: string;
+  paymentData?: unknown;
+  nowIso: string;
+}): Promise<TransitionResult<RentalOrderTransitionOrder>> {
+  const { supabase, order, nextStatus, paymentData, nowIso } = params;
+  const currentPaymentStatus = String(order.payment_status || "").toLowerCase();
+  const currentStatus = String(order.status || "").toLowerCase();
+  
+  const skippedReason = getRentalTransitionSkipReason(
+    currentPaymentStatus,
+    currentStatus,
+    nextStatus,
+  );
+  if (skippedReason) {
+    return {
+      order,
+      updateError: null,
+      effectError: null,
+      applied: false,
+      skippedReason,
+    };
+  }
+
+  const paymentStatus = mapProductPaymentStatus(nextStatus);
+  const status = mapRentalOrderStatus(nextStatus, currentStatus);
+
+  const updateFields: Record<string, unknown> = {
+    status,
+    payment_status: paymentStatus,
+    updated_at: nowIso,
+  };
+
+  if (typeof paymentData !== "undefined") {
+    updateFields.payment_data = await buildMergedPaymentData({
+      supabase,
+      table: "rental_orders",
+      orderId: order.id,
+      paymentData,
+      nextStatus,
+      nowIso,
+    });
+  }
+
+  let updateQuery = supabase.from("rental_orders").update(updateFields).eq("id", order.id);
+  if (nextStatus === "pending") {
+    updateQuery = updateQuery.not("payment_status", "in", "(paid,failed,refunded)").not("status", "in", "(cancelled,completed)");
+  } else if (nextStatus === "paid") {
+    updateQuery = updateQuery.not("payment_status", "eq", "refunded").not("status", "in", "(cancelled,completed)");
+  } else if (nextStatus === "expired" || nextStatus === "failed") {
+    updateQuery = updateQuery.not("payment_status", "in", "(paid,refunded)").not("status", "eq", "completed");
+  }
+
+  const { data: updatedOrder, error: updateError } = await updateQuery
+    .select(RENTAL_ORDER_SELECT)
+    .maybeSingle();
+
+  if (updateError) {
+    return {
+      order: null,
+      updateError: updateError.message,
+      effectError: null,
+      applied: false,
+      skippedReason: null,
+    };
+  }
+
+  if (!updatedOrder) {
+    const latestOrder = await fetchRentalOrderById({ supabase, orderId: order.id });
+    return {
+      order: latestOrder ?? order,
+      updateError: null,
+      effectError: null,
+      applied: false,
+      skippedReason: latestOrder
+        ? getRentalTransitionSkipReason(
+          String(latestOrder.payment_status || "").toLowerCase(),
+          String(latestOrder.status || "").toLowerCase(),
+          nextStatus,
+        ) ?? "concurrent_state_change"
+        : "concurrent_state_change",
+    };
+  }
+
+  // Effect: When rental order is paid, update items to 'reserved'
+  if (nextStatus === "paid") {
+    try {
+      const { error: itemsError } = await supabase
+        .from("rental_order_items")
+        .update({ current_status: 'reserved', status_updated_at: nowIso })
+        .eq("rental_order_id", order.id);
+
+      if (itemsError) {
+        throw new Error(`Failed to reserve items: ${itemsError.message}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to process rental side effects";
+      await logWebhookEvent(supabase, {
+        orderNumber: order.order_number,
+        eventType: "rental_side_effect_failed",
+        payload: { error: message, status: nextStatus },
+        success: false,
+        errorMessage: message,
+        processedAt: nowIso,
+      });
+      return {
+        order: (updatedOrder as RentalOrderTransitionOrder),
+        updateError: null,
+        effectError: message,
+        applied: true,
+        skippedReason: null,
+      };
+    }
+  }
+
+  const finalOrder = await fetchRentalOrderById({
+    supabase,
+    orderId: updatedOrder.id,
+  });
+
+  return {
+    order: finalOrder ?? (updatedOrder as RentalOrderTransitionOrder),
     updateError: null,
     effectError: null,
     applied: true,
