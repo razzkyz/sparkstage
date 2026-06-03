@@ -14,6 +14,7 @@ export default defineConfig({
     }
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     outDir: path.resolve(__dirname, './dist'),
     emptyOutDir: true,
     rollupOptions: {
@@ -57,6 +58,10 @@ export default defineConfig({
 
           if (id.includes('lucide-react')) {
             return 'icons-vendor';
+          }
+
+          if (id.includes('@n8n/chat')) {
+            return 'n8n-chat-vendor';
           }
         },
       },
