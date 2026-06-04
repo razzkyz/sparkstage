@@ -460,32 +460,20 @@ export default function ChatWidget() {
         }
 
         /* ── RESPONSIVE ─────────────────────────────────────────── */
-        /* Tablet: pastikan window tidak melewati sisi kiri layar */
-        @media (max-width: 460px) {
+        /* Mobile & small tablet: compact card, NOT full screen */
+        @media (max-width: 768px) {
           .scw-root { bottom: 16px; right: 16px; }
           .scw-window {
-            position: fixed;
-            inset: 0;
-            width: 100dvw;
-            height: 100dvh;
-            border-radius: 0;
-            bottom: 0; right: 0;
-            animation: scw-slide-up 0.28s ease-out;
+            width: calc(100vw - 32px);
+            max-width: 380px;
+            height: min(500px, calc(100dvh - 110px));
+            max-height: calc(100dvh - 110px);
+            bottom: 90px;
+            right: 16px;
+            border-radius: 20px;
           }
-          @keyframes scw-slide-up {
-            from { opacity: 0; transform: translateY(30px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .scw-header { padding-top: max(18px, env(safe-area-inset-top)); border-radius: 0 !important; }
-          .scw-input-area { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-        }
-        /* Small tablet 460–768px: kurangi lebar window agar tidak kepotong */
-        @media (min-width: 461px) and (max-width: 768px) {
-          .scw-window {
-            width: calc(100vw - 48px);
-            right: 24px;
-            max-width: 400px;
-          }
+          .scw-toggle { width: 56px; height: 56px; }
+          .scw-toggle img { width: 32px; height: 32px; }
         }
       `}</style>
 
