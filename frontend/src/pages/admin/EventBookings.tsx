@@ -37,6 +37,7 @@ export default function EventBookings() {
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [rescheduleBooking, setRescheduleBooking] = useState<PurchasedTicket | null>(null);
   const [newTimeSlot, setNewTimeSlot] = useState('');
+  const [newValidDate, setNewValidDate] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 100;
@@ -113,17 +114,18 @@ export default function EventBookings() {
   };
 
   const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      (booking.ticket_code && booking.ticket_code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (booking.ticket_name && booking.ticket_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      booking.user_id.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery ||
+      (booking.ticket_code?.toLowerCase().includes(q) ?? false) ||
+      (booking.ticket_name?.toLowerCase().includes(q) ?? false) ||
+      (booking.user_id?.toLowerCase().includes(q) ?? false);
+
     const matchesDate = !dateFilter || booking.valid_date === dateFilter;
-    
+
     const matchesTimeSlot = !timeSlotFilter || booking.time_slot === timeSlotFilter;
-    
+
     const matchesStatus = !statusFilter || booking.status === statusFilter;
-    
+
     return matchesSearch && matchesDate && matchesTimeSlot && matchesStatus;
   });
 
@@ -152,18 +154,27 @@ export default function EventBookings() {
   }, [showToast]);
 
   const handleReschedule = async () => {
-    if (!rescheduleBooking || !newTimeSlot) {
-      showToast('error', 'Pilih sesi baru terlebih dahulu');
+    if (!rescheduleBooking) return;
+
+    const dateChanged = newValidDate && newValidDate !== rescheduleBooking.valid_date;
+    const slotChanged = newTimeSlot && newTimeSlot !== rescheduleBooking.time_slot;
+
+    if (!dateChanged && !slotChanged) {
+      showToast('error', 'Tidak ada perubahan untuk disimpan');
       return;
     }
 
     setRescheduling(true);
     try {
-      console.log('Rescheduling ticket:', rescheduleBooking.id, 'to time_slot:', newTimeSlot);
+      const updates: Record<string, string> = {};
+      if (dateChanged) updates.valid_date = newValidDate;
+      if (slotChanged) updates.time_slot = newTimeSlot;
+
+      console.log('Rescheduling ticket:', rescheduleBooking.id, updates);
 
       const { error } = await supabase
         .from('purchased_tickets')
-        .update({ time_slot: newTimeSlot })
+        .update(updates)
         .eq('id', rescheduleBooking.id);
 
       if (error) {
@@ -171,14 +182,18 @@ export default function EventBookings() {
         throw error;
       }
 
-      showToast('success', 'Jadwal sesi berhasil diubah');
+      const parts: string[] = [];
+      if (dateChanged) parts.push('tanggal');
+      if (slotChanged) parts.push('sesi');
+      showToast('success', `Jadwal ${parts.join(' & ')} berhasil diubah`);
       setRescheduleModalOpen(false);
       setRescheduleBooking(null);
       setNewTimeSlot('');
+      setNewValidDate('');
       fetchBookings();
     } catch (error) {
       console.error('Failed to reschedule:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Gagal mengubah jadwal sesi';
+      const errorMessage = error instanceof Error ? error.message : 'Gagal mengubah jadwal';
       showToast('error', errorMessage);
     } finally {
       setRescheduling(false);
@@ -188,6 +203,7 @@ export default function EventBookings() {
   const openRescheduleModal = (booking: PurchasedTicket) => {
     setRescheduleBooking(booking);
     setNewTimeSlot(booking.time_slot || '');
+    setNewValidDate(booking.valid_date || '');
     setRescheduleModalOpen(true);
   };
 
@@ -195,6 +211,7 @@ export default function EventBookings() {
     setRescheduleModalOpen(false);
     setRescheduleBooking(null);
     setNewTimeSlot('');
+    setNewValidDate('');
   };
 
   if (loading) {
@@ -548,7 +565,7 @@ export default function EventBookings() {
             <div className="bg-white rounded-lg max-w-md w-full">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">Reschedule Sesi</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Reschedule Tiket</h2>
                   <button
                     onClick={closeRescheduleModal}
                     className="text-gray-400 hover:text-gray-600"
@@ -565,16 +582,30 @@ export default function EventBookings() {
                     <p className="text-sm text-gray-500">Ticket Name</p>
                     <p className="font-semibold text-gray-900">{rescheduleBooking.ticket_name || '-'}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Valid Date</p>
-                    <p className="font-semibold text-gray-900">{new Date(rescheduleBooking.valid_date).toLocaleDateString('id-ID')}</p>
+
+                  {/* Current schedule info */}
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <p className="text-gray-500 mb-1">Jadwal Saat Ini</p>
+                    <p className="font-semibold text-gray-900">
+                      {new Date(rescheduleBooking.valid_date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      {rescheduleBooking.time_slot ? ` · ${rescheduleBooking.time_slot.slice(0, 5)}` : ''}
+                    </p>
                   </div>
+
+                  {/* New date */}
                   <div>
-                    <p className="text-sm text-gray-500">Sesi Saat Ini</p>
-                    <p className="font-semibold text-gray-900">{rescheduleBooking.time_slot || '-'}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Baru</label>
+                    <input
+                      type="date"
+                      value={newValidDate}
+                      onChange={(e) => setNewValidDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-500"
+                    />
                   </div>
+
+                  {/* New session */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Sesi Baru</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sesi Baru</label>
                     <select
                       value={newTimeSlot}
                       onChange={(e) => setNewTimeSlot(e.target.value)}
@@ -587,6 +618,7 @@ export default function EventBookings() {
                       <option value="18:00:00">18:00</option>
                     </select>
                   </div>
+
                   <div className="flex gap-3 pt-4">
                     <button
                       onClick={closeRescheduleModal}
@@ -596,10 +628,16 @@ export default function EventBookings() {
                     </button>
                     <button
                       onClick={handleReschedule}
-                      disabled={!newTimeSlot || newTimeSlot === rescheduleBooking.time_slot || rescheduling}
+                      disabled={
+                        rescheduling ||
+                        (
+                          (!newValidDate || newValidDate === rescheduleBooking.valid_date) &&
+                          (!newTimeSlot || newTimeSlot === rescheduleBooking.time_slot)
+                        )
+                      }
                       className="flex-1 px-4 py-2 bg-main-600 text-white rounded-lg hover:bg-main-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {rescheduling ? 'Menyimpan...' : 'Simpan'}
+                      {rescheduling ? 'Menyimpan...' : 'Simpan Perubahan'}
                     </button>
                   </div>
                 </div>
