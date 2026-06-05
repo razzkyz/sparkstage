@@ -314,7 +314,7 @@ const Navbar = () => {
                       <button
                         onClick={handleSignOutClick}
                         disabled={loggingOut}
-                        className="text-gray-600 hover:text-primary transition-colors"
+                        className="text-gray-600 hover:text-primary transition-colors cursor-pointer"
                         title={t("auth.signOut")}
                       >
                         <LogOut className="h-5 w-5" />
@@ -391,6 +391,14 @@ const Navbar = () => {
                         {totalQuantity}
                       </span>
                     )}
+                  </Link>
+
+                  <Link
+                    to="/profile"
+                    className="text-gray-600 hover:text-primary transition-colors"
+                    title="Profile"
+                  >
+                    <UserRound className="h-5 w-5" />
                   </Link>
 
                   {/* UserRound — hanya tampil saat belum login */}
@@ -809,6 +817,16 @@ const Navbar = () => {
                   Dashboard Admin
                 </Link>
               )}
+
+              {/* Profile Link */}
+              <Link
+                to="/profile"
+                onClick={() => setSidebarOpen(false)}
+                className="flex w-full items-center gap-3 py-2 text-sm font-semibold text-gray-500 hover:text-[#ff4b86] transition-colors"
+              >
+                <UserRound className="h-4 w-4 flex-shrink-0" />
+                Profile
+              </Link>
 
               {/* Sign Out */}
               <button

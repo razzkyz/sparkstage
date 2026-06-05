@@ -182,9 +182,11 @@ export default function CartPage() {
                           <h3 className="font-serif text-base sm:text-xl text-gray-900 leading-tight mb-1 truncate pr-1">
                             {item.productName}
                           </h3>
-                          <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">
-                            {item.variantName}
-                          </p>
+                          {item.variantName && item.variantName !== "Default" && (
+                            <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">
+                              {item.variantName}
+                            </p>
+                          )}
                           {item.isRental && item.rentalDailyRate && item.rentalDurationDays && (
                             <p className="text-xs text-gray-500 mt-1">
                               {formatCurrency(item.rentalDailyRate)} × {item.rentalDurationDays} hari

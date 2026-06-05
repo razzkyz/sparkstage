@@ -13,6 +13,7 @@ const ProductOrderSuccessPage = lazy(() => import('../../pages/ProductOrderSucce
 const ProductOrderPendingPage = lazy(() => import('../../pages/ProductOrderPendingPage'));
 const MyPointsPage = lazy(() => import('../../pages/MyPointsPage'));
 const LoyaltyDashboard = lazy(() => import('../../pages/account/LoyaltyDashboard'));
+const ProfilePage = lazy(() => import('../../pages/account/ProfilePage'));
 
 export const protectedPublicRouteConfigs: AppRouteConfig[] = [
   { path: 'cart', Page: CartPage },
@@ -23,6 +24,7 @@ export const protectedPublicRouteConfigs: AppRouteConfig[] = [
   { path: 'my-tickets', Page: MyTicketsPage },
   { path: 'my-orders', Page: MyProductOrdersPage },
   { path: 'my-points', Page: MyPointsPage },
+  { path: 'profile', Page: ProfilePage },
   { path: 'spark-club', Page: LoyaltyDashboard },
   { path: 'order/product/success/:orderNumber', Page: ProductOrderSuccessPage },
   { path: 'order/product/pending/:orderNumber', Page: ProductOrderPendingPage },

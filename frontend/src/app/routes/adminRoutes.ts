@@ -72,6 +72,10 @@ const AdminPointsManager = lazy(
   () => import("../../pages/admin/AdminPointsManager"),
 );
 
+const RetailProductManager = lazy(
+  () => import("../../pages/admin/RetailProductManager"),
+);
+
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
   { path: "/admin/retail-dashboard", Page: RetailDashboard },
@@ -108,4 +112,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/audit-logs", Page: AuditLogsPage },
   { path: "/admin/loyalty-points", Page: AdminPointsManager },
   { path: "/admin/divisions", Page: DivisionManager },
+  { path: "/admin/retail-products", Page: RetailProductManager },
 ];

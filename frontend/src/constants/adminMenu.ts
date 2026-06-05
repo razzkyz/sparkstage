@@ -115,6 +115,12 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         icon: "inventory_2",
         path: "/admin/store",
       },
+      {
+        id: "retail-products",
+        label: "Produk Retail (E-Com)",
+        icon: "storefront",
+        path: "/admin/retail-products",
+      },
     ],
   },
   {
@@ -316,6 +322,12 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "retail-products",
+        label: "Produk Retail (E-Com)",
+        icon: "storefront",
+        path: "/admin/retail-products",
       },
     ],
   },

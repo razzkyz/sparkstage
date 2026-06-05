@@ -15,10 +15,11 @@ export function ProductImageCarousel(props: ProductImageCarouselProps) {
 
   const isControlled = typeof currentIndex === "number";
   const index = isControlled ? currentIndex : internalIndex;
+  const [failedSrcs, setFailedSrcs] = useState<Set<string>>(new Set());
 
   const safeImages = useMemo(
-    () => images.filter((v) => typeof v === "string" && v.trim().length > 0),
-    [images],
+    () => images.filter((v) => typeof v === "string" && v.trim().length > 0 && !failedSrcs.has(v)),
+    [images, failedSrcs],
   );
   const hasImages = safeImages.length > 0;
   const hasMultiple = safeImages.length > 1;
@@ -96,6 +97,7 @@ export function ProductImageCarousel(props: ProductImageCarouselProps) {
                   alt={`${alt} - View ${i + 1}`}
                   className="w-full h-full object-cover"
                   draggable={false}
+                  onError={() => setFailedSrcs(prev => new Set([...prev, src]))}
                 />
               </div>
             ))}
