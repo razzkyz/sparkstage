@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Heart, ShieldCheck, Zap, ArrowRight, Star, Package } from 'lucide-react';
 import { PageTransition } from '../components/PageTransition';
+import useSeo from '../hooks/useSeo';
 import { HeroCarousel } from '../components/dressing-room/HeroCarousel';
 import { DRESSING_ROOM_DEMO } from '../mock/dressingRoomDemo';
 import { useDressingRoomCollection } from '../hooks/useDressingRoomCollection';
@@ -142,15 +143,21 @@ export default function DressingRoomLandingPage() {
   const { collection, looks: dbLooks, isLoading: looksLoading } = useDressingRoomCollection();
   const { data: drProducts = [], isLoading: productsLoading } = useDressingRoomCatalog();
   const { data: subcategories = [] } = useDressingRoomSubcategoriesBySlug('dressing-room');
+
+  const title = collection?.title || DRESSING_ROOM_DEMO.title;
+  const description = collection?.description || DRESSING_ROOM_DEMO.description;
+
+  useSeo({
+    title: `${title} · Fashion On Demand · Stage 55`,
+    description,
+    canonical: `${window.location.origin}/dressing-room`,
+  });
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<DressingRoomCatalogProduct | null>(null);
   const [rentalProduct, setRentalProduct] = useState<DressingRoomCatalogProduct | null>(null);
   const [rentalVariant, setRentalVariant] = useState<any>(null);
   const [showRentalModal, setShowRentalModal] = useState(false);
-
-  const title = collection?.title || DRESSING_ROOM_DEMO.title;
-  const description = collection?.description || DRESSING_ROOM_DEMO.description;
 
   // Collect all model images from looks for carousel
   const carouselImages = dbLooks

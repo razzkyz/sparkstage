@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { mapSearchQueryToRoute } from "../lib/searchRouteMap";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageTransition } from "../components/PageTransition";
 import ProductQuickViewModal from "../components/ProductQuickViewModal";
@@ -15,6 +16,7 @@ import { buildImageKitThumbUrl } from "../lib/imagekit";
 import { useCart } from "../contexts/cartStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
+import useSeo from "../hooks/useSeo";
 import type { Product } from "../hooks/useProducts";
 
 const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
@@ -55,6 +57,11 @@ type QuickViewState = {
 };
 
 export default function BeautyPage() {
+  useSeo({
+    title: "Glam Room · Stage 55",
+    description: "Explore Glam Room curated makeup and accessories.",
+    canonical: `${window.location.origin}/glam`,
+  });
   const { settings, error: settingsError } = useGlamPageSettings();
   const {
     data: products = [],
@@ -345,6 +352,15 @@ export default function BeautyPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const mapped = mapSearchQueryToRoute(searchQuery || "");
+                    if (mapped) {
+                      (e.currentTarget as HTMLInputElement).blur();
+                      navigate(mapped);
+                    }
+                  }
+                }}
                 placeholder={content.product_search_placeholder}
                 className="w-full rounded-full border border-black/30 bg-white py-3.5 pl-12 pr-6 text-sm outline-none transition-colors focus:border-black"
               />

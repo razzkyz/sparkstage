@@ -18,6 +18,7 @@ import { fetchProductDetail } from "../hooks/useProduct";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
+import useSeo from "../hooks/useSeo";
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -338,6 +339,11 @@ function ShopResults({
 }
 
 export default function CharmBar() {
+  useSeo({
+    title: "Charm Bar · Stage 55",
+    description: "Shop charms and accessories at Charm Bar.",
+    canonical: `${window.location.origin}/charm-bar`,
+  });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const {

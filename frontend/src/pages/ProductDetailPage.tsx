@@ -11,6 +11,7 @@ import { ProductImageCarousel } from "../components/ProductImageCarousel";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../lib/queryKeys";
 import { ShoppingBag, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
+import useSeo from "../hooks/useSeo";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -20,6 +21,12 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: product, error, isLoading } = useProduct(productId);
+
+  useSeo({
+    title: product ? `${product.name} · Spark Club · Stage 55` : "Product · Spark Club · Stage 55",
+    description: product?.description || "Shop this product on Stage 55.",
+    canonical: product ? `${window.location.origin}/shop/product/${product.id}` : undefined,
+  });
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     null,
   );

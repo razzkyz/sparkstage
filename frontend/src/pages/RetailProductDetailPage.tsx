@@ -10,6 +10,7 @@ import { LazyMotion, m } from "framer-motion";
 import { ProductImageCarousel } from "../components/ProductImageCarousel";
 import { ShoppingBag, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
+import useSeo from "../hooks/useSeo";
 
 export default function RetailProductDetailPage() {
   const { productId } = useParams();
@@ -18,6 +19,12 @@ export default function RetailProductDetailPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: product, error, isLoading } = useProductRetailDetail(productId);
+
+  useSeo({
+    title: product ? `${product.name} · Stage 55 Retail` : "Retail Product · Stage 55",
+    description: product?.description || "Retail product at Stage 55",
+    canonical: product ? `${window.location.origin}/shop/retail/product/${product.id}` : undefined,
+  });
   const [imageIndex, setImageIndex] = useState(0);
 
   const handleAddToCart = () => {

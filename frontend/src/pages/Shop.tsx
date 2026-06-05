@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { mapSearchQueryToRoute } from "../lib/searchRouteMap";
+import useSeo from "../hooks/useSeo";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCart } from "../contexts/cartStore";
@@ -211,6 +213,12 @@ function ShopResults({
 }
 
 const Shop = () => {
+  useSeo({
+    title: "SparkStage Shop · Stage 55",
+    description: "Discover Glam Room, Charm Bar, and Spark Club products in SparkStage Shop.",
+    canonical: `${window.location.origin}/shop`,
+  });
+
   const queryClient = useQueryClient();
   const { addItem } = useCart();
   const { user } = useAuth();
@@ -503,6 +511,15 @@ const Shop = () => {
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
                       updateFilters({ q: e.target.value });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const mapped = mapSearchQueryToRoute(searchQuery || "");
+                        if (mapped) {
+                          e.currentTarget.blur();
+                          navigate(mapped);
+                        }
+                      }
                     }}
                     placeholder="Search products..."
                     className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"

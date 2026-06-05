@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import useSeo from "../hooks/useSeo";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -51,6 +52,12 @@ const Booking = () => {
   const { data: sparkMapBanners = [], isLoading: sparkMapLoading } =
     useBanners("spark-map");
   const sparkMap = sparkMapBanners[0];
+
+  useSeo({
+    title: "SparkStage Booking · Stage 55",
+    description: `Book Stage 55 journeys and experiences with SparkStage Booking. ${bookingCopy.journey_description}`,
+    canonical: `${window.location.origin}/booking`,
+  });
 
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
