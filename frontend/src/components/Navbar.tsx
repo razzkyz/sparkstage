@@ -393,16 +393,16 @@ const Navbar = () => {
                     )}
                   </Link>
 
-                  <Link
-                    to="/profile"
-                    className="text-gray-600 hover:text-primary transition-colors"
-                    title="Profile"
-                  >
-                    <UserRound className="h-5 w-5" />
-                  </Link>
-
-                  {/* UserRound — hanya tampil saat belum login */}
-                  {!user && (
+                  {/* Profile — hanya tampil saat login */}
+                  {user ? (
+                    <Link
+                      to="/profile"
+                      className="text-gray-600 hover:text-primary transition-colors"
+                      title="Profile"
+                    >
+                      <UserRound className="h-5 w-5" />
+                    </Link>
+                  ) : (
                     <Link
                       to="/login"
                       className="relative text-gray-600 hover:text-main-600 transition-colors"
@@ -497,8 +497,17 @@ const Navbar = () => {
                     )}
                   </Link>
 
-                  {/* Mobile: UserRound — hanya tampil saat belum login */}
-                  {!user && (
+                  {/* Mobile: Profile/Login — kondisional berdasarkan status login */}
+                  {user ? (
+                    <Link
+                      to="/profile"
+                      className="relative text-gray-600 hover:text-main-600 transition-colors"
+                      aria-label="Profile"
+                      title="Profile"
+                    >
+                      <UserRound className="h-5 w-5" />
+                    </Link>
+                  ) : (
                     <Link
                       to="/login"
                       className="relative text-gray-600 hover:text-main-600 transition-colors"
