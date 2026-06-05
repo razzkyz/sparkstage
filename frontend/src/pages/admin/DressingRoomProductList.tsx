@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import AdminLayout from '@/components/AdminLayout';
-import { AlertCircle, Upload, Search } from 'lucide-react';
+import { AlertCircle, Upload, Search, Download } from 'lucide-react';
 import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu';
 import { useAdminMenuSections } from '@/hooks/useAdminMenuSections';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ import { DressingRoomCSVImportModal, type DressingRoomProductDraft } from '@/com
 import { DressingRoomProductModal } from '@/components/admin/DressingRoomProductModal';
 import { DressingRoomProductCard } from './dressing-room/DressingRoomProductCard';
 import TableRowSkeleton from '@/components/skeletons/TableRowSkeleton';
+import { exportDressingRoomProductsToExcel } from '@/utils/dressingRoomExcelUtils';
 
 function DressingRoomProductList() {
   const queryClient = useQueryClient();
@@ -34,11 +35,12 @@ function DressingRoomProductList() {
           id,
           name,
           slug,
+          description,
           category,
           image_url,
           is_active,
           created_at,
-          dressing_room_product_variants(id, price, daily_rental_fee, total_quantity)
+          dressing_room_product_variants(id, name, sku, size_label, color, price, daily_rental_fee, total_quantity, is_active)
         `)
         .order('created_at', { ascending: false });
 
@@ -186,12 +188,20 @@ function DressingRoomProductList() {
       onLogout={signOut}
       headerActions={
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportDressingRoomProductsToExcel(products ?? [])}
+            disabled={!products || products.length === 0}
+            className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed sm:px-4"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export Excel</span>
+          </button>
           <button 
             onClick={() => setShowImportModal(true)}
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 sm:px-4"
           >
             <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Import CSV</span>
+            <span className="hidden sm:inline">Import Excel</span>
           </button>
           <button 
             onClick={() => { setEditingProduct(null); setModalOpen(true); }}

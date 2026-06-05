@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { X, Upload, Download, CheckCircle, AlertTriangle, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { parseDRProductsFromExcel, downloadDRProductTemplate } from '../../utils/dressingRoomExcelUtils';
 
 export interface DressingRoomProductDraft {
   id?: number;
@@ -20,24 +22,14 @@ export interface DressingRoomProductDraft {
   }>;
 }
 
-interface CSVProductRow {
-  name: string;
-  sku: string;
-  description?: string;
-  price?: string;
-  daily_rental_fee?: string;
-  stock?: string;
-  variant_name?: string;
-  color?: string;
-  size?: string;
-}
-
 interface DressingRoomCSVImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (products: DressingRoomProductDraft[]) => Promise<void>;
   isImporting: boolean;
 }
+
+type Step = 'upload' | 'preview' | 'done';
 
 export function DressingRoomCSVImportModal({
   isOpen,
@@ -47,195 +39,243 @@ export function DressingRoomCSVImportModal({
 }: DressingRoomCSVImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsedProducts, setParsedProducts] = useState<DressingRoomProductDraft[]>([]);
-  const [error, setError] = useState<string>('');
-  const [fileName, setFileName] = useState<string>('');
+  const [parseErrors, setParseErrors] = useState<string[]>([]);
+  const [fileName, setFileName] = useState('');
+  const [parseLoading, setParseLoading] = useState(false);
+  const [step, setStep] = useState<Step>('upload');
+
+  const reset = () => {
+    setParsedProducts([]);
+    setParseErrors([]);
+    setFileName('');
+    setStep('upload');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setError('');
-    setParsedProducts([]);
     setFileName(file.name);
-
+    setParseLoading(true);
     try {
-      const text = await file.text();
-      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-      
-      if (lines.length < 2) {
-        throw new Error('CSV harus memiliki header dan minimal 1 data row');
-      }
-
-      // Parse header
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const requiredCols = ['name', 'sku'];
-      const missingCols = requiredCols.filter(col => !headers.includes(col));
-      
-      if (missingCols.length > 0) {
-        throw new Error(`Kolom wajib tidak ada: ${missingCols.join(', ')}`);
-      }
-
-      // Parse rows
-      const products: DressingRoomProductDraft[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const row: Partial<CSVProductRow> = {};
-        
-        headers.forEach((header, idx) => {
-          row[header as keyof CSVProductRow] = values[idx] || '';
-        });
-
-        if (!row.name || !row.sku) continue;
-
-        const price = parseFloat(row.price || '0');
-        const dailyRentalFee = parseFloat(row.daily_rental_fee || '15000');
-        const stock = parseInt(row.stock || '1', 10) || 1;
-
-        products.push({
-          name: row.name,
-          slug: row.name.toLowerCase().replace(/\s+/g, '-'),
-          description: row.description || '',
-          category: 'clothing',
-          dressing_room_category_id: null,
-          image_url: '',
-          is_active: true,
-          variants: [
-            {
-              name: row.variant_name || 'Default',
-              sku: row.sku,
-              price: price,
-              daily_rental_fee: dailyRentalFee,
-              total_quantity: stock,
-              color: row.color || '',
-              size_label: row.size || '',
-            },
-          ],
-        });
-      }
-
-      if (products.length === 0) {
-        throw new Error('Tidak ada produk yang valid di CSV');
-      }
-
-      setParsedProducts(products);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal parse CSV');
-      setParsedProducts([]);
+      const result = await parseDRProductsFromExcel(file);
+      setParsedProducts(result.products);
+      setParseErrors(result.errors);
+      setStep('preview');
+    } catch (err: any) {
+      setParseErrors([err.message]);
+      setStep('preview');
+    } finally {
+      setParseLoading(false);
     }
   };
 
   const handleImport = async () => {
     if (parsedProducts.length === 0) return;
-
     try {
       await onImport(parsedProducts);
-      setParsedProducts([]);
-      setFileName('');
-      setError('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      reset();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal import produk');
+    } catch (err: any) {
+      setParseErrors((prev) => [...prev, err.message]);
     }
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Import Katalog Dressing Room</h2>
-          <button
-            onClick={onClose}
-            disabled={isImporting}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        {/* Instructions */}
-        <div className="mb-6 rounded-lg bg-pink-50 border border-pink-200 p-4">
-          <p className="text-sm text-pink-900 font-medium mb-2">Format CSV:</p>
-          <p className="text-xs text-pink-800 font-mono mb-2">
-            name, sku, description, price, daily_rental_fee, stock, variant_name, color, size
-          </p>
-          <p className="text-xs text-pink-800">
-            Wajib: name, sku | Opsional: yang lainnya
-          </p>
-        </div>
-
-        {/* File input */}
-        <div className="mb-6">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            disabled={isImporting}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
-          />
-          {fileName && (
-            <p className="mt-2 text-xs text-gray-600">File: <strong>{fileName}</strong></p>
-          )}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Preview */}
-        {parsedProducts.length > 0 && (
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-900 mb-3">
-              Preview ({parsedProducts.length} produk akan ditambahkan ke kategori Dressing Room)
-            </p>
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Nama</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">SKU</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Biaya Sewa</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Stok</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {parsedProducts.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-gray-900">{p.name}</td>
-                      <td className="px-4 py-2 text-gray-600 text-xs font-mono">{p.variants[0].sku}</td>
-                      <td className="px-4 py-2 text-gray-600">Rp {p.variants[0].daily_rental_fee}</td>
-                      <td className="px-4 py-2 text-gray-600">{p.variants[0].total_quantity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center">
+              <FileSpreadsheet className="w-5 h-5 text-pink-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Import Katalog dari Excel</h2>
+              <p className="text-sm text-gray-500">Upload file .xlsx untuk menambah produk sekaligus</p>
             </div>
           </div>
-        )}
+          <button onClick={handleClose} disabled={isImporting} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            disabled={isImporting}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Batal
-          </button>
-          <button
-            onClick={handleImport}
-            disabled={parsedProducts.length === 0 || isImporting}
-            className="px-4 py-2 rounded-lg bg-pink-600 text-sm font-semibold text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isImporting && <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-            {isImporting ? 'Importing...' : `Import ${parsedProducts.length} Katalog`}
-          </button>
+        <div className="p-6 space-y-5">
+
+          {/* ── STEP: UPLOAD ── */}
+          {step === 'upload' && (
+            <>
+              {/* Template download */}
+              <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">Belum punya template?</p>
+                  <p className="text-xs text-blue-700 mt-0.5">Download template Excel dengan contoh format produk & varian</p>
+                </div>
+                <button
+                  onClick={downloadDRProductTemplate}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Template
+                </button>
+              </div>
+
+              {/* Drop zone */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50/30 transition-all group"
+              >
+                {parseLoading ? (
+                  <Loader2 className="w-10 h-10 text-pink-500 mx-auto mb-3 animate-spin" />
+                ) : (
+                  <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3 group-hover:text-pink-500 transition-colors" />
+                )}
+                <p className="text-sm font-semibold text-gray-700 group-hover:text-pink-700">
+                  {parseLoading ? 'Memproses file...' : 'Klik untuk pilih file Excel'}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Format: .xlsx atau .xls</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={isImporting}
+                />
+              </div>
+
+              {/* Column guide */}
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kolom Excel</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { name: 'product_name', note: 'Wajib (baris pertama varian)', req: true },
+                    { name: 'sku', note: 'Wajib tiap varian', req: true },
+                    { name: 'variant_name', note: 'Nama varian (Size S, dll)', req: false },
+                    { name: 'size_label', note: 'Ukuran (S/M/L/XL)', req: false },
+                    { name: 'color', note: 'Warna', req: false },
+                    { name: 'price', note: 'Harga jual', req: false },
+                    { name: 'daily_rental_fee', note: 'Biaya sewa/hari', req: false },
+                    { name: 'stock', note: 'Jumlah stok', req: false },
+                    { name: 'slug', note: 'URL slug (auto-generate)', req: false },
+                    { name: 'is_active', note: '"ya" atau "tidak"', req: false },
+                  ].map((col) => (
+                    <div key={col.name} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${col.req ? 'bg-pink-50 border border-pink-100' : 'bg-gray-50 border border-gray-100'}`}>
+                      <code className={`font-mono font-bold ${col.req ? 'text-pink-700' : 'text-gray-700'}`}>{col.name}</code>
+                      <span className="text-gray-400 truncate">— {col.note}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  💡 Satu produk bisa punya banyak baris varian. Isi <code className="font-mono">product_name</code> hanya di baris pertama tiap produk, baris varian berikutnya biarkan kosong.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* ── STEP: PREVIEW ── */}
+          {step === 'preview' && (
+            <>
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-2">
+                <FileSpreadsheet className="w-4 h-4 text-gray-400" />
+                <span className="font-medium truncate">{fileName}</span>
+              </div>
+
+              {/* Summary badges */}
+              <div className="flex gap-3">
+                <div className="flex-1 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-2xl font-black text-emerald-700">{parsedProducts.length}</p>
+                    <p className="text-xs text-emerald-600">Produk valid</p>
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-4">
+                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-2xl font-black text-red-600">{parseErrors.length}</p>
+                    <p className="text-xs text-red-500">Error</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parse errors */}
+              {parseErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">Error Ditemukan</p>
+                  {parseErrors.map((e, i) => (
+                    <p key={i} className="text-xs text-red-600">• {e}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview table */}
+              {parsedProducts.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 max-h-72 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        {['Nama Produk', 'Varian', 'SKU', 'Biaya Sewa', 'Stok'].map(h => (
+                          <th key={h} className="px-3 py-2 text-left font-semibold text-gray-600 whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {parsedProducts.flatMap((p) =>
+                        p.variants.map((v, vi) => (
+                          <tr key={`${p.name}-${vi}`} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 font-medium text-gray-900 max-w-[140px] truncate">
+                              {vi === 0 ? p.name : <span className="text-gray-300">↳</span>}
+                            </td>
+                            <td className="px-3 py-2 text-gray-600">{v.name}</td>
+                            <td className="px-3 py-2 font-mono text-gray-500">{v.sku}</td>
+                            <td className="px-3 py-2 text-gray-700 font-semibold">
+                              Rp {v.daily_rental_fee.toLocaleString('id-ID')}
+                            </td>
+                            <td className="px-3 py-2 text-gray-700">{v.total_quantity}</td>
+                          </tr>
+                        ))
+                      ).slice(0, 20)}
+                    </tbody>
+                  </table>
+                  {parsedProducts.reduce((s, p) => s + p.variants.length, 0) > 20 && (
+                    <p className="text-center text-xs text-gray-400 py-2 border-t border-gray-100">
+                      + lebih banyak baris tidak ditampilkan
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => { reset(); }}
+                  disabled={isImporting}
+                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-40"
+                >
+                  Pilih File Lain
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={parsedProducts.length === 0 || isImporting}
+                  className="flex-1 py-3 bg-pink-600 text-white rounded-xl font-bold hover:bg-pink-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isImporting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isImporting ? 'Importing...' : `Import ${parsedProducts.length} Produk`}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

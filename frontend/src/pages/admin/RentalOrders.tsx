@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag, Plus, CheckCircle, Package } from 'lucide-react';
+import { Search, Calendar, Clock, User, Phone, Mail, ArrowRight, FileText, RefreshCw, ShoppingBag, Plus, CheckCircle, Package, Download, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 import AdminLayout from '../../components/AdminLayout';
@@ -11,6 +11,8 @@ import { uploadFileToImageKit } from '../../lib/imagekit';
 import { RentalItemStatusTracker } from '../../components/admin/RentalItemStatusTracker';
 import { CreateRentalOrderModal } from '../../components/admin/CreateRentalOrderModal';
 import { DRReturnModal } from '../../components/admin/DRReturnModal';
+import { RentalExcelImportModal } from '../../components/admin/RentalExcelImportModal';
+import { exportRentalOrdersToExcel } from '../../utils/rentalExcelUtils';
 import type { RentalItemStatus } from '../../types/dressingRoom';
 
 type RentalOrderStatus = 'awaiting_payment' | 'paid' | 'active' | 'overdue' | 'returned' | 'cancelled' | 'refunded';
@@ -96,6 +98,7 @@ export default function RentalOrders() {
   const menuSections = useAdminMenuSections();
   // Page-level tab
   const [activePageTab, setActivePageTab] = useState<PageTab>('costume_harian');
+  const [showImportModal, setShowImportModal] = useState(false);
   // Sewa Formal state
   const [orders, setOrders] = useState<RentalOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<RentalOrder | null>(null);
@@ -679,7 +682,22 @@ export default function RentalOrders() {
           <h1 className="text-2xl font-bold text-gray-900">Sewa Dressing Room</h1>
           <p className="text-sm text-gray-600 mt-1">Kelola pesanan sewa baju dan proses pengembalian</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportRentalOrdersToExcel(filteredOrders, 'sewa-formal')}
+            disabled={filteredOrders.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm"
+          >
+            <Upload className="w-4 h-4" />
+            Import Excel
+          </button>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold shadow-sm"
@@ -1300,7 +1318,19 @@ export default function RentalOrders() {
             setShowCreateModal(false);
             setCreateSuccessMsg(`Order ${orderNumber} berhasil dibuat dan stok telah dikurangi.`);
             fetchOrders();
-            // Auto-hide toast after 6 seconds
+            setTimeout(() => setCreateSuccessMsg(null), 6000);
+          }}
+        />
+      )}
+
+      {/* Excel Import Modal */}
+      {showImportModal && (
+        <RentalExcelImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={(count) => {
+            setShowImportModal(false);
+            setCreateSuccessMsg(`${count} order berhasil diimport dari Excel!`);
+            fetchOrders();
             setTimeout(() => setCreateSuccessMsg(null), 6000);
           }}
         />
