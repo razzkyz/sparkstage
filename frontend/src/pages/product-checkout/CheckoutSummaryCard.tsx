@@ -9,6 +9,7 @@ type CheckoutSummaryCardProps = {
   finalTotal: number;
   appliedVoucher: AppliedVoucher | null;
   appliedPoints: AppliedPoints | null;
+  shippingCost?: number;
 };
 
 export function CheckoutSummaryCard({
@@ -18,6 +19,7 @@ export function CheckoutSummaryCard({
   finalTotal,
   appliedVoucher,
   appliedPoints,
+  shippingCost = 0,
 }: CheckoutSummaryCardProps) {
   const { t } = useTranslation();
 
@@ -61,6 +63,12 @@ export function CheckoutSummaryCard({
             <span>{t('voucher.summary.subtotal')}</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
+          {shippingCost > 0 && (
+            <div className="flex justify-between text-sm text-rose-700">
+              <span>Ongkos Kirim</span>
+              <span>{formatCurrency(shippingCost)}</span>
+            </div>
+          )}
           {appliedVoucher && discountAmount > 0 && (
             <div className="flex justify-between text-sm text-green-700">
               <span>{t('voucher.summary.discount', { code: appliedVoucher.code })}</span>

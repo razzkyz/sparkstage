@@ -52,14 +52,13 @@ Deno.serve(async (req: Request) => {
 
     // ─── CEK ONGKOS KIRIM ───
     if (action === 'cost') {
-      // RajaOngkir mewajibkan format body x-www-form-urlencoded
       const formParams = new URLSearchParams()
       if (body.origin) formParams.append('origin', body.origin)
       if (body.destination) formParams.append('destination', body.destination)
       if (body.weight) formParams.append('weight', body.weight.toString())
       if (body.courier) formParams.append('courier', body.courier)
 
-      const response = await fetch(`${BASE_URL}/cost`, {
+      const response = await fetch('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', {
         method: 'POST',
         headers,
         body: formParams.toString()

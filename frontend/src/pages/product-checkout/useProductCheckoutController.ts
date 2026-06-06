@@ -39,6 +39,7 @@ type UseProductCheckoutControllerParams = {
   removeItem: (variantId: number) => void;
   showToast: (type: 'success' | 'error' | 'info' | 'warning', message: string) => void;
   cashierCheckoutEnabled: boolean;
+  initialProfile?: any;
 };
 
 const mapVoucherErrorCode = (message?: string | null, code?: string | null) => {
@@ -67,9 +68,17 @@ export function useProductCheckoutController({
   removeItem,
   showToast,
   cashierCheckoutEnabled,
+  initialProfile,
 }: UseProductCheckoutControllerParams) {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [deliveryMethod, setDeliveryMethod] = useState<'shipping' | 'pickup'>('shipping');
+  const [provinceId, setProvinceId] = useState('');
+  const [cityId, setCityId] = useState('');
+  const [shippingCourier, setShippingCourier] = useState('');
+  const [shippingService, setShippingService] = useState('');
+  const [shippingCost, setShippingCost] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkoutReady, setCheckoutReady] = useState(false);
@@ -109,13 +118,24 @@ export function useProductCheckoutController({
     }
   }, [user]);
 
+  useEffect(() => {
+    if (initialProfile) {
+      setCustomerPhone(initialProfile.phone || '');
+      setCustomerAddress(initialProfile.address || '');
+      setProvinceId(initialProfile.province_id || '');
+      setCityId(initialProfile.city_id || '');
+    }
+  }, [initialProfile]);
+
   const items = useMemo(() => selectCheckoutItems(allItems, selectedVariantIds), [allItems, selectedVariantIds]);
   const subtotal = useMemo(() => calculateSubtotal(items), [items]);
   const discountAmount = appliedVoucher?.discountAmount ?? 0;
   const pointsDiscountAmount = appliedPoints?.discountAmount ?? 0;
+  const actualShippingCost = deliveryMethod === 'shipping' ? shippingCost : 0;
+
   const finalTotal = useMemo(
-    () => calculateFinalTotalWithPoints(subtotal, discountAmount, pointsDiscountAmount),
-    [discountAmount, pointsDiscountAmount, subtotal]
+    () => calculateFinalTotalWithPoints(subtotal, discountAmount, pointsDiscountAmount) + actualShippingCost,
+    [discountAmount, pointsDiscountAmount, subtotal, actualShippingCost]
   );
   const orderItems = useMemo<CheckoutOrderItem[]>(() => mapCheckoutOrderItems(items), [items]);
   const canCheckout = initialized && Boolean(sessionToken) && checkoutReady && items.length > 0;
@@ -301,6 +321,11 @@ export function useProductCheckoutController({
       throw new Error('Missing account email');
     }
 
+    if (deliveryMethod === 'shipping' && !shippingCost) {
+      setError('Please select a shipping method');
+      return null;
+    }
+
     let token = await getValidAccessToken();
     if (!token) {
       setError('Sesi login kadaluarsa. Silakan login ulang.');
@@ -326,6 +351,12 @@ export function useProductCheckoutController({
             customerName: customerName.trim(),
             customerEmail: user.email,
             customerPhone: customerPhone.trim() || undefined,
+            customerAddress: deliveryMethod === 'shipping' ? customerAddress.trim() || undefined : undefined,
+            shippingProvinceId: deliveryMethod === 'shipping' ? provinceId : undefined,
+            shippingCityId: deliveryMethod === 'shipping' ? cityId : undefined,
+            shippingCourier: deliveryMethod === 'shipping' ? shippingCourier : 'pickup',
+            shippingService: deliveryMethod === 'shipping' ? shippingService : undefined,
+            shippingCost: deliveryMethod === 'shipping' ? shippingCost : 0,
             voucherCode: appliedVoucher?.code || undefined,
             pointsRedeemed: appliedPoints?.pointsUsed || undefined,
           },
@@ -467,6 +498,13 @@ export function useProductCheckoutController({
   return {
     customerName,
     customerPhone,
+    customerAddress,
+    deliveryMethod,
+    provinceId,
+    cityId,
+    shippingCourier,
+    shippingService,
+    shippingCost: actualShippingCost,
     error,
     loading,
     voucherCode,
@@ -483,6 +521,13 @@ export function useProductCheckoutController({
     canCheckout,
     setCustomerName,
     setCustomerPhone,
+    setCustomerAddress,
+    setDeliveryMethod,
+    setProvinceId,
+    setCityId,
+    setShippingCourier,
+    setShippingService,
+    setShippingCost,
     setVoucherCode,
     handleApplyVoucher,
     handleRemoveVoucher,

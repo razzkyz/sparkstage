@@ -11,8 +11,10 @@ import { CheckoutPaymentSection } from './product-checkout/CheckoutPaymentSectio
 import { CheckoutPointsSection } from './product-checkout/CheckoutPointsSection';
 import { CheckoutSummaryCard } from './product-checkout/CheckoutSummaryCard';
 import { CheckoutVoucherSection } from './product-checkout/CheckoutVoucherSection';
+import { CheckoutShippingSection } from './product-checkout/CheckoutShippingSection';
 import { useProductCheckoutController } from './product-checkout/useProductCheckoutController';
 import { useLoyaltyPoints } from '../hooks/useLoyaltyPoints';
+import { useProfile } from '../hooks/useProfile';
 import { ReferralCodeInput } from '../components/account/ReferralCodeInput';
 
 export default function ProductCheckoutPage() {
@@ -25,6 +27,7 @@ export default function ProductCheckoutPage() {
   const { showToast } = useToast();
   const cashierCheckoutEnabled = String(import.meta.env.VITE_ENABLE_CASHIER_CHECKOUT || '').toLowerCase() !== 'false';
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
+  const { profile } = useProfile();
   const userPoints = loyaltyData?.total_points ?? 0;
   const userTierLevel = loyaltyData?.tier_level ?? 0;
 
@@ -40,6 +43,13 @@ export default function ProductCheckoutPage() {
   const {
     customerName,
     customerPhone,
+    customerAddress,
+    deliveryMethod,
+    provinceId,
+    cityId,
+    shippingCourier,
+    shippingService,
+    shippingCost,
     error,
     loading,
     voucherCode,
@@ -54,6 +64,13 @@ export default function ProductCheckoutPage() {
     canCheckout,
     setCustomerName,
     setCustomerPhone,
+    setCustomerAddress,
+    setDeliveryMethod,
+    setProvinceId,
+    setCityId,
+    setShippingCourier,
+    setShippingService,
+    setShippingCost,
     setVoucherCode,
     handleApplyVoucher,
     handleRemoveVoucher,
@@ -76,6 +93,7 @@ export default function ProductCheckoutPage() {
     removeItem,
     showToast,
     cashierCheckoutEnabled,
+    initialProfile: profile,
   });
 
   // Clear ticket booking state when entering product checkout
@@ -123,6 +141,7 @@ export default function ProductCheckoutPage() {
               finalTotal={finalTotal}
               appliedVoucher={appliedVoucher}
               appliedPoints={appliedPoints}
+              shippingCost={shippingCost}
             />
 
             <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-lg border border-primary/10">
@@ -145,6 +164,26 @@ export default function ProductCheckoutPage() {
                 loading={loading}
                 onChangeName={setCustomerName}
                 onChangePhone={setCustomerPhone}
+              />
+
+              <CheckoutShippingSection
+                customerAddress={customerAddress}
+                deliveryMethod={deliveryMethod}
+                provinceId={provinceId}
+                cityId={cityId}
+                selectedCourier={shippingCourier}
+                selectedService={shippingService}
+                loading={loading}
+                totalWeight={orderItems.reduce((sum, item) => sum + (item.quantity * 1000), 0)} // Assume 1kg per item for now if not available
+                onChangeDeliveryMethod={setDeliveryMethod}
+                onChangeAddress={setCustomerAddress}
+                onChangeProvince={setProvinceId}
+                onChangeCity={setCityId}
+                onChangeShipping={(courier, service, cost) => {
+                  setShippingCourier(courier);
+                  setShippingService(service);
+                  setShippingCost(cost);
+                }}
               />
 
               <CheckoutVoucherSection
