@@ -50,22 +50,118 @@ export function ProfilePage() {
   const [cities, setCities] = useState<any[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [provinceError, setProvinceError] = useState<string | null>(null);
+  const [cityError, setCityError] = useState<string | null>(null);
+  const [selectedProvinceName, setSelectedProvinceName] = useState<string>("");
+  const [selectedCityName, setSelectedCityName] = useState<string>("");
+
+  // Cache configuration
+  const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const CACHE_KEY_PROVINCES = "rajaongkir_profile_provinces";
+  const CACHE_KEY_CITIES_PREFIX = "rajaongkir_profile_cities_";
+
+  // Fallback provinces jika API down
+  const FALLBACK_PROVINCES = [
+    { id: "1", name: "Aceh" },
+    { id: "2", name: "Sumatera Utara" },
+    { id: "3", name: "Sumatera Barat" },
+    { id: "4", name: "Riau" },
+    { id: "5", name: "Jambi" },
+    { id: "6", name: "Sumatera Selatan" },
+    { id: "7", name: "Lampung" },
+    { id: "8", name: "Kepulauan Bangka Belitung" },
+    { id: "9", name: "Kepulauan Riau" },
+    { id: "10", name: "DKI Jakarta" },
+    { id: "11", name: "Jawa Barat" },
+    { id: "12", name: "Jawa Tengah" },
+    { id: "13", name: "DI Yogyakarta" },
+    { id: "14", name: "Jawa Timur" },
+    { id: "15", name: "Banten" },
+    { id: "16", name: "Bali" },
+    { id: "17", name: "Nusa Tenggara Barat" },
+    { id: "18", name: "Nusa Tenggara Timur" },
+    { id: "19", name: "Kalimantan Barat" },
+    { id: "20", name: "Kalimantan Tengah" },
+    { id: "21", name: "Kalimantan Selatan" },
+    { id: "22", name: "Kalimantan Timur" },
+    { id: "23", name: "Kalimantan Utara" },
+    { id: "24", name: "Sulawesi Utara" },
+    { id: "25", name: "Sulawesi Tengah" },
+    { id: "26", name: "Sulawesi Selatan" },
+    { id: "27", name: "Sulawesi Tenggara" },
+    { id: "28", name: "Gorontalo" },
+    { id: "29", name: "Sulawesi Barat" },
+    { id: "30", name: "Maluku" },
+    { id: "31", name: "Maluku Utara" },
+    { id: "32", name: "Papua" },
+    { id: "33", name: "Papua Barat" },
+    { id: "34", name: "Papua Tengah" },
+    { id: "35", name: "Papua Pegunungan" },
+    { id: "36", name: "Papua Selatan" },
+  ];
 
   useEffect(() => {
     const fetchProvinces = async () => {
       setIsLoadingProvinces(true);
+      setProvinceError(null);
       try {
+        // 1. Check cache first
+        const cachedData = localStorage.getItem(CACHE_KEY_PROVINCES);
+        if (cachedData) {
+          const cache = JSON.parse(cachedData);
+          if (Date.now() - cache.timestamp < CACHE_DURATION) {
+            console.log("[ProfilePage] Using cached provinces");
+            const normalized = cache.data.map((p: any) => ({
+              id: p.id || p.province_id,
+              name: p.name || p.province,
+            }));
+            setProvinces(normalized);
+            setIsLoadingProvinces(false);
+            return;
+          }
+        }
+
+        // 2. Fetch from API
+        console.log("[ProfilePage] Fetching provinces from API...");
         const { data, error } = await supabase.functions.invoke("rajaongkir", {
           body: { action: "provinces" },
         });
         if (error) throw error;
 
-        // Komerce returns the list in data.data
-        if (data?.data) {
-          setProvinces(data.data);
+        // Check for error message (e.g. rate limit)
+        if (data?.message) {
+          console.error("RajaOngkir error:", data.message);
+          setProvinceError(data.message);
+          setProvinces(FALLBACK_PROVINCES);
+          return;
+        }
+
+        // Normalize and cache
+        if (data?.data && Array.isArray(data.data)) {
+          const normalized = data.data.map((p: any) => ({
+            id: p.id || p.province_id,
+            name: p.name || p.province,
+          }));
+
+          // 3. Save to cache
+          localStorage.setItem(
+            CACHE_KEY_PROVINCES,
+            JSON.stringify({
+              data: normalized,
+              timestamp: Date.now(),
+            }),
+          );
+
+          setProvinces(normalized);
+        } else {
+          console.warn("Unexpected response format:", data);
+          setProvinceError("Unexpected data format from API");
+          setProvinces(FALLBACK_PROVINCES);
         }
       } catch (err) {
         console.error("Failed to fetch provinces:", err);
+        setProvinceError(err instanceof Error ? err.message : String(err));
+        setProvinces(FALLBACK_PROVINCES);
       } finally {
         setIsLoadingProvinces(false);
       }
@@ -76,21 +172,80 @@ export function ProfilePage() {
   useEffect(() => {
     if (!formData.province_id) {
       setCities([]);
+      setCityError(null);
+      setSelectedCityName("");
       return;
     }
     const fetchCities = async () => {
       setIsLoadingCities(true);
+      setCityError(null);
       try {
+        const cacheKey = `${CACHE_KEY_CITIES_PREFIX}${formData.province_id}`;
+
+        // 1. Check cache first
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+          const cache = JSON.parse(cachedData);
+          if (Date.now() - cache.timestamp < CACHE_DURATION) {
+            console.log(
+              `[ProfilePage] Using cached cities for province ${formData.province_id}`,
+            );
+            const normalized = cache.data.map((c: any) => ({
+              id: c.id || c.city_id,
+              name: c.name || c.city_name,
+            }));
+            setCities(normalized);
+            setIsLoadingCities(false);
+            return;
+          }
+        }
+
+        // 2. Fetch from API
+        console.log(
+          `[ProfilePage] Fetching cities for province ${formData.province_id}...`,
+        );
         const { data, error } = await supabase.functions.invoke("rajaongkir", {
           body: { action: "cities", province_id: formData.province_id },
         });
         if (error) throw error;
 
-        if (data?.data) {
-          setCities(data.data);
+        // Check for error message
+        if (data?.message) {
+          console.error("RajaOngkir cities error:", data.message);
+          setCityError(data.message);
+          setCities([]);
+          return;
+        }
+
+        // Normalize and cache
+        if (data?.data && Array.isArray(data.data)) {
+          const normalized = data.data.map((c: any) => ({
+            id: c.id || c.city_id,
+            name: c.name || c.city_name,
+          }));
+
+          // 3. Save to cache
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              data: normalized,
+              timestamp: Date.now(),
+            }),
+          );
+
+          console.log(
+            `[ProfilePage] Successfully loaded ${normalized.length} cities for province ${formData.province_id}`,
+          );
+          setCities(normalized);
+        } else {
+          console.warn("Unexpected cities response format:", data);
+          setCityError("Unexpected data format from API");
+          setCities([]);
         }
       } catch (err) {
         console.error("Failed to fetch cities:", err);
+        setCityError(err instanceof Error ? err.message : String(err));
+        setCities([]);
       } finally {
         setIsLoadingCities(false);
       }
@@ -111,6 +266,21 @@ export function ProfilePage() {
       });
     }
   }, [profile]);
+
+  // Update selected names when province_id or city_id changes
+  useEffect(() => {
+    if (formData.province_id && provinces.length > 0) {
+      const selected = provinces.find((p) => p.id === formData.province_id);
+      setSelectedProvinceName(selected?.name || "");
+    }
+  }, [formData.province_id, provinces]);
+
+  useEffect(() => {
+    if (formData.city_id && cities.length > 0) {
+      const selected = cities.find((c) => c.id === formData.city_id);
+      setSelectedCityName(selected?.name || "");
+    }
+  }, [formData.city_id, cities]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -384,7 +554,8 @@ export function ProfilePage() {
                 </div>
                 {formData.phone && !/^08[0-9]{8,11}$/.test(formData.phone) && (
                   <span className="text-red-500 text-[0.8rem] mt-0.5">
-                    Format nomor telepon salah (harus diawali 08 dan 10-13 digit)
+                    Format nomor telepon salah (harus diawali 08 dan 10-13
+                    digit)
                   </span>
                 )}
               </div>
@@ -433,39 +604,75 @@ export function ProfilePage() {
                   htmlFor="province_id"
                   className="text-[0.8rem] font-semibold text-gray-700 uppercase tracking-wide"
                 >
-                  Province
+                  Province <span className="text-red-500">*</span>
                 </label>
-                <div className="relative flex items-center">
-                  <Map
-                    className="absolute left-3.5 text-gray-400 pointer-events-none"
-                    size={18}
-                  />
-                  <select
-                    id="province_id"
-                    name="province_id"
-                    value={formData.province_id}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        province_id: e.target.value,
-                        city_id: "",
-                      }));
-                    }}
-                    disabled={isLoadingProvinces}
-                    className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10 appearance-none disabled:opacity-60"
-                  >
-                    <option value="" disabled>
-                      {isLoadingProvinces
-                        ? "Loading provinces..."
-                        : "Select Province"}
-                    </option>
-                    {provinces.map((prov) => (
-                      <option key={prov.id} value={prov.id}>
-                        {prov.name}
+                {provinces.length > 0 ? (
+                  // Show dropdown if data available
+                  <div className="relative flex items-center">
+                    <Map
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <select
+                      id="province_id"
+                      name="province_id"
+                      value={formData.province_id}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          province_id: e.target.value,
+                          city_id: "",
+                        }));
+                      }}
+                      disabled={isLoadingProvinces}
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10 appearance-none disabled:opacity-60"
+                    >
+                      <option value="" disabled>
+                        {isLoadingProvinces
+                          ? "Loading provinces..."
+                          : "Select Province"}
                       </option>
-                    ))}
-                  </select>
-                </div>
+                      {provinces.map((prov) => (
+                        <option key={prov.id} value={prov.id}>
+                          {prov.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  // Show text input if dropdown empty (API failed)
+                  <div className="relative flex items-center">
+                    <Map
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      id="province_id_text"
+                      name="province_id_text"
+                      value={selectedProvinceName}
+                      onChange={(e) => {
+                        setSelectedProvinceName(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          province_id: e.target.value,
+                        }));
+                      }}
+                      placeholder="Enter province name manually"
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10"
+                    />
+                  </div>
+                )}
+                {provinceError && (
+                  <p className="text-xs text-red-500 mt-1">
+                    ⚠️ {provinceError} (Enter province manually below)
+                  </p>
+                )}
+                {formData.province_id && selectedProvinceName && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    ✓ Selected: {selectedProvinceName}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -473,41 +680,88 @@ export function ProfilePage() {
                   htmlFor="city_id"
                   className="text-[0.8rem] font-semibold text-gray-700 uppercase tracking-wide"
                 >
-                  City / Regency
+                  City / Regency <span className="text-red-500">*</span>
                 </label>
-                <div className="relative flex items-center">
-                  <Building
-                    className="absolute left-3.5 text-gray-400 pointer-events-none"
-                    size={18}
-                  />
-                  <select
-                    id="city_id"
-                    name="city_id"
-                    value={formData.city_id}
-                    onChange={(e) => {
-                      // Komerce does not provide postal_code in the city list endpoint directly
-                      setFormData((prev) => ({
-                        ...prev,
-                        city_id: e.target.value,
-                      }));
-                    }}
-                    disabled={!formData.province_id || isLoadingCities}
-                    className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10 appearance-none disabled:opacity-60"
-                  >
-                    <option value="" disabled>
-                      {!formData.province_id
-                        ? "Select province first"
-                        : isLoadingCities
+                {!formData.province_id ? (
+                  // Select province first
+                  <div className="relative flex items-center opacity-60">
+                    <Building
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Select province first"
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-400 bg-gray-50"
+                    />
+                  </div>
+                ) : cities.length > 0 ? (
+                  // Show dropdown if data available
+                  <div className="relative flex items-center">
+                    <Building
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <select
+                      id="city_id"
+                      name="city_id"
+                      value={formData.city_id}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          city_id: e.target.value,
+                        }));
+                      }}
+                      disabled={isLoadingCities}
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10 appearance-none disabled:opacity-60"
+                    >
+                      <option value="" disabled>
+                        {isLoadingCities
                           ? "Loading cities..."
                           : "Select City / Regency"}
-                    </option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}
                       </option>
-                    ))}
-                  </select>
-                </div>
+                      {cities.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  // Show text input if dropdown empty (API failed)
+                  <div className="relative flex items-center">
+                    <Building
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      id="city_id_text"
+                      name="city_id_text"
+                      value={selectedCityName}
+                      onChange={(e) => {
+                        setSelectedCityName(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          city_id: e.target.value,
+                        }));
+                      }}
+                      placeholder="Enter city/regency name manually"
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10"
+                    />
+                  </div>
+                )}
+                {cityError && (
+                  <p className="text-xs text-red-500 mt-1">
+                    ⚠️ {cityError} (Enter city manually below)
+                  </p>
+                )}
+                {formData.city_id && selectedCityName && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    ✓ Selected: {selectedCityName}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
