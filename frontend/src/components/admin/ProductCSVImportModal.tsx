@@ -1,34 +1,6 @@
 import { useState, useRef } from 'react';
 import type { ProductDraft } from './ProductFormModal';
-
-interface CSVProductRow {
-  name: string;
-  sku: string;
-  description?: string;
-  category_id?: string;
-  price?: string;
-  stock?: string;
-  variant_name?: string;
-  color?: string;
-  size?: string;
-}
-
-interface ParsedProduct {
-  name: string;
-  sku: string;
-  slug: string;
-  description: string;
-  category_id: number | null;
-  is_active: boolean;
-  variants: Array<{
-    name: string;
-    sku: string;
-    price: string;
-    stock: number;
-    color: string;
-    size: string;
-  }>;
-}
+import { downloadStoreProductTemplateExcel, parseStoreProductsFromFile } from '../../utils/storeExcelUtils';
 
 interface ProductCSVImportModalProps {
   isOpen: boolean;
@@ -44,7 +16,7 @@ export function ProductCSVImportModal({
   isImporting,
 }: ProductCSVImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [parsedProducts, setParsedProducts] = useState<ParsedProduct[]>([]);
+  const [parsedProducts, setParsedProducts] = useState<ProductDraft[]>([]);
   const [error, setError] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
 
@@ -57,64 +29,10 @@ export function ProductCSVImportModal({
     setFileName(file.name);
 
     try {
-      const text = await file.text();
-      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-      
-      if (lines.length < 2) {
-        throw new Error('CSV harus memiliki header dan minimal 1 data row');
-      }
-
-      // Parse header
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const requiredCols = ['name', 'sku'];
-      const missingCols = requiredCols.filter(col => !headers.includes(col));
-      
-      if (missingCols.length > 0) {
-        throw new Error(`Kolom wajib tidak ada: ${missingCols.join(', ')}`);
-      }
-
-      // Parse rows
-      const products: ParsedProduct[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const row: Partial<CSVProductRow> = {};
-        
-        headers.forEach((header, idx) => {
-          row[header as keyof CSVProductRow] = values[idx] || '';
-        });
-
-        if (!row.name || !row.sku) continue;
-
-        const price = row.price || '0';
-        const stock = parseInt(row.stock || '0', 10) || 0;
-
-        products.push({
-          name: row.name,
-          sku: row.sku,
-          slug: row.name.toLowerCase().replace(/\s+/g, '-'),
-          description: row.description || '',
-          category_id: row.category_id ? parseInt(row.category_id, 10) : null,
-          is_active: true,
-          variants: [
-            {
-              name: row.variant_name || 'Default',
-              sku: row.sku,
-              price: price,
-              stock: stock,
-              color: row.color || '',
-              size: row.size || '',
-            },
-          ],
-        });
-      }
-
-      if (products.length === 0) {
-        throw new Error('Tidak ada produk yang valid di CSV');
-      }
-
+      const products = await parseStoreProductsFromFile(file);
       setParsedProducts(products);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal parse CSV');
+      setError(err instanceof Error ? err.message : 'Gagal parse file');
       setParsedProducts([]);
     }
   };
@@ -151,7 +69,10 @@ export function ProductCSVImportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Import Produk dari CSV</h2>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Import Produk Excel</h2>
+            <p className="text-sm text-gray-500">Upload file .xls atau .xlsx untuk menambahkan produk secara batch.</p>
+          </div>
           <button
             onClick={onClose}
             disabled={isImporting}
@@ -162,28 +83,46 @@ export function ProductCSVImportModal({
         </div>
 
         {/* Instructions */}
-        <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <p className="text-sm text-blue-900 font-medium mb-2">Format CSV:</p>
-          <p className="text-xs text-blue-800 font-mono mb-2">
-            name, sku, description, category_id, price, stock, variant_name, color, size
-          </p>
-          <p className="text-xs text-blue-800">
-            Wajib: name, sku | Opsional: yang lainnya
-          </p>
+        <div className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-blue-900 font-semibold mb-1">Import Excel Produk</p>
+              <p className="text-xs text-blue-800 font-mono leading-5">
+                product_name, sku, description, category_id, price, stock, variant_name, variant_sku, color, size, is_active, slug
+              </p>
+              <p className="text-xs text-blue-800 mt-2">
+                Wajib: product_name, sku | Opsional: kolom lainnya
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={downloadStoreProductTemplateExcel}
+              className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+            >
+              Download Template Excel
+            </button>
+          </div>
         </div>
 
         {/* File input */}
         <div className="mb-6">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            disabled={isImporting}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
+          <label className="flex min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center transition hover:border-blue-400 hover:bg-white">
+            <span className="material-symbols-outlined text-4xl text-gray-500">upload_file</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Klik untuk pilih file Excel</p>
+              <p className="text-xs text-gray-500">Format: .xlsx, .xls</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xls,.xlsx"
+              onChange={handleFileChange}
+              disabled={isImporting}
+              className="hidden"
+            />
+          </label>
           {fileName && (
-            <p className="mt-2 text-xs text-gray-600">File: <strong>{fileName}</strong></p>
+            <p className="mt-3 text-xs text-gray-600">File yang dipilih: <strong>{fileName}</strong></p>
           )}
         </div>
 

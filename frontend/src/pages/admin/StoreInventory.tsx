@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import CategoryManager from '../../components/admin/CategoryManager';
-import ProductFormModal, { type CategoryOption } from '../../components/admin/ProductFormModal';
+import ProductFormModal, { type CategoryOption, type ProductDraft } from '../../components/admin/ProductFormModal';
 import { ProductCSVImportModal } from '../../components/admin/ProductCSVImportModal';
 import QRScannerModal from '../../components/admin/QRScannerModal';
 import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
@@ -11,6 +11,9 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useInventory } from '../../hooks/useInventory';
+import { supabase } from '../../lib/supabase';
+import { getInventorySelect } from '../../hooks/inventory/inventoryQuerySchema';
+import { exportStoreStockReportToExcel } from '../../utils/storeExcelUtils';
 import { DeleteProductDialog } from './store-inventory/DeleteProductDialog';
 import { InventoryEmptyState } from './store-inventory/InventoryEmptyState';
 import { InventoryGrid } from './store-inventory/InventoryGrid';
@@ -34,8 +37,9 @@ const StoreInventory = () => {
   const [orderCode, setOrderCode] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [showCSVImport, setShowCSVImport] = useState(false);
-  const [isImportingCSV, setIsImportingCSV] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isImportingExcel, setIsImportingExcel] = useState(false);
+  const [isExportingCSV, setIsExportingCSV] = useState(false);
 
   const filters = useStoreInventoryFilters({
     pathname: location.pathname,
@@ -120,8 +124,8 @@ const StoreInventory = () => {
     }
   };
 
-  const handleCSVImport = async (products: any[]) => {
-    setIsImportingCSV(true);
+  const handleExcelImport = async (products: ProductDraft[]) => {
+    setIsImportingExcel(true);
     let successCount = 0;
     let failCount = 0;
 
@@ -139,42 +143,41 @@ const StoreInventory = () => {
       }
     }
 
-    setIsImportingCSV(false);
+    setIsImportingExcel(false);
     showToast(
       failCount === 0 ? 'success' : 'info',
       `Import selesai: ${successCount} produk berhasil${failCount > 0 ? `, ${failCount} gagal` : ''}`
     );
   };
 
-  const handleStockReport = () => {
-    if (!inventoryProducts.length) {
-      showToast('error', 'Tidak ada data produk untuk di-export.');
-      return;
+  const handleStockReport = async () => {
+    if (isExportingCSV) return;
+    setIsExportingCSV(true);
+
+    try {
+      const { data: allProducts, error } = await supabase
+        .from('products')
+        .select(getInventorySelect(''))
+        .is('deleted_at', null)
+        .order('name', { ascending: true }) as any;
+
+      if (error) {
+        throw error;
+      }
+
+      const rows = mapInventoryProducts((allProducts as any[]) ?? []);
+      if (rows.length === 0) {
+        showToast('error', 'Tidak ada data produk untuk di-export.');
+        return;
+      }
+
+      exportStoreStockReportToExcel(rows);
+      showToast('success', 'Laporan stok berhasil diunduh.');
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Gagal mengunduh laporan stok');
+    } finally {
+      setIsExportingCSV(false);
     }
-
-    const headers = ['Nama Produk', 'SKU', 'Kategori', 'Total Stock', 'Status Stock', 'Harga Minimum', 'Harga Maksimum'];
-    const rows = inventoryProducts.map(p => [
-      `"${(p.name || '').replace(/"/g, '""')}"`,
-      `"${(p.sku || '').replace(/"/g, '""')}"`,
-      `"${(p.category || '').replace(/"/g, '""')}"`,
-      p.stock_available,
-      `"${(p.stock_status || '').replace(/"/g, '""')}"`,
-      p.price_min,
-      p.price_max
-    ].join(','));
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `stock_report_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    showToast('success', 'Laporan stok berhasil diunduh.');
   };
 
   return (
@@ -197,18 +200,19 @@ const StoreInventory = () => {
           <button
             onClick={handleStockReport}
             aria-label="Stock Report"
-            className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-neutral-900 shadow-sm transition-colors hover:bg-gray-50 sm:px-4"
+            disabled={isExportingCSV}
+            className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-neutral-900 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
           >
             <span className="material-symbols-outlined text-[20px]">inventory_2</span>
             <span className="hidden sm:inline">Stock Report</span>
           </button>
           <button
-            onClick={() => setShowCSVImport(true)}
-            aria-label="Import CSV"
+            onClick={() => setShowImportModal(true)}
+            aria-label="Import Excel"
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 sm:px-4"
           >
             <span className="material-symbols-outlined text-[20px]">upload_file</span>
-            <span className="hidden sm:inline">CSV Import</span>
+            <span className="hidden sm:inline">Import Excel</span>
           </button>
           <button
             onClick={productActions.handleOpenCreate}
@@ -357,10 +361,10 @@ const StoreInventory = () => {
       />
 
       <ProductCSVImportModal
-        isOpen={showCSVImport}
-        onClose={() => setShowCSVImport(false)}
-        onImport={handleCSVImport}
-        isImporting={isImportingCSV}
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleExcelImport}
+        isImporting={isImportingExcel}
       />
     </AdminLayout>
   );

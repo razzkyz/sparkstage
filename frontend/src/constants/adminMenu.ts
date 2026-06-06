@@ -46,6 +46,19 @@ export const STARGUIDE_MENU_SECTIONS: AdminMenuSection[] = [
       },
     ],
   },
+  {
+    id: "laporan",
+    label: "Laporan",
+    items: [
+      {
+        id: "sock-report",
+        label: "Laporan Kaos Kaki",
+        icon: "inventory_2",
+        path: "/admin/sock-report",
+        highlight: true,
+      },
+    ],
+  },
 ];
 
 export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [

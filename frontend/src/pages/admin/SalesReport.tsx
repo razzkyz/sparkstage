@@ -6,6 +6,7 @@ import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { supabase } from '../../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
+import * as XLSX from 'xlsx';
 
 const TICKET_PRICE = 85_000;
 
@@ -75,16 +76,20 @@ function formatDatetime(iso: string | null) {
   return new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 }
 
-function downloadCSV(filename: string, rows: string[][], headers: string[]) {
-  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-  const lines = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))];
-  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function downloadXLSX(filename: string, sheets: { name: string; rows: Record<string, unknown>[] }[]) {
+  const wb = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    const ws = XLSX.utils.json_to_sheet(sheet.rows);
+    // Auto-width
+    if (sheet.rows.length > 0) {
+      const cols = Object.keys(sheet.rows[0]);
+      ws['!cols'] = cols.map(k => ({
+        wch: Math.max(k.length + 2, ...sheet.rows.map(r => String(r[k] ?? '').length)) + 1,
+      }));
+    }
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  }
+  XLSX.writeFile(wb, filename);
 }
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
@@ -358,63 +363,98 @@ export default function SalesReport() {
   const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue;
   console.log(`[SalesReport] TOTAL REVENUE: ${totalRevenue} (Tickets: ${ticketStats.revenue} + Products: ${productStats.revenue} + Prints: ${printStats.revenue})`);
 
-  // ── CSV Exports ──────────────────────────────────────────────────────────
-  function exportTicketsCSV() {
-    const headers = ['No', 'Kode Tiket', 'Nama Tiket', 'Tanggal Valid', 'Sesi', 'Status', 'Harga (Rp)', 'Dibuat', 'Dipakai'];
-    const rows = filteredTickets.map((t, i) => [
-      String(i + 1),
-      t.ticket_code ?? '-',
-      t.tickets?.name ?? '-',
-      formatDate(t.valid_date),
-      t.time_slot ?? '-',
-      t.status,
-      String(TICKET_PRICE),
-      formatDatetime(t.created_at),
-      formatDatetime(t.used_at),
-    ]);
-    // Add empty row and total row
-    rows.push(['', '', '', '', '', '', '', '', '']);
-    rows.push(['', '', 'TOTAL', '', '', '', String(ticketStats.revenue), '', '']);
+  // ── XLSX Exports ──────────────────────────────────────────────────────────
+  function exportTicketsXLSX() {
     const ts = new Date().toISOString().slice(0, 10);
-    downloadCSV(`laporan-tiket-${ts}.csv`, rows, headers);
+    const rows = filteredTickets.map((t, i) => ({
+      'No': i + 1,
+      'Kode Tiket': t.ticket_code ?? '-',
+      'Nama Tiket': t.tickets?.name ?? '-',
+      'Tanggal Valid': formatDate(t.valid_date),
+      'Sesi': t.time_slot ?? '-',
+      'Status': t.status,
+      'Harga (Rp)': TICKET_PRICE,
+      'Tanggal Beli': formatDatetime(t.created_at),
+      'Tanggal Pakai': formatDatetime(t.used_at),
+    }));
+    // Totals row
+    rows.push({ 'No': '', 'Kode Tiket': '', 'Nama Tiket': 'TOTAL', 'Tanggal Valid': '', 'Sesi': '', 'Status': '', 'Harga (Rp)': ticketStats.revenue, 'Tanggal Beli': '', 'Tanggal Pakai': '' } as any);
+    downloadXLSX(`laporan-tiket-${ts}.xlsx`, [{ name: 'Tiket Terjual', rows }]);
   }
 
-  function exportProductsCSV() {
-    const headers = ['No', 'No. Order', 'Nama Customer', 'Email', 'Total (Rp)', 'Status', 'Tanggal Bayar', 'Dibuat'];
-    const rows = filteredProducts.map((o, i) => [
-      String(i + 1),
-      o.order_number,
-      o.profiles?.name ?? '-',
-      o.profiles?.email ?? '-',
-      String(o.total),
-      o.pickup_status ?? '-',
-      formatDatetime(o.paid_at),
-      formatDatetime(o.created_at),
-    ]);
-    // Add empty row and total row
-    rows.push(['', '', '', '', '', '', '', '']);
-    rows.push(['', 'TOTAL', '', '', String(productStats.revenue), '', '', '']);
+  function exportProductsXLSX() {
     const ts = new Date().toISOString().slice(0, 10);
-    downloadCSV(`laporan-produk-${ts}.csv`, rows, headers);
+
+    // Sheet 1 — Orders
+    const orderRows = filteredProducts.map((o, i) => ({
+      'No': i + 1,
+      'No. Order': o.order_number,
+      'Nama Customer': o.profiles?.name ?? '-',
+      'Email': o.profiles?.email ?? '-',
+      'Total (Rp)': o.total,
+      'Status Pickup': o.pickup_status ?? '-',
+      'Tanggal Bayar': formatDatetime(o.paid_at),
+      'Tanggal Buat': formatDatetime(o.created_at),
+    }));
+    orderRows.push({ 'No': '', 'No. Order': 'TOTAL', 'Nama Customer': '', 'Email': '', 'Total (Rp)': productStats.revenue, 'Status Pickup': '', 'Tanggal Bayar': '', 'Tanggal Buat': '' } as any);
+
+    // Sheet 2 — Item Detail (per produk per order)
+    const itemRows: Record<string, unknown>[] = [];
+    filteredProducts.forEach(o => {
+      o.order_product_items.forEach(item => {
+        itemRows.push({
+          'No. Order': o.order_number,
+          'Nama Customer': o.profiles?.name ?? '-',
+          'Produk': item.product_variants?.products?.name ?? '-',
+          'Varian': item.product_variants?.name ?? '-',
+          'Qty': item.quantity,
+          'Harga (Rp)': item.price,
+          'Subtotal (Rp)': item.subtotal,
+          'Tanggal Bayar': formatDatetime(o.paid_at),
+        });
+      });
+    });
+
+    // Sheet 3 — Stok Opname (aggregated: qty terjual per produk)
+    const stockMap = new Map<string, { terjual: number; pendapatan: number }>();
+    filteredProducts.forEach(o => {
+      o.order_product_items.forEach(item => {
+        const key = `${item.product_variants?.products?.name ?? 'Unknown'} — ${item.product_variants?.name ?? '-'}`;
+        const prev = stockMap.get(key) ?? { terjual: 0, pendapatan: 0 };
+        stockMap.set(key, {
+          terjual: prev.terjual + item.quantity,
+          pendapatan: prev.pendapatan + item.subtotal,
+        });
+      });
+    });
+    const stockRows = Array.from(stockMap.entries()).map(([nama, v]) => ({
+      'Produk — Varian': nama,
+      'Total Terjual (qty)': v.terjual,
+      'Total Pendapatan (Rp)': v.pendapatan,
+    }));
+
+    downloadXLSX(`laporan-produk-${ts}.xlsx`, [
+      { name: 'Pesanan', rows: orderRows },
+      { name: 'Detail Item', rows: itemRows },
+      { name: 'Stok Opname', rows: stockRows },
+    ]);
   }
 
-  function exportPrintsCSV() {
-    const headers = ['No', 'Doku Order ID', 'Nama Customer', 'Email', 'Amount (Rp)', 'Status', 'Tanggal Bayar', 'Dibuat'];
-    const rows = filteredPrints.map((p, i) => [
-      String(i + 1),
-      p.doku_order_id ?? '-',
-      p.customer_name ?? '-',
-      p.customer_email ?? '-',
-      String(p.amount),
-      p.status ?? '-',
-      formatDatetime(p.paid_at),
-      formatDatetime(p.created_at),
-    ]);
-    // Add empty row and total row
-    rows.push(['', '', '', '', '', '', '', '']);
-    rows.push(['', 'TOTAL', '', '', String(printStats.revenue), '', '', '']);
+  function exportPrintsXLSX() {
     const ts = new Date().toISOString().slice(0, 10);
-    downloadCSV(`laporan-cetak-${ts}.csv`, rows, headers);
+    const rows = filteredPrints.map((p, i) => ({
+      'No': i + 1,
+      'Doku Order ID': p.doku_order_id ?? '-',
+      'Nama Customer': p.customer_name ?? '-',
+      'Email': p.customer_email ?? '-',
+      'Amount (Rp)': p.amount,
+      'Status': p.status ?? '-',
+      'No. Antrian': p.queue_number ?? '-',
+      'Tanggal Bayar': formatDatetime(p.paid_at),
+      'Tanggal Buat': formatDatetime(p.created_at),
+    }));
+    rows.push({ 'No': '', 'Doku Order ID': 'TOTAL', 'Nama Customer': '', 'Email': '', 'Amount (Rp)': printStats.revenue, 'Status': '', 'No. Antrian': '', 'Tanggal Bayar': '', 'Tanggal Buat': '' } as any);
+    downloadXLSX(`laporan-cetak-${ts}.xlsx`, [{ name: 'Cetak', rows }]);
   }
 
   const isLoading = tab === 'tickets' ? ticketsLoading : tab === 'products' ? productsLoading : printsLoading;
@@ -537,12 +577,12 @@ export default function SalesReport() {
 
           {/* Export Button */}
           <button
-            onClick={tab === 'tickets' ? exportTicketsCSV : tab === 'products' ? exportProductsCSV : exportPrintsCSV}
+            onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : exportPrintsXLSX}
             disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : prints.length === 0)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px]">download</span>
-            Export CSV
+            Export Excel
           </button>
         </div>
 
