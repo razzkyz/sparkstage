@@ -1,18 +1,33 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS, OWNER_MENU_SECTIONS } from '../../constants/adminMenu';
 import { useProductOrders } from '../../hooks/useProductOrders';
-
+import { lookupUserRole } from '../../auth/adminRole';
 
 import ClaimTab from './retail/ClaimTab';
 import ReportTab from './retail/ReportTab';
 
 export default function RetailDashboard() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   const [activeTab, setActiveTab] = useState<'pos' | 'claim' | 'report'>('claim');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Get user role
+  useEffect(() => {
+    (async () => {
+      const result = await lookupUserRole(user?.id);
+      if (result.ok) {
+        setUserRole(result.role ?? null);
+        // Auto-redirect owner to report tab
+        if (result.role === 'owner') {
+          setActiveTab('report');
+        }
+      }
+    })();
+  }, [user?.id]);
   
   // Ambil data pesanan selesai dari hook useProductOrders
   // Hook ini sudah meng-handle cache dan real-time subscriptions
@@ -38,10 +53,12 @@ export default function RetailDashboard() {
     return completedOrders.filter(o => !o.sales_staff_name).length;
   }, [completedOrders]);
 
+  const menuSections = userRole === 'owner' ? OWNER_MENU_SECTIONS : CASHIER_MENU_SECTIONS;
+
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
-      menuSections={CASHIER_MENU_SECTIONS}
+      menuSections={menuSections}
       defaultActiveMenuId="retail-dashboard"
       title="Sales Back Office (POS)"
       subtitle="Input penjualan langsung dan klaim riwayat transaksi"
@@ -60,22 +77,24 @@ export default function RetailDashboard() {
           <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
           Kasir (POS)
         </button> */}
-        <button
-          onClick={() => setActiveTab('claim')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
-            activeTab === 'claim' 
-              ? 'bg-[#ff4b86] text-white shadow-md' 
-              : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[20px]">fact_check</span>
-          Klaim Penjualan
-          {unclaimedCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
-              {unclaimedCount}
-            </span>
-          )}
-        </button>
+        {userRole !== 'owner' && (
+          <button
+            onClick={() => setActiveTab('claim')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
+              activeTab === 'claim' 
+                ? 'bg-[#ff4b86] text-white shadow-md' 
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">fact_check</span>
+            Klaim Penjualan
+            {unclaimedCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
+                {unclaimedCount}
+              </span>
+            )}
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('report')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${

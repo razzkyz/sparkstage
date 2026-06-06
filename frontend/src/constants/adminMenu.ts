@@ -95,6 +95,48 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
       },
     ],
   },
+  {
+    id: "laporan",
+    label: "Laporan",
+    items: [
+      {
+        id: "sales-report",
+        label: "Laporan Penjualan",
+        icon: "assessment",
+        path: "/admin/sales-report",
+        highlight: true,
+      },
+    ],
+  },
+];
+
+export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
+  {
+    id: "sales",
+    label: "Penjualan",
+    items: [
+      {
+        id: "retail-dashboard",
+        label: "Sales Back Office",
+        icon: "point_of_sale",
+        path: "/admin/retail-dashboard",
+        highlight: true,
+      },
+    ],
+  },
+  {
+    id: "laporan",
+    label: "Laporan",
+    items: [
+      {
+        id: "sales-report",
+        label: "Laporan Penjualan",
+        icon: "assessment",
+        path: "/admin/sales-report",
+        highlight: true,
+      },
+    ],
+  },
 ];
 
 export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [

@@ -60,6 +60,20 @@ interface PrintOrderRow {
   queue_number: string | null;
 }
 
+interface SockRow {
+  id: number;
+  report_date: string;
+  stock_awal: number;
+  terjual: number;
+  sisa: number;
+  harga_per_pasang: number;
+  total: number;
+  catatan: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatRupiah(n: number) {
@@ -193,10 +207,34 @@ function usePrintSales(enabled: boolean) {
   });
 }
 
+function useSockSales(enabled: boolean) {
+  return useQuery({
+    queryKey: ['sales-report-socks'],
+    enabled,
+    queryFn: async () => {
+      let allData: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('sock_sales_reports')
+          .select('*')
+          .order('report_date', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (error) throw error;
+        allData = [...allData, ...(data ?? [])];
+        if (!data || data.length < pageSize) break;
+        page++;
+      }
+      return allData as unknown as SockRow[];
+    },
+  });
+}
+
 export default function SalesReport() {
-  const { signOut, session, isAdmin } = useAuth();
+  const { signOut, session } = useAuth();
   const menuSections = useAdminMenuSections();
-  const queryEnabled = !!session && isAdmin;
+  const queryEnabled = !!session;
 
   const now = new Date();
   const year = now.getFullYear();
@@ -207,14 +245,16 @@ export default function SalesReport() {
 
   const [from, setFrom] = useState(firstOfMonth);
   const [to,   setTo]   = useState(today);
-  const [tab, setTab] = useState<'tickets' | 'products' | 'prints'>('tickets');
+  const [tab, setTab] = useState<'tickets' | 'products' | 'prints' | 'socks'>('tickets');
   const [ticketPage, setTicketPage] = useState(1);
   const [productPage, setProductPage] = useState(1);
   const [printPage, setPrintPage] = useState(1);
+  const [sockPage, setSockPage] = useState(1);
 
   const { data: tickets  = [], isLoading: ticketsLoading,  error: ticketsError, refetch: refetchTickets } = useTicketSales(queryEnabled);
   const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProductSales(queryEnabled);
   const { data: prints   = [], isLoading: printsLoading,   error: printsError, refetch: refetchPrints } = usePrintSales(queryEnabled);
+  const { data: socks    = [], isLoading: socksLoading,    error: socksError, refetch: refetchSocks } = useSockSales(queryEnabled);
 
   // Auto-refresh effect (every 10 seconds, silent)
   useEffect(() => {
@@ -224,12 +264,13 @@ export default function SalesReport() {
       refetchTickets();
       refetchProducts();
       refetchPrints();
+      refetchSocks();
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-  }, [queryEnabled, refetchTickets, refetchProducts, refetchPrints]);
+  }, [queryEnabled, refetchTickets, refetchProducts, refetchPrints, refetchSocks]);
 
-  const queryError = ticketsError || productsError || printsError;
+  const queryError = ticketsError || productsError || printsError || socksError;
   const isAuthError = queryError instanceof Error &&
     (queryError.message.includes('JWT') ||
      queryError.message.includes('token') ||
@@ -282,6 +323,15 @@ export default function SalesReport() {
     [prints, fromMs, toMs]
   );
 
+  const filteredSocks = useMemo(() =>
+    socks.filter(s => {
+      // Use report_date for filtering
+      const ms = new Date(s.report_date).getTime();
+      return ms >= fromMs && ms <= toMs;
+    }),
+    [socks, fromMs, toMs]
+  );
+
   // ── Pagination ───────────────────────────────────────────────────
   const ITEMS_PER_PAGE = 100;
   
@@ -330,6 +380,21 @@ export default function SalesReport() {
     };
   }, [filteredPrints, printPage]);
 
+  const sockPagination = useMemo(() => {
+    const total = filteredSocks.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    const page = Math.max(1, Math.min(sockPage, totalPages));
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      data: filteredSocks.slice(start, end),
+      page,
+      totalPages,
+      total,
+      start,
+    };
+  }, [filteredSocks, sockPage]);
+
   // ── Summaries ────────────────────────────────────────────────────────────
   const ticketStats = useMemo(() => {
     const paid = filteredTickets.length;
@@ -343,6 +408,7 @@ export default function SalesReport() {
     setTicketPage(1);
     setProductPage(1);
     setPrintPage(1);
+    setSockPage(1);
   }, [from, to]);
   
   const productStats = useMemo(() => {
@@ -360,7 +426,15 @@ export default function SalesReport() {
     return { orders, revenue };
   }, [filteredPrints]);
 
-  const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue;
+  const sockStats = useMemo(() => {
+    const orders = filteredSocks.length;
+    const revenue = filteredSocks.reduce((s, s_) => s + (s_.total || 0), 0);
+    const quantity = filteredSocks.reduce((s, s_) => s + (s_.terjual || 0), 0);
+    console.log(`[SalesReport] Socks - Count: ${orders}, Revenue: ${revenue}, Qty: ${quantity}`);
+    return { orders, revenue, quantity };
+  }, [filteredSocks]);
+
+  const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue + sockStats.revenue;
   console.log(`[SalesReport] TOTAL REVENUE: ${totalRevenue} (Tickets: ${ticketStats.revenue} + Products: ${productStats.revenue} + Prints: ${printStats.revenue})`);
 
   // ── XLSX Exports ──────────────────────────────────────────────────────────
@@ -457,7 +531,24 @@ export default function SalesReport() {
     downloadXLSX(`laporan-cetak-${ts}.xlsx`, [{ name: 'Cetak', rows }]);
   }
 
-  const isLoading = tab === 'tickets' ? ticketsLoading : tab === 'products' ? productsLoading : printsLoading;
+  function exportSocksXLSX() {
+    const ts = new Date().toISOString().slice(0, 10);
+    const rows = filteredSocks.map((s, i) => ({
+      'No': i + 1,
+      'Tanggal Laporan': formatDate(s.report_date),
+      'Stok Awal': s.stock_awal,
+      'Terjual': s.terjual,
+      'Sisa': s.sisa,
+      'Harga per Pasang (Rp)': s.harga_per_pasang,
+      'Total (Rp)': s.total,
+      'Catatan': s.catatan ?? '-',
+      'Tanggal Input': formatDatetime(s.created_at),
+    }));
+    rows.push({ 'No': '', 'Tanggal Laporan': 'TOTAL', 'Stok Awal': '', 'Terjual': filteredSocks.reduce((s, s_) => s + s_.terjual, 0), 'Sisa': '', 'Harga per Pasang (Rp)': '', 'Total (Rp)': sockStats.revenue, 'Catatan': '', 'Tanggal Input': '' } as any);
+    downloadXLSX(`laporan-kaos-kaki-${ts}.xlsx`, [{ name: 'Kaos Kaki', rows }]);
+  }
+
+  const isLoading = tab === 'tickets' ? ticketsLoading : tab === 'products' ? productsLoading : tab === 'prints' ? printsLoading : socksLoading;
 
   return (
     <AdminLayout
@@ -493,13 +584,14 @@ export default function SalesReport() {
         </div>
       )}
       {/* ── Summary Cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {[
           { label: 'Total Pendapatan', value: formatRupiah(totalRevenue), icon: 'payments', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
           { label: 'Tiket Terpakai', value: `${ticketStats.paid} tiket`, icon: 'confirmation_number', color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
           { label: 'Pendapatan Tiket', value: formatRupiah(ticketStats.revenue), icon: 'local_activity', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
           { label: 'Pendapatan Produk', value: formatRupiah(productStats.revenue), icon: 'shopping_bag', color: 'text-pink-600', bg: 'bg-pink-50 border-pink-200' },
-        { label: 'Pendapatan Cetak', value: formatRupiah(printStats.revenue), icon: 'print', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
+          { label: 'Pendapatan Cetak', value: formatRupiah(printStats.revenue), icon: 'print', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
+          { label: 'Pendapatan Kaos Kaki', value: formatRupiah(sockStats.revenue), icon: 'checkroom', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200' },
         ].map(card => (
           <div key={card.label} className={`rounded-xl border ${card.bg} p-4 flex flex-col gap-2`}>
             <div className="flex items-center gap-2">
@@ -573,12 +665,21 @@ export default function SalesReport() {
                 Cetak ({printStats.orders})
               </span>
             </button>
+            <button
+              onClick={() => setTab('socks')}
+              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${tab === 'socks' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px]">checkroom</span>
+                Kaos Kaki ({sockStats.orders})
+              </span>
+            </button>
           </div>
 
           {/* Export Button */}
           <button
-            onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : exportPrintsXLSX}
-            disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : prints.length === 0)}
+            onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : tab === 'prints' ? exportPrintsXLSX : exportSocksXLSX}
+            disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : tab === 'prints' ? prints.length === 0 : socks.length === 0)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px]">download</span>
@@ -931,6 +1032,119 @@ export default function SalesReport() {
                       onClick={() => setPrintPage(p => Math.min(printPagination.totalPages, p + 1))}
                       disabled={printPagination.page === printPagination.totalPages}
                       className="flex items-center gap-1 px-3 py-1.5 border border-orange-300 rounded-lg text-sm font-medium text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-700 disabled:hover:bg-gray-100"
+                    >
+                      Berikutnya
+                      <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* -- Socks Table ------------------------------------------ */}
+        {tab === 'socks' && (
+          <>
+            <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-indigo-700">
+                Total Hari: <strong>{sockStats.orders}</strong>
+              </span>
+              <span className="text-xs text-gray-400">·</span>
+              <span className="text-xs text-indigo-700">
+                Total Terjual: <strong>{sockStats.quantity} pasang</strong>
+              </span>
+              <span className="text-xs text-gray-400">·</span>
+              <span className="text-xs text-indigo-700">
+                Revenue: <strong>{formatRupiah(sockStats.revenue)}</strong>
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {['No', 'Tanggal', 'Stok Awal', 'Terjual', 'Sisa', 'Harga/Pasang', 'Total', 'Catatan'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {socksLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 8 }).map((_, j) => (
+                          <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse w-20" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : sockPagination.data.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
+                        <span className="material-symbols-outlined text-4xl mb-2 block">inbox</span>
+                        Tidak ada data kaos kaki di periode ini
+                      </td>
+                    </tr>
+                  ) : (
+                    sockPagination.data.map((s, i) => (
+                      <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-500 text-xs">{sockPagination.start + i + 1}</td>
+                        <td className="px-4 py-3 text-gray-900 font-medium whitespace-nowrap">{formatDate(s.report_date)}</td>
+                        <td className="px-4 py-3 text-gray-700 text-right">{s.stock_awal}</td>
+                        <td className="px-4 py-3 text-gray-700 font-bold text-right text-green-600">{s.terjual}</td>
+                        <td className="px-4 py-3 text-gray-700 text-right">{s.sisa}</td>
+                        <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{formatRupiah(s.harga_per_pasang)}</td>
+                        <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{formatRupiah(s.total)}</td>
+                        <td className="px-4 py-3 text-gray-600 text-xs">{s.catatan ?? '-'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {!isLoading && sockPagination.data.length > 0 && (
+              <div className="px-4 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-gray-600">
+                  <span>
+                    Menampilkan <strong>{sockPagination.start + 1}–{Math.min(sockPagination.start + ITEMS_PER_PAGE, sockPagination.total)}</strong> dari <strong>{sockPagination.total}</strong> hari
+                  </span>
+                  <span>·</span>
+                  <span className="font-bold text-gray-900">{formatRupiah(sockStats.revenue)}</span>
+                </div>
+                
+                {sockPagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSockPage(p => Math.max(1, p - 1))}
+                      disabled={sockPagination.page === 1}
+                      className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                      Sebelumnya
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: sockPagination.totalPages }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setSockPage(pageNum)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              sockPagination.page === pageNum
+                                ? 'bg-indigo-600 text-white'
+                                : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setSockPage(p => Math.min(sockPagination.totalPages, p + 1))}
+                      disabled={sockPagination.page === sockPagination.totalPages}
+                      className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Berikutnya
                       <span className="material-symbols-outlined text-[16px]">chevron_right</span>

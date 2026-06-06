@@ -159,13 +159,13 @@ const StoreInventory = () => {
         .from('products')
         .select(getInventorySelect(''))
         .is('deleted_at', null)
-        .order('name', { ascending: true }) as any;
+        .order('name', { ascending: true });
 
       if (error) {
         throw error;
       }
 
-      const rows = mapInventoryProducts((allProducts as any[]) ?? []);
+      const rows = mapInventoryProducts((allProducts as any) ?? []);
       if (rows.length === 0) {
         showToast('error', 'Tidak ada data produk untuk di-export.');
         return;
