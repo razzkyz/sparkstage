@@ -73,7 +73,7 @@ export function useProductCheckoutController({
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [deliveryMethod, setDeliveryMethod] = useState<'shipping' | 'pickup'>('shipping');
+  const [deliveryMethod, setDeliveryMethod] = useState<'shipping' | 'pickup'>('pickup');
   const [provinceId, setProvinceId] = useState('');
   const [cityId, setCityId] = useState('');
   const [shippingCourier, setShippingCourier] = useState('');
