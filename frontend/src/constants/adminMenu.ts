@@ -125,6 +125,19 @@ export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
     ],
   },
   {
+    id: "inventory",
+    label: "Inventaris",
+    items: [
+      {
+        id: "stock-opname",
+        label: "Stock Opname",
+        icon: "fact_check",
+        path: "/admin/stock-opname",
+        highlight: true,
+      },
+    ],
+  },
+  {
     id: "laporan",
     label: "Laporan",
     items: [
@@ -169,6 +182,13 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "stock-opname",
+        label: "Stock Opname",
+        icon: "fact_check",
+        path: "/admin/stock-opname",
+        highlight: true,
       },
       {
         id: "retail-products",
@@ -377,6 +397,13 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "stock-opname",
+        label: "Stock Opname",
+        icon: "fact_check",
+        path: "/admin/stock-opname",
+        highlight: true,
       },
       {
         id: "retail-products",

@@ -62,3 +62,53 @@ export interface ProductRetail {
     slug: string;
   } | null;
 }
+
+export interface StockOpname {
+  id: number;
+  opname_number: string;
+  location: string;
+  transaction_date: string;
+  transaction_type: 'stock_in' | 'stock_out' | 'adjustment';
+  reason: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_by_email?: string | null;
+  created_at: string;
+  updated_at: string;
+  items_count?: number;
+}
+
+export interface StockOpnameItem {
+  id: number;
+  stock_opname_id: number;
+  product_id: number;
+  product_name: string;
+  product_sku: string;
+  variant_id: number;
+  variant_name: string;
+  variant_sku: string;
+  quantity_before: number;
+  quantity_change: number;
+  quantity_after: number;
+  unit: string;
+  cost_per_unit: number | null;
+  created_at?: string;
+}
+
+export interface StockOpnameDetail extends StockOpname {
+  items: StockOpnameItem[];
+}
+
+export interface StockOpnameFormData {
+  location: string;
+  transaction_date: string;
+  transaction_type: 'stock_in' | 'stock_out' | 'adjustment';
+  reason: string;
+  notes: string;
+  items: {
+    variant_id: number;
+    quantity_change: number;
+    unit: string;
+    cost_per_unit?: number;
+  }[];
+}

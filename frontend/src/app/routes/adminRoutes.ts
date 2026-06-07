@@ -80,6 +80,11 @@ const StarGuideSockReport = lazy(
   () => import("../../pages/admin/StarGuideSockReport"),
 );
 
+const StockOpname = lazy(() => import("../../pages/admin/StockOpname"));
+const StockOpnameDetail = lazy(
+  () => import("../../pages/admin/StockOpnameDetail"),
+);
+
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
   { path: "/admin/retail-dashboard", Page: RetailDashboard },
@@ -118,4 +123,6 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/divisions", Page: DivisionManager },
   { path: "/admin/retail-products", Page: RetailProductManager },
   { path: "/admin/sock-report", Page: StarGuideSockReport },
+  { path: "/admin/stock-opname", Page: StockOpname },
+  { path: "/admin/stock-opname/:id", Page: StockOpnameDetail },
 ];

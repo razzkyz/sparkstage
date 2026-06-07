@@ -18,6 +18,7 @@ dist-ssr
 .env.local
 .env.production
 .env.imagekit-migration
+.env.r2-migration
 
 # Editor directories and files
 .vscode/*
