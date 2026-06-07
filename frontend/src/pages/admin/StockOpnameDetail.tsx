@@ -192,7 +192,7 @@ const StockOpnameDetail = () => {
                 </p>
               </div>
 
-              {opname.reason && (
+              {(opname.reason || canEdit) && (
                 <div className="md:col-span-2">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">
                     Alasan
@@ -209,9 +209,9 @@ const StockOpnameDetail = () => {
                     <p className="text-base text-gray-900">{opname.reason}</p>
                   )}
                 </div>
-              ) : null}
+              )}
 
-              {opname.notes && (
+              {(opname.notes || canEdit) && (
                 <div className="md:col-span-2">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">
                     Catatan
@@ -228,7 +228,7 @@ const StockOpnameDetail = () => {
                     <p className="text-base text-gray-700">{opname.notes}</p>
                   )}
                 </div>
-              ) : null}
+              )}
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">
