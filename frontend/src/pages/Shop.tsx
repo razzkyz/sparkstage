@@ -215,7 +215,8 @@ function ShopResults({
 const Shop = () => {
   useSeo({
     title: "SparkStage Shop · Stage 55",
-    description: "Discover Glam Room, Charm Bar, and Spark Club products in SparkStage Shop.",
+    description:
+      "Discover Glam Room, Charm Bar, and Spark Club products in SparkStage Shop.",
     canonical: `${window.location.origin}/shop`,
   });
 
@@ -291,7 +292,10 @@ const Shop = () => {
         if (
           nameLower.includes("headliner") ||
           nameLower.includes("pop socket") ||
-          nameLower.includes("popsocket")
+          nameLower.includes("popsocket") ||
+          nameLower.includes("lucky charm") ||
+          nameLower.includes("lucky") ||
+          nameLower.includes("lucky-charm")
         ) {
           return false;
         }

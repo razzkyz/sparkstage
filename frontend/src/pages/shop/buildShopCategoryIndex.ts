@@ -1,4 +1,4 @@
-import type { Category } from '../../hooks/useCategories';
+import type { Category } from "../../hooks/useCategories";
 
 export type ShopCategoryIndex = {
   parentCategories: Category[];
@@ -8,46 +8,53 @@ export type ShopCategoryIndex = {
 
 // Categories that should only appear in Charm Bar, not in Shop
 const CHARM_BAR_ONLY_CATEGORIES = new Set([
-  'holiday',
-  'edgy-soul',
-  'sky-dream',
-  'hobby',
-  'island-vibes',
-  'pop-icon',
-  'the-icon',
-  'love',
-  'soft-muse',
-  'foodie',
-  'zodiac',
-  'pets',
+  "holiday",
+  "edgy-soul",
+  "sky-dream",
+  "hobby",
+  "island-vibes",
+  "pop-icon",
+  "the-icon",
+  "love",
+  "soft-muse",
+  "foodie",
+  "zodiac",
+  "pets",
+  "lucky",
+  "lucky-charm",
 ]);
 
 // Categories that should only appear in Glam, not in Shop
 const GLAM_ONLY_CATEGORIES = new Set([
-  'makeup',
-  'eyewear',
-  'glitter',
-  'headliner',
-  'starglitter',
-  'star-glitter',
-  'popsocket',
-  'pop-socket',
-  'popsockets',
-  'patches',
-  'patch',
-  'speckles',
-  'freckles'
+  "makeup",
+  "eyewear",
+  "glitter",
+  "headliner",
+  "starglitter",
+  "star-glitter",
+  "popsocket",
+  "pop-socket",
+  "popsockets",
+  "patches",
+  "patch",
+  "speckles",
+  "freckles",
 ]);
 
-export function buildShopCategoryIndex(categories: Category[]): ShopCategoryIndex {
+export function buildShopCategoryIndex(
+  categories: Category[],
+): ShopCategoryIndex {
   const parents: Category[] = [];
   const childrenByParentId = new Map<number, Category[]>();
 
   for (const category of categories) {
-    const slugLower = category.slug?.toLowerCase() || '';
-    
+    const slugLower = category.slug?.toLowerCase() || "";
+
     // Skip charm-bar-only and glam-only categories from appearing in Shop
-    if (CHARM_BAR_ONLY_CATEGORIES.has(slugLower) || GLAM_ONLY_CATEGORIES.has(slugLower)) {
+    if (
+      CHARM_BAR_ONLY_CATEGORIES.has(slugLower) ||
+      GLAM_ONLY_CATEGORIES.has(slugLower)
+    ) {
       continue;
     }
 
@@ -75,7 +82,10 @@ export function buildShopCategoryIndex(categories: Category[]): ShopCategoryInde
 
   const allowedSlugMap = new Map<string, Set<string>>();
   for (const category of categories) {
-    allowedSlugMap.set(category.slug, new Set([category.slug, ...getAllDescendantSlugs(category.id)]));
+    allowedSlugMap.set(
+      category.slug,
+      new Set([category.slug, ...getAllDescendantSlugs(category.id)]),
+    );
   }
 
   const childCategoriesByParentSlug = new Map<string, Category[]>();
@@ -83,12 +93,16 @@ export function buildShopCategoryIndex(categories: Category[]): ShopCategoryInde
     const children = childrenByParentId.get(category.id) ?? [];
     childCategoriesByParentSlug.set(
       category.slug,
-      children.slice().sort((left, right) => left.name.localeCompare(right.name))
+      children
+        .slice()
+        .sort((left, right) => left.name.localeCompare(right.name)),
     );
   }
 
   return {
-    parentCategories: parents.slice().sort((left, right) => left.name.localeCompare(right.name)),
+    parentCategories: parents
+      .slice()
+      .sort((left, right) => left.name.localeCompare(right.name)),
     childCategoriesByParentSlug,
     allowedSlugMap,
   };

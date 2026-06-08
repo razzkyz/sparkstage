@@ -288,7 +288,9 @@ const SparkClub = () => {
         if (
           nameLower.includes("headliner") ||
           nameLower.includes("pop socket") ||
-          nameLower.includes("popsocket")
+          nameLower.includes("popsocket") ||
+          nameLower.includes("lucky charm") ||
+          nameLower.includes("lucky-charm")
         ) {
           return false;
         }
