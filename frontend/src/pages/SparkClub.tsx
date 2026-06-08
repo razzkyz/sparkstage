@@ -290,7 +290,9 @@ const SparkClub = () => {
           nameLower.includes("pop socket") ||
           nameLower.includes("popsocket") ||
           nameLower.includes("lucky charm") ||
-          nameLower.includes("lucky-charm")
+          nameLower.includes("lucky") ||
+          nameLower.includes("lucky-charm") ||
+          nameLower.includes("charm")
         ) {
           return false;
         }

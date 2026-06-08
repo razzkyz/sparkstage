@@ -295,7 +295,9 @@ const Shop = () => {
           nameLower.includes("popsocket") ||
           nameLower.includes("lucky charm") ||
           nameLower.includes("lucky") ||
-          nameLower.includes("lucky-charm")
+          nameLower.includes("lucky-charm") ||
+          nameLower.includes("charm") ||
+          nameLower.includes("speckles")
         ) {
           return false;
         }
