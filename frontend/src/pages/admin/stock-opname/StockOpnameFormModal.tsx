@@ -18,12 +18,15 @@ export const StockOpnameFormModal = ({
   const { showToast } = useToast();
   const createMutation = useCreateStockOpname();
 
+  const today = new Date().toISOString().split('T')[0];
   const [formData, setFormData] = useState<StockOpnameFormData>({
     location: 'SparkStage55',
-    transaction_date: new Date().toISOString().split('T')[0],
-    transaction_type: 'stock_in',
+    transaction_date: today,
+    transaction_type: 'adjustment',
     reason: '',
     notes: '',
+    opname_start_date: today,
+    opname_end_date: today,
     items: [],
   });
 
@@ -46,10 +49,12 @@ export const StockOpnameFormModal = ({
       // Reset form
       setFormData({
         location: 'SparkStage55',
-        transaction_date: new Date().toISOString().split('T')[0],
-        transaction_type: 'stock_in',
+        transaction_date: today,
+        transaction_type: 'adjustment',
         reason: '',
         notes: '',
+        opname_start_date: today,
+        opname_end_date: today,
         items: [],
       });
     } catch (error) {
@@ -124,6 +129,45 @@ export const StockOpnameFormModal = ({
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#ff4b86] focus:outline-none focus:ring-2 focus:ring-[#ff4b86]/20"
                 required
               />
+            </div>
+          </div>
+
+          {/* Opname Period */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Periode Cek (untuk hitung penjualan otomatis)
+            </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mulai Dari
+                </label>
+                <input
+                  type="date"
+                  value={formData.opname_start_date}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, opname_start_date: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#ff4b86] focus:outline-none focus:ring-2 focus:ring-[#ff4b86]/20"
+                  required
+                />
+                <p className="text-xs text-gray-600 mt-1">Dari kapan mulai hitung stok terjual</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sampai
+                </label>
+                <input
+                  type="date"
+                  value={formData.opname_end_date}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, opname_end_date: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#ff4b86] focus:outline-none focus:ring-2 focus:ring-[#ff4b86]/20"
+                  required
+                />
+                <p className="text-xs text-gray-600 mt-1">Sampai kapan hitung stok terjual</p>
+              </div>
             </div>
           </div>
 

@@ -66,6 +66,8 @@ export const useCreateStockOpname = () => {
         p_transaction_type: formData.transaction_type,
         p_reason: formData.reason,
         p_notes: formData.notes,
+        p_opname_start_date: formData.opname_start_date,
+        p_opname_end_date: formData.opname_end_date,
         p_items: formData.items,
       });
 

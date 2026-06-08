@@ -192,6 +192,28 @@ const StockOpnameDetail = () => {
                 </p>
               </div>
 
+              {(opname.opname_start_date || opname.opname_end_date) && (
+                <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
+                    Periode Perhitungan Penjualan
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Dari tanggal</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {opname.opname_start_date ? new Date(opname.opname_start_date).toLocaleDateString('id-ID') : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Hingga tanggal</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {opname.opname_end_date ? new Date(opname.opname_end_date).toLocaleDateString('id-ID') : '-'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {(opname.reason || canEdit) && (
                 <div className="md:col-span-2">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">
@@ -268,64 +290,81 @@ const StockOpnameDetail = () => {
                       SKU
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
-                      Stok Sebelum
+                      Stock Awal
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
-                      Perubahan
+                      Terjual
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
-                      Stok Setelah
+                      Expected
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
+                      Stock Fisik
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
+                      Selisih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                      Alasan Selisih
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                       Satuan
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
-                      Biaya/Unit
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {opname.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                        {item.product_name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {item.variant_name}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-600">
-                        {item.variant_sku}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">
-                        {item.quantity_before}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm">
-                        <span
-                          className={`font-semibold ${
-                            item.quantity_change > 0
-                              ? 'text-green-700'
-                              : item.quantity_change < 0
-                              ? 'text-red-700'
-                              : 'text-gray-700'
-                          }`}
-                        >
-                          {item.quantity_change > 0 ? '+' : ''}
-                          {item.quantity_change}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                        {item.quantity_after}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {item.unit}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-700">
-                        {item.cost_per_unit
-                          ? `Rp ${item.cost_per_unit.toLocaleString('id-ID')}`
-                          : '-'}
-                      </td>
-                    </tr>
-                  ))}
+                  {opname.items.map((item) => {
+                    const discrepancyClass = !item.quantity_discrepancy
+                      ? 'text-green-700 font-semibold'
+                      : item.quantity_discrepancy > 0
+                      ? 'text-orange-700 font-semibold'
+                      : 'text-red-700 font-semibold';
+
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                          {item.product_name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.variant_name}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">
+                          {item.variant_sku}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                          {item.quantity_before} {item.unit}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-700">
+                          {item.quantity_sold ?? '-'} {item.unit}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-700">
+                          {item.quantity_expected ?? '-'} {item.unit}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                          {item.quantity_actual !== null && item.quantity_actual !== undefined
+                            ? `${item.quantity_actual} ${item.unit}`
+                            : '-'}
+                        </td>
+                        <td className={`px-4 py-3 text-right text-sm ${discrepancyClass}`}>
+                          {item.quantity_discrepancy !== null && item.quantity_discrepancy !== undefined
+                            ? `${item.quantity_discrepancy > 0 ? '+' : ''}${item.quantity_discrepancy} ${item.unit}`
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.discrepancy_reason ? (
+                            <span className="inline-block rounded-lg bg-amber-50 px-2.5 py-1 text-xs border border-amber-200">
+                              {item.discrepancy_reason}
+                            </span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.unit}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

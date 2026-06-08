@@ -74,6 +74,8 @@ export interface StockOpname {
   transaction_type: "stock_in" | "stock_out" | "adjustment";
   reason: string | null;
   notes: string | null;
+  opname_start_date?: string;
+  opname_end_date?: string;
   created_by: string | null;
   created_by_email?: string | null;
   created_at: string;
@@ -91,8 +93,11 @@ export interface StockOpnameItem {
   variant_name: string;
   variant_sku: string;
   quantity_before: number;
-  quantity_change: number;
-  quantity_after: number;
+  quantity_sold: number;
+  quantity_expected: number;
+  quantity_actual: number | null;
+  quantity_discrepancy: number | null;
+  discrepancy_reason: string | null;
   unit: string;
   cost_per_unit: number | null;
   created_at?: string;
@@ -108,10 +113,14 @@ export interface StockOpnameFormData {
   transaction_type: "stock_in" | "stock_out" | "adjustment";
   reason: string;
   notes: string;
+  opname_start_date: string;
+  opname_end_date: string;
   items: {
     variant_id: number;
-    quantity_change: number;
+    quantity_before: number;
+    quantity_actual?: number;
     unit: string;
     cost_per_unit?: number;
+    discrepancy_reason?: string;
   }[];
 }
