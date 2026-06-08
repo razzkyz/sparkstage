@@ -90,7 +90,7 @@ export function useRetailProductImageMutations(productId: number | null) {
       const imageUrl = await uploadPublicAssetToImageKit({
         file,
         fileName,
-        folderPath: `retail_products/${productId}`,
+        folderPath: `public/retail-products/${productId}`,
       });
 
       // If setting primary, unset other primaries first

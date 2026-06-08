@@ -258,7 +258,7 @@ export default function RetailProductManager() {
         finalImageUrl = await uploadPublicAssetToImageKit({
           file: imageFile,
           fileName,
-          folderPath: "retail_products",
+          folderPath: "public/retail-products",
         });
       }
 
@@ -1015,7 +1015,7 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        price: Number(e.target.value),
+                        price: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1031,7 +1031,7 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        stock: Number(e.target.value),
+                        stock: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1047,7 +1047,7 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        weight: Number(e.target.value),
+                        weight: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1062,11 +1062,11 @@ export default function RetailProductManager() {
                   </label>
                   <input
                     type="number"
-                    value={formData.length || ""}
+                    value={formData.length ?? ""}
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        length: Number(e.target.value),
+                        length: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1078,11 +1078,11 @@ export default function RetailProductManager() {
                   </label>
                   <input
                     type="number"
-                    value={formData.width || ""}
+                    value={formData.width ?? ""}
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        width: Number(e.target.value),
+                        width: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1094,11 +1094,11 @@ export default function RetailProductManager() {
                   </label>
                   <input
                     type="number"
-                    value={formData.height || ""}
+                    value={formData.height ?? ""}
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        height: Number(e.target.value),
+                        height: e.target.value === "" ? ("" as any) : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"

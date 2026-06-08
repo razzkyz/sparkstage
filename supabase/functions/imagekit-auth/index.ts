@@ -16,6 +16,8 @@ const ALLOWED_PUBLIC_FOLDER_PATTERNS = [
   /^\/public\/dressing-room\/[0-9]+$/,
   /^\/public\/events-schedule\/[a-z0-9-]+$/,
   /^\/public\/stage-gallery$/,
+  /^\/public\/retail-products$/,
+  /^\/public\/retail-products\/[0-9]+$/,
 ]
 
 function normalizeFolderPath(value: string): string {
@@ -27,7 +29,7 @@ function isAllowedPublicFolderPath(folderPath: string): boolean {
   return ALLOWED_PUBLIC_FOLDER_PATTERNS.some((pattern) => pattern.test(folderPath))
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
