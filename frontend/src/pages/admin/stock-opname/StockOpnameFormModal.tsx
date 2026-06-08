@@ -64,10 +64,22 @@ export const StockOpnameFormModal = ({
 
   const handleAddItem = (item: {
     variant_id: number;
-    quantity_change: number;
+    quantity_before: number;
+    quantity_actual?: number;
     unit: string;
     cost_per_unit?: number;
+    discrepancy_reason?: string;
   }) => {
+    // Validate discrepancy if quantity_actual is provided
+    if (
+      item.quantity_actual !== undefined &&
+      item.quantity_actual !== item.quantity_before &&
+      !item.discrepancy_reason
+    ) {
+      showToast('error', 'Wajib isi alasan selisih jika ada perbedaan stok');
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       items: [...prev.items, item],
