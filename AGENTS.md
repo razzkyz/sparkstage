@@ -31,6 +31,87 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - ImageKit migration status: `docs/runbooks/imagekit-migration.md`
 - Product admin data-entry rules: `docs/runbooks/admin-product-entry.md`
 - Kasir (Cashier) role setup: `docs/runbooks/kasir-setup.md`
+- Stock Opname system (NEW 2026-06-09): `docs/runbooks/stock-opname-system.md`
+- Stock Opname quick start: `docs/runbooks/STOCK_OPNAME_QUICKSTART.md`
+- Stock Opname implementation: `STOCK_OPNAME_IMPLEMENTATION_SUMMARY.md`
+- Stock Opname deployment guide: `READY_TO_DEPLOY.md`
+- Stock Opname finalize workflow: `docs/runbooks/STOCK_OPNAME_FINALIZE.md`
+- Stock Opname realtime auto-refresh (NEW 2026-06-09): `docs/runbooks/STOCK_REALTIME_AUTO_REFRESH.md`
+
+## Frontend Stock Management Pages (100% COMPLETE ✅)
+
+All three stock management pages are fully implemented, tested, and ready to deploy with **Complete CRUD Operations** and **✨ Realtime Auto-Refresh**:
+
+- **Stock Opening** (`/admin/stock-opening`): Morning opening stock entry
+  - Main list page with create modal + NEW Detail page
+  - Product selector with ALL products, multi-field search (name, variant, SKU)
+  - Scrollable modal with proper flexbox layout
+  - Auto-numbering: #open-00001, #open-00002, etc.
+  - Status workflow: draft → confirmed
+  - ✅ **Create** - with date, location, items
+  - ✅ **Read** - list view and detail page
+  - ✅ **Edit** (draft only) - updates date, location, items
+  - ✅ **Delete** - with protection if used in opname
+  - ✅ **Confirm** - locks opening for use in opname
+  - ✨ **Realtime** - auto-refresh on any create/edit/delete/confirm
+
+- **Stock Adjustments** (`/admin/stock-adjustments`): Manual stock changes (gift, KOL, loss, gain)
+  - Main list page with create modal + NEW Detail page with summary
+  - Type selector: gift (🎁), kol (📢), loss (📉), gain (📈), other (🔧)
+  - Mandatory reason field (min 10 chars)
+  - Auto-updates product_variants.stock immediately
+  - Visual warnings for stock reduction
+  - Scrollable modal with proper flexbox layout
+  - Auto-numbering: #adj-00001, #adj-00002, etc.
+  - ✅ **Create** - with type, reason, items
+  - ✅ **Read** - list view and NEW detail page
+  - ✅ **Edit** - reverts old stock + applies new stock (smart recalculation)
+  - ✅ **Delete** - reverts all stock changes automatically
+  - ✨ **Realtime** - auto-refresh on any create/edit/delete
+
+- **Stock Opname** (`/admin/stock-opname`): Physical count vs system stock comparison
+  - Main list page with create modal + Detail page showing variance analysis
+  - Auto-loads system stock calculation on date/location selection
+  - Formula: System Stock = Opening - Sold + Adjustments
+  - Variance = Physical Count - System Stock
+  - Requires reason if variance != 0 (min 10 chars)
+  - Detailed error messages with checklist for requirements
+  - Scrollable modal with proper flexbox layout
+  - Auto-numbering: #opname-00001, #opname-00002, etc.
+  - Status workflow: draft → finalized
+  - ✅ **Create** - with date, location, physical counts
+  - ✅ **Read** - list view and detail page with variance
+  - ✅ **Delete** - removes opname and all items
+  - ✅ **Finalize** - locks opname and reconciles stock based on variance
+  - ❌ **No Edit** (by design - opname is final audit record)
+  - ✨ **Realtime** - auto-refresh on any create/delete/finalize
+
+All pages visible in admin menu under "Toko" > "Inventaris" section for admin and dressing-room-admin roles.
+
+**✨ NEW: Realtime Auto-Refresh:**
+- Uses Supabase Realtime with PostgreSQL replication
+- Auto-refresh on INSERT, UPDATE, DELETE events
+- Multi-user sync - all admins see changes instantly
+- No manual refresh needed (no more F5!)
+- See `docs/runbooks/STOCK_REALTIME_AUTO_REFRESH.md` for details
+
+**UI Improvements:**
+- ✅ Professional custom confirmation dialogs (replaced browser alerts)
+- ✅ Proper loading states with icons
+- ✅ Visual feedback for all actions
+- ✅ Tooltips and helpful messages
+- ✅ Responsive design
+
+**Deployment:** 
+1. Run `npm run supabase:db:push` to deploy 7 migration files:
+   - 5 migrations for CRUD operations (create, update, delete, confirm, finalize)
+   - 1 migration for finalize stock opname function
+   - 1 migration for enabling realtime on stock tables
+2. Run `npm run build` to verify build (✅ PASSED)
+3. Test locally with `npm run dev`
+4. Deploy to production
+
+**Status:** ✅ Production ready with full CRUD operations + Realtime auto-refresh. See `STOCK_EDIT_DELETE_COMPLETE.md` for complete feature documentation.
 
 ## Core Commands
 

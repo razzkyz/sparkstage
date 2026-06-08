@@ -76,6 +76,7 @@ export interface StockOpname {
   notes: string | null;
   opname_start_date?: string;
   opname_end_date?: string;
+  status?: 'draft' | 'finalized';
   created_by: string | null;
   created_by_email?: string | null;
   created_at: string;

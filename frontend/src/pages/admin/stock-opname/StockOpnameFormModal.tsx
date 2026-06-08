@@ -252,7 +252,6 @@ export const StockOpnameFormModal = ({
               items={formData.items}
               onAddItem={handleAddItem}
               onRemoveItem={handleRemoveItem}
-              transactionType={formData.transaction_type}
             />
           </div>
 

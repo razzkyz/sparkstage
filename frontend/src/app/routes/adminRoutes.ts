@@ -80,6 +80,16 @@ const StarGuideSockReport = lazy(
   () => import("../../pages/admin/StarGuideSockReport"),
 );
 
+const StockOpening = lazy(() => import("../../pages/admin/StockOpening"));
+const StockOpeningDetail = lazy(
+  () => import("../../pages/admin/StockOpeningDetail"),
+);
+const StockAdjustments = lazy(
+  () => import("../../pages/admin/StockAdjustments"),
+);
+const StockAdjustmentDetail = lazy(
+  () => import("../../pages/admin/StockAdjustmentDetail"),
+);
 const StockOpname = lazy(() => import("../../pages/admin/StockOpname"));
 const StockOpnameDetail = lazy(
   () => import("../../pages/admin/StockOpnameDetail"),
@@ -123,6 +133,10 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/divisions", Page: DivisionManager },
   { path: "/admin/retail-products", Page: RetailProductManager },
   { path: "/admin/sock-report", Page: StarGuideSockReport },
+  { path: "/admin/stock-opening", Page: StockOpening },
+  { path: "/admin/stock-opening/:openingId", Page: StockOpeningDetail },
+  { path: "/admin/stock-adjustments", Page: StockAdjustments },
+  { path: "/admin/stock-adjustments/:adjustmentId", Page: StockAdjustmentDetail },
   { path: "/admin/stock-opname", Page: StockOpname },
-  { path: "/admin/stock-opname/:id", Page: StockOpnameDetail },
+  { path: "/admin/stock-opname/:opnameId", Page: StockOpnameDetail },
 ];

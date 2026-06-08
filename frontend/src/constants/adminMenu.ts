@@ -129,6 +129,20 @@ export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
     label: "Inventaris",
     items: [
       {
+        id: "stock-opening",
+        label: "Stock Opening",
+        icon: "wb_twilight",
+        path: "/admin/stock-opening",
+        highlight: true,
+      },
+      {
+        id: "stock-adjustments",
+        label: "Stock Adjustments",
+        icon: "tune",
+        path: "/admin/stock-adjustments",
+        highlight: true,
+      },
+      {
         id: "stock-opname",
         label: "Stock Opname",
         icon: "fact_check",
@@ -182,6 +196,20 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "stock-opening",
+        label: "Stock Opening",
+        icon: "wb_twilight",
+        path: "/admin/stock-opening",
+        highlight: true,
+      },
+      {
+        id: "stock-adjustments",
+        label: "Stock Adjustments",
+        icon: "tune",
+        path: "/admin/stock-adjustments",
+        highlight: true,
       },
       {
         id: "stock-opname",
@@ -397,6 +425,20 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "stock-opening",
+        label: "Stock Opening",
+        icon: "wb_twilight",
+        path: "/admin/stock-opening",
+        highlight: true,
+      },
+      {
+        id: "stock-adjustments",
+        label: "Stock Adjustments",
+        icon: "tune",
+        path: "/admin/stock-adjustments",
+        highlight: true,
       },
       {
         id: "stock-opname",

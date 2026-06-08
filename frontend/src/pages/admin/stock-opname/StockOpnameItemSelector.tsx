@@ -15,14 +15,12 @@ interface StockOpnameItemSelectorProps {
   items: StockOpnameItem[];
   onAddItem: (item: StockOpnameItem) => void;
   onRemoveItem: (index: number) => void;
-  transactionType: 'stock_in' | 'stock_out' | 'adjustment';
 }
 
 export const StockOpnameItemSelector = ({
   items,
   onAddItem,
   onRemoveItem,
-  transactionType,
 }: StockOpnameItemSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
