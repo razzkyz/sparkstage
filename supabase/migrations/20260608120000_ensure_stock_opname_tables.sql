@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS public.stock_opname (
   transaction_type TEXT NOT NULL CHECK (transaction_type IN ('stock_in', 'stock_out', 'adjustment')),
   reason TEXT,
   notes TEXT,
+  -- Opname period for calculating quantity_sold from order_items
+  opname_start_date TIMESTAMPTZ NOT NULL DEFAULT (NOW() - INTERVAL '1 day'),
+  opname_end_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -30,18 +33,115 @@ CREATE TABLE IF NOT EXISTS public.stock_opname_items (
   stock_opname_id BIGINT NOT NULL REFERENCES public.stock_opname(id) ON DELETE CASCADE,
   product_id BIGINT NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
   variant_id BIGINT NOT NULL REFERENCES public.product_variants(id) ON DELETE RESTRICT,
-  quantity_before INTEGER NOT NULL DEFAULT 0,
-  quantity_change INTEGER NOT NULL,
-  quantity_after INTEGER NOT NULL,
+  -- Stock tracking workflow
+  quantity_before INTEGER NOT NULL DEFAULT 0,         -- Stock awal (before opname period)
+  quantity_sold INTEGER NOT NULL DEFAULT 0,           -- Sold from order_items during period
+  quantity_expected INTEGER NOT NULL DEFAULT 0,       -- Calculated: quantity_before - quantity_sold
+  quantity_actual INTEGER,                             -- Physical count by staff during opname
+  quantity_discrepancy INTEGER,                        -- Calculated: quantity_actual - quantity_expected (if exists)
+  -- Additional tracking
   unit TEXT NOT NULL DEFAULT 'pcs',
   cost_per_unit NUMERIC(10, 2),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  discrepancy_reason TEXT,                            -- Why stock doesn't match (e.g., "hilang 1 untuk KOL", "rusak", dll)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_stock_opname_items_opname_id ON public.stock_opname_items(stock_opname_id);
 CREATE INDEX IF NOT EXISTS idx_stock_opname_items_product_id ON public.stock_opname_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_stock_opname_items_variant_id ON public.stock_opname_items(variant_id);
+
+-- ============================================
+-- 2.5 Function to get quantity sold from order_items
+-- ============================================
+CREATE OR REPLACE FUNCTION public.get_quantity_sold_for_variant(
+  p_variant_id BIGINT,
+  p_start_date TIMESTAMPTZ,
+  p_end_date TIMESTAMPTZ
+)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_quantity_sold INTEGER;
+BEGIN
+  SELECT COALESCE(SUM(oi.quantity), 0)
+  INTO v_quantity_sold
+  FROM order_items oi
+  INNER JOIN orders o ON oi.order_id = o.id
+  WHERE oi.variant_id = p_variant_id
+    AND o.status NOT IN ('cancelled', 'abandoned')
+    AND o.created_at >= p_start_date
+    AND o.created_at < p_end_date;
+  
+  RETURN v_quantity_sold;
+END;
+$$;
+
+-- ============================================
+-- 2.6 Trigger to calculate expected and discrepancy quantities
+-- ============================================
+CREATE OR REPLACE FUNCTION public.calculate_stock_opname_quantities()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_start_date TIMESTAMPTZ;
+  v_end_date TIMESTAMPTZ;
+BEGIN
+  -- Get opname period dates from stock_opname header
+  SELECT opname_start_date, opname_end_date
+  INTO v_start_date, v_end_date
+  FROM public.stock_opname
+  WHERE id = NEW.stock_opname_id;
+  
+  -- Fallback if dates not set (shouldn't happen with defaults, but safe)
+  IF v_start_date IS NULL THEN
+    v_start_date := CURRENT_TIMESTAMP - INTERVAL '1 day';
+  END IF;
+  IF v_end_date IS NULL THEN
+    v_end_date := CURRENT_TIMESTAMP;
+  END IF;
+  
+  -- Calculate quantity_sold from order_items during opname period
+  NEW.quantity_sold := public.get_quantity_sold_for_variant(
+    NEW.variant_id,
+    v_start_date,
+    v_end_date
+  );
+  
+  -- Calculate expected quantity: before - sold
+  NEW.quantity_expected := NEW.quantity_before - NEW.quantity_sold;
+  
+  -- If quantity_actual is provided, calculate discrepancy
+  IF NEW.quantity_actual IS NOT NULL THEN
+    NEW.quantity_discrepancy := NEW.quantity_actual - NEW.quantity_expected;
+    
+    -- Validate: if discrepancy exists, reason is required
+    IF NEW.quantity_discrepancy <> 0 AND (NEW.discrepancy_reason IS NULL OR TRIM(NEW.discrepancy_reason) = '') THEN
+      RAISE EXCEPTION 'discrepancy_reason is required when stock discrepancy exists (actual: %, expected: %)', 
+        NEW.quantity_actual, NEW.quantity_expected;
+    END IF;
+  END IF;
+  
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+-- Drop trigger if exists
+DROP TRIGGER IF EXISTS trigger_calculate_stock_opname_quantities ON public.stock_opname_items;
+
+CREATE TRIGGER trigger_calculate_stock_opname_quantities
+  BEFORE INSERT OR UPDATE ON public.stock_opname_items
+  FOR EACH ROW
+  EXECUTE FUNCTION public.calculate_stock_opname_quantities();
+
 
 -- ============================================
 -- 3. Auto-generate Stock Opname Number
