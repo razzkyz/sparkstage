@@ -14,7 +14,7 @@ export function useAdminRetailProducts() {
         .from('product_retail')
         .select(`
           *,
-          retail_categories(id, name, department)
+          retail_categories!retail_category_id(id, name, department)
         `)
         .order('created_at', { ascending: false });
 

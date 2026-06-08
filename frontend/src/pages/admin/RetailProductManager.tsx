@@ -97,6 +97,8 @@ export default function RetailProductManager() {
     "glam" | "charmbar" | "sparkclub"
   >("glam");
   const [catEditingId, setCatEditingId] = useState<number | null>(null);
+  // null = adding root category, number = adding sub to this parent id
+  const [catParentId, setCatParentId] = useState<number | null>(null);
   const [catFormData, setCatFormData] = useState({
     name: "",
     slug: "",
@@ -106,26 +108,30 @@ export default function RetailProductManager() {
   const resetCatForm = () => {
     setCatFormData({ name: "", slug: "", is_active: true });
     setCatEditingId(null);
+    setCatParentId(null);
   };
 
   const handleCatSave = async () => {
     if (!catFormData.name || !catFormData.slug) {
-      showToast("error", "Category Name and Slug are required");
+      showToast("error", "Name dan Slug wajib diisi");
       return;
     }
     try {
       if (catEditingId) {
         await updateCategory({ id: catEditingId, updates: catFormData });
-        showToast("success", "Category updated successfully");
+        showToast("success", "Berhasil diperbarui");
       } else {
         await createCategory({
           department: catActiveDept,
           name: catFormData.name,
           slug: catFormData.slug,
           is_active: catFormData.is_active,
-          parent_id: null,
+          parent_id: catParentId,
         });
-        showToast("success", "Category created successfully");
+        showToast(
+          "success",
+          catParentId ? "Sub-category berhasil ditambahkan" : "Category berhasil ditambahkan",
+        );
       }
       resetCatForm();
     } catch (err: any) {
@@ -190,6 +196,7 @@ export default function RetailProductManager() {
       image: null,
       is_active: true,
       retail_category: "glam",
+      retail_category_id: null,
       retail_subcategory_id: null,
       variant: "",
     });
@@ -213,6 +220,7 @@ export default function RetailProductManager() {
       image: product.image,
       is_active: product.is_active,
       retail_category: product.retail_category,
+      retail_category_id: product.retail_category_id ?? null,
       retail_subcategory_id: product.retail_subcategory_id,
       variant: product.variant || "",
     });
@@ -234,9 +242,9 @@ export default function RetailProductManager() {
       !formData.name ||
       !formData.slug ||
       !formData.retail_category ||
-      !formData.retail_subcategory_id
+      !formData.retail_category_id
     ) {
-      showToast("error", "Name, Slug, Department, and Category are required.");
+      showToast("error", "Name, Slug, Department, dan Category wajib diisi.");
       return;
     }
 
@@ -271,29 +279,29 @@ export default function RetailProductManager() {
       if (savedProductId && finalImageUrl) {
         // Shift existing non-primary images up by 1
         const { data: existing } = await supabase
-          .from('product_retail_images')
-          .select('id, display_order, image_url')
-          .eq('product_retail_id', savedProductId)
-          .order('display_order', { ascending: true });
+          .from("product_retail_images")
+          .select("id, display_order, image_url")
+          .eq("product_retail_id", savedProductId)
+          .order("display_order", { ascending: true });
 
         if (existing && existing.length > 0) {
           // Unset all primaries and shift orders
           await supabase
-            .from('product_retail_images')
+            .from("product_retail_images")
             .update({ is_primary: false })
-            .eq('product_retail_id', savedProductId);
+            .eq("product_retail_id", savedProductId);
           for (const img of existing) {
             await supabase
-              .from('product_retail_images')
+              .from("product_retail_images")
               .update({ display_order: img.display_order + 1 })
-              .eq('id', img.id);
+              .eq("id", img.id);
           }
           // Check if same URL already exists as an entry
           const alreadyExists = existing.find(
-            (img: any) => img.image_url === finalImageUrl
+            (img: any) => img.image_url === finalImageUrl,
           );
           if (!alreadyExists) {
-            await supabase.from('product_retail_images').insert({
+            await supabase.from("product_retail_images").insert({
               product_retail_id: savedProductId,
               image_url: finalImageUrl,
               is_primary: true,
@@ -301,13 +309,13 @@ export default function RetailProductManager() {
             });
           } else {
             await supabase
-              .from('product_retail_images')
+              .from("product_retail_images")
               .update({ is_primary: true, display_order: 0 })
-              .eq('id', alreadyExists.id);
+              .eq("id", alreadyExists.id);
           }
         } else {
           // No existing gallery images — just insert
-          await supabase.from('product_retail_images').insert({
+          await supabase.from("product_retail_images").insert({
             product_retail_id: savedProductId,
             image_url: finalImageUrl,
             is_primary: true,
@@ -318,7 +326,9 @@ export default function RetailProductManager() {
 
       // Invalidate gallery cache so carousel section refreshes
       if (savedProductId) {
-        queryClient.invalidateQueries({ queryKey: ['retailProductImages', savedProductId] });
+        queryClient.invalidateQueries({
+          queryKey: ["retailProductImages", savedProductId],
+        });
       }
 
       setIsModalOpen(false);
@@ -329,11 +339,42 @@ export default function RetailProductManager() {
     }
   };
 
-  // Subcategories specific to selected department in form
-  const formSubcategories = useMemo(() => {
+  // 3-tier form options
+  const formCategories = useMemo(() => {
     if (!formData.retail_category) return [];
-    return categories.filter((c) => c.department === formData.retail_category);
+    return categories.filter(
+      (c) => c.department === formData.retail_category && c.parent_id === null,
+    );
   }, [categories, formData.retail_category]);
+
+  const formSubcategories = useMemo(() => {
+    if (!formData.retail_category_id) return [];
+    return categories.filter(
+      (c) => c.parent_id === formData.retail_category_id,
+    );
+  }, [categories, formData.retail_category_id]);
+
+  // Root categories for active dept in category manager
+  const catRootCategories = useMemo(
+    () =>
+      categories.filter(
+        (c) => c.parent_id === null && c.department === catActiveDept,
+      ),
+    [categories, catActiveDept],
+  );
+
+  // Sub-categories grouped by parent in category manager
+  const catSubsByParent = useMemo(() => {
+    const map = new Map<number, typeof categories>();
+    categories
+      .filter((c) => c.parent_id !== null && c.department === catActiveDept)
+      .forEach((c) => {
+        const arr = map.get(c.parent_id!) ?? [];
+        arr.push(c);
+        map.set(c.parent_id!, arr);
+      });
+    return map;
+  }, [categories, catActiveDept]);
 
   return (
     <AdminLayout
@@ -381,65 +422,118 @@ export default function RetailProductManager() {
                 ))}
               </div>
 
-              <div className="space-y-2">
-                {categories
-                  .filter((c) => c.department === catActiveDept)
-                  .map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:border-[#ff4b86]/30 group transition-colors"
-                    >
-                      <div>
-                        <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                          {c.name}
-                          {!c.is_active && (
-                            <span className="text-[9px] bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 uppercase">
-                              Hidden
-                            </span>
-                          )}
-                        </h4>
-                        <p className="text-xs text-gray-400 font-mono">
-                          /{c.slug}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => {
-                            setCatEditingId(c.id);
-                            setCatFormData({
-                              name: c.name,
-                              slug: c.slug,
-                              is_active: c.is_active,
-                            });
-                          }}
-                          className="text-blue-500 p-1 hover:bg-blue-50 rounded"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleCatDelete(c.id, c.name)}
-                          className="text-red-500 p-1 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                {categories.filter((c) => c.department === catActiveDept)
-                  .length === 0 && (
+              {/* ── Category Manager tree list ── */}
+              <div className="space-y-3">
+                {catRootCategories.length === 0 && (
                   <p className="text-sm text-gray-400 p-4 text-center border border-dashed border-gray-200 rounded-lg">
-                    No categories in {catActiveDept}.
+                    Belum ada category di {catActiveDept}.
                   </p>
                 )}
+                {catRootCategories.map((root) => {
+                  const subs = catSubsByParent.get(root.id) ?? [];
+                  return (
+                    <div key={root.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                      {/* Root row */}
+                      <div className="flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 transition-colors group">
+                        <div>
+                          <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+                            {root.name}
+                            {!root.is_active && (
+                              <span className="text-[9px] bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 uppercase">
+                                Hidden
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-xs text-gray-400 font-mono">/{root.slug}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            title="Tambah sub-category"
+                            onClick={() => {
+                              resetCatForm();
+                              setCatParentId(root.id);
+                            }}
+                            className="text-[#ff4b86] p-1 hover:bg-pink-50 rounded text-xs font-bold"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setCatEditingId(root.id);
+                              setCatParentId(null);
+                              setCatFormData({ name: root.name, slug: root.slug, is_active: root.is_active });
+                            }}
+                            className="text-blue-500 p-1 hover:bg-blue-50 rounded"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleCatDelete(root.id, root.name)}
+                            className="text-red-500 p-1 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sub-category rows */}
+                      {subs.length > 0 && (
+                        <div className="divide-y divide-gray-100">
+                          {subs.map((sub) => (
+                            <div
+                              key={sub.id}
+                              className="flex justify-between items-center px-4 py-2.5 pl-8 bg-white hover:bg-gray-50 transition-colors"
+                            >
+                              <div>
+                                <span className="text-sm text-gray-700 flex items-center gap-1">
+                                  <span className="text-gray-300 text-xs">└</span>
+                                  {sub.name}
+                                  {!sub.is_active && (
+                                    <span className="text-[9px] bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 uppercase">
+                                      Hidden
+                                    </span>
+                                  )}
+                                </span>
+                                <p className="text-xs text-gray-400 font-mono pl-3">/{sub.slug}</p>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setCatEditingId(sub.id);
+                                    setCatParentId(sub.parent_id);
+                                    setCatFormData({ name: sub.name, slug: sub.slug, is_active: sub.is_active });
+                                  }}
+                                  className="text-blue-500 p-1 hover:bg-blue-50 rounded"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleCatDelete(sub.id, sub.name)}
+                                  className="text-red-500 p-1 hover:bg-red-50 rounded"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             <div className="lg:w-[350px] bg-gray-50 p-4 rounded-xl border border-gray-200 h-fit">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-sm">
-                  {catEditingId ? "Edit Category" : "Add Category"}
+                  {catEditingId
+                    ? "Edit Category"
+                    : catParentId
+                      ? `Tambah Sub-Category`
+                      : "Tambah Category"}
                 </h3>
-                {catEditingId && (
+                {(catEditingId || catParentId) && (
                   <button
                     onClick={resetCatForm}
                     className="text-xs text-gray-500 hover:text-gray-800"
@@ -448,6 +542,14 @@ export default function RetailProductManager() {
                   </button>
                 )}
               </div>
+
+              {/* Show parent info when adding sub */}
+              {!catEditingId && catParentId && (
+                <div className="mb-3 px-3 py-2 bg-pink-50 border border-pink-100 rounded-lg text-xs text-pink-700 font-semibold">
+                  Parent: {catRootCategories.find((c) => c.id === catParentId)?.name}
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">
@@ -504,7 +606,7 @@ export default function RetailProductManager() {
                   onClick={handleCatSave}
                   className="w-full bg-[#ff4b86] text-white py-2 rounded-md text-sm font-bold hover:bg-[#e63d75] transition-colors mt-2"
                 >
-                  {catEditingId ? "Update" : "Add"}
+                  {catEditingId ? "Update" : catParentId ? "Tambah Sub-Category" : "Tambah Category"}
                 </button>
               </div>
             </div>
@@ -774,444 +876,481 @@ export default function RetailProductManager() {
 
             {/* ── Details ── */}
             <div className="p-5 overflow-y-auto space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          name: e.target.value,
-                          slug: editingId
-                            ? p.slug
-                            : handleSlugify(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:border-[#ff4b86] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Variant Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.variant || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, variant: e.target.value }))
-                      }
-                      placeholder="e.g. Size M, Merah (optional)"
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:border-[#ff4b86] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Slug
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.slug}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          slug: handleSlugify(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 bg-gray-50 px-3 py-2 rounded-lg text-sm font-mono focus:border-[#ff4b86] outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Department
-                    </label>
-                    <select
-                      value={formData.retail_category || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          retail_category: e.target.value as any,
-                          retail_subcategory_id: null,
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white outline-none"
-                    >
-                      <option value="" disabled>
-                        Select Department
-                      </option>
-                      {DEPARTMENTS.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Sub-Category
-                    </label>
-                    <select
-                      value={formData.retail_subcategory_id || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          retail_subcategory_id: Number(e.target.value),
-                        }))
-                      }
-                      disabled={!formData.retail_category || isLoadingCats}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white outline-none disabled:opacity-50"
-                    >
-                      <option value="">Select Sub-Category</option>
-                      {formSubcategories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Price
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          price: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Stock
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.stock}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          stock: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Weight (g)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.weight}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          weight: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Length (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.length || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          length: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Width (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.width || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          width: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                      Height (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.height || ""}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          height: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                    Description
+                    Name
                   </label>
-                  <textarea
-                    value={formData.description || ""}
+                  <input
+                    type="text"
+                    value={formData.name}
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        description: e.target.value,
+                        name: e.target.value,
+                        slug: editingId
+                          ? p.slug
+                          : handleSlugify(e.target.value),
                       }))
                     }
-                    rows={3}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:border-[#ff4b86] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Variant Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.variant || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, variant: e.target.value }))
+                    }
+                    placeholder="e.g. Size M, Merah (optional)"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:border-[#ff4b86] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        slug: handleSlugify(e.target.value),
+                      }))
+                    }
+                    className="w-full border border-gray-300 bg-gray-50 px-3 py-2 rounded-lg text-sm font-mono focus:border-[#ff4b86] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Department
+                  </label>
+                  <select
+                    value={formData.retail_category || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        retail_category: e.target.value as any,
+                        retail_category_id: null,
+                        retail_subcategory_id: null,
+                      }))
+                    }
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white outline-none"
+                  >
+                    <option value="" disabled>
+                      Pilih Department
+                    </option>
+                    {DEPARTMENTS.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={formData.retail_category_id || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        retail_category_id: Number(e.target.value),
+                        retail_subcategory_id: null,
+                      }))
+                    }
+                    disabled={!formData.retail_category || isLoadingCats}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white outline-none disabled:opacity-50"
+                  >
+                    <option value="">Pilih Category</option>
+                    {formCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Sub-Category (Optional)
+                  </label>
+                  <select
+                    value={formData.retail_subcategory_id || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        retail_subcategory_id: e.target.value ? Number(e.target.value) : null,
+                      }))
+                    }
+                    disabled={!formData.retail_category_id || isLoadingCats}
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white outline-none disabled:opacity-50"
+                  >
+                    <option value="">Pilih Sub-Category</option>
+                    {formSubcategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        price: Number(e.target.value),
+                      }))
+                    }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
-                    Product Image
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Stock
                   </label>
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
-                    {/* Upload Option */}
-                    <div className="flex items-start gap-4">
-                      {(imageFile || formData.image) && (
-                        <img
-                          src={
-                            imageFile
-                              ? URL.createObjectURL(imageFile)
-                              : (formData.image as string)
-                          }
-                          alt="Preview"
-                          className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0 bg-white"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "https://placehold.co/100x100?text=Invalid+Image";
-                          }}
-                        />
-                      )}
-                      <div className="flex-1 space-y-2">
-                        <p className="text-xs font-bold text-gray-600">
-                          Option 1: Upload New File
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              setImageFile(e.target.files[0]);
-                            }
-                          }}
-                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ff4b86]/10 file:text-[#ff4b86] hover:file:bg-[#ff4b86]/20 transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="relative flex items-center py-2">
-                      <div className="flex-grow border-t border-gray-300"></div>
-                      <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase">
-                        Or
-                      </span>
-                      <div className="flex-grow border-t border-gray-300"></div>
-                    </div>
-
-                    {/* Paste URL Option */}
-                    <div>
-                      <p className="text-xs font-bold text-gray-600 mb-1">
-                        Option 2: Paste Existing Image URL
-                      </p>
-                      <input
-                        type="url"
-                        placeholder="https://ik.imagekit.io/..."
-                        value={(formData.image as string) || ""}
-                        onChange={(e) => {
-                          setFormData((p) => ({ ...p, image: e.target.value }));
-                          // Jika user mengetik URL, kita batalkan file yang dipilih (jika ada)
-                          if (e.target.value) {
-                            setImageFile(null);
-                          }
-                        }}
-                        className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none focus:border-[#ff4b86]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Carousel Images Manager (edit-only, below product image) ── */}
-                {editingId && (
-                  <div className="border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <Images className="w-4 h-4 text-[#ff4b86]" />
-                        <span className="text-xs font-bold text-gray-700 uppercase">Carousel Images</span>
-                        {galleryImages.length > 0 && (
-                          <span className="bg-[#ff4b86] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                            {galleryImages.length}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-gray-400">Product image = primary · Carousel = 2nd, 3rd…</span>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {/* Gallery Grid */}
-                      {galleryLoading ? (
-                        <div className="text-center py-6 text-gray-400 text-sm animate-pulse">Loading images...</div>
-                      ) : galleryImages.length === 0 ? (
-                        <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-sm">
-                          No carousel images yet. Add below — the product image above is already the primary.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-4 gap-2">
-                          {galleryImages.map((img) => (
-                            <div
-                              key={img.id}
-                              className="relative group rounded-lg overflow-hidden border-2 border-gray-100 aspect-square bg-gray-50"
-                            >
-                              <img src={img.image_url} alt="" className="w-full h-full object-cover" />
-                              {img.is_primary && (
-                                <div className="absolute top-1 left-1 bg-[#ff4b86] text-white text-[8px] font-bold uppercase px-1 py-0.5 rounded-full flex items-center gap-0.5">
-                                  <Star className="w-2 h-2 fill-white" /> Primary
-                                </div>
-                              )}
-                              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-center gap-1.5">
-                                {!img.is_primary && (
-                                  <button
-                                    title="Set as primary"
-                                    onClick={() => setPrimary.mutate(img.id)}
-                                    disabled={setPrimary.isPending}
-                                    className="bg-yellow-400 text-white p-1 rounded-full hover:bg-yellow-500 disabled:opacity-50"
-                                  >
-                                    <Star className="w-3 h-3" />
-                                  </button>
-                                )}
-                                <button
-                                  title="Delete"
-                                  onClick={() => {
-                                    if (window.confirm("Delete this image?"))
-                                      deleteImage.mutate(img.id);
-                                  }}
-                                  disabled={deleteImage.isPending}
-                                  className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 disabled:opacity-50"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Add new carousel image */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <input
-                          ref={galleryFileRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setGalleryUploading(true);
-                            try {
-                              await uploadAndAdd.mutateAsync({
-                                file,
-                                isPrimary: false,
-                                displayOrder: galleryImages.length,
-                              });
-                              showToast("success", "Image uploaded!");
-                            } catch (err: any) {
-                              showToast("error", err.message);
-                            } finally {
-                              setGalleryUploading(false);
-                              if (galleryFileRef.current) galleryFileRef.current.value = "";
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => galleryFileRef.current?.click()}
-                          disabled={galleryUploading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ff4b86] text-white rounded-lg text-xs font-bold hover:bg-[#e63d75] disabled:opacity-50 flex-shrink-0"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          {galleryUploading ? "Uploading..." : "Upload"}
-                        </button>
-                        <input
-                          type="url"
-                          placeholder="or paste image URL…"
-                          value={galleryUrlInput}
-                          onChange={(e) => setGalleryUrlInput(e.target.value)}
-                          className="flex-1 border border-gray-300 px-3 py-1.5 rounded-lg text-sm outline-none focus:border-[#ff4b86] min-w-0"
-                        />
-                        <button
-                          onClick={async () => {
-                            if (!galleryUrlInput.trim()) return;
-                            try {
-                              await addImage.mutateAsync({
-                                imageUrl: galleryUrlInput.trim(),
-                                isPrimary: false,
-                                displayOrder: galleryImages.length,
-                              });
-                              setGalleryUrlInput("");
-                              showToast("success", "Image added!");
-                            } catch (err: any) {
-                              showToast("error", err.message);
-                            }
-                          }}
-                          disabled={!galleryUrlInput.trim() || addImage.isPending}
-                          className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900 disabled:opacity-40 flex-shrink-0"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <label className="flex items-center gap-2 cursor-pointer">
                   <input
-                    type="checkbox"
-                    checked={formData.is_active}
+                    type="number"
+                    value={formData.stock}
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        is_active: e.target.checked,
+                        stock: Number(e.target.value),
                       }))
                     }
-                    className="rounded text-[#ff4b86] w-4 h-4"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
                   />
-                  <span className="text-sm font-bold text-gray-700">
-                    Active (Visible in Shop)
-                  </span>
-                </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Weight (g)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.weight}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        weight: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
+                  />
+                </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Length (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.length || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        length: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Width (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.width || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        width: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                    Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.height || ""}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        height: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                  Product Image
+                </label>
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+                  {/* Upload Option */}
+                  <div className="flex items-start gap-4">
+                    {(imageFile || formData.image) && (
+                      <img
+                        src={
+                          imageFile
+                            ? URL.createObjectURL(imageFile)
+                            : (formData.image as string)
+                        }
+                        alt="Preview"
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0 bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://placehold.co/100x100?text=Invalid+Image";
+                        }}
+                      />
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs font-bold text-gray-600">
+                        Option 1: Upload New File
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setImageFile(e.target.files[0]);
+                          }
+                        }}
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ff4b86]/10 file:text-[#ff4b86] hover:file:bg-[#ff4b86]/20 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase">
+                      Or
+                    </span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                  </div>
+
+                  {/* Paste URL Option */}
+                  <div>
+                    <p className="text-xs font-bold text-gray-600 mb-1">
+                      Option 2: Paste Existing Image URL
+                    </p>
+                    <input
+                      type="url"
+                      placeholder="https://ik.imagekit.io/..."
+                      value={(formData.image as string) || ""}
+                      onChange={(e) => {
+                        setFormData((p) => ({ ...p, image: e.target.value }));
+                        // Jika user mengetik URL, kita batalkan file yang dipilih (jika ada)
+                        if (e.target.value) {
+                          setImageFile(null);
+                        }
+                      }}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none focus:border-[#ff4b86]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Carousel Images Manager (edit-only, below product image) ── */}
+              {editingId && (
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <Images className="w-4 h-4 text-[#ff4b86]" />
+                      <span className="text-xs font-bold text-gray-700 uppercase">
+                        Carousel Images
+                      </span>
+                      {galleryImages.length > 0 && (
+                        <span className="bg-[#ff4b86] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {galleryImages.length}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-400">
+                      Product image = primary · Carousel = 2nd, 3rd…
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {/* Gallery Grid */}
+                    {galleryLoading ? (
+                      <div className="text-center py-6 text-gray-400 text-sm animate-pulse">
+                        Loading images...
+                      </div>
+                    ) : galleryImages.length === 0 ? (
+                      <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-sm">
+                        No carousel images yet. Add below — the product image
+                        above is already the primary.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2">
+                        {galleryImages.map((img) => (
+                          <div
+                            key={img.id}
+                            className="relative group rounded-lg overflow-hidden border-2 border-gray-100 aspect-square bg-gray-50"
+                          >
+                            <img
+                              src={img.image_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                            {img.is_primary && (
+                              <div className="absolute top-1 left-1 bg-[#ff4b86] text-white text-[8px] font-bold uppercase px-1 py-0.5 rounded-full flex items-center gap-0.5">
+                                <Star className="w-2 h-2 fill-white" /> Primary
+                              </div>
+                            )}
+                            <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-center gap-1.5">
+                              {!img.is_primary && (
+                                <button
+                                  title="Set as primary"
+                                  onClick={() => setPrimary.mutate(img.id)}
+                                  disabled={setPrimary.isPending}
+                                  className="bg-yellow-400 text-white p-1 rounded-full hover:bg-yellow-500 disabled:opacity-50"
+                                >
+                                  <Star className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button
+                                title="Delete"
+                                onClick={() => {
+                                  if (window.confirm("Delete this image?"))
+                                    deleteImage.mutate(img.id);
+                                }}
+                                disabled={deleteImage.isPending}
+                                className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add new carousel image */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        ref={galleryFileRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setGalleryUploading(true);
+                          try {
+                            await uploadAndAdd.mutateAsync({
+                              file,
+                              isPrimary: false,
+                              displayOrder: galleryImages.length,
+                            });
+                            showToast("success", "Image uploaded!");
+                          } catch (err: any) {
+                            showToast("error", err.message);
+                          } finally {
+                            setGalleryUploading(false);
+                            if (galleryFileRef.current)
+                              galleryFileRef.current.value = "";
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => galleryFileRef.current?.click()}
+                        disabled={galleryUploading}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ff4b86] text-white rounded-lg text-xs font-bold hover:bg-[#e63d75] disabled:opacity-50 flex-shrink-0"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        {galleryUploading ? "Uploading..." : "Upload"}
+                      </button>
+                      <input
+                        type="url"
+                        placeholder="or paste image URL…"
+                        value={galleryUrlInput}
+                        onChange={(e) => setGalleryUrlInput(e.target.value)}
+                        className="flex-1 border border-gray-300 px-3 py-1.5 rounded-lg text-sm outline-none focus:border-[#ff4b86] min-w-0"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!galleryUrlInput.trim()) return;
+                          try {
+                            await addImage.mutateAsync({
+                              imageUrl: galleryUrlInput.trim(),
+                              isPrimary: false,
+                              displayOrder: galleryImages.length,
+                            });
+                            setGalleryUrlInput("");
+                            showToast("success", "Image added!");
+                          } catch (err: any) {
+                            showToast("error", err.message);
+                          }
+                        }}
+                        disabled={!galleryUrlInput.trim() || addImage.isPending}
+                        className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-bold hover:bg-gray-900 disabled:opacity-40 flex-shrink-0"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      is_active: e.target.checked,
+                    }))
+                  }
+                  className="rounded text-[#ff4b86] w-4 h-4"
+                />
+                <span className="text-sm font-bold text-gray-700">
+                  Active (Visible in Shop)
+                </span>
+              </label>
+            </div>
 
             <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
               <button

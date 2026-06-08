@@ -39,15 +39,18 @@ export interface ProductRetail {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  retail_category: 'glam' | 'charmbar' | 'sparkclub' | null;
+  retail_category: "glam" | "charmbar" | "sparkclub" | null;
+  retail_category_id: number | null;
   retail_subcategory_id: number | null;
   variant: string | null;
   imageUrls?: string[];
-  product_retail_images?: {
-    image_url: string;
-    is_primary: boolean;
-    display_order: number;
-  }[] | null;
+  product_retail_images?:
+    | {
+        image_url: string;
+        is_primary: boolean;
+        display_order: number;
+      }[]
+    | null;
   // Relasi opsional — tersedia jika di-select dengan JOIN
   categories?: {
     id: number;
@@ -68,7 +71,7 @@ export interface StockOpname {
   opname_number: string;
   location: string;
   transaction_date: string;
-  transaction_type: 'stock_in' | 'stock_out' | 'adjustment';
+  transaction_type: "stock_in" | "stock_out" | "adjustment";
   reason: string | null;
   notes: string | null;
   created_by: string | null;
@@ -102,7 +105,7 @@ export interface StockOpnameDetail extends StockOpname {
 export interface StockOpnameFormData {
   location: string;
   transaction_date: string;
-  transaction_type: 'stock_in' | 'stock_out' | 'adjustment';
+  transaction_type: "stock_in" | "stock_out" | "adjustment";
   reason: string;
   notes: string;
   items: {
