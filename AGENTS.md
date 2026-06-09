@@ -12,11 +12,12 @@ Spark Stage is a fullstack booking ticket and commerce app.
 
 - `frontend/src/pages/`: route-level pages
 - `frontend/src/components/`: shared UI and admin UI
-- `frontend/src/hooks/`: data-fetching and domain hooks
+- `frontend/src/hooks/`: data-fetching and domain hooks (includes `useShipping.ts` with localStorage cache)
 - `frontend/src/lib/`: Supabase, query client, shared helpers
 - `supabase/migrations/`: database schema, RPC, RLS
 - `supabase/functions/`: server-side workflows and payment handlers
 - `supabase/functions/_shared/`: shared payment and infra helpers
+- `supabase/functions/rajaongkir/`: RajaOngkir Enterprise API proxy (provinces, cities, districts, shipping cost)
 - `docs/architecture.md`: current architecture and risk zones
 - `docs/runbooks/`: operational runbooks
 - `docs/decisions/`: stable feature decisions and constraints
@@ -37,6 +38,16 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - Stock Opname deployment guide: `READY_TO_DEPLOY.md`
 - Stock Opname finalize workflow: `docs/runbooks/STOCK_OPNAME_FINALIZE.md`
 - Stock Opname realtime auto-refresh (NEW 2026-06-09): `docs/runbooks/STOCK_REALTIME_AUTO_REFRESH.md`
+- **RajaOngkir Shipping Integration (NEW 2026-06-09):**
+  - Overall status: `RAJAONGKIR_INTEGRATION_STATUS.md`
+  - On-demand loading: `SHIPPING-ON-DEMAND.md`
+  - Rate limit fixes: `RATE-LIMIT-FIX.md`
+  - LocalStorage cache: `LOCALSTORAGE_CACHE_IMPLEMENTATION.md`
+  - Testing guide: `CACHE_TESTING_GUIDE.md`
+- **RajaOngkir shipping integration (NEW 2026-06-09)**: `RAJAONGKIR_INTEGRATION_STATUS.md`
+- **RajaOngkir cache implementation**: `LOCALSTORAGE_CACHE_IMPLEMENTATION.md`
+- **Shipping on-demand loading**: `SHIPPING-ON-DEMAND.md`
+- **Rate limiting fixes**: `RATE-LIMIT-FIX.md`
 
 ## Frontend Stock Management Pages (100% COMPLETE ✅)
 
