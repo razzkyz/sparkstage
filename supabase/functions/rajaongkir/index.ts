@@ -192,6 +192,70 @@ Deno.serve(async (req: Request) => {
       return json(req, { data: results });
     }
 
+    // ─── AMBIL DAFTAR KECAMATAN (DISTRICT) ───
+    if (action === "subdistricts") {
+      const cityId = body.city_id;
+      if (!cityId) {
+        console.error(`[RajaOngkir:${requestId}] Missing city_id for subdistricts`);
+        return jsonError(req, 400, "city_id is required for subdistricts");
+      }
+
+      // Use DISTRICT endpoint (not subdistrict) - this is the correct endpoint!
+      const targetUrl = `${BASE_URL}/district/${cityId}`;
+      
+      console.log(
+        `[RajaOngkir:${requestId}] Fetching districts from: ${targetUrl}`,
+        { cityId }
+      );
+
+      const response = await fetch(targetUrl, { method: "GET", headers });
+      const data = await response.json().catch(() => ({}));
+
+      console.log(
+        `[RajaOngkir:${requestId}] Districts (city ${cityId}) API response:`,
+        {
+          status: response.status,
+          statusText: response.statusText,
+          metaCode: data?.meta?.code,
+          metaMessage: data?.meta?.message,
+          dataCount: Array.isArray(data?.data) ? data.data.length : 0,
+        }
+      );
+
+      // Check for API errors
+      const apiError = parseApiError(data, response.status);
+      if (apiError) {
+        console.error(
+          `[RajaOngkir:${requestId}] API Error [${apiError.code}]: ${apiError.message}`,
+        );
+        return jsonError(
+          req,
+          apiError.code === "RATE_LIMIT" ? 429 : 401,
+          apiError.message,
+        );
+      }
+
+      if (!response.ok) {
+        console.error(
+          `[RajaOngkir:${requestId}] HTTP error: ${response.status} ${response.statusText}`
+        );
+        return jsonError(
+          req,
+          response.status,
+          `RajaOngkir API error: ${response.statusText}`,
+        );
+      }
+
+      // Normalize response from Komerce format
+      const results = data?.data || [];
+
+      console.log(
+        `[RajaOngkir:${requestId}] Districts (city ${cityId}): Returned ${results.length} results`,
+      );
+      
+      return json(req, { data: results });
+    }
+
     // ─── CEK ONGKOS KIRIM ───
     if (action === "cost") {
       const formParams = new URLSearchParams();

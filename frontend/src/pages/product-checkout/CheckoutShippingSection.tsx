@@ -7,6 +7,7 @@ type CheckoutShippingSectionProps = {
   customerAddress: string;
   provinceId: string;
   cityId: string;
+  subdistrictId: string;
   selectedCourier: string;
   selectedService: string;
   deliveryMethod: "shipping" | "pickup";
@@ -16,6 +17,7 @@ type CheckoutShippingSectionProps = {
   onChangeAddress: (value: string) => void;
   onChangeProvince: (value: string) => void;
   onChangeCity: (value: string) => void;
+  onChangeSubdistrict: (value: string) => void;
   onChangeShipping: (courier: string, service: string, cost: number) => void;
 };
 
@@ -23,6 +25,7 @@ export function CheckoutShippingSection({
   customerAddress,
   provinceId,
   cityId,
+  subdistrictId,
   selectedCourier,
   selectedService,
   loading,
@@ -32,17 +35,20 @@ export function CheckoutShippingSection({
   onChangeAddress,
   onChangeProvince,
   onChangeCity,
+  onChangeSubdistrict,
   onChangeShipping,
 }: CheckoutShippingSectionProps) {
   const {
     provinces,
     cities,
+    subdistricts,
     shippingCosts,
     isLoadingProvinces,
     isLoadingCities,
+    isLoadingSubdistricts,
     isLoadingCost,
     fetchShippingCost,
-  } = useShipping(provinceId, totalWeight);
+  } = useShipping(provinceId, cityId, totalWeight);
 
   const [localCourier, setLocalCourier] = useState<string>(
     selectedCourier || "jne",
@@ -71,7 +77,6 @@ export function CheckoutShippingSection({
             checked={deliveryMethod === "shipping"}
             onChange={() => onChangeDeliveryMethod("shipping")}
             className="hidden"
-            disabled
           />
           <Truck size={20} />
           <div className="flex flex-col items-center">
@@ -184,6 +189,44 @@ export function CheckoutShippingSection({
                   {cities.map((city) => (
                     <option key={city.city_id} value={city.city_id}>
                       {city.type} {city.city_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <label
+                htmlFor="subdistrict_id"
+                className="text-sm font-semibold text-neutral-950"
+              >
+                Subdistrict <span className="text-red-500">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <MapPin
+                  className="absolute left-3.5 text-gray-400 pointer-events-none"
+                  size={18}
+                />
+                <select
+                  id="subdistrict_id"
+                  value={subdistrictId}
+                  onChange={(e) => onChangeSubdistrict(e.target.value)}
+                  disabled={loading || !cityId || isLoadingSubdistricts}
+                  className="w-full rounded-lg border border-rose-100 focus:ring-primary focus:border-primary text-sm py-3 pr-4 pl-11 outline-none transition-all appearance-none bg-white"
+                >
+                  <option value="" disabled>
+                    {!cityId
+                      ? "Select city first"
+                      : isLoadingSubdistricts
+                        ? "Loading subdistricts..."
+                        : "Select Subdistrict"}
+                  </option>
+                  {subdistricts.map((subdistrict) => (
+                    <option
+                      key={subdistrict.subdistrict_id}
+                      value={subdistrict.subdistrict_id}
+                    >
+                      {subdistrict.subdistrict_name}
                     </option>
                   ))}
                 </select>

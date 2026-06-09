@@ -15,6 +15,15 @@ export interface City {
   postal_code: string;
 }
 
+export interface Subdistrict {
+  subdistrict_id: string;
+  city_id: string;
+  city: string;
+  province: string;
+  type: string;
+  subdistrict_name: string;
+}
+
 export interface ShippingCost {
   service: string;
   description: string;
@@ -31,12 +40,14 @@ export interface CourierService {
   costs: ShippingCost[];
 }
 
-export const useShipping = (provinceId?: string, weight: number = 1000) => {
+export const useShipping = (provinceId?: string, cityId?: string, weight: number = 1000) => {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  const [subdistricts, setSubdistricts] = useState<Subdistrict[]>([]);
   const [shippingCosts, setShippingCosts] = useState<CourierService[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isLoadingSubdistricts, setIsLoadingSubdistricts] = useState(false);
   const [isLoadingCost, setIsLoadingCost] = useState(false);
 
   useEffect(() => {
@@ -73,6 +84,7 @@ export const useShipping = (provinceId?: string, weight: number = 1000) => {
   useEffect(() => {
     if (!provinceId) {
       setCities([]);
+      setSubdistricts([]);
       return;
     }
     const fetchCities = async () => {
@@ -84,10 +96,11 @@ export const useShipping = (provinceId?: string, weight: number = 1000) => {
         if (error) throw error;
         if (data?.data) {
           const formatted = (data.data || []).map((c: any) => ({
+            city_id: c.id || c.city_id,
             province_id: c.province_id || provinceId,
             province: '',
             type: c.type || '',
-            city_name: c.name || c.city_name || c.name,
+            city_name: c.name || c.city_name,
             postal_code: c.postal_code || ''
           }));
           setCities(formatted);
@@ -100,6 +113,58 @@ export const useShipping = (provinceId?: string, weight: number = 1000) => {
     };
     fetchCities();
   }, [provinceId]);
+
+  useEffect(() => {
+    if (!cityId) {
+      setSubdistricts([]);
+      return;
+    }
+    const fetchSubdistricts = async () => {
+      setIsLoadingSubdistricts(true);
+      try {
+        console.log('[useShipping] Fetching subdistricts for city:', cityId);
+        const { data, error } = await supabase.functions.invoke('rajaongkir', {
+          body: { action: 'subdistricts', city_id: cityId }
+        });
+        
+        console.log('[useShipping] Subdistricts response:', { data, error });
+        
+        if (error) {
+          console.error('[useShipping] Subdistricts error:', error);
+          throw error;
+        }
+        
+        // Check if this is an error response from the API
+        if (data?.message && !data?.data) {
+          console.error('[useShipping] API returned error:', data.message);
+          setSubdistricts([]);
+          return;
+        }
+        
+        if (data?.data) {
+          const formatted = (data.data || []).map((s: any) => ({
+            subdistrict_id: s.id || s.subdistrict_id,
+            city_id: s.city_id || cityId,
+            city: s.city || '',
+            province: s.province || '',
+            type: s.type || '',
+            subdistrict_name: s.name || s.subdistrict_name
+          }));
+          console.log('[useShipping] Formatted subdistricts:', formatted.length);
+          setSubdistricts(formatted);
+        } else {
+          console.warn('[useShipping] No subdistricts data in response');
+          setSubdistricts([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch subdistricts:', err);
+        setSubdistricts([]);
+      } finally {
+        setIsLoadingSubdistricts(false);
+      }
+    };
+    fetchSubdistricts();
+  }, [cityId]);
 
   const fetchShippingCost = async (destinationCityId: string, originCityId: string = '153', courier: string = 'jne') => { // origin default (e.g. Jakarta Selatan)
     if (!destinationCityId) return;
@@ -150,9 +215,11 @@ export const useShipping = (provinceId?: string, weight: number = 1000) => {
   return {
     provinces,
     cities,
+    subdistricts,
     shippingCosts,
     isLoadingProvinces,
     isLoadingCities,
+    isLoadingSubdistricts,
     isLoadingCost,
     fetchShippingCost
   };

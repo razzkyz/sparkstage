@@ -48,17 +48,22 @@ export function ProfilePage() {
   // --- RajaOngkir State ---
   const [provinces, setProvinces] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
+  const [subdistricts, setSubdistricts] = useState<any[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isLoadingSubdistricts, setIsLoadingSubdistricts] = useState(false);
   const [provinceError, setProvinceError] = useState<string | null>(null);
   const [cityError, setCityError] = useState<string | null>(null);
+  const [subdistrictError, setSubdistrictError] = useState<string | null>(null);
   const [selectedProvinceName, setSelectedProvinceName] = useState<string>("");
   const [selectedCityName, setSelectedCityName] = useState<string>("");
+  const [selectedSubdistrictName, setSelectedSubdistrictName] = useState<string>("");
 
   // Cache configuration
   const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
   const CACHE_KEY_PROVINCES = "rajaongkir_profile_provinces";
   const CACHE_KEY_CITIES_PREFIX = "rajaongkir_profile_cities_";
+  const CACHE_KEY_SUBDISTRICTS_PREFIX = "rajaongkir_profile_subdistricts_";
 
   // Fallback provinces jika API down
   const FALLBACK_PROVINCES = [
@@ -172,8 +177,11 @@ export function ProfilePage() {
   useEffect(() => {
     if (!formData.province_id) {
       setCities([]);
+      setSubdistricts([]);
       setCityError(null);
+      setSubdistrictError(null);
       setSelectedCityName("");
+      setSelectedSubdistrictName("");
       return;
     }
     const fetchCities = async () => {
@@ -254,6 +262,90 @@ export function ProfilePage() {
   }, [formData.province_id]);
 
   useEffect(() => {
+    if (!formData.city_id) {
+      setSubdistricts([]);
+      setSubdistrictError(null);
+      setSelectedSubdistrictName("");
+      return;
+    }
+    const fetchSubdistricts = async () => {
+      setIsLoadingSubdistricts(true);
+      setSubdistrictError(null);
+      try {
+        const cacheKey = `${CACHE_KEY_SUBDISTRICTS_PREFIX}${formData.city_id}`;
+
+        // 1. Check cache first
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+          const cache = JSON.parse(cachedData);
+          if (Date.now() - cache.timestamp < CACHE_DURATION) {
+            console.log(
+              `[ProfilePage] Using cached subdistricts for city ${formData.city_id}`,
+            );
+            const normalized = cache.data.map((s: any) => ({
+              id: s.id || s.subdistrict_id,
+              name: s.name || s.subdistrict_name,
+            }));
+            setSubdistricts(normalized);
+            setIsLoadingSubdistricts(false);
+            return;
+          }
+        }
+
+        // 2. Fetch from API
+        console.log(
+          `[ProfilePage] Fetching subdistricts for city ${formData.city_id}...`,
+        );
+        const { data, error } = await supabase.functions.invoke("rajaongkir", {
+          body: { action: "subdistricts", city_id: formData.city_id },
+        });
+        if (error) throw error;
+
+        // Check for error message
+        if (data?.message) {
+          console.error("RajaOngkir subdistricts error:", data.message);
+          setSubdistrictError(data.message);
+          setSubdistricts([]);
+          return;
+        }
+
+        // Normalize and cache
+        if (data?.data && Array.isArray(data.data)) {
+          const normalized = data.data.map((s: any) => ({
+            id: s.id || s.subdistrict_id,
+            name: s.name || s.subdistrict_name,
+          }));
+
+          // 3. Save to cache
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              data: normalized,
+              timestamp: Date.now(),
+            }),
+          );
+
+          console.log(
+            `[ProfilePage] Successfully loaded ${normalized.length} subdistricts for city ${formData.city_id}`,
+          );
+          setSubdistricts(normalized);
+        } else {
+          console.warn("Unexpected subdistricts response format:", data);
+          setSubdistrictError("Unexpected data format from API");
+          setSubdistricts([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch subdistricts:", err);
+        setSubdistrictError(err instanceof Error ? err.message : String(err));
+        setSubdistricts([]);
+      } finally {
+        setIsLoadingSubdistricts(false);
+      }
+    };
+    fetchSubdistricts();
+  }, [formData.city_id]);
+
+  useEffect(() => {
     if (profile) {
       setFormData({
         name: profile.name || "",
@@ -281,6 +373,13 @@ export function ProfilePage() {
       setSelectedCityName(selected?.name || "");
     }
   }, [formData.city_id, cities]);
+
+  useEffect(() => {
+    if (formData.subdistrict_id && subdistricts.length > 0) {
+      const selected = subdistricts.find((s) => s.id === formData.subdistrict_id);
+      setSelectedSubdistrictName(selected?.name || "");
+    }
+  }, [formData.subdistrict_id, subdistricts]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -769,23 +868,94 @@ export function ProfilePage() {
                   htmlFor="subdistrict_id"
                   className="text-[0.8rem] font-semibold text-gray-700 uppercase tracking-wide"
                 >
-                  Subdistrict (Kecamatan)
+                  Subdistrict (Kecamatan) <span className="text-red-500">*</span>
                 </label>
-                <div className="relative flex items-center">
-                  <Home
-                    className="absolute left-3.5 text-gray-400 pointer-events-none"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    id="subdistrict_id"
-                    name="subdistrict_id"
-                    value={formData.subdistrict_id}
-                    onChange={handleChange}
-                    placeholder="Kecamatan name"
-                    className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10"
-                  />
-                </div>
+                {!formData.city_id ? (
+                  // Select city first
+                  <div className="relative flex items-center opacity-60">
+                    <Home
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Select city first"
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-400 bg-gray-50"
+                    />
+                  </div>
+                ) : subdistricts.length > 0 ? (
+                  // Show dropdown if data available
+                  <div className="relative flex items-center">
+                    <Home
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <select
+                      id="subdistrict_id"
+                      name="subdistrict_id"
+                      value={formData.subdistrict_id}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          subdistrict_id: e.target.value,
+                        }));
+                      }}
+                      disabled={isLoadingSubdistricts}
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10 appearance-none disabled:opacity-60"
+                    >
+                      <option value="" disabled>
+                        {isLoadingSubdistricts
+                          ? "Loading subdistricts..."
+                          : "Select Subdistrict"}
+                      </option>
+                      {subdistricts.map((subdistrict) => (
+                        <option key={subdistrict.id} value={subdistrict.id}>
+                          {subdistrict.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  // Show text input if dropdown empty (API failed or not available)
+                  <div className="relative flex items-center">
+                    <Home
+                      className="absolute left-3.5 text-gray-400 pointer-events-none"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      id="subdistrict_id_text"
+                      name="subdistrict_id_text"
+                      value={selectedSubdistrictName}
+                      onChange={(e) => {
+                        setSelectedSubdistrictName(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          subdistrict_id: e.target.value,
+                        }));
+                      }}
+                      placeholder="e.g., Cilandak, Kebayoran Baru"
+                      className="w-full py-[0.7rem] pr-3.5 pl-11 border border-gray-300 rounded-lg text-[0.95rem] text-gray-900 bg-gray-50 transition-colors duration-150 focus:outline-none focus:border-pink-600 focus:bg-white focus:ring-[3px] focus:ring-pink-600/10"
+                    />
+                  </div>
+                )}
+                {isLoadingSubdistricts && (
+                  <p className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                    Loading subdistricts...
+                  </p>
+                )}
+                {subdistrictError && !isLoadingSubdistricts && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ℹ️ Please type subdistrict name manually
+                  </p>
+                )}
+                {formData.subdistrict_id && selectedSubdistrictName && !isLoadingSubdistricts && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    ✓ Selected: {selectedSubdistrictName}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">

@@ -47,6 +47,7 @@ export default function ProductCheckoutPage() {
     deliveryMethod,
     provinceId,
     cityId,
+    subdistrictId,
     shippingCourier,
     shippingService,
     shippingCost,
@@ -68,6 +69,7 @@ export default function ProductCheckoutPage() {
     setDeliveryMethod,
     setProvinceId,
     setCityId,
+    setSubdistrictId,
     setShippingCourier,
     setShippingService,
     setShippingCost,
@@ -171,6 +173,7 @@ export default function ProductCheckoutPage() {
                 deliveryMethod={deliveryMethod}
                 provinceId={provinceId}
                 cityId={cityId}
+                subdistrictId={subdistrictId}
                 selectedCourier={shippingCourier}
                 selectedService={shippingService}
                 loading={loading}
@@ -179,6 +182,7 @@ export default function ProductCheckoutPage() {
                 onChangeAddress={setCustomerAddress}
                 onChangeProvince={setProvinceId}
                 onChangeCity={setCityId}
+                onChangeSubdistrict={setSubdistrictId}
                 onChangeShipping={(courier, service, cost) => {
                   setShippingCourier(courier);
                   setShippingService(service);
