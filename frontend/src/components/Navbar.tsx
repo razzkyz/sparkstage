@@ -501,7 +501,7 @@ const Navbar = () => {
                   {user ? (
                     <Link
                       to="/profile"
-                      className="relative text-gray-600 hover:text-main-600 transition-colors"
+                      className="relative text-gray-600 hover:text-main-600 transition-colors hidden"
                       aria-label="Profile"
                       title="Profile"
                     >

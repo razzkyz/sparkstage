@@ -56,12 +56,15 @@ describe('productOrdersHelpers', () => {
     const pendingPayment = [createOrder({ id: 4 })];
     const today = [createOrder({ id: 2 })];
     const completed = [createOrder({ id: 3, pickup_status: 'completed' })];
+    const shipping = [createOrder({ id: 5, pickup_status: 'pending_shipment' })];
 
-    expect(getDisplayOrders('pending_payment', pending, pendingPayment, today, completed)).toEqual(pendingPayment);
-    expect(getDisplayOrders('pending_pickup', pending, pendingPayment, today, completed)).toEqual(pending);
-    expect(getDisplayOrders('today', pending, pendingPayment, today, completed)).toEqual(today);
+    expect(getDisplayOrders('pending_payment', pending, pendingPayment, today, completed, shipping)).toEqual(pendingPayment);
+    expect(getDisplayOrders('pending_pickup', pending, pendingPayment, today, completed, shipping)).toEqual(pending);
+    expect(getDisplayOrders('today', pending, pendingPayment, today, completed, shipping)).toEqual(today);
+    expect(getDisplayOrders('shipping', pending, pendingPayment, today, completed, shipping)).toEqual(shipping);
     expect(getCompletedOrders(completed).map((order) => order.id)).toEqual([3]);
     expect(getEmptyStateCopy('completed').message).toContain('selesai');
+    expect(getEmptyStateCopy('shipping').message).toContain('dikirim');
     expect(getPickupStatusLabel('pending_pickup')).toBe('Pending');
     expect(getPickupStatusLabel('pending_review')).toBe('Review');
     expect(getPickupStatusClass('pending_review')).toContain('bg-orange-100');

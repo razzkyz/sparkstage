@@ -76,6 +76,7 @@ export function useProductCheckoutController({
   const [deliveryMethod, setDeliveryMethod] = useState<'shipping' | 'pickup'>('pickup');
   const [provinceId, setProvinceId] = useState('');
   const [cityId, setCityId] = useState('');
+  const [subdistrictId, setSubdistrictId] = useState('');
   const [shippingCourier, setShippingCourier] = useState('');
   const [shippingService, setShippingService] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
@@ -124,6 +125,7 @@ export function useProductCheckoutController({
       setCustomerAddress(initialProfile.address || '');
       setProvinceId(initialProfile.province_id || '');
       setCityId(initialProfile.city_id || '');
+      setSubdistrictId(initialProfile.subdistrict_id || '');
     }
   }, [initialProfile]);
 
@@ -354,6 +356,7 @@ export function useProductCheckoutController({
             customerAddress: deliveryMethod === 'shipping' ? customerAddress.trim() || undefined : undefined,
             shippingProvinceId: deliveryMethod === 'shipping' ? provinceId : undefined,
             shippingCityId: deliveryMethod === 'shipping' ? cityId : undefined,
+            shippingSubdistrictId: deliveryMethod === 'shipping' ? subdistrictId : undefined,
             shippingCourier: deliveryMethod === 'shipping' ? shippingCourier : 'pickup',
             shippingService: deliveryMethod === 'shipping' ? shippingService : undefined,
             shippingCost: deliveryMethod === 'shipping' ? shippingCost : 0,
@@ -502,6 +505,7 @@ export function useProductCheckoutController({
     deliveryMethod,
     provinceId,
     cityId,
+    subdistrictId,
     shippingCourier,
     shippingService,
     shippingCost: actualShippingCost,
@@ -525,6 +529,7 @@ export function useProductCheckoutController({
     setDeliveryMethod,
     setProvinceId,
     setCityId,
+    setSubdistrictId,
     setShippingCourier,
     setShippingService,
     setShippingCost,

@@ -41,6 +41,13 @@ type CreateTokenRequest = {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  customerAddress?: string; // Shipping address for delivery orders
+  shippingProvinceId?: string; // RajaOngkir province ID
+  shippingCityId?: string; // RajaOngkir city ID
+  shippingSubdistrictId?: string; // RajaOngkir subdistrict ID
+  shippingCourier?: string; // Courier code: jne, tiki, pos, etc.
+  shippingService?: string; // Service type: REG, YES, OKE, etc.
+  shippingCost?: number; // Calculated shipping cost
   voucherCode?: string; // NEW: Optional voucher code for discount
   pointsRedeemed?: number; // NEW: Optional loyalty points to redeem (1 point = Rp 1 discount)
 };
@@ -554,6 +561,31 @@ serve(async (req) => {
     console.log("[create-doku-product-checkout] Total discount:", totalDiscount);
     console.log("[create-doku-product-checkout] Final total for DOKU:", finalTotal);
 
+    // Extract and validate shipping data from payload
+    const shippingCost = toNumber(payload.shippingCost, 0);
+    const shippingAddress = payload.customerAddress?.trim() || null;
+    const shippingProvinceId = payload.shippingProvinceId?.trim() || null;
+    const shippingCityId = payload.shippingCityId?.trim() || null;
+    const shippingSubdistrictId = payload.shippingSubdistrictId?.trim() || null;
+    const shippingCourier = payload.shippingCourier?.trim().toLowerCase() || null;
+    const shippingService = payload.shippingService?.trim().toUpperCase() || null;
+
+    // Validate: if any shipping field present, courier must be set
+    const hasShippingData = shippingAddress || shippingProvinceId || shippingCityId;
+    if (hasShippingData && !shippingCourier) {
+      return jsonError(req, 400, "Shipping courier required for delivery orders");
+    }
+
+    // Calculate final total including shipping cost
+    const finalTotalWithShipping = finalTotal + shippingCost;
+
+    console.log("[create-doku-product-checkout] Shipping data:", {
+      courier: shippingCourier,
+      service: shippingService,
+      cost: shippingCost,
+      hasAddress: Boolean(shippingAddress),
+    });
+
     const { data: order, error: orderError } = await supabase
       .from("order_products")
       .insert({
@@ -564,11 +596,17 @@ serve(async (req) => {
         payment_status: "unpaid",
         subtotal: totalAmount,
         discount_amount: totalDiscount,
-        shipping_cost: 0,
+        shipping_cost: shippingCost,
         shipping_discount: 0,
-        total: finalTotal,
+        total: finalTotalWithShipping,
         voucher_id: voucherId,
         voucher_code: voucherCode,
+        shipping_address: shippingAddress,
+        shipping_province_id: shippingProvinceId,
+        shipping_city_id: shippingCityId,
+        shipping_subdistrict_id: shippingSubdistrictId,
+        shipping_courier: shippingCourier,
+        shipping_service: shippingService,
         payment_expired_at: paymentExpiredAt.toISOString(),
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
@@ -662,6 +700,19 @@ serve(async (req) => {
     console.log("[create-doku-product-checkout] DOKU line items:", JSON.stringify(lineItems));
     console.log("[create-doku-product-checkout] DOKU total amount:", finalTotal);
 
+    // Add shipping cost as line item if present
+    if (shippingCost > 0 && shippingCourier) {
+      lineItems.push({
+        name: sanitizeDokuString(`Shipping ${shippingCourier.toUpperCase()} ${shippingService || ''}`.trim(), 90) || "Shipping Cost",
+        quantity: 1,
+        price: shippingCost,
+        sku: sanitizeDokuString(`shipping-${shippingCourier}`, 64),
+        category: "shipping",
+        type: "PHYSICAL",
+      });
+      console.log("[create-doku-product-checkout] Added shipping to line items:", shippingCost);
+    }
+
     if (discountAmount > 0) {
       lineItems.push({
         name: sanitizeDokuString(`Voucher ${voucherCode ?? "DISCOUNT"}`, 90) ||
@@ -687,7 +738,7 @@ serve(async (req) => {
 
     const dokuPayload = {
       order: {
-        amount: finalTotal,
+        amount: finalTotalWithShipping,
         invoice_number: invoiceNumber,
         currency: "IDR",
         callback_url: callbackUrl,

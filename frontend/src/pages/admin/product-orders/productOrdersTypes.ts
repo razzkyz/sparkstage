@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import type { OrderSummaryRow } from '../../../hooks/useProductOrders';
 
-export type ProductOrdersTab = 'pending_payment' | 'pending_pickup' | 'today' | 'completed';
+export type ProductOrdersTab = 'pending_payment' | 'pending_pickup' | 'today' | 'completed' | 'shipping';
 
 export type OrderItemRow = {
   id: number;
@@ -18,6 +18,12 @@ export type ProductOrderDetails = {
     payment_status: string;
     status: string;
     pickup_expires_at: string | null;
+    shipping_address?: string | null;
+    shipping_courier?: string | null;
+    shipping_service?: string | null;
+    shipping_cost?: number | null;
+    tracking_number?: string | null;
+    shipped_at?: string | null;
   };
   items: OrderItemRow[];
 };
