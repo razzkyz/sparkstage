@@ -33,6 +33,21 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - Kasir (Cashier) role setup: `docs/runbooks/kasir-setup.md`
 - Stock Opname system (NEW 2026-06-09): `docs/runbooks/stock-opname-system.md`
 - Stock Opname quick start: `docs/runbooks/STOCK_OPNAME_QUICKSTART.md`
+- R2 Migration (ImageKit → Cloudflare R2): `docs/runbooks/r2-migration.md`
+- R2 Egress Setup (Zero cost setup): `docs/runbooks/R2_EGRESS_SETUP.md`
+- R2 Migration Quick Start: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
+- R2 Migration Status (UPDATED 2026-06-10): **READY TO EXECUTE** ✅
+  - Product images uploaded: 2,227 / 2,227 (100%) ✅
+  - R2 bucket: sparkstage-public-assets ✅
+  - Custom domain: `cdn.sparkstage55.com` (configured, waiting nameserver switch) ⏸️
+  - R2.dev URL: `pub-9808d1f4ad9448a1ae0eccf1371cac00.r2.dev` (backup option)
+  - DNS records: Verified at Cloudflare (7 records ready) ✅
+  - Website DNS: Currently on Domainesia (stable) ✅
+  - Database cutover: PENDING (after nameserver switch) ⏸️
+  - Migration guide: `CLOUDFLARE_MIGRATION_GUIDE.md` (complete step-by-step) ✅
+  - Cutover script: `scripts/cutover-products-to-r2.sql` ✅
+  - Rollback script: `scripts/rollback-to-imagekit.sql` ✅
+  - **Next Step:** Execute migration when ready (see guide for timeline)
 - Stock Opname implementation: `STOCK_OPNAME_IMPLEMENTATION_SUMMARY.md`
 - Stock Opname deployment guide: `READY_TO_DEPLOY.md`
 - Stock Opname finalize workflow: `docs/runbooks/STOCK_OPNAME_FINALIZE.md`

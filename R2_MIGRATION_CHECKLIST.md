@@ -1,342 +1,634 @@
-# 📋 Checklist Migrasi ImageKit → Cloudflare R2
+# 🚀 R2 Migration - Pre-Flight Checklist
 
-**Tujuan**: Hemat $9/bulan dengan pindah ke R2 (zero egress cost)  
-**Durasi Total**: 2-3 jam + 14 hari monitoring  
-**Downtime**: ZERO (dual-run strategy)
+**Target**: Migrasi 1,598 product images dari ImageKit → Cloudflare R2  
+**Expected Duration**: 2-3 jam (active work)  
+**Expected Savings**: $107.23/year  
 
 ---
 
-## ✅ Pre-Migration (15-30 menit)
+## ✅ FASE 0: PERSIAPAN (Sebelum Mulai)
 
-### Setup Cloudflare R2
+### A. Akun & Akses (15 menit)
 
-- [ ] Login [Cloudflare Dashboard](https://dash.cloudflare.com)
-- [ ] Buat R2 bucket: `sparkstage-public-assets`
-- [ ] Enable **Public Access** pada bucket
-- [ ] Buat R2 API Token dengan permission `Object Read & Write`
-- [ ] Catat credentials:
-  - [ ] Account ID: `_______________`
-  - [ ] Access Key ID: `_______________`
-  - [ ] Secret Access Key: `_______________`
-- [ ] (Optional) Setup custom domain: `media.sparkstage55.com`
-  - [ ] Connect domain di R2 bucket settings
-  - [ ] Verify DNS record aktif
+- [ ] **Cloudflare Account**
+  - Login: https://dash.cloudflare.com
+  - Verify account active
+  - R2 access enabled (bisa akses menu R2)
 
-### Setup Environment
+- [ ] **Supabase Access**
+  - CLI installed: `supabase --version`
+  - Logged in: `supabase projects list`
+  - Linked to project: `supabase status`
+  - Service role key tersedia
 
-- [ ] Copy template: `copy .env.r2-migration.example .env.r2-migration`
-- [ ] Edit `.env.r2-migration` dengan credentials
-- [ ] Verify isi file minimal:
+- [ ] **ImageKit Account** (existing)
+  - Account masih aktif
+  - Verify current usage: ~1,598 images
+  - Bandwidth usage: Cek dashboard (seharusnya > 20 GB/month)
+
+### B. Cloudflare R2 Setup (30 menit)
+
+#### Step 1: Create Bucket
+
+- [ ] Login Cloudflare Dashboard → R2
+- [ ] Click **Create bucket**
+- [ ] Bucket name: `sparkstage-public-assets`
+- [ ] Location: **Automatic**
+- [ ] Click **Create bucket**
+
+#### Step 2: Enable Public Access ⚠️ CRITICAL!
+
+- [ ] Masuk ke bucket `sparkstage-public-assets`
+- [ ] Tab **Settings**
+- [ ] Section **Public access**
+- [ ] Click **Allow Access**
+- [ ] Centang "I understand..."
+- [ ] Click **Allow Access**
+- [ ] Status berubah: ✅ **Public access: Enabled**
+- [ ] **COPY** Public Bucket URL:
   ```
-  R2_ACCOUNT_ID=xxx
-  R2_ACCESS_KEY_ID=xxx
-  R2_SECRET_ACCESS_KEY=xxx
+  https://<account_id>.r2.cloudflarestorage.com
+  ```
+
+#### Step 3: Create API Token
+
+- [ ] R2 Dashboard → **Manage R2 API Tokens**
+- [ ] Click **Create API Token**
+- [ ] Token name: `sparkstage-r2-migration`
+- [ ] Permissions: **Object Read & Write**
+- [ ] TTL: **Forever** (atau 1 year)
+- [ ] Bucket scope: **Apply to specific buckets only**
+  - Select: `sparkstage-public-assets`
+- [ ] Click **Create API Token**
+- [ ] **COPY dan SIMPAN** (tidak bisa dilihat lagi!):
+  ```
+  Account ID: _____________________
+  Access Key ID: _____________________
+  Secret Access Key: _____________________
+  ```
+
+#### Step 4: Test R2 Connection
+
+- [ ] Upload test file via R2 UI:
+  - Bucket → Upload → Select any image → Upload
+- [ ] Test public URL:
+  ```powershell
+  curl -I https://<account_id>.r2.cloudflarestorage.com/<filename>
+  ```
+- [ ] Expected: `HTTP/2 200` ✅
+
+### C. Custom Domain Setup (OPTIONAL tapi RECOMMENDED - 15 menit)
+
+- [ ] R2 Bucket → Settings → **Custom Domains**
+- [ ] Click **Connect Domain**
+- [ ] Enter: `media.sparkstage55.com`
+- [ ] Click **Continue**
+- [ ] Verify DNS CNAME created (auto jika domain di Cloudflare)
+- [ ] Wait 2-5 menit
+- [ ] Test custom domain:
+  ```powershell
+  curl -I https://media.sparkstage55.com/<filename>
+  ```
+- [ ] Expected: `HTTP/2 200` via Cloudflare CDN ✅
+
+**Jika tidak setup custom domain**: Gunakan R2 default URL (OK untuk testing)
+
+---
+
+## ✅ FASE 1: ENVIRONMENT & DEPENDENCIES (10 menit)
+
+### A. Install Dependencies
+
+- [ ] Check current Node.js version:
+  ```powershell
+  node --version
+  ```
+  Expected: `v18+` atau `v20+`
+
+- [ ] Install AWS SDK (untuk R2):
+  ```powershell
+  npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+  ```
+
+- [ ] Install dotenv (jika belum):
+  ```powershell
+  npm install dotenv
+  ```
+
+- [ ] Verify scripts exist:
+  ```powershell
+  dir scripts\migrate-imagekit-to-r2.mjs
+  dir scripts\r2-migration-status.mjs
+  dir scripts\verify-r2-urls.mjs
+  dir scripts\r2-cutover-database.mjs
+  ```
+
+### B. Configure Environment File
+
+- [ ] File `.env.r2-migration` sudah ada (checked!)
+- [ ] Update dengan credentials dari Step B3:
+  ```env
+  R2_ACCOUNT_ID=<your_account_id>
+  R2_ACCESS_KEY_ID=<your_access_key_id>
+  R2_SECRET_ACCESS_KEY=<your_secret_access_key>
   R2_BUCKET_NAME=sparkstage-public-assets
-  R2_PUBLIC_BASE_URL=https://media.sparkstage55.com
+  R2_BASE_PATH=products
+  
+  # Pilih salah satu:
+  # Option 1: R2 default URL
+  R2_PUBLIC_BASE_URL=https://<account_id>.r2.cloudflarestorage.com
+  
+  # Option 2: Custom domain (jika sudah setup)
+  # R2_PUBLIC_BASE_URL=https://media.sparkstage55.com
+  ```
+
+- [ ] Verify `.env.r2-migration` tidak di-commit (check `.gitignore`)
+
+### C. Test R2 Connection via Script
+
+- [ ] Run test script:
+  ```powershell
+  node scripts\test-r2-connection.mjs
+  ```
+
+- [ ] Expected output:
+  ```
+  ✅ R2 Connection successful!
+  Bucket: sparkstage-public-assets
+  Account: <account_id>
+  Public URL: https://...
   ```
 
 ---
 
-## ✅ Phase 1: Testing (30 menit)
+## ✅ FASE 2: DRY RUN TEST (15 menit)
 
-### Dry Run
+### A. Dry Run (No Changes)
 
-- [ ] Run: `npm run r2:migrate:dry`
-- [ ] Verify output:
-  - [ ] No connection errors
-  - [ ] Shows correct row count (~2117 images)
-  - [ ] Sample URLs terlihat benar
-  
-### Test Migration (25 images)
+- [ ] Run dry run:
+  ```powershell
+  npm run r2:migrate:dry
+  ```
 
-- [ ] Run: `npm run r2:migrate -- --batch-size 25 --limit 25`
-- [ ] Wait until selesai (~2-5 menit)
-- [ ] Run: `npm run r2:migrate:status`
-- [ ] Verify: `Success: 25`, `Failed: 0`
+- [ ] Expected output:
+  ```
+  [DRY RUN] Would migrate 1598 images
+  [DRY RUN] Sample #1:
+    From: https://ik.imagekit.io/sparkstage55/products/abc.jpg
+    To:   https://media.sparkstage55.com/products/123/abc.jpg
+  [DRY RUN] No changes made.
+  ```
 
-### Verify URLs Accessible
-
-- [ ] Run: `npm run r2:verify`
-- [ ] Verify: All URLs return 200 OK
-- [ ] Manual test 3-5 URLs di browser
-- [ ] Test dari mobile network (optional)
-
-**✋ STOP jika ada failed URLs. Debug dulu sebelum lanjut.**
-
----
-
-## ✅ Phase 2: Full Migration (30-60 menit)
-
-### Start Full Migration
-
-- [ ] Run: `npm run r2:migrate`
-- [ ] Open terminal baru, run: `npm run r2:migrate:status`
-- [ ] Monitor progress setiap 5-10 menit
-- [ ] Expected: ~30-60 menit untuk 2000+ images
-
-### Verify Completion
-
-- [ ] Final status check: `npm run r2:migrate:status`
 - [ ] Verify:
-  - [ ] `Migrated: 2117 / 2117 (100%)`
-  - [ ] `Failed: < 20` (dibawah 1%)
-  - [ ] Success rate > 99%
-
-### Post-Migration Verification
-
-- [ ] Run: `npm run r2:verify -- --sample-size 50`
-- [ ] Verify: 100% URLs accessible
-- [ ] Check Cloudflare R2 dashboard:
-  - [ ] Total files: ~2117
-  - [ ] Storage used: ~1-2 GB
-  - [ ] No errors in metrics
-
-**✋ STOP jika success rate < 95%. Investigate failures.**
-
----
-
-## ✅ Phase 3: Soak Period (24-48 jam)
-
-**⏰ Start Date/Time**: `___ / ___ / _____ at __:__`
-
-### Day 1 Checklist
-
-- [ ] Test 20-30 random URLs: `npm run r2:verify`
-- [ ] Browse website:
-  - [ ] Homepage loads
-  - [ ] Shop page loads (images masih dari ImageKit - normal)
-  - [ ] Product detail page
-  - [ ] Admin inventory
-- [ ] Check R2 dashboard:
-  - [ ] Files ada semua
-  - [ ] No error metrics
-  - [ ] Bandwidth cost = $0
-- [ ] ImageKit subscription status: **Masih aktif** ✅
-
-### Day 2 Checklist
-
-- [ ] Test URLs lagi: `npm run r2:verify`
-- [ ] Test dari berbagai device:
-  - [ ] Desktop Chrome
-  - [ ] Mobile Safari/Chrome
-  - [ ] Wifi + Cellular data
-- [ ] Check tidak ada user complaints
-- [ ] R2 metrics stabil
-
-**Go/No-Go Decision**
-
-- [ ] ✅ All URLs accessible 100%
-- [ ] ✅ No performance issues
-- [ ] ✅ R2 metrics healthy
-- [ ] ✅ Team ready untuk cutover
-- [ ] ✅ Backup database ready
-
-**Decision**: [ ] GO / [ ] NO-GO
-
-**If NO-GO**: Document reason and retry after fix:  
-`_______________________________________________________`
-
----
-
-## ✅ Phase 4: Database Cutover (30 menit)
-
-**⚠️ POINT OF NO RETURN - Hati-hati!**
-
-**⏰ Cutover Date/Time**: `___ / ___ / _____ at __:__`
-
-### Pre-Cutover
-
-- [ ] Database backup verified ada
-- [ ] Soak period 24-48 jam completed
-- [ ] Team ready to monitor 2-3 jam
-- [ ] ImageKit masih aktif (rollback safety)
-- [ ] Low traffic time (ideal: dini hari)
-
-### Cutover Dry Run
-
-- [ ] Run: `npm run r2:cutover:dry`
-- [ ] Review output:
-  - [ ] Sample updates terlihat benar
-  - [ ] Row count correct
   - [ ] No errors
+  - [ ] URL format correct
+  - [ ] Image count ~1598
 
-### Production Cutover
+### B. Migration Status Check
 
-- [ ] **DEEP BREATH** 🧘
-- [ ] Run: `npm run r2:cutover:confirm`
-- [ ] Wait until complete (~5-10 menit)
-- [ ] Note completion time: `__:__`
+- [ ] Check current status:
+  ```powershell
+  npm run r2:migrate:status
+  ```
 
-### Immediate Verification (Within 5 Minutes!)
+- [ ] Expected output:
+  ```
+  Total images: 1598
+  ImageKit: 1598 (100%)
+  R2: 0 (0%)
+  Ready to migrate: Yes
+  ```
 
-- [ ] Open: https://www.sparkstage55.com
+---
+
+## ✅ FASE 3: BATCH TEST (15 menit)
+
+### A. Migrate 25 Images (Test Batch)
+
+- [ ] Run batch test:
+  ```powershell
+  npm run r2:migrate -- --batch-size 25 --limit 25 --fail-fast
+  ```
+
+- [ ] Expected output:
+  ```
+  [INFO] Starting R2 migration...
+  [INFO] Found 25 images to migrate
+  [PROGRESS] Batch 1/1 (25 images)
+    [1/25] ✓ Downloaded from ImageKit
+    [1/25] ✓ Uploaded to R2
+    [1/25] ✓ Database updated
+    ...
+  [SUCCESS] Migrated 25/25 images
+  [INFO] Manifest: backups/r2-migration-manifest.jsonl
+  ```
+
+- [ ] Verify success rate: 25/25 (100%)
+
+### B. Verify Test URLs
+
+- [ ] Run verification:
+  ```powershell
+  npm run r2:verify -- --sample 25
+  ```
+
+- [ ] Expected output:
+  ```
+  [INFO] Verifying 25 URLs...
+  [PROGRESS] Testing URLs...
+    ✓ https://media.sparkstage55.com/products/123/abc.jpg [200 OK]
+    ✓ https://media.sparkstage55.com/products/124/def.jpg [200 OK]
+    ...
+  [SUCCESS] 25/25 URLs accessible (100%)
+  ```
+
+### C. Manual Verification
+
+- [ ] Test 3-5 URLs manually dengan browser:
+  ```
+  https://media.sparkstage55.com/products/<product_id>/<uuid>.jpg
+  ```
+- [ ] Images harus load tanpa error
+- [ ] Check R2 Dashboard: 25 files uploaded
+
+### D. Database Check
+
+- [ ] Check database:
+  ```sql
+  SELECT image_provider, COUNT(*) 
+  FROM product_images 
+  GROUP BY image_provider;
+  ```
+
+- [ ] Expected (SEBELUM cutover):
+  ```
+  imagekit | 1598
+  ```
+
+- [ ] Note: DB belum cutover, masih pointing ke ImageKit (by design!)
+
+### E. Website Check (IMPORTANT!)
+
+- [ ] Buka https://www.sparkstage55.com
 - [ ] Test pages:
-  - [ ] Homepage - images load?
-  - [ ] Shop page - product grid shows?
-  - [ ] Product detail - gallery works?
-  - [ ] Admin inventory - thumbnails OK?
-- [ ] DevTools → Network:
-  - [ ] Filter: `img`
-  - [ ] Images load from `media.sparkstage55.com` ✅
-  - [ ] NOT from `ik.imagekit.io` ✅
-- [ ] Check for broken images: `0` ✅
-- [ ] Check console errors: `0` ✅
+  - [ ] Homepage (images load)
+  - [ ] Shop page (thumbnails load)
+  - [ ] Product detail (images load)
+  - [ ] Admin inventory (thumbnails load)
 
-### Rollback Decision (If needed)
+- [ ] DevTools → Network → Filter images
+- [ ] Verify masih dari ImageKit: `ik.imagekit.io` (NOT R2 yet!)
 
-**Issue Detected**: `_____________________________________`
+**✅ GO/NO-GO Decision Point**:
+- [ ] All 25 images migrated successfully
+- [ ] All URLs accessible
+- [ ] Website masih normal (ImageKit)
+- [ ] Ready untuk full migration
 
-- [ ] Issue severity: [ ] CRITICAL / [ ] MAJOR / [ ] MINOR
+---
 
-**If CRITICAL (>5% broken images)**:
+## ⏸️ CHECKPOINT: Apakah lanjut full migration?
+
+**Jika semua checklist ✅**: Lanjut ke Fase 4 (Full Migration)
+
+**Jika ada masalah**:
+- Review error logs
+- Fix issues
+- Re-run batch test
+- Don't proceed until 100% success
+
+---
+
+## ✅ FASE 4: FULL MIGRATION (30-60 menit)
+
+### A. Pre-Flight Final Check
+
+- [ ] Batch test 100% sukses
+- [ ] R2 public access verified
+- [ ] Custom domain working (jika pakai)
+- [ ] Database backup (optional)
+- [ ] Window kerja confirmed (off-peak hours recommended)
+- [ ] ImageKit subscription masih aktif (untuk rollback)
+
+### B. Run Full Migration
+
+- [ ] Start migration:
+  ```powershell
+  npm run r2:migrate
+  ```
+
+- [ ] Monitor progress (terminal baru):
+  ```powershell
+  npm run r2:migrate:status
+  ```
+
+- [ ] Expected duration: 30-60 menit
+- [ ] Monitor output untuk errors
+
+### C. Migration Progress Tracking
+
+**Target**: 1,598 images
+
+Track progress setiap 10 menit:
+```
+□ 10 min: ~400 images (25%)
+□ 20 min: ~800 images (50%)
+□ 30 min: ~1200 images (75%)
+□ 40 min: ~1598 images (100%)
+```
+
+### D. Handle Interruptions
+
+**Jika migration terputus (network, crash, dll)**:
+
+- [ ] Don't panic! Resume otomatis:
+  ```powershell
+  npm run r2:migrate
+  ```
+
+- [ ] Script akan skip images yang sudah uploaded
+- [ ] Continue dari checkpoint terakhir
+
+---
+
+## ✅ FASE 5: POST-MIGRATION VERIFICATION (15 menit)
+
+### A. Check Final Status
+
+- [ ] Run status check:
+  ```powershell
+  npm run r2:migrate:status
+  ```
+
+- [ ] Expected output:
+  ```
+  Total images: 1598
+  Migrated to R2: 1598 (100%)
+  Still on ImageKit: 0
+  Failed: 0
+  Success rate: 100%
+  ```
+
+### B. Verify All URLs
+
+- [ ] Run full verification (100 random samples):
+  ```powershell
+  npm run r2:verify
+  ```
+
+- [ ] Expected: 100/100 URLs accessible (100%)
+
+**Jika ada failures**:
+- [ ] Check failed URLs
+- [ ] Re-run migration untuk specific images
+- [ ] Don't proceed to cutover until 100%
+
+### C. Cloudflare R2 Dashboard Check
+
+- [ ] Login Cloudflare → R2 → Bucket
+- [ ] Navigate folder: `products/`
+- [ ] Verify object count: **~1,598 files**
+- [ ] Spot check 5-10 files (preview available)
+
+### D. Backup Verification
+
+- [ ] Verify manifest file exists:
+  ```powershell
+  dir backups\r2-migration-manifest.jsonl
+  ```
+
+- [ ] File should contain 1,598 records
+- [ ] Keep this file PERMANENT (rollback reference)
+
+---
+
+## ⚠️ FASE 6: DATABASE CUTOVER (5 menit) - CRITICAL!
+
+**⚠️ WARNING**: Ini adalah point of no return sampai rollback dijalankan!
+
+### A. Pre-Cutover Checklist (ALL MUST BE ✅)
+
+- [ ] 1,598/1,598 images uploaded to R2 (100%)
+- [ ] 100% URLs verified accessible
+- [ ] R2 bucket object count matches (1,598)
+- [ ] ImageKit subscription masih aktif (untuk rollback)
+- [ ] Off-peak hours window
+- [ ] Team ready untuk monitor 15-30 menit
+
+### B. Dry Run Cutover (WAJIB!)
+
+- [ ] Run dry run:
+  ```powershell
+  npm run r2:cutover:dry
+  ```
+
+- [ ] Expected output:
+  ```
+  [DRY RUN] Would update 1598 rows:
+    UPDATE product_images SET
+      image_url = (R2 URL),
+      image_provider = 'r2',
+      provider_original_url = (ImageKit URL),
+      migrated_at = NOW()
+    WHERE image_provider = 'imagekit'
+  [DRY RUN] No changes made.
+  ```
+
+- [ ] Review output, pastikan make sense
+
+### C. Production Cutover
+
+- [ ] **DEEP BREATH** 🧘‍♂️
+- [ ] Run production cutover:
+  ```powershell
+  npm run r2:cutover:confirm
+  ```
+
+- [ ] Script akan confirm 3x:
+  ```
+  ⚠️  WARNING: This will update 1598 rows!
+  ⚠️  All product images will switch to R2.
+  ⚠️  Type 'CONFIRM CUTOVER' to proceed: _
+  ```
+
+- [ ] Type: `CONFIRM CUTOVER` (exact text!)
+- [ ] Press Enter
+
+- [ ] Expected output:
+  ```
+  [INFO] Starting production cutover...
+  [INFO] Backup ImageKit URLs... ✓
+  [INFO] Updating 1598 rows...
+  [SUCCESS] Cutover completed!
+  [INFO] Updated 1598 rows in 2.3 seconds
+  ```
+
+### D. IMMEDIATE Post-Cutover Checks (DALAM 5 MENIT!)
+
+**🚨 CRITICAL - Lakukan segera!**
+
+#### 1. Database Verification
+```sql
+SELECT image_provider, COUNT(*) 
+FROM product_images 
+GROUP BY image_provider;
+
+-- Expected:
+-- r2 | 1598
+```
+
+#### 2. Website Check (MOST IMPORTANT!)
+- [ ] **Clear browser cache** atau gunakan Incognito
+- [ ] Buka https://www.sparkstage55.com
+- [ ] **Homepage**: Check images load ✅
+- [ ] **Shop page**: Check product thumbnails ✅
+- [ ] **Product detail**: Check multiple products ✅
+- [ ] **Admin inventory**: Check thumbnails ✅
+
+#### 3. DevTools Network Check
+- [ ] Open DevTools → Network tab
+- [ ] Filter: Images
+- [ ] **Verify**: URLs dari `media.sparkstage55.com` (NOT `ik.imagekit.io`!)
+- [ ] **Check**: No 404 errors, no broken images
+
+#### 4. Broken Image Count
+- [ ] Scroll homepage: Count broken images (gray boxes)
+- [ ] **Acceptable**: 0-2 images (investigate specific items)
+- [ ] **ROLLBACK**: > 5 images (something wrong!)
+
+---
+
+## 🚨 ROLLBACK PROCEDURE (Jika Diperlukan)
+
+**Trigger Rollback if**:
+- [ ] > 5 broken images detected
+- [ ] Homepage tidak load images
+- [ ] Critical errors di console
+
+**Rollback Steps** (5 menit):
 
 ```sql
--- ROLLBACK NOW
+-- Rollback ke ImageKit URLs
+BEGIN;
+
 UPDATE product_images
 SET 
   image_url = provider_original_url,
-  image_provider = 'imagekit'
+  image_provider = 'imagekit',
+  provider_file_id = NULL,
+  migrated_at = NULL
 WHERE image_provider = 'r2' 
   AND provider_original_url IS NOT NULL;
+
+-- Verify
+SELECT image_provider, COUNT(*) 
+FROM product_images 
+GROUP BY image_provider;
+-- Expected: imagekit | 1598
+
+COMMIT;
 ```
 
-- [ ] Rollback executed at: `__:__`
-- [ ] Verify images back to normal
-- [ ] Document incident for review
-
-**If SUCCESS**:
-
-- [ ] ✅ Cutover successful!
-- [ ] Screenshot evidence saved
-- [ ] Monitoring started
+- [ ] Test website immediately
+- [ ] Images harus kembali dari ImageKit
+- [ ] Investigate issue sebelum retry
 
 ---
 
-## ✅ Phase 5: Post-Cutover Monitoring (7-14 hari)
+## ✅ FASE 7: SOAK PERIOD (14-30 hari)
 
-**⏰ Monitoring Period**: `___ / ___ / _____ to ___ / ___ / _____`
+### Week 1 Monitoring (INTENSIVE)
 
-### Daily Checklist
+**Daily checks**:
+- [ ] **Day 1**: Website spot check (10 random products)
+- [ ] **Day 2**: Run `npm run r2:verify -- --sample 20`
+- [ ] **Day 3**: Website spot check
+- [ ] **Day 4**: Cloudflare analytics review
+- [ ] **Day 5**: ImageKit bandwidth check (should drop)
+- [ ] **Day 6**: Website spot check
+- [ ] **Day 7**: Full week review
 
-**Day 1-3** (Critical):
+**Metrics to track**:
+```
+Broken images: Target = 0
+R2 bandwidth cost: Target = $0
+ImageKit bandwidth: Target < 5 GB/week
+Customer complaints: Target = 0
+```
 
-- [ ] Morning check: Browse site, check for issues
-- [ ] Afternoon check: Review metrics
-- [ ] Evening check: Final verification
-- [ ] No broken images reported: ✅
-- [ ] R2 metrics healthy: ✅
-- [ ] ImageKit bandwidth dropping: ✅
+### Week 2-4 Monitoring (WEEKLY)
 
-**Day 4-7**:
+**Weekly checks**:
+- [ ] **Monday**: Spot check 10 random products
+- [ ] **Friday**: Run verification script
+- [ ] **End of week**: Review metrics
 
-- [ ] Daily site check
-- [ ] Review Cloudflare R2 dashboard:
-  - [ ] Requests: ~50-100K/week
-  - [ ] Bandwidth cost: $0
-  - [ ] Error rate: < 0.1%
-- [ ] Review ImageKit dashboard:
-  - [ ] Bandwidth: < 1 GB/week
-  - [ ] Confirms cutover success
-
-**Day 8-14**:
-
-- [ ] Every 2-3 days check
-- [ ] Monitor user feedback
-- [ ] Prepare for cleanup
-
-### Week 2 Go/No-Go
-
-- [ ] Zero broken images for 7+ days
-- [ ] R2 stable and cost = $0
-- [ ] ImageKit bandwidth < 1 GB total
-- [ ] No performance degradation
-- [ ] User satisfaction maintained
-
-**Decision**: [ ] GO to Cleanup / [ ] EXTEND Monitoring
+**Target by Week 4**:
+- [ ] Zero broken images (30 hari stable)
+- [ ] ImageKit bandwidth < 1 GB/month
+- [ ] R2 cost ~$0.06/month
+- [ ] No customer complaints
+- [ ] Cache hit ratio > 95%
 
 ---
 
-## ✅ Phase 6: Cleanup (After 14 days stable)
+## ✅ FASE 8: CLEANUP (After 30+ days stable)
 
-**⏰ Cleanup Date**: `___ / ___ / _____`
+### Step 1: Downgrade ImageKit
 
-### Cancel ImageKit Subscription
+- [ ] 30 hari soak period completed ✅
+- [ ] Zero issues during soak ✅
+- [ ] Login ImageKit Dashboard
+- [ ] Settings → Billing
+- [ ] **Downgrade to Free Plan**
+- [ ] Konfirm downgrade
 
-- [ ] Login to ImageKit dashboard
-- [ ] Go to Billing/Subscription
-- [ ] Cancel or downgrade to Free
+### Step 2: Monitor Free Plan (7 days)
+
+- [ ] Track bandwidth: Should be < 1 GB/week
+- [ ] If stable: Proceed to cancel
+- [ ] If high usage: Investigate (something wrong!)
+
+### Step 3: Cancel ImageKit Subscription
+
+- [ ] 7 hari on Free Plan stable
+- [ ] ImageKit Dashboard → Settings → Billing
+- [ ] **Cancel Subscription**
+- [ ] Reason: "Migrated to alternative CDN"
 - [ ] Confirm cancellation
-- [ ] Screenshot confirmation saved
-- [ ] **Cost Savings**: $9/month = **$108/year** 🎉
+- [ ] **Save confirmation email**
 
-### Archive Migration Files
+### Step 4: Celebrate! 🎉
 
-- [ ] Create archive folder:
-  ```
-  mkdir backups\r2-migration-archive
-  move backups\r2-migration-manifest.jsonl backups\r2-migration-archive\
-  move backups\r2-migration-summary.json backups\r2-migration-archive\
-  ```
-- [ ] Zip archive untuk long-term storage
-- [ ] Backup to cloud/external drive
-- [ ] Keep for audit trail (1 year minimum)
-
-### Delete ImageKit Files (Optional - After 30 days)
-
-**⏰ Safe to Delete After**: `___ / ___ / _____` (30 days post-cleanup)
-
-- [ ] 30 days passed since cancellation
-- [ ] R2 still stable
-- [ ] No rollback needed
-- [ ] Delete files from ImageKit (frees up space)
+**🎉 SUCCESS!**
+- ✅ Saved $9/month = $108/year
+- ✅ Zero egress cost forever
+- ✅ Unlimited bandwidth
+- ✅ Faster delivery (Cloudflare CDN)
 
 ---
 
-## 📊 Final Success Metrics
+## 📊 Final Success Criteria
 
-- [ ] **Cost Savings**: $9/month → $0/month ✅
-- [ ] **Zero broken images**: 100% ✅
-- [ ] **R2 bandwidth cost**: $0 (zero egress) ✅
-- [ ] **ImageKit decommissioned**: Yes ✅
-- [ ] **Migration manifest archived**: Yes ✅
-- [ ] **Page load time**: Same or faster ✅
-
-**🎉 MIGRATION COMPLETE! 🎉**
+- [x] Setup R2 bucket dengan public access
+- [ ] 1,598/1,598 images migrated to R2
+- [ ] Database cutover completed
+- [ ] 30 hari stable (zero critical issues)
+- [ ] ImageKit cancelled
+- [ ] **Saving $9/month confirmed** 💰
 
 ---
 
-## 📝 Notes & Issues Log
+## 📞 Emergency Contacts & Resources
 
-**Date** | **Issue/Note** | **Resolution**
----------|----------------|---------------
-         |                |
-         |                |
-         |                |
-
----
-
-## 📞 Emergency Contacts
-
-| Issue | Action |
-|-------|--------|
-| Broken images after cutover | **ROLLBACK IMMEDIATELY** - See Phase 4 |
-| R2 URLs not accessible | Check public access + DNS + CORS |
-| High R2 costs | Review metrics, should be $0 egress |
-| Migration script errors | Check logs, resume with same command |
+- **Documentation**: `docs/runbooks/r2-migration.md`
+- **Egress Setup**: `docs/runbooks/R2_EGRESS_SETUP.md`
+- **Quick Start**: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
+- **Manifest Backup**: `backups/r2-migration-manifest.jsonl`
+- **Rollback SQL**: See section above
 
 ---
 
-## 📚 Documentation Reference
+**Ready to Start?** Begin with **FASE 0: PERSIAPAN**
 
-- Full docs: `docs/runbooks/r2-migration.md`
-- Quick start: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
-- Scripts location: `scripts/migrate-imagekit-to-r2.mjs`
-
----
-
-**Prepared by**: `_______________`  
-**Approved by**: `_______________`  
-**Started**: `___ / ___ / _____`  
-**Completed**: `___ / ___ / _____`
-
-**Status**: [ ] Planning / [ ] In Progress / [ ] Monitoring / [ ] ✅ Complete
+**Questions?** Review full documentation atau ask Kiro! 🤖
