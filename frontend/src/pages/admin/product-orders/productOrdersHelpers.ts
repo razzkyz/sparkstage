@@ -8,6 +8,7 @@ const EMPTY_STATE_COPY: Record<ProductOrdersTab, { icon: string; message: string
   pending_pickup: { icon: 'inventory_2', message: 'Tidak ada pesanan menunggu pickup.' },
   today: { icon: 'today', message: 'Belum ada pesanan paid hari ini.' },
   completed: { icon: 'check_circle', message: 'Belum ada pesanan selesai.' },
+  shipping: { icon: 'local_shipping', message: 'Tidak ada pesanan yang perlu dikirim.' },
 };
 
 export function getPendingOrders(orders: OrderSummaryRow[]) {
@@ -56,16 +57,29 @@ export function getCompletedOrders(orders: OrderSummaryRow[]) {
     .sort((left, right) => (right.updated_at ?? '').localeCompare(left.updated_at ?? ''));
 }
 
+export function getShippingOrders(orders: OrderSummaryRow[]) {
+  return orders
+    .filter((order) => order.payment_status === 'paid')
+    .filter((order) => order.pickup_status === 'pending_shipment' || order.pickup_status === 'shipped')
+    .sort((left, right) => {
+      const leftTime = left.paid_at || left.created_at || '';
+      const rightTime = right.paid_at || right.created_at || '';
+      return rightTime.localeCompare(leftTime);
+    });
+}
+
 export function getDisplayOrders(
   tab: ProductOrdersTab,
   pendingOrders: OrderSummaryRow[],
   pendingPaymentOrders: OrderSummaryRow[],
   todaysOrders: OrderSummaryRow[],
-  completedOrders: OrderSummaryRow[]
+  completedOrders: OrderSummaryRow[],
+  shippingOrders: OrderSummaryRow[]
 ) {
   if (tab === 'pending_payment') return pendingPaymentOrders;
   if (tab === 'pending_pickup') return pendingOrders;
   if (tab === 'today') return todaysOrders;
+  if (tab === 'shipping') return shippingOrders;
   return completedOrders;
 }
 

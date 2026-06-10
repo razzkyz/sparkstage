@@ -9,6 +9,7 @@ import {
   getDisplayOrders,
   getPendingOrders,
   getPendingPaymentOrders,
+  getShippingOrders,
   getTodaysOrders,
 } from './productOrdersHelpers';
 import { completeProductPickup, loadProductOrderDetailsByPickupCode } from './productOrdersData';
@@ -166,9 +167,10 @@ export function useProductOrdersController({
   const pendingOrders = useMemo(() => getPendingOrders(safeOrders), [safeOrders]);
   const todaysOrders = useMemo(() => getTodaysOrders(safeOrders), [safeOrders]);
   const completedOrders = useMemo(() => getCompletedOrders(safeOrders), [safeOrders]);
+  const shippingOrders = useMemo(() => getShippingOrders(safeOrders), [safeOrders]);
   const displayOrders = useMemo(
-    () => getDisplayOrders(activeTab, pendingOrders, pendingPaymentOrders, todaysOrders, completedOrders),
-    [activeTab, completedOrders, pendingOrders, pendingPaymentOrders, todaysOrders]
+    () => getDisplayOrders(activeTab, pendingOrders, pendingPaymentOrders, todaysOrders, completedOrders, shippingOrders),
+    [activeTab, completedOrders, pendingOrders, pendingPaymentOrders, todaysOrders, shippingOrders]
   );
   const menuSections = useMemo(
     () => buildProductOrdersMenuSections(pendingPickupCount + pendingPaymentCount, baseMenuSections),
@@ -188,6 +190,7 @@ export function useProductOrdersController({
     pendingPaymentOrders,
     todaysOrders,
     completedOrders,
+    shippingOrders,
     displayOrders,
     menuSections,
     setActiveTab,

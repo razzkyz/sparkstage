@@ -140,7 +140,7 @@ export function CheckoutShippingSection({
             checked={deliveryMethod === "shipping"}
             onChange={() => onChangeDeliveryMethod("shipping")}
             className="hidden"
-            disabled
+            
           />
           <Truck size={20} />
           <div className="flex flex-col items-center">
