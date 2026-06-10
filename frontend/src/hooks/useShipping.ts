@@ -30,6 +30,7 @@ const CACHE_VERSION = 'v1'; // Increment to invalidate all caches
 const CACHE_KEY_PROVINCES = `rajaongkir_checkout_${CACHE_VERSION}_provinces`;
 const CACHE_KEY_CITIES_PREFIX = `rajaongkir_checkout_${CACHE_VERSION}_cities_`;
 const CACHE_KEY_SUBDISTRICTS_PREFIX = `rajaongkir_checkout_${CACHE_VERSION}_subdistricts_`;
+const defaultOriginCityId = import.meta.env.VITE_STORE_ORIGIN_CITY_ID || '23';
 
 // Fallback provinces if API fails (34 provinces in Indonesia)
 const FALLBACK_PROVINCES = [
@@ -332,7 +333,7 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
     }
   }, [cityId]);
 
-  const fetchShippingCost = async (destinationCityId: string, originCityId: string = '153', courier: string = 'jne') => { // origin default (e.g. Jakarta Selatan)
+  const fetchShippingCost = async (destinationCityId: string, originCityId: string = defaultOriginCityId, courier: string = 'jne') => { // origin default (e.g. Jakarta Selatan)
     if (!destinationCityId) return [];
     setIsLoadingCost(true);
     try {
