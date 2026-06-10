@@ -296,13 +296,12 @@ const Shop = () => {
           nameLower.includes("lucky charm") ||
           nameLower.includes("lucky") ||
           nameLower.includes("lucky-charm") ||
-          nameLower.includes("charm") ||
           nameLower.includes("speckles")
         ) {
           return false;
         }
-
         if (!p.categorySlug) return true;
+        
         const slugLower = p.categorySlug.toLowerCase();
         return (
           !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) &&
