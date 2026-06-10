@@ -131,7 +131,7 @@ export function CheckoutShippingSection({
 
       <div className="flex gap-4 mb-4">
         <label
-          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border cursor-pointer transition-all border-gray-200 text-gray-400 bg-gray-50`}
+          className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border cursor-not-allowed transition-all border-gray-200 text-gray-400 bg-gray-50`}
         >
           <input
             type="radio"
@@ -140,7 +140,7 @@ export function CheckoutShippingSection({
             checked={deliveryMethod === "shipping"}
             onChange={() => onChangeDeliveryMethod("shipping")}
             className="hidden"
-            
+            disabled
           />
           <Truck size={20} />
           <div className="flex flex-col items-center">

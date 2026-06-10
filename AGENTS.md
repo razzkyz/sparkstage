@@ -48,6 +48,9 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - **RajaOngkir cache implementation**: `LOCALSTORAGE_CACHE_IMPLEMENTATION.md`
 - **Shipping on-demand loading**: `SHIPPING-ON-DEMAND.md`
 - **Rate limiting fixes**: `RATE-LIMIT-FIX.md`
+- **E-Commerce Shipping Integration (NEW 2026-06-10):**
+  - Phase 1 Complete: `SHIPPING_PHASE1_COMPLETE.md`
+  - Full roadmap: `SHIPPING_INTEGRATION_COMPLETE.md`
 
 ## Frontend Stock Management Pages (100% COMPLETE ✅)
 
