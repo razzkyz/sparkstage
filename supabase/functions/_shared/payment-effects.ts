@@ -36,6 +36,8 @@ type OrderProductsRow = {
   stock_released_at?: string | null
   paid_at?: string | null
   updated_at?: string | null
+  shipping_courier?: string | null
+  shipping_cost?: unknown
 }
 
 type OrderProductItemsRow = {
@@ -931,7 +933,12 @@ export async function ensureProductPaidSideEffects(params: {
 
       const baseStatus = params.defaultStatus || String(order.status || 'processing')
       const finalStatus = stockValidationFailed || amountMismatch ? 'requires_review' : baseStatus
-      const finalPickupStatus = stockValidationFailed || amountMismatch ? 'pending_review' : 'pending_pickup'
+      
+      // Determine pickup_status based on delivery method
+      // If shipping_courier exists and is not 'pickup', it's a shipping order
+      const isShippingOrder = order.shipping_courier && order.shipping_courier !== 'pickup'
+      const normalPickupStatus = isShippingOrder ? 'pending_shipment' : 'pending_pickup'
+      const finalPickupStatus = stockValidationFailed || amountMismatch ? 'pending_review' : normalPickupStatus
 
       let pickupCode = order.pickup_code || ''
       if (!pickupCode) {

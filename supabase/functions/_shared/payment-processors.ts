@@ -28,7 +28,7 @@ type ServiceClient = ReturnType<typeof createServiceClient>;
 const TICKET_ORDER_SELECT =
   "id, user_id, order_number, status, tickets_issued_at, capacity_released_at";
 const PRODUCT_ORDER_SELECT =
-  "id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, paid_at, total, stock_released_at, voucher_id, voucher_code, discount_amount";
+  "id, user_id, order_number, status, payment_status, pickup_code, pickup_status, pickup_expires_at, paid_at, total, stock_released_at, voucher_id, voucher_code, discount_amount, shipping_courier, shipping_cost";
 const RENTAL_ORDER_SELECT =
   "id, user_id, order_number, status, payment_status";
 
