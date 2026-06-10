@@ -6,7 +6,6 @@
 -- Use this if something goes wrong after cutover
 -- 
 -- RESTORES:
---   provider: 'r2' → 'imagekit'
 --   image_url: R2 URL → ImageKit URL (from backup column)
 -- 
 -- ============================================================================
@@ -17,10 +16,9 @@ BEGIN;
 UPDATE product_images
 SET 
   image_url = imagekit_backup_url,
-  provider = 'imagekit',
   updated_at = NOW()
-WHERE provider = 'r2'
-  AND imagekit_backup_url IS NOT NULL;
+WHERE imagekit_backup_url IS NOT NULL
+  AND image_url LIKE 'https://cdn.sparkstage55.com/%';
 
 -- Step 2: Verify rollback results
 DO $$
@@ -29,16 +27,16 @@ DECLARE
   imagekit_count INTEGER;
   total_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO r2_count FROM product_images WHERE provider = 'r2';
-  SELECT COUNT(*) INTO imagekit_count FROM product_images WHERE provider = 'imagekit';
+  SELECT COUNT(*) INTO r2_count FROM product_images WHERE image_url LIKE 'https://cdn.sparkstage55.com/%';
+  SELECT COUNT(*) INTO imagekit_count FROM product_images WHERE image_url LIKE 'https://ik.imagekit.io/hjnuyz1t3/%';
   SELECT COUNT(*) INTO total_count FROM product_images;
   
   RAISE NOTICE '================================================';
   RAISE NOTICE 'ROLLBACK VERIFICATION';
   RAISE NOTICE '================================================';
   RAISE NOTICE 'Total product images: %', total_count;
-  RAISE NOTICE 'R2 provider: % (%.1%)', r2_count, (r2_count::FLOAT / total_count * 100);
-  RAISE NOTICE 'ImageKit provider: % (%.1%)', imagekit_count, (imagekit_count::FLOAT / total_count * 100);
+  RAISE NOTICE 'R2 (cdn.sparkstage55.com): % (%.1f%%)', r2_count, (r2_count::FLOAT / total_count * 100);
+  RAISE NOTICE 'ImageKit (ik.imagekit.io): % (%.1f%%)', imagekit_count, (imagekit_count::FLOAT / total_count * 100);
   RAISE NOTICE '================================================';
   
   IF imagekit_count > 2000 THEN
@@ -52,10 +50,9 @@ END $$;
 SELECT 
   id,
   product_id,
-  LEFT(image_url, 80) as restored_imagekit_url,
-  provider
+  LEFT(image_url, 80) as restored_imagekit_url
 FROM product_images
-WHERE provider = 'imagekit'
+WHERE image_url LIKE 'https://ik.imagekit.io/hjnuyz1t3/%'
 LIMIT 5;
 
 -- ============================================================================

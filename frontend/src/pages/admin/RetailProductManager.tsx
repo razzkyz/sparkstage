@@ -25,6 +25,7 @@ import { useToast } from "../../components/Toast";
 import { useAdminRetailProducts } from "../../hooks/useAdminRetailProducts";
 import { useRetailCategories } from "../../hooks/useRetailCategories";
 import { uploadPublicAssetToImageKit } from "../../lib/publicImagekitUpload";
+import { uploadToR2 } from "../../lib/r2Upload";
 import { supabase } from "../../lib/supabase";
 import {
   useRetailProductImages,
@@ -254,12 +255,28 @@ export default function RetailProductManager() {
 
       // Upload image if selected
       if (imageFile) {
-        const fileName = `${formData.slug}-${Date.now()}`;
-        finalImageUrl = await uploadPublicAssetToImageKit({
-          file: imageFile,
-          fileName,
-          folderPath: "public/retail-products",
-        });
+        const useR2 = import.meta.env.VITE_USE_R2_UPLOAD === 'true';
+        
+        if (useR2) {
+          // Use Cloudflare R2 upload (new flow)
+          console.log('Uploading to R2...');
+          const tempProductId = editingId || 999999; // Use temp ID for new products
+          finalImageUrl = await uploadToR2({
+            file: imageFile,
+            productId: tempProductId,
+          });
+          console.log('R2 upload successful:', finalImageUrl);
+        } else {
+          // Fallback to ImageKit upload (legacy flow)
+          console.log('Uploading to ImageKit (fallback)...');
+          const fileName = `${formData.slug}-${Date.now()}`;
+          finalImageUrl = await uploadPublicAssetToImageKit({
+            file: imageFile,
+            fileName,
+            folderPath: "public/retail-products",
+          });
+          console.log('ImageKit upload successful:', finalImageUrl);
+        }
       }
 
       const updates = { ...formData, image: finalImageUrl };

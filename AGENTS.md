@@ -37,18 +37,20 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - R2 Migration (ImageKit → Cloudflare R2): `docs/runbooks/r2-migration.md`
 - R2 Egress Setup (Zero cost setup): `docs/runbooks/R2_EGRESS_SETUP.md`
 - R2 Migration Quick Start: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
-- R2 Migration Status (UPDATED 2026-06-10): **READY TO EXECUTE** ✅
-  - Product images uploaded: 2,227 / 2,227 (100%) ✅
-  - R2 bucket: sparkstage-public-assets ✅
-  - Custom domain: `cdn.sparkstage55.com` (configured, waiting nameserver switch) ⏸️
-  - R2.dev URL: `pub-9808d1f4ad9448a1ae0eccf1371cac00.r2.dev` (backup option)
-  - DNS records: Verified at Cloudflare (7 records ready) ✅
-  - Website DNS: Currently on Domainesia (stable) ✅
-  - Database cutover: PENDING (after nameserver switch) ⏸️
-  - Migration guide: `CLOUDFLARE_MIGRATION_GUIDE.md` (complete step-by-step) ✅
-  - Cutover script: `scripts/cutover-products-to-r2.sql` ✅
-  - Rollback script: `scripts/rollback-to-imagekit.sql` ✅
-  - **Next Step:** Execute migration when ready (see guide for timeline)
+- R2 Migration Status (UPDATED 2026-06-10): **95% COMPLETE - Upload Code Ready** ✅
+  - **DONE:** Product images uploaded: 2,227 / 2,227 (100%) ✅
+  - **DONE:** R2 bucket: sparkstage-public-assets ✅
+  - **DONE:** Custom domain: `cdn.sparkstage55.com` (active, zero-cost egress) ✅
+  - **DONE:** DNS: Cloudflare nameservers (hope.ns.cloudflare.com, simon.ns.cloudflare.com) ✅
+  - **DONE:** Database cutover: All URLs updated to cdn.sparkstage55.com ✅
+  - **DONE:** Website verified: Images loading correctly ✅
+  - **READY:** Upload code: R2 Edge Function + Frontend helper written ✅
+  - **PENDING:** Deployment: Needs 30-45 minutes to deploy upload code ⏸️
+  - Migration guide: `R2_MIGRATION_COMPLETE_SUMMARY.md` ✅
+  - Deployment guide: `R2_UPLOAD_DEPLOYMENT_GUIDE.md` ✅
+  - Rollback scripts: Available for instant revert if needed ✅
+  - **Cost savings:** Rp 504K - 2.3M per year (84-96% reduction) 💰
+  - **Next Step:** Deploy upload code when ready (see deployment guide)
 - Stock Opname implementation: `STOCK_OPNAME_IMPLEMENTATION_SUMMARY.md`
 - Stock Opname deployment guide: `READY_TO_DEPLOY.md`
 - Stock Opname finalize workflow: `docs/runbooks/STOCK_OPNAME_FINALIZE.md`
