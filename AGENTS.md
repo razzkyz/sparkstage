@@ -182,6 +182,25 @@ Current roles: `admin`, `super_admin`, `starguide`, `kasir`
 
 Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/adminRole.ts`
 
+## E-Commerce Retail Product Management (NEW 2026-06-11)
+
+**Migration:** Products from `products` + `product_variants` → `product_retail`
+- Status: ✅ Complete (784 products migrated)
+- Migration file: `20260611010000_smart_migrate_products_to_retail.sql`
+- Documentation: `RETAIL_PRODUCT_MIGRATION_SUMMARY.md`
+
+**Admin Filters (NEW 2026-06-11):** `/admin/retail-products`
+- ✅ Active/Inactive status filter
+- ✅ No Category filter (finds products without `retail_category_id`)
+- ✅ Real-time stats summary (Total, Active, Inactive, No Category)
+- ✅ Visual badges on product cards for status and missing category
+- Documentation: `RETAIL_PRODUCT_FILTERS_FEATURE.md`
+
+**Common Admin Tasks:**
+- Find products needing categories: Filter by "No Category"
+- Review disabled products: Filter by "Inactive"
+- Data quality check: Combine filters (e.g., Active + No Category)
+
 ## Working Rules
 
 - Prefer TanStack Query patterns already used in the app.

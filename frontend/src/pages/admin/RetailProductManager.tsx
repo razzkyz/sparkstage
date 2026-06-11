@@ -57,6 +57,8 @@ export default function RetailProductManager() {
 
   const [search, setSearch] = useState("");
   const [activeDept, setActiveDept] = useState<string>("all");
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all"); // all, active, inactive
+  const [categoryFilter, setCategoryFilter] = useState<string>("all"); // all, no-category
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -158,9 +160,25 @@ export default function RetailProductManager() {
 
   const filteredProducts = useMemo(() => {
     let list = products;
+    
+    // Filter by department
     if (activeDept !== "all") {
       list = list.filter((p) => p.retail_category === activeDept);
     }
+    
+    // Filter by active/inactive status
+    if (activeStatusFilter === "active") {
+      list = list.filter((p) => p.is_active === true);
+    } else if (activeStatusFilter === "inactive") {
+      list = list.filter((p) => p.is_active === false);
+    }
+    
+    // Filter by category presence
+    if (categoryFilter === "no-category") {
+      list = list.filter((p) => !p.retail_category_id);
+    }
+    
+    // Search filter
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -168,8 +186,9 @@ export default function RetailProductManager() {
           p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
       );
     }
+    
     return list;
-  }, [products, activeDept, search]);
+  }, [products, activeDept, activeStatusFilter, categoryFilter, search]);
 
   // Reset to first page when filters change
   const totalPages = Math.max(
@@ -632,8 +651,9 @@ export default function RetailProductManager() {
       </div>
 
       {/* ── Toolbar ── */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+      <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+        {/* Row 1: Department Tabs */}
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
           <button
             onClick={() => {
               setActiveDept("all");
@@ -657,40 +677,132 @@ export default function RetailProductManager() {
           ))}
         </div>
 
-        <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+        {/* Row 2: Additional Filters and Search */}
+        <div className="flex flex-col md:flex-row gap-3 justify-between items-start md:items-center">
+          {/* Filter buttons */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Status Filter */}
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => {
+                  setActiveStatusFilter("all");
                   setCurrentPage(1);
                 }}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#ff4b86]"
-              />
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${activeStatusFilter === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                All Status
+              </button>
+              <button
+                onClick={() => {
+                  setActiveStatusFilter("active");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${activeStatusFilter === "active" ? "bg-green-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                ✓ Active
+              </button>
+              <button
+                onClick={() => {
+                  setActiveStatusFilter("inactive");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${activeStatusFilter === "inactive" ? "bg-red-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                ✕ Inactive
+              </button>
             </div>
-            <button
-              onClick={openAddModal}
-              className="flex items-center justify-center gap-2 bg-[#ff4b86] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#e63d75] shadow-sm"
-            >
-              <Plus className="w-4 h-4" /> Add Product
-            </button>
+
+            {/* Category Filter */}
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => {
+                  setCategoryFilter("all");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                All Categories
+              </button>
+              <button
+                onClick={() => {
+                  setCategoryFilter("no-category");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-category" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                ⚠ No Category
+              </button>
+            </div>
           </div>
-          {filteredProducts.length > 0 && (
-            <p className="text-xs text-gray-500 font-sans">
-              Showing{" "}
-              {Math.min(
-                (currentPage - 1) * PAGE_SIZE + 1,
-                filteredProducts.length,
-              )}
-              –{Math.min(currentPage * PAGE_SIZE, filteredProducts.length)} of{" "}
-              {filteredProducts.length} products
-            </p>
-          )}
+
+          {/* Search and Add Product */}
+          <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+            <div className="flex gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#ff4b86]"
+                />
+              </div>
+              <button
+                onClick={openAddModal}
+                className="flex items-center justify-center gap-2 bg-[#ff4b86] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#e63d75] shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Add Product
+              </button>
+            </div>
+            {filteredProducts.length > 0 && (
+              <p className="text-xs text-gray-500 font-sans">
+                Showing{" "}
+                {Math.min(
+                  (currentPage - 1) * PAGE_SIZE + 1,
+                  filteredProducts.length,
+                )}
+                –{Math.min(currentPage * PAGE_SIZE, filteredProducts.length)} of{" "}
+                {filteredProducts.length} products
+              </p>
+            )}
+          </div>
         </div>
+
+        {/* Row 3: Stats Summary */}
+        {products.length > 0 && (
+          <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-gray-600">Total:</span>
+              <span className="font-bold text-gray-900">{products.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-gray-600">Active:</span>
+              <span className="font-bold text-green-700">
+                {products.filter((p) => p.is_active).length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              <span className="text-gray-600">Inactive:</span>
+              <span className="font-bold text-red-700">
+                {products.filter((p) => !p.is_active).length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+              <span className="text-gray-600">No Category:</span>
+              <span className="font-bold text-orange-700">
+                {products.filter((p) => !p.retail_category_id).length}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Grid ── */}
@@ -711,12 +823,20 @@ export default function RetailProductManager() {
               className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:border-[#ff4b86] transition-colors group relative"
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-0.5 rounded z-10">
-                  {product.retail_category}{" "}
-                  {product.retail_categories?.name
-                    ? `/ ${product.retail_categories.name}`
-                    : ""}
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-0.5 rounded z-10 w-fit">
+                    {product.retail_category}{" "}
+                    {product.retail_categories?.name
+                      ? `/ ${product.retail_categories.name}`
+                      : ""}
+                  </span>
+                  {!product.retail_category_id && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-100 text-orange-600 px-2 py-0.5 rounded z-10 w-fit flex items-center gap-1">
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      No Category
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-1 z-10">
                   <button
                     onClick={() => openEditModal(product)}
