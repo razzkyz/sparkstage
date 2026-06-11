@@ -36,7 +36,7 @@ function extractPaymentTypeFromInvoice(invoiceNumber: string): PaymentType | nul
  * This prevents product invoices from being applied to ticket orders
  */
 function validatePaymentTypeMatch(
-  foundOrderType: 'product' | 'ticket',
+  foundOrderType: PaymentType,
   invoicePaymentType: PaymentType | null,
   orderNumber: string,
 ): boolean {
@@ -252,7 +252,7 @@ function buildNotificationDiagnostics(params: {
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req, { allowAllOrigins: true })
   if (corsResponse) return corsResponse
   const corsHeaders = getCorsHeaders(req, { allowAllOrigins: true })
@@ -933,7 +933,7 @@ serve(async (req) => {
       // ─────────────────────────────────────────────
       // Trigger n8n → kirim WhatsApp invoice
       // ─────────────────────────────────────────────
-      const N8N_WEBHOOK_URL = Deno.env.get("N8N_INVOICE_WEBHOOK_URL");
+      const N8N_WEBHOOK_URL = (globalThis as { Deno?: { env?: { get?: (key: string) => string | undefined } } }).Deno?.env?.get?.("N8N_INVOICE_WEBHOOK_URL");
 
       // Normalize phone: 08xxx → 628xxx, +628xxx → 628xxx
       function normalizePhoneID(raw: string): string {
