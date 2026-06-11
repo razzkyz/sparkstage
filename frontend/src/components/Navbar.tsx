@@ -82,7 +82,7 @@ const Navbar = () => {
       path.startsWith("/chamr-bar")
     )
       return "shop";
-    if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
+    // if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
       return "dressing-room";
     if (path.startsWith("/news")) return "news";
     if (path.startsWith("/booking")) return "booking";
@@ -98,7 +98,7 @@ const Navbar = () => {
       isPink: true,
       icon: Ticket,
     },
-    { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
+    // { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
     { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
