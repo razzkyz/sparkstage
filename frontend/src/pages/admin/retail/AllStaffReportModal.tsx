@@ -211,38 +211,44 @@ export default function AllStaffReportModal({ orders, onClose }: AllStaffReportM
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-350px)]">
+        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 280px)' }}>
           
           {/* Summary Box - hanya tampil jika filter aktif */}
           {isFilterApplied && totalDays && (
-            <div className="mb-6 bg-gradient-to-br from-purple-50 to-indigo-100 border-2 border-purple-300 rounded-2xl p-6 text-center">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <span className="material-symbols-outlined text-purple-600 text-[24px]">summarize</span>
-                <h3 className="text-lg font-black text-purple-900 uppercase">Total Keseluruhan</h3>
-              </div>
-              <p className="text-sm text-purple-700 font-medium mb-4">
-                Periode: {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
-                {' s/d '}
-                {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-              <div className="space-y-2 mb-4">
-                <p className="text-sm font-semibold text-purple-800">
-                  Total Staff: <span className="font-black">{totalStaff} orang</span>
-                </p>
-                <p className="text-sm font-semibold text-purple-800">
-                  Total Hari: <span className="font-black">{totalDays} hari</span>
-                </p>
-                <p className="text-sm font-semibold text-purple-800">
-                  Total Transaksi: <span className="font-black">{totalOrders} transaksi</span>
-                </p>
-                <p className="text-sm font-semibold text-purple-800">
-                  Total Kejual: <span className="font-black">{totalQuantity} Item</span>
+            <div className="mb-6 bg-gradient-to-br from-purple-50 to-indigo-100 border-2 border-purple-300 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-purple-600 text-[20px]">summarize</span>
+                  <h3 className="text-base font-black text-purple-900 uppercase">Total Keseluruhan</h3>
+                </div>
+                <p className="text-xs text-purple-700 font-medium">
+                  {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                  {' s/d '}
+                  {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
-              <div className="pt-4 border-t-2 border-purple-300">
-                <p className="text-3xl font-black text-purple-600">
-                  Rp {formatCurrency(totalRevenue)}
-                </p>
+              
+              <div className="grid grid-cols-5 gap-3 items-center">
+                <div className="text-center">
+                  <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Staff</p>
+                  <p className="text-xl font-black text-purple-900">{totalStaff}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Hari</p>
+                  <p className="text-xl font-black text-purple-900">{totalDays}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Transaksi</p>
+                  <p className="text-xl font-black text-purple-900">{totalOrders}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Item</p>
+                  <p className="text-xl font-black text-purple-900">{totalQuantity}</p>
+                </div>
+                <div className="text-center bg-purple-600 rounded-xl py-2 px-3">
+                  <p className="text-xs text-white font-semibold uppercase mb-1">Total</p>
+                  <p className="text-lg font-black text-white">Rp {formatCurrency(totalRevenue)}</p>
+                </div>
               </div>
             </div>
           )}
@@ -269,16 +275,16 @@ export default function AllStaffReportModal({ orders, onClose }: AllStaffReportM
               <p className="text-gray-500 font-medium">Tidak ada produk yang terjual</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-gray-200">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">No</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Produk</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Variant</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-600">Qty</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600">Harga Satuan</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600">Subtotal</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 w-16">No</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 min-w-[250px]">Produk</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 min-w-[150px]">Variant</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-600 w-24">Qty</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600 w-36">Harga Satuan</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600 w-36">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">

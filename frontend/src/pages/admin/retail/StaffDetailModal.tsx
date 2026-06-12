@@ -246,16 +246,16 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
               <p className="text-gray-500 font-medium">Tidak ada produk yang terjual</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-gray-200">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">No</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Produk</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Variant</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-600">Qty</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600">Harga Satuan</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600">Subtotal</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 w-16">No</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 min-w-[250px]">Produk</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 min-w-[150px]">Variant</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-600 w-24">Qty</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600 w-36">Harga Satuan</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600 w-36">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">

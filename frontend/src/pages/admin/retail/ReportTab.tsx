@@ -8,6 +8,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import StaffDetailModal from './StaffDetailModal';
 import AllStaffReportModal from './AllStaffReportModal';
+import SalesReportView from './SalesReportView';
 
 type ReportTabProps = {
   orders: OrderSummaryRow[];
@@ -44,7 +45,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<OrderSummaryRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState<'staff' | 'print'>('staff');
+  const [viewMode, setViewMode] = useState<'staff' | 'print' | 'report-view'>('staff');
   const [selectedStaffReport, setSelectedStaffReport] = useState<StaffReport | null>(null);
   const [showAllStaffReport, setShowAllStaffReport] = useState(false);
 
@@ -185,6 +186,17 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
           }`}
         >
           Staff
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('report-view')}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            viewMode === 'report-view'
+              ? 'bg-[#ff4b86] text-white shadow-sm'
+              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          Laporan Penjualan
         </button>
         {/* PRINT_FEATURE_DISABLED - print tab button (komment untuk disable)
         <button
@@ -348,6 +360,8 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
             </div>
           );
         })
+      ) : viewMode === 'report-view' ? (
+        <SalesReportView orders={claimedOrders} />
       ) : null}
       {/* PRINT_FEATURE_DISABLED - print view rendering disabled:
       ) : isLoadingPrintOrders ? (
