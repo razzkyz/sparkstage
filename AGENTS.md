@@ -196,6 +196,17 @@ Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/a
 - ✅ Visual badges on product cards for status and missing category
 - Documentation: `RETAIL_PRODUCT_FILTERS_FEATURE.md`
 
+**Retail Categories RLS (NEW 2026-06-12):** `retail_categories` table
+- Status: ✅ RLS Enabled and Configured
+- Migration file: `20260612000000_create_retail_categories_with_rls.sql`
+- Documentation: `docs/runbooks/retail-categories-rls.md`
+- **Access Control:**
+  - Public/Anonymous: View active categories only
+  - Admin roles: Full CRUD access to all categories
+  - Non-admin authenticated: View active categories only
+- **Departments:** `glam`, `charmbar`, `sparkclub`
+- **Features:** Hierarchical (parent_id), slug-based URLs, soft delete (is_active)
+
 **Common Admin Tasks:**
 - Find products needing categories: Filter by "No Category"
 - Review disabled products: Filter by "Inactive"
