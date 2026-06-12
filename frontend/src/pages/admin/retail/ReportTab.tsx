@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import StaffDetailModal from './StaffDetailModal';
 import AllStaffReportModal from './AllStaffReportModal';
 import SalesReportView from './SalesReportView';
+import SimpleReportModal from './SimpleReportModal';
 
 type ReportTabProps = {
   orders: OrderSummaryRow[];
@@ -48,6 +49,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
   const [viewMode, setViewMode] = useState<'staff' | 'print' | 'report-view'>('staff');
   const [selectedStaffReport, setSelectedStaffReport] = useState<StaffReport | null>(null);
   const [showAllStaffReport, setShowAllStaffReport] = useState(false);
+  const [showSimpleReport, setShowSimpleReport] = useState(false);
 
   const claimedOrders = orders.filter((o) => o.sales_staff_name);
 
@@ -164,14 +166,14 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
         </div>
       </div>
 
-      {/* Button Laporan Semua */}
+      {/* Button Laporan Staff */}
       <div className="mt-6 flex justify-center">
         <button
-          onClick={() => setShowAllStaffReport(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all"
+          onClick={() => setShowSimpleReport(true)}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all"
         >
-          <span className="material-symbols-outlined text-[20px]">summarize</span>
-          Laporan Semua Staff
+          <span className="material-symbols-outlined text-[20px]">assignment</span>
+          Laporan Staff
         </button>
       </div>
 
@@ -441,6 +443,13 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
         <AllStaffReportModal
           orders={claimedOrders}
           onClose={() => setShowAllStaffReport(false)}
+        />
+      )}
+
+      {showSimpleReport && (
+        <SimpleReportModal
+          orders={claimedOrders}
+          onClose={() => setShowSimpleReport(false)}
         />
       )}
     </div>
