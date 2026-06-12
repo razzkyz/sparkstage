@@ -839,7 +839,7 @@ export async function ensureProductPaidSideEffects(params: {
     run: async () => {
       const { data: orderItems, error: orderItemsError } = await supabase
         .from('order_product_items')
-        .select('product_variant_id, quantity')
+        .select('product_variant_id, retail_product_id, quantity')
         .eq('order_product_id', order.id)
 
       if (orderItemsError) {
@@ -849,7 +849,9 @@ export async function ensureProductPaidSideEffects(params: {
       let stockValidationFailed = false
       const stockIssues: string[] = []
 
-      if (Array.isArray(orderItems)) {
+      const isRetailOrder = Array.isArray(orderItems) && orderItems.length > 0 && Boolean((orderItems[0] as any).retail_product_id);
+
+      if (Array.isArray(orderItems) && !isRetailOrder) {
         const variantIds = Array.from(
           new Set(
             orderItems
@@ -1025,7 +1027,7 @@ export async function releaseProductReservedStockIfNeeded(params: {
     run: async () => {
       const { data: orderItems, error: orderItemsError } = await supabase
         .from('order_product_items')
-        .select('product_variant_id, quantity')
+        .select('product_variant_id, retail_product_id, quantity')
         .eq('order_product_id', order.id)
 
       if (orderItemsError) {
@@ -1036,6 +1038,24 @@ export async function releaseProductReservedStockIfNeeded(params: {
         return { released: false }
       }
 
+      const isRetailOrder = Boolean((orderItems as any[])[0]?.retail_product_id)
+
+      if (isRetailOrder) {
+        for (const row of orderItems as any[]) {
+          const retailId = Number(row.retail_product_id)
+          const qty = Math.max(1, Math.floor(Number(row.quantity)))
+          if (!retailId || qty <= 0) continue
+
+          const { data: released, error: releaseError } = await supabase.rpc('release_retail_stock', {
+            p_retail_id: retailId,
+            p_quantity: qty,
+          })
+
+          if (releaseError || released !== true) {
+            throw new Error(releaseError?.message ?? `Failed to release stock for retail product ${retailId}`)
+          }
+        }
+      } else {
       const qtyByVariantId = new Map<number, number>()
       for (const row of orderItems as ProductOrderItem[]) {
         const variantId = Number((row as { product_variant_id: number | string }).product_variant_id)
@@ -1078,6 +1098,8 @@ export async function releaseProductReservedStockIfNeeded(params: {
           throw new Error(releaseError?.message ?? `Failed to release stock for variant ${variantId}`)
         }
       }
+
+      } // end else block for isRetailOrder
 
       const { error: markReleasedError } = await supabase
         .from('order_products')

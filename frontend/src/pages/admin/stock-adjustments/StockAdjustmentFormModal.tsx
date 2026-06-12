@@ -5,7 +5,7 @@ import {
   type StockAdjustmentItem, 
   type StockAdjustment 
 } from '../../../hooks/useStockOpnameNew';
-import { useInventoryProducts } from '../../../hooks/useInventoryProducts';
+import { useAdminRetailProducts } from '../../../hooks/useAdminRetailProducts';
 import { useToast } from '../../../components/Toast';
 import { VariantSelectorWithSearch } from '../stock-opening/VariantSelectorWithSearch';
 import { supabase } from '../../../lib/supabase';
@@ -19,6 +19,7 @@ interface StockAdjustmentFormModalProps {
 
 interface AdjustmentItemRow extends StockAdjustmentItem {
   tempId: string;
+  retail_product_id: number;
   product_name?: string;
   variant_name?: string;
   variant_sku?: string;
@@ -40,7 +41,7 @@ export const StockAdjustmentFormModal = ({ isOpen, onClose, onSuccess, editingAd
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: productsData } = useInventoryProducts('');
+  const { products: productsData } = useAdminRetailProducts();
   
   // Load data when editing
   useEffect(() => {
@@ -55,36 +56,32 @@ export const StockAdjustmentFormModal = ({ isOpen, onClose, onSuccess, editingAd
           setLocation(editingAdjustment.location);
           setNotes(editingAdjustment.notes || '');
           
-          // Fetch items from stock_adjustment_items table
+          // Fetch items from retail_stock_adjustment_items table
           const { data: itemsData, error } = await supabase
-            .from('stock_adjustment_items')
+            .from('retail_stock_adjustment_items')
             .select(`
               *,
-              products!stock_adjustment_items_product_id_fkey (
-                id,
-                name
-              ),
-              product_variants!stock_adjustment_items_variant_id_fkey (
+              product_retail!retail_stock_adjustment_items_retail_product_id_fkey (
                 id,
                 name,
-                sku
+                variant,
+                slug
               )
             `)
-            .eq('stock_adjustment_id', editingAdjustment.id);
+            .eq('retail_stock_adjustment_id', editingAdjustment.id);
 
           if (error) throw error;
 
           if (itemsData && itemsData.length > 0) {
             const loadedItems: AdjustmentItemRow[] = itemsData.map((item: any, index: number) => ({
               tempId: `existing-${item.id}-${index}`,
-              product_id: item.product_id,
-              variant_id: item.variant_id,
+              retail_product_id: item.retail_product_id,
               quantity_change: item.quantity_change,
               unit: item.unit,
               notes: item.notes || '',
-              product_name: item.products?.name || 'Unknown',
-              variant_name: item.product_variants?.name || 'Unknown',
-              variant_sku: item.product_variants?.sku || '',
+              product_name: item.product_retail?.name || 'Unknown',
+              variant_name: item.product_retail?.variant || 'Unknown',
+              variant_sku: item.product_retail?.slug || '',
             }));
             setItems(loadedItems);
           }
@@ -108,28 +105,26 @@ export const StockAdjustmentFormModal = ({ isOpen, onClose, onSuccess, editingAd
     loadAdjustmentDetail();
   }, [editingAdjustment, isOpen, showToast]);
   
-  const variants = productsData?.data?.map((p) => ({
-    variant_id: p.variant_id,
-    product_id: p.product_id,
-    product_name: p.product_name,
-    variant_name: p.variant_name,
-    variant_sku: p.variant_sku,
-    current_stock: p.current_stock,
+  const variants = productsData?.map((p) => ({
+    variant_id: p.id,
+    product_name: p.name,
+    variant_name: p.variant || '-',
+    variant_sku: p.slug,
+    current_stock: p.stock,
   })) || [];
 
   const handleAddItem = (variantId: number) => {
     const variant = variants.find((v) => v.variant_id === variantId);
     if (!variant) return;
 
-    if (items.some((item) => item.variant_id === variantId)) {
-      showToast('warning', 'Variant sudah ditambahkan');
+    if (items.some((item) => item.retail_product_id === variantId)) {
+      showToast('warning', 'Produk sudah ditambahkan');
       return;
     }
 
     const newItem: AdjustmentItemRow = {
       tempId: `temp-${Date.now()}`,
-      product_id: variant.product_id,
-      variant_id: variant.variant_id,
+      retail_product_id: variant.variant_id,
       quantity_change: 0,
       unit: 'pcs',
       notes: '',
@@ -178,7 +173,10 @@ export const StockAdjustmentFormModal = ({ isOpen, onClose, onSuccess, editingAd
     }
 
     try {
-      const itemsData = items.map(({ tempId, product_name, variant_name, variant_sku, ...rest }) => rest);
+      const itemsData = items.map(({ tempId, product_name, variant_name, variant_sku, ...rest }) => ({
+        ...rest,
+        retail_product_id: rest.retail_product_id
+      }));
       
       if (editingAdjustment) {
         // Update existing adjustment

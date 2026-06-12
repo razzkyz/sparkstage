@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
           productName: product.name,
           productImageUrl:
             selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
-          variantId: selectedVariant.id,
+          retailProductId: selectedVariant.id,
           variantName: selectedVariant.name,
           unitPrice: selectedVariant.price,
         },
@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
       productName: product.name,
       productImageUrl:
         selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
-      variantId: selectedVariant.id,
+      retailProductId: selectedVariant.id,
       variantName: selectedVariant.name,
       unitPrice: selectedVariant.price,
       quantity: 1,

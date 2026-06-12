@@ -33,7 +33,7 @@ export function CheckoutSummaryCard({
       <div className="space-y-4">
         {orderItems.map((item) => (
           <div
-            key={item.product_variant_id}
+            key={item.retail_product_id}
             className="flex justify-between items-start border-b border-dashed border-rose-100 pb-4 last:border-0 last:pb-0"
           >
             <div>

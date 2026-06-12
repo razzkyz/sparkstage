@@ -26,22 +26,22 @@ Aturan mutlak yang **TIDAK BOLEH DILANGGAR** oleh AI maupun Developer selama pro
 ## 🗺️ Tahapan Eksekusi (Roadmap)
 
 ### Phase 1: Persiapan Database (Aman untuk Production)
-- [ ] Buat migrasi SQL untuk menambahkan kolom `retail_product_id` (NULLABLE) pada tabel `order_product_items`.
-- [ ] Buat/sesuaikan fungsi RPC untuk pengurangan & pengembalian stok (misal: `reserve_retail_stock` dan `release_retail_stock`) yang menargetkan kolom `stock` di `product_retail`.
+- [x] Buat migrasi SQL untuk menambahkan kolom `retail_product_id` (NULLABLE) pada tabel `order_product_items`.
+- [x] Buat/sesuaikan fungsi RPC untuk pengurangan & pengembalian stok (misal: `reserve_retail_stock` dan `release_retail_stock`) yang menargetkan kolom `stock` di `product_retail`.
 
 ### Phase 2: Persiapan Edge Functions (Backend)
-- [ ] Duplikasi Edge Function `create-doku-product-checkout` menjadi `create-doku-retail-checkout`.
-- [ ] Modifikasi `create-doku-retail-checkout` agar mengambil harga, stok, dan berat langsung dari `product_retail`.
-- [ ] Modifikasi webhook handler (atau buat penyesuaian yang aman di `doku-webhook`) agar pesanan yang memiliki `retail_product_id` memotong stok dari tabel `product_retail`.
+- [x] Duplikasi Edge Function `create-doku-product-checkout` menjadi `create-doku-retail-checkout`.
+- [x] Modifikasi `create-doku-retail-checkout` agar mengambil harga, stok, dan berat langsung dari `product_retail`.
+- [x] Modifikasi webhook handler (atau buat penyesuaian yang aman di `doku-webhook`) agar pesanan yang memiliki `retail_product_id` memotong stok dari tabel `product_retail`.
 
 ### Phase 3: Refactor Frontend (Dikerjakan di Branch Khusus)
-- [ ] **Keranjang (Cart):** Ubah state keranjang belanja (Zustand/Context) agar menyimpan `product_retail.id` bukan `product_variants.id`.
-- [ ] **Halaman Checkout:** Arahkan pemanggilan API checkout ke Edge Function baru (`create-doku-retail-checkout`).
-- [ ] **Halaman Toko (Shop):** Pastikan halaman `/shop` dan `/product/:slug` 100% menggunakan data dari `product_retail` dan `retail_categories`.
+- [x] **Keranjang (Cart):** Ubah state keranjang belanja (Zustand/Context) agar menyimpan `product_retail.id` bukan `product_variants.id`.
+- [x] **Halaman Checkout:** Arahkan pemanggilan API checkout ke Edge Function baru (`create-doku-retail-checkout`).
+- [x] **Halaman Toko (Shop):** Pastikan halaman `/shop` dan `/product/:slug` 100% menggunakan data dari `product_retail` dan `retail_categories`.
 
 ### Phase 4: Pembaruan Sistem Stok Internal (Admin)
-- [ ] Refactor fitur **Stock Opening**, **Stock Adjustments**, dan **Stock Opname** di `/admin/stock-*` agar semuanya membaca dan melakukan mutasi data pada tabel `product_retail`.
-- [ ] Pastikan sistem *Realtime Auto-Refresh* diarahkan ke tabel `product_retail`.
+- [x] Refactor fitur **Stock Opening**, **Stock Adjustments**, dan **Stock Opname** di `/admin/stock-*` agar semuanya membaca dan melakukan mutasi data pada tabel `product_retail`.
+- [x] Pastikan sistem *Realtime Auto-Refresh* diarahkan ke tabel `product_retail`.
 
 ### Phase 5: Final Review & Go-Live
 - [ ] Uji coba transaksi *end-to-end* (Cart -> Checkout -> DOKU Webhook -> Stok Berkurang) di Local/Staging menggunakan Sandbox.

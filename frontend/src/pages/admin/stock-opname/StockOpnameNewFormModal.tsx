@@ -43,9 +43,8 @@ export const StockOpnameNewFormModal = ({
   useEffect(() => {
     if (systemStockData && systemStockData.length > 0 && items.length === 0) {
       const newItems: OpnameItemRow[] = systemStockData.map((stock: SystemStockCalculation) => ({
-        tempId: `temp-${stock.variant_id}`,
-        product_id: stock.product_id,
-        variant_id: stock.variant_id,
+        tempId: `temp-${stock.retail_product_id}`,
+        retail_product_id: stock.retail_product_id,
         opening_stock: stock.opening_stock,
         sold_quantity: stock.sold_quantity,
         adjustment_quantity: stock.adjustment_quantity,
@@ -54,9 +53,9 @@ export const StockOpnameNewFormModal = ({
         variance_reason: '',
         unit: 'pcs',
         notes: '',
-        product_name: stock.product_name,
-        variant_name: stock.variant_name,
-        variant_sku: stock.variant_sku,
+        product_name: stock.name,
+        variant_name: stock.variant,
+        variant_sku: stock.slug,
       }));
       setItems(newItems);
     }

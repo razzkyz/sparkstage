@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCreateStockOpening, useUpdateStockOpening, useStockOpeningDetail, type StockOpeningItem, type StockOpening } from '../../../hooks/useStockOpnameNew';
-import { useInventoryProducts } from '../../../hooks/useInventoryProducts';
+import { useAdminRetailProducts } from '../../../hooks/useAdminRetailProducts';
 import { useToast } from '../../../components/Toast';
 import { VariantSelectorWithSearch } from './VariantSelectorWithSearch';
 
@@ -13,6 +13,7 @@ interface StockOpeningFormModalProps {
 
 interface OpeningItemRow extends StockOpeningItem {
   tempId: string;
+  retail_product_id: number;
   product_name?: string;
   variant_name?: string;
   variant_sku?: string;
@@ -29,7 +30,7 @@ export const StockOpeningFormModal = ({ isOpen, onClose, onSuccess, editingOpeni
   const [items, setItems] = useState<OpeningItemRow[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: productsData, isLoading: isLoadingProducts, error: productsError } = useInventoryProducts('');
+  const { products: productsData, isLoading: isLoadingProducts, error: productsError } = useAdminRetailProducts();
   
   // Fetch detail if editing
   const { data: openingDetail } = useStockOpeningDetail(editingOpening?.id || null);
@@ -45,8 +46,7 @@ export const StockOpeningFormModal = ({ isOpen, onClose, onSuccess, editingOpeni
       if (openingDetail.items && openingDetail.items.length > 0) {
         const loadedItems: OpeningItemRow[] = openingDetail.items.map((item, index) => ({
           tempId: `existing-${item.id}-${index}`,
-          product_id: item.product_id,
-          variant_id: item.variant_id,
+          retail_product_id: item.retail_product_id,
           opening_quantity: item.opening_quantity,
           unit: item.unit,
           notes: item.notes || '',
@@ -65,13 +65,12 @@ export const StockOpeningFormModal = ({ isOpen, onClose, onSuccess, editingOpeni
     }
   }, [editingOpening, openingDetail, isOpen]);
   
-  const variants = productsData?.data?.map((p) => ({
-    variant_id: p.variant_id,
-    product_id: p.product_id,
-    product_name: p.product_name,
-    variant_name: p.variant_name,
-    variant_sku: p.variant_sku,
-    current_stock: p.current_stock,
+  const variants = productsData?.map((p) => ({
+    variant_id: p.id,
+    product_name: p.name,
+    variant_name: p.variant || '-',
+    variant_sku: p.slug,
+    current_stock: p.stock,
   })) || [];
 
   // Filter variants based on search query
@@ -87,15 +86,14 @@ export const StockOpeningFormModal = ({ isOpen, onClose, onSuccess, editingOpeni
     if (!variant) return;
 
     // Check if already added
-    if (items.some((item) => item.variant_id === variantId)) {
-      showToast('warning', 'Variant sudah ditambahkan');
+    if (items.some((item) => item.retail_product_id === variantId)) {
+      showToast('warning', 'Produk sudah ditambahkan');
       return;
     }
 
     const newItem: OpeningItemRow = {
       tempId: `temp-${Date.now()}`,
-      product_id: variant.product_id,
-      variant_id: variant.variant_id,
+      retail_product_id: variant.variant_id,
       opening_quantity: 0,
       unit: 'pcs',
       notes: '',
@@ -138,7 +136,10 @@ export const StockOpeningFormModal = ({ isOpen, onClose, onSuccess, editingOpeni
     }
 
     try {
-      const itemsData = items.map(({ tempId, product_name, variant_name, variant_sku, ...rest }) => rest);
+      const itemsData = items.map(({ tempId, product_name, variant_name, variant_sku, ...rest }) => ({
+        ...rest,
+        retail_product_id: rest.retail_product_id
+      }));
       
       if (editingOpening) {
         // Update existing opening

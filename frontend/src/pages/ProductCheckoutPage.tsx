@@ -34,9 +34,9 @@ export default function ProductCheckoutPage() {
   // Direct Buy handling
   const directItem = location.state?.directItem as any | undefined;
   const allItems = directItem ? [directItem] : cartItems;
-  const removeItem = (variantId: number) => {
+  const removeItem = (retailProductId: number) => {
     if (!directItem) {
-      removeCartItem(variantId);
+      removeCartItem(retailProductId);
     }
   };
 
@@ -83,7 +83,7 @@ export default function ProductCheckoutPage() {
     cashierDisabled,
   } = useProductCheckoutController({
     allItems,
-    selectedVariantIds: directItem ? [directItem.variantId] : (location.state?.selectedVariantIds as number[] | undefined),
+    selectedVariantIds: directItem ? [directItem.retailProductId] : (location.state?.selectedVariantIds as number[] | undefined),
     user,
     sessionToken: session?.access_token,
     initialized,

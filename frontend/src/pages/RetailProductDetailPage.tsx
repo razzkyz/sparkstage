@@ -45,7 +45,7 @@ export default function RetailProductDetailPage() {
           productId: product.id,
           productName: product.name,
           productImageUrl: imageUrl,
-          variantId: 0, // Fallback variant ID for retail products
+          retailProductId: 0, // Fallback variant ID for retail products
           variantName: product.variant || "Default",
           unitPrice: product.price,
         },
@@ -73,7 +73,7 @@ export default function RetailProductDetailPage() {
       productId: product.id,
       productName: product.name,
       productImageUrl: imageUrl,
-      variantId: 0,
+      retailProductId: 0,
       variantName: product.variant || "Default",
       unitPrice: product.price,
       quantity: 1,

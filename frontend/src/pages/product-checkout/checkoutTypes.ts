@@ -44,7 +44,7 @@ export type ValidateVoucherResult = {
 };
 
 export type CheckoutOrderItem = {
-  product_variant_id: number;
+  retail_product_id: number;
   product_name: string;
   variant_name: string;
   quantity: number;

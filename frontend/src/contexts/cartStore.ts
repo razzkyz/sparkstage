@@ -4,7 +4,7 @@ export type CartItem = {
   productId: number;
   productName: string;
   productImageUrl?: string;
-  variantId: number;
+  retailProductId: number;
   variantName: string;
   unitPrice: number;
   quantity: number;
@@ -19,8 +19,8 @@ export type CartContextValue = {
   totalQuantity: number;
   subtotal: number;
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  setQuantity: (variantId: number, quantity: number) => void;
-  removeItem: (variantId: number) => void;
+  setQuantity: (retailProductId: number, quantity: number) => void;
+  removeItem: (retailProductId: number) => void;
   clear: () => void;
 };
 

@@ -493,7 +493,7 @@ export default function CharmBar() {
           productId: product.id,
           productName: product.name,
           productImageUrl: product.image,
-          variantId: product.defaultVariantId,
+          retailProductId: product.defaultVariantId,
           variantName: product.defaultVariantName,
           unitPrice: product.price,
         },

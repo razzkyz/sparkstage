@@ -8,7 +8,7 @@ import BeautyPosterInteractive from '../components/beauty/BeautyPosterInteractiv
 type QuickViewState = {
   open: boolean;
   productId: number | null;
-  variantId: number | null;
+  retailProductId: number | null;
 };
 
 export default function BeautyPosterPage() {
@@ -17,12 +17,12 @@ export default function BeautyPosterPage() {
   const poster = data?.poster ?? null;
   const tags = data?.tags ?? [];
 
-  const [quickView, setQuickView] = useState<QuickViewState>({ open: false, productId: null, variantId: null });
+  const [quickView, setQuickView] = useState<QuickViewState>({ open: false, productId: null, retailProductId: null });
 
   const openQuickView = (tag: BeautyPosterTag) => {
     const pv = tag.product_variant;
     if (!pv?.product?.id) return;
-    setQuickView({ open: true, productId: pv.product.id, variantId: pv.id });
+    setQuickView({ open: true, productId: pv.product.id, retailProductId: pv.id });
   };
 
   if (isLoading) {
@@ -89,8 +89,8 @@ export default function BeautyPosterPage() {
         <ProductQuickViewModal
           open={quickView.open}
           productId={quickView.productId}
-          initialVariantId={quickView.variantId}
-          onClose={() => setQuickView({ open: false, productId: null, variantId: null })}
+          initialVariantId={quickView.retailProductId}
+          onClose={() => setQuickView({ open: false, productId: null, retailProductId: null })}
         />
       </div>
     </PageTransition>

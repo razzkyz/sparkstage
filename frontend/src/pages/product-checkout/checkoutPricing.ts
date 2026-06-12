@@ -3,7 +3,7 @@ import type { CheckoutOrderItem } from './checkoutTypes';
 
 export function selectCheckoutItems(allItems: CartItem[], selectedVariantIds?: number[]) {
   if (selectedVariantIds && Array.isArray(selectedVariantIds) && selectedVariantIds.length > 0) {
-    return allItems.filter((item) => selectedVariantIds.includes(item.variantId));
+    return allItems.filter((item) => selectedVariantIds.includes(item.retailProductId));
   }
 
   return allItems;
@@ -18,7 +18,7 @@ export function calculateSubtotal(items: CartItem[]) {
 
 export function mapCheckoutOrderItems(items: CartItem[]): CheckoutOrderItem[] {
   return items.map((item) => ({
-    product_variant_id: item.variantId,
+    retail_product_id: item.retailProductId,
     product_name: item.productName,
     variant_name: item.variantName,
     quantity: item.quantity,

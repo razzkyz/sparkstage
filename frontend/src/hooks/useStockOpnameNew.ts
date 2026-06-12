@@ -7,8 +7,7 @@ import { useEffect } from 'react';
 // ============================================
 
 export interface StockOpeningItem {
-  product_id: number;
-  variant_id: number;
+  retail_product_id: number;
   opening_quantity: number;
   unit?: string;
   notes?: string;
@@ -31,7 +30,7 @@ export interface StockOpening {
 export interface StockOpeningDetail extends StockOpening {
   items: Array<{
     id: number;
-    product_id: number;
+    retail_product_id: number;
     product_name: string;
     product_sku: string;
     variant_id: number;
@@ -44,8 +43,7 @@ export interface StockOpeningDetail extends StockOpening {
 }
 
 export interface StockAdjustmentItem {
-  product_id: number;
-  variant_id: number;
+  retail_product_id: number;
   quantity_change: number;
   unit?: string;
   notes?: string;
@@ -67,8 +65,7 @@ export interface StockAdjustment {
 }
 
 export interface StockOpnameItem {
-  product_id: number;
-  variant_id: number;
+  retail_product_id: number;
   opening_stock: number;
   sold_quantity: number;
   adjustment_quantity: number;
@@ -97,7 +94,7 @@ export interface StockOpname {
 export interface StockOpnameDetail extends StockOpname {
   items: Array<{
     id: number;
-    product_id: number;
+    retail_product_id: number;
     product_name: string;
     product_sku: string;
     variant_id: number;
@@ -116,11 +113,10 @@ export interface StockOpnameDetail extends StockOpname {
 }
 
 export interface SystemStockCalculation {
-  variant_id: number;
-  product_id: number;
-  product_name: string;
-  variant_name: string;
-  variant_sku: string;
+  retail_product_id: number;
+  name: string;
+  slug: string;
+  variant: string;
   opening_stock: number;
   sold_quantity: number;
   adjustment_quantity: number;
@@ -137,7 +133,7 @@ export const useStockOpeningList = (limit = 50, offset = 0) => {
   const query = useQuery({
     queryKey: ['stock-openings', limit, offset],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_stock_opening_list', {
+      const { data, error } = await supabase.rpc('get_retail_stock_opening_list', {
         p_limit: limit,
         p_offset: offset,
       });
@@ -161,7 +157,7 @@ export const useStockOpeningList = (limit = 50, offset = 0) => {
         {
           event: '*', // Listen to all events: INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'stock_openings',
+          table: 'retail_stock_openings',
         },
         () => {
           console.log('🔄 Stock opening changed, refreshing...');
@@ -184,7 +180,7 @@ export const useStockOpeningDetail = (openingId: number | null) => {
     queryFn: async () => {
       if (!openingId) return null;
 
-      const { data, error } = await supabase.rpc('get_stock_opening_detail', {
+      const { data, error } = await supabase.rpc('get_retail_stock_opening_detail', {
         p_opening_id: openingId,
       });
 
@@ -205,7 +201,7 @@ export const useCreateStockOpening = () => {
       notes?: string;
       items: StockOpeningItem[];
     }) => {
-      const { data, error } = await supabase.rpc('create_stock_opening', {
+      const { data, error } = await supabase.rpc('create_retail_stock_opening', {
         p_opening_date: params.opening_date,
         p_location: params.location || 'SparkStage55',
         p_notes: params.notes || null,
@@ -235,7 +231,7 @@ export const useStockAdjustmentList = (limit = 50, offset = 0) => {
   const query = useQuery({
     queryKey: ['stock-adjustments', limit, offset],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_stock_adjustment_list', {
+      const { data, error } = await supabase.rpc('get_retail_stock_adjustment_list', {
         p_limit: limit,
         p_offset: offset,
       });
@@ -259,7 +255,7 @@ export const useStockAdjustmentList = (limit = 50, offset = 0) => {
         {
           event: '*', // Listen to all events: INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'stock_adjustments',
+          table: 'retail_stock_adjustments',
         },
         () => {
           console.log('🔄 Stock adjustment changed, refreshing...');
@@ -288,7 +284,7 @@ export const useCreateStockAdjustment = () => {
       location?: string;
       items: StockAdjustmentItem[];
     }) => {
-      const { data, error } = await supabase.rpc('create_stock_adjustment', {
+      const { data, error } = await supabase.rpc('create_retail_stock_adjustment', {
         p_adjustment_date: params.adjustment_date,
         p_adjustment_type: params.adjustment_type,
         p_reason: params.reason,
@@ -321,7 +317,7 @@ export const useStockOpnameList = (limit = 50, offset = 0) => {
   const query = useQuery({
     queryKey: ['stock-opnames', limit, offset],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_stock_opname_list', {
+      const { data, error } = await supabase.rpc('get_retail_stock_opname_list', {
         p_limit: limit,
         p_offset: offset,
       });
@@ -345,7 +341,7 @@ export const useStockOpnameList = (limit = 50, offset = 0) => {
         {
           event: '*', // Listen to all events: INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'stock_opnames',
+          table: 'retail_stock_opnames',
         },
         () => {
           console.log('🔄 Stock opname changed, refreshing...');
@@ -368,7 +364,7 @@ export const useStockOpnameDetail = (opnameId: number | null) => {
     queryFn: async () => {
       if (!opnameId) return null;
 
-      const { data, error } = await supabase.rpc('get_stock_opname_detail', {
+      const { data, error } = await supabase.rpc('get_retail_stock_opname_detail', {
         p_opname_id: opnameId,
       });
 
@@ -388,7 +384,7 @@ export const useCalculateSystemStock = (opnameDate: string | null, location = 'S
       console.log('📊 Calculating system stock for:', { opnameDate, location });
 
       try {
-        const { data, error } = await supabase.rpc('calculate_system_stock_for_opname', {
+        const { data, error } = await supabase.rpc('calculate_retail_system_stock_for_opname', {
           p_opname_date: opnameDate,
           p_location: location,
         });
@@ -435,7 +431,7 @@ export const useConfirmStockOpening = () => {
     mutationFn: async (openingId: number) => {
       // Update status to confirmed via direct update
       const { data, error } = await supabase
-        .from('stock_openings')
+        .from('retail_stock_openings')
         .update({ status: 'confirmed' })
         .eq('id', openingId)
         .select()
@@ -467,7 +463,7 @@ export const useUpdateStockOpening = () => {
       notes?: string;
       items: StockOpeningItem[];
     }) => {
-      const { data, error } = await supabase.rpc('update_stock_opening', {
+      const { data, error } = await supabase.rpc('update_retail_stock_opening', {
         p_opening_id: params.opening_id,
         p_opening_date: params.opening_date,
         p_location: params.location,
@@ -495,7 +491,7 @@ export const useDeleteStockOpening = () => {
 
   return useMutation({
     mutationFn: async (openingId: number) => {
-      const { data, error } = await supabase.rpc('delete_stock_opening', {
+      const { data, error } = await supabase.rpc('delete_retail_stock_opening', {
         p_opening_id: openingId,
       });
 
@@ -530,7 +526,7 @@ export const useUpdateStockAdjustment = () => {
       location?: string;
       items: StockAdjustmentItem[];
     }) => {
-      const { data, error } = await supabase.rpc('update_stock_adjustment', {
+      const { data, error } = await supabase.rpc('update_retail_stock_adjustment', {
         p_adjustment_id: params.adjustment_id,
         p_adjustment_date: params.adjustment_date,
         p_adjustment_type: params.adjustment_type,
@@ -559,7 +555,7 @@ export const useDeleteStockAdjustment = () => {
 
   return useMutation({
     mutationFn: async (adjustmentId: number) => {
-      const { data, error } = await supabase.rpc('delete_stock_adjustment', {
+      const { data, error } = await supabase.rpc('delete_retail_stock_adjustment', {
         p_adjustment_id: adjustmentId,
       });
 
@@ -586,7 +582,7 @@ export const useDeleteStockOpname = () => {
 
   return useMutation({
     mutationFn: async (opnameId: number) => {
-      const { data, error } = await supabase.rpc('delete_stock_opname', {
+      const { data, error } = await supabase.rpc('delete_retail_stock_opname', {
         p_opname_id: opnameId,
       });
 
@@ -609,7 +605,7 @@ export const useFinalizeStockOpname = () => {
 
   return useMutation({
     mutationFn: async (opnameId: number) => {
-      const { data, error } = await supabase.rpc('finalize_stock_opname', {
+      const { data, error } = await supabase.rpc('finalize_retail_stock_opname', {
         p_opname_id: opnameId,
       });
 
@@ -638,7 +634,7 @@ export const useCreateStockOpname = () => {
       notes?: string;
       items: StockOpnameItem[];
     }) => {
-      const { data, error } = await supabase.rpc('create_stock_opname', {
+      const { data, error } = await supabase.rpc('create_retail_stock_opname', {
         p_opname_date: params.opname_date,
         p_location: params.location || 'SparkStage55',
         p_notes: params.notes || null,

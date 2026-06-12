@@ -20,13 +20,13 @@ export default function CartPage() {
   // Initialize selection with all items on load
   useEffect(() => {
     if (selectedItems.size === 0 && items.length > 0) {
-      setSelectedItems(new Set(items.map((i) => i.variantId)));
+      setSelectedItems(new Set(items.map((i) => i.retailProductId)));
     }
   }, []);
 
   // Clean up selected items that no longer exist in cart
   useEffect(() => {
-    const validVariantIds = new Set(items.map((i) => i.variantId));
+    const validVariantIds = new Set(items.map((i) => i.retailProductId));
     const newSelection = new Set(
       Array.from(selectedItems).filter((id) => validVariantIds.has(id))
     );
@@ -51,13 +51,13 @@ export default function CartPage() {
     if (selectedItems.size === items.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(items.map((i) => i.variantId)));
+      setSelectedItems(new Set(items.map((i) => i.retailProductId)));
     }
   };
 
   const selectedSubtotal = useMemo(() => {
     return items
-      .filter((i) => selectedItems.has(i.variantId))
+      .filter((i) => selectedItems.has(i.retailProductId))
       .reduce((sum, i) => {
         if (i.isRental) {
           // For rentals, unitPrice is total rental cost
@@ -133,20 +133,20 @@ export default function CartPage() {
               ) : (
                 items.map((item) => (
                   <motion.div
-                    key={item.variantId}
+                    key={item.retailProductId}
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className={`group bg-white p-3 sm:p-4 rounded-2xl border shadow-sm hover:shadow-md duration-300 ux-transition-color flex gap-3 sm:gap-6 ${selectedItems.has(item.variantId) ? 'border-[#e63d75]/30 ring-1 ring-[#e63d75]/30' : 'border-gray-100'}`}
+                    className={`group bg-white p-3 sm:p-4 rounded-2xl border shadow-sm hover:shadow-md duration-300 ux-transition-color flex gap-3 sm:gap-6 ${selectedItems.has(item.retailProductId) ? 'border-[#e63d75]/30 ring-1 ring-[#e63d75]/30' : 'border-gray-100'}`}
                   >
                     {/* Checkbox */}
                     <div className="flex items-center">
                       <button
-                        onClick={() => toggleSelection(item.variantId)}
+                        onClick={() => toggleSelection(item.retailProductId)}
                         className="text-gray-400 hover:text-[#e63d75] transition-colors p-1 -ml-1"
                       >
-                        {selectedItems.has(item.variantId) ? (
+                        {selectedItems.has(item.retailProductId) ? (
                           <CheckSquare className="w-5 h-5 sm:w-6 sm:h-6 text-[#e63d75]" />
                         ) : (
                           <Square className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -194,7 +194,7 @@ export default function CartPage() {
                           )}
                         </div>
                         <button
-                          onClick={() => removeItem(item.variantId)}
+                          onClick={() => removeItem(item.retailProductId)}
                           className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors -mr-2"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -205,7 +205,7 @@ export default function CartPage() {
                         {/* Quantity */}
                         <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-full px-2 sm:px-3 py-1 border border-gray-100">
                           <button
-                            onClick={() => setQuantity(item.variantId, item.quantity - 1)}
+                            onClick={() => setQuantity(item.retailProductId, item.quantity - 1)}
                             className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 hover:text-[#e63d75] transition-colors"
                           >
                             <Minus className="w-3 h-3" />
@@ -214,7 +214,7 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => setQuantity(item.variantId, item.quantity + 1)}
+                            onClick={() => setQuantity(item.retailProductId, item.quantity + 1)}
                             className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 hover:text-[#e63d75] transition-colors"
                           >
                             <Plus className="w-3 h-3" />

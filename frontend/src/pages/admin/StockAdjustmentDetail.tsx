@@ -18,13 +18,12 @@ const StockAdjustmentDetail = () => {
       if (!adjustmentId) throw new Error('ID not provided');
 
       const { data, error } = await supabase
-        .from('stock_adjustments')
+        .from('retail_stock_adjustments')
         .select(`
           *,
-          stock_adjustment_items (
+          retail_stock_adjustment_items (
             *,
-            products (id, name),
-            product_variants (id, name, sku)
+            product_retail (id, name, variant, slug)
           )
         `)
         .eq('id', parseInt(adjustmentId))
@@ -169,7 +168,7 @@ const StockAdjustmentDetail = () => {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
-              Item Adjustment ({adjustment.stock_adjustment_items?.length || 0})
+              Item Adjustment ({adjustment.retail_stock_adjustment_items?.length || 0})
             </h2>
           </div>
 
@@ -198,17 +197,17 @@ const StockAdjustmentDetail = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {adjustment.stock_adjustment_items && adjustment.stock_adjustment_items.length > 0 ? (
-                  adjustment.stock_adjustment_items.map((item: any) => (
+                {adjustment.retail_stock_adjustment_items && adjustment.retail_stock_adjustment_items.length > 0 ? (
+                  adjustment.retail_stock_adjustment_items.map((item: any) => (
                     <tr key={item.id} className="transition-colors hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {item.products?.name || 'Unknown'}
+                        {item.product_retail?.name || 'Unknown'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {item.product_variants?.name || 'Unknown'}
+                        {item.product_retail?.variant || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm font-mono text-gray-600">
-                        {item.product_variants?.sku || '-'}
+                        {item.product_retail?.slug || '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span
@@ -239,25 +238,25 @@ const StockAdjustmentDetail = () => {
         </div>
 
         {/* Summary */}
-        {adjustment.stock_adjustment_items && adjustment.stock_adjustment_items.length > 0 && (
+        {adjustment.retail_stock_adjustment_items && adjustment.retail_stock_adjustment_items.length > 0 && (
           <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="rounded-lg bg-white p-4 shadow-sm">
                 <p className="text-xs font-medium text-gray-500">Total Items</p>
                 <p className="mt-1 text-2xl font-bold text-gray-900">
-                  {adjustment.stock_adjustment_items.length}
+                  {adjustment.retail_stock_adjustment_items.length}
                 </p>
               </div>
               <div className="rounded-lg bg-white p-4 shadow-sm">
                 <p className="text-xs font-medium text-gray-500">Total Change</p>
                 <p className={`mt-1 text-2xl font-bold ${
-                  adjustment.stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0) >= 0
+                  adjustment.retail_stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0) >= 0
                     ? 'text-green-600'
                     : 'text-red-600'
                 }`}>
-                  {adjustment.stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0) >= 0 ? '+' : ''}
-                  {adjustment.stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0)}
+                  {adjustment.retail_stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0) >= 0 ? '+' : ''}
+                  {adjustment.retail_stock_adjustment_items.reduce((sum: number, item: any) => sum + item.quantity_change, 0)}
                 </p>
               </div>
               <div className="rounded-lg bg-white p-4 shadow-sm">

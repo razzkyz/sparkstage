@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 
 interface Variant {
   variant_id: number;
-  product_id: number;
+  product_id?: number;
   product_name: string;
   variant_name: string;
   variant_sku: string;

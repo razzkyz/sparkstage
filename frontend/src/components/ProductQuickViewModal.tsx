@@ -102,7 +102,7 @@ export default function ProductQuickViewModal({ open, productId, initialVariantI
           productId: product.id,
           productName: product.name,
           productImageUrl: selectedVariant.imageUrl ?? imageFromCarousel ?? product.imageUrl,
-          variantId: selectedVariant.id,
+          retailProductId: selectedVariant.id,
           variantName: selectedVariant.name,
           unitPrice: selectedVariant.price,
         },

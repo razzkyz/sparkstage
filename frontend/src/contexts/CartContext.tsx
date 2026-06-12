@@ -9,8 +9,8 @@ type CartState = {
 type CartAction =
   | { type: 'replace'; items: CartItem[] }
   | { type: 'add'; item: Omit<CartItem, 'quantity'>; quantity: number }
-  | { type: 'setQuantity'; variantId: number; quantity: number }
-  | { type: 'remove'; variantId: number }
+  | { type: 'setQuantity'; retailProductId: number; quantity: number }
+  | { type: 'remove'; retailProductId: number }
   | { type: 'clear' };
 
 const LEGACY_STORAGE_KEY = 'spark_cart_v1';
@@ -35,26 +35,26 @@ function reducer(state: CartState, action: CartAction): CartState {
   }
 
   if (action.type === 'remove') {
-    return { items: state.items.filter((i) => i.variantId !== action.variantId) };
+    return { items: state.items.filter((i) => i.retailProductId !== action.retailProductId) };
   }
 
   if (action.type === 'setQuantity') {
     const nextQuantity = clampQuantity(action.quantity);
     return {
-      items: state.items.map((i) => (i.variantId === action.variantId ? { ...i, quantity: nextQuantity } : i)),
+      items: state.items.map((i) => (i.retailProductId === action.retailProductId ? { ...i, quantity: nextQuantity } : i)),
     };
   }
 
   if (action.type === 'add') {
     const nextQuantity = clampQuantity(action.quantity);
-    const existing = state.items.find((i) => i.variantId === action.item.variantId);
+    const existing = state.items.find((i) => i.retailProductId === action.item.retailProductId);
     if (!existing) {
       return { items: [{ ...action.item, quantity: nextQuantity }, ...state.items] };
     }
 
     return {
       items: state.items.map((i) =>
-        i.variantId === action.item.variantId ? { ...i, quantity: clampQuantity(i.quantity + nextQuantity) } : i
+        i.retailProductId === action.item.retailProductId ? { ...i, quantity: clampQuantity(i.quantity + nextQuantity) } : i
       ),
     };
   }
@@ -94,13 +94,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             : [];
           const normalized: CartItem[] = items
             .map((i) => i as Partial<CartItem>)
-            .filter((i) => typeof i.variantId === 'number' && typeof i.productId === 'number')
+            .filter((i) => typeof i.retailProductId === 'number' && typeof i.productId === 'number')
             .map((i) => {
               const item = {
                 productId: Number(i.productId),
                 productName: String(i.productName ?? ''),
                 productImageUrl: typeof i.productImageUrl === 'string' ? i.productImageUrl : undefined,
-                variantId: Number(i.variantId),
+                retailProductId: Number(i.retailProductId),
                 variantName: String(i.variantName ?? ''),
                 unitPrice: Number(i.unitPrice ?? 0),
                 quantity: clampQuantity(Number(i.quantity ?? 1)),
@@ -144,12 +144,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'add', item, quantity });
   }, []);
 
-  const setQuantity = useCallback<CartContextValue['setQuantity']>((variantId, quantity) => {
-    dispatch({ type: 'setQuantity', variantId, quantity });
+  const setQuantity = useCallback<CartContextValue['setQuantity']>((retailProductId, quantity) => {
+    dispatch({ type: 'setQuantity', retailProductId, quantity });
   }, []);
 
-  const removeItem = useCallback<CartContextValue['removeItem']>((variantId) => {
-    dispatch({ type: 'remove', variantId });
+  const removeItem = useCallback<CartContextValue['removeItem']>((retailProductId) => {
+    dispatch({ type: 'remove', retailProductId });
   }, []);
 
   const clear = useCallback<CartContextValue['clear']>(() => {

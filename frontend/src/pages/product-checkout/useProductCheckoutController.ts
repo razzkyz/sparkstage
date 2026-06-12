@@ -36,7 +36,7 @@ type UseProductCheckoutControllerParams = {
   t: TFunction;
   navigate: NavigateFunction;
   queryClient: QueryClient;
-  removeItem: (variantId: number) => void;
+  removeItem: (retailProductId: number) => void;
   showToast: (type: 'success' | 'error' | 'info' | 'warning', message: string) => void;
   cashierCheckoutEnabled: boolean;
   initialProfile?: any;
@@ -161,36 +161,21 @@ export function useProductCheckoutController({
     if (appliedPoints) {
       setAppliedPoints(null);
     }
-  }, [items.map((i) => i.variantId).join(',')]);  // Only trigger when variant IDs change
+  }, [items.map((i) => i.retailProductId).join(',')]);  // Only trigger when variant IDs change
 
   const fetchCategoryIds = async () => {
-    const variantIds = items.map((item) => item.variantId);
-    if (variantIds.length === 0) return [];
+    const retailProductIds = items.map((item) => item.retailProductId);
+    if (retailProductIds.length === 0) return [];
 
-    const { data: variantRows, error: variantError } = await supabase
-      .from('product_variants')
-      .select('product_id')
-      .in('id', variantIds);
-    if (variantError) throw variantError;
-
-    const productIds = Array.from(
-      new Set(
-        (variantRows || [])
-          .map((row) => Number((row as { product_id?: number }).product_id))
-          .filter((id) => id > 0)
-      )
-    );
-    if (productIds.length === 0) return [];
-
-    const { data: productRows, error: productError } = await supabase
-      .from('products')
+    const { data: retailRows, error: retailError } = await supabase
+      .from('product_retail')
       .select('category_id')
-      .in('id', productIds);
-    if (productError) throw productError;
+      .in('id', retailProductIds);
+    if (retailError) throw retailError;
 
     return Array.from(
       new Set(
-        (productRows || [])
+        (retailRows || [])
           .map((row) => Number((row as { category_id?: number }).category_id))
           .filter((id) => id > 0)
       )
@@ -217,7 +202,7 @@ export function useProductCheckoutController({
 
   const completeSuccessfulOrder = (orderNumber: string, nextState: Record<string, unknown>) => {
     skipEmptyCartRedirectRef.current = true;
-    orderItems.map((item) => item.product_variant_id).forEach((id) => removeItem(id));
+    orderItems.map((item) => item.retail_product_id).forEach((id) => removeItem(id));
 
     if (user?.id) {
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrders(user.id) });
@@ -303,7 +288,7 @@ export function useProductCheckoutController({
     setAppliedPoints(null);
   };
 
-  const createOrder = async (functionName: 'create-doku-product-checkout' | 'create-cashier-product-order') => {
+  const createOrder = async (functionName: 'create-doku-retail-checkout' | 'create-cashier-product-order') => {
     if (!user) {
       navigate('/login');
       return null;
@@ -337,7 +322,7 @@ export function useProductCheckoutController({
 
     const invoke = async (accessToken: string) => {
       const itemsPayload = orderItems.map((item) => ({
-        productVariantId: item.product_variant_id,
+        retailProductId: item.retail_product_id,
         name: `${item.product_name} - ${item.variant_name}`.slice(0, 50),
         price: item.unit_price,
         quantity: item.quantity,
@@ -430,7 +415,7 @@ export function useProductCheckoutController({
     setError(null);
 
     try {
-      const payload = (await createOrder('create-doku-product-checkout')) as CreateProductTokenResponse | null;
+      const payload = (await createOrder('create-doku-retail-checkout')) as CreateProductTokenResponse | null;
       if (!payload) {
         setError('No response from payment server. Please try again.');
         return;

@@ -95,7 +95,7 @@ export default function BeautyPage() {
           productId: product.id,
           productName: product.name,
           productImageUrl: product.image,
-          variantId: product.defaultVariantId,
+          retailProductId: product.defaultVariantId,
           variantName: product.defaultVariantName,
           unitPrice: product.price,
         },
