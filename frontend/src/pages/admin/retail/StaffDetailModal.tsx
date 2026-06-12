@@ -1,6 +1,7 @@
 import { formatCurrency } from '../../../utils/formatters';
 import type { StaffReport } from './ReportTab';
 import { useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 type StaffDetailModalProps = {
   staffReport: StaffReport;
@@ -51,7 +52,7 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
   const totalQuantity = productSummaries.reduce((sum, p) => sum + p.quantity, 0);
   const totalRevenue = productSummaries.reduce((sum, p) => sum + p.subtotal, 0);
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
       onClick={onClose}
@@ -189,4 +190,7 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
       </div>
     </div>
   );
+
+  // Render modal menggunakan Portal agar muncul di root level (di luar AdminLayout)
+  return createPortal(modalContent, document.body);
 }
