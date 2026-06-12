@@ -1,6 +1,6 @@
 import { formatCurrency } from '../../../utils/formatters';
 import type { StaffReport } from './ReportTab';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type StaffDetailModalProps = {
@@ -17,11 +17,32 @@ type ProductSummary = {
 };
 
 export default function StaffDetailModal({ staffReport, onClose }: StaffDetailModalProps) {
-  // Agregasi produk dari semua transaksi
+  // State untuk date range filter
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
+
+  // Filter orders berdasarkan date range
+  const filteredOrders = useMemo(() => {
+    if (!isFilterApplied || !startDate || !endDate) {
+      return staffReport.orders;
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return staffReport.orders.filter((order) => {
+      const orderDate = new Date(order.paid_at || order.updated_at || order.created_at || '');
+      return orderDate >= start && orderDate <= end;
+    });
+  }, [staffReport.orders, startDate, endDate, isFilterApplied]);
+  // Agregasi produk dari semua transaksi (gunakan filteredOrders)
   const productSummaries = useMemo(() => {
     const productMap = new Map<string, ProductSummary>();
 
-    staffReport.orders.forEach((order) => {
+    filteredOrders.forEach((order) => {
       order.order_product_items?.forEach((item) => {
         const productName = item.product_variants?.products?.name ?? 'Produk Tidak Diketahui';
         const variantName = item.product_variants?.name ?? '-';
@@ -47,10 +68,38 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
     });
 
     return Array.from(productMap.values()).sort((a, b) => b.subtotal - a.subtotal);
-  }, [staffReport.orders]);
+  }, [filteredOrders]);
 
   const totalQuantity = productSummaries.reduce((sum, p) => sum + p.quantity, 0);
   const totalRevenue = productSummaries.reduce((sum, p) => sum + p.subtotal, 0);
+
+  // Hitung jumlah hari dalam periode
+  const totalDays = useMemo(() => {
+    if (!isFilterApplied || !startDate || !endDate) return null;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 untuk include hari terakhir
+    return diffDays;
+  }, [startDate, endDate, isFilterApplied]);
+
+  const handleApplyFilter = () => {
+    if (!startDate || !endDate) {
+      alert('Mohon pilih tanggal mulai dan tanggal akhir');
+      return;
+    }
+    if (new Date(startDate) > new Date(endDate)) {
+      alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+      return;
+    }
+    setIsFilterApplied(true);
+  };
+
+  const handleResetFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    setIsFilterApplied(false);
+  };
 
   const modalContent = (
     <div
@@ -85,7 +134,7 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
           {/* Summary Cards */}
           <div className="grid grid-cols-3 gap-3 mt-6">
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-black">{staffReport.totalOrders}</p>
+              <p className="text-2xl font-black">{filteredOrders.length}</p>
               <p className="text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Transaksi</p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
@@ -97,13 +146,88 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
               <p className="text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Total Penjualan</p>
             </div>
           </div>
+
+          {/* Date Range Filter */}
+          <div className="mt-4 bg-white/20 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-white text-[20px]">date_range</span>
+              <h3 className="text-sm font-bold text-white">Filter Periode Laporan</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-white/80 mb-1">Dari Tanggal</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-white/30 bg-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/80 mb-1">Sampai Tanggal</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-white/30 bg-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={handleApplyFilter}
+                disabled={!startDate || !endDate}
+                className="flex-1 px-4 py-2 rounded-lg bg-white text-[#ff4b86] font-bold text-sm hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Lihat Laporan
+              </button>
+              {isFilterApplied && (
+                <button
+                  onClick={handleResetFilter}
+                  className="px-4 py-2 rounded-lg bg-white/20 text-white font-bold text-sm hover:bg-white/30 transition-all"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-280px)]">
+          
+          {/* Summary Box - hanya tampil jika filter aktif */}
+          {isFilterApplied && totalDays && (
+            <div className="mb-6 bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-300 rounded-2xl p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-pink-600 text-[24px]">summarize</span>
+                <h3 className="text-lg font-black text-pink-900 uppercase">Total Keseluruhan</h3>
+              </div>
+              <p className="text-sm text-pink-700 font-medium mb-4">
+                Periode: {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                {' s/d '}
+                {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+              <div className="space-y-2 mb-4">
+                <p className="text-sm font-semibold text-pink-800">
+                  Total Hari: <span className="font-black">{totalDays} hari</span>
+                </p>
+                <p className="text-sm font-semibold text-pink-800">
+                  Total Kejual: <span className="font-black">{totalQuantity} Item</span>
+                </p>
+              </div>
+              <div className="pt-4 border-t-2 border-pink-300">
+                <p className="text-3xl font-black text-pink-600">
+                  Rp {formatCurrency(totalRevenue)}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">
               Rincian Produk ({productSummaries.length} Item)
+              {isFilterApplied && <span className="ml-2 text-pink-600">• Periode Terpilih</span>}
             </h3>
             <button
               onClick={() => window.print()}
