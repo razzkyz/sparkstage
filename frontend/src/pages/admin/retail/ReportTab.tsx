@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import StaffDetailModal from './StaffDetailModal';
 
 type ReportTabProps = {
   orders: OrderSummaryRow[];
@@ -19,6 +20,8 @@ type StaffReport = {
   totalRevenue: number;
   orders: OrderSummaryRow[];
 };
+
+export type { StaffReport };
 
 // Warna avatar berdasarkan inisial nama
 const AVATAR_COLORS = [
@@ -41,6 +44,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<OrderSummaryRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'staff' | 'print'>('staff');
+  const [selectedStaffReport, setSelectedStaffReport] = useState<StaffReport | null>(null);
 
   const claimedOrders = orders.filter((o) => o.sales_staff_name);
 
@@ -221,6 +225,13 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
                   <div className="sm:ml-auto text-left sm:text-right">
                     <p className="text-xl font-black text-[#ff4b86]">Rp {formatCurrency(report.totalRevenue)}</p>
                     <p className="text-xs text-gray-400 font-medium">{sharePercent.toFixed(1)}% dari total penjualan</p>
+                    <button
+                      onClick={() => setSelectedStaffReport(report)}
+                      className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#ff4b86] bg-[#ff4b86]/10 px-4 py-1.5 text-xs font-bold text-[#ff4b86] hover:bg-[#ff4b86] hover:text-white transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">assignment</span>
+                      Detail
+                    </button>
                   </div>
                 </div>
 
@@ -391,6 +402,13 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
         onConfirm={confirmDeleteReportOrder}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {selectedStaffReport && (
+        <StaffDetailModal
+          staffReport={selectedStaffReport}
+          onClose={() => setSelectedStaffReport(null)}
+        />
+      )}
     </div>
   );
 }
