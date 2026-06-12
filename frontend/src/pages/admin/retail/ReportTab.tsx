@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import StaffDetailModal from './StaffDetailModal';
+import AllStaffReportModal from './AllStaffReportModal';
 
 type ReportTabProps = {
   orders: OrderSummaryRow[];
@@ -45,6 +46,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'staff' | 'print'>('staff');
   const [selectedStaffReport, setSelectedStaffReport] = useState<StaffReport | null>(null);
+  const [showAllStaffReport, setShowAllStaffReport] = useState(false);
 
   const claimedOrders = orders.filter((o) => o.sales_staff_name);
 
@@ -159,6 +161,17 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
           <p className="text-2xl font-black text-gray-900">Rp {formatCurrency(grandTotal)}</p>
           <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Penjualan</p>
         </div>
+      </div>
+
+      {/* Button Laporan Semua */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => setShowAllStaffReport(true)}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all"
+        >
+          <span className="material-symbols-outlined text-[20px]">summarize</span>
+          Laporan Semua Staff
+        </button>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
@@ -407,6 +420,13 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
         <StaffDetailModal
           staffReport={selectedStaffReport}
           onClose={() => setSelectedStaffReport(null)}
+        />
+      )}
+
+      {showAllStaffReport && (
+        <AllStaffReportModal
+          orders={claimedOrders}
+          onClose={() => setShowAllStaffReport(false)}
         />
       )}
     </div>
