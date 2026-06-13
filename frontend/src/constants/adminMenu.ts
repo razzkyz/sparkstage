@@ -166,6 +166,30 @@ export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
   },
 ];
 
+// Menu untuk role "print" - HANYA laporan
+export const PRINT_MENU_SECTIONS: AdminMenuSection[] = [
+  {
+    id: "laporan",
+    label: "Laporan",
+    items: [
+      {
+        id: "retail-dashboard",
+        label: "Laporan Staff",
+        icon: "assessment",
+        path: "/admin/retail-dashboard",
+        highlight: true,
+      },
+      {
+        id: "print-orders",
+        label: "Laporan Print",
+        icon: "print",
+        path: "/admin/print-orders",
+        highlight: true,
+      },
+    ],
+  },
+];
+
 export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
   {
     id: "store",
