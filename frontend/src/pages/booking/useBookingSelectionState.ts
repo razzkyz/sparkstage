@@ -143,7 +143,7 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
         return previous;
       }
 
-      return firstBookableDate;
+      return null;
     });
 
     if (!firstBookableDate) return;
@@ -340,7 +340,11 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
   };
 
   const handleSelectDate = (date: Date) => {
-    setSelectedDate(date);
+    if (selectedDate && date.getTime() === selectedDate.getTime()) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+    }
     setSelectedTime(null);
   };
 

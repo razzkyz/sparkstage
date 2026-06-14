@@ -49,7 +49,7 @@ export function JourneyTimeSlotsSection({
   getMinutesUntilClose,
   getSlotUrgency,
 }: JourneyTimeSlotsSectionProps) {
-  if (!selectedDate && hasBookableDates) return null;
+
 
   return (
     <div className="bg-gray-50 rounded-xl p-4 md:p-8 border border-gray-200">
@@ -84,9 +84,9 @@ export function JourneyTimeSlotsSection({
         </div>
       ) : null}
 
-      {hasBookableDates && availableSlotsCount > 0 ? (
+      {hasBookableDates && (availableSlotsCount > 0 || !selectedDate) ? (
         <div className="space-y-3 md:space-y-4">
-          {isAllDayTicket ? (
+          {isAllDayTicket && selectedDate ? (
             <p className="text-xs md:text-sm font-black uppercase tracking-widest text-main-600/70">
               {copy.choose_specific_time_label}
             </p>
@@ -97,37 +97,43 @@ export function JourneyTimeSlotsSection({
               [keyof GroupedTimeSlots, GroupedTimeSlots[keyof GroupedTimeSlots]]
             >
           ).map(([period, slots]) => {
-            if (slots.length === 0) return null;
+            const hasNoDate = !selectedDate;
+            if (period === "evening" && hasNoDate) return null;
+            if (!hasNoDate && slots.length === 0) return null;
 
             const cfg = SESSION_CONFIG[period as string];
             const sessionLabel = cfg?.label ?? (period as string);
             const periodLabel =
               SESSION_LABEL_ID[period as string] ?? (period as string);
 
-            // Use the first non-past slot as representative; fall back to first slot
-            const firstAvailable = slots.find((s) => !s.isPast) ?? slots[0];
-            const representativeTime = firstAvailable.time;
+            let isPast = false;
+            let isSelected = false;
+            let representativeTime: string | null = null;
+            let _urgency = "none";
+            let _minutesLeft = null;
 
-            // Session is selected when selectedTime belongs to any slot in this group
-            const isSelected = slots.some((s) => s.time === selectedTime);
-            const isPast = slots.every((s) => s.isPast);
-
-            // Show the most conservative (minimum) capacity
-            // const minAvailable = Math.min(...slots.map((s) => s.available));
-
-            const _urgency = isPast
-              ? "none"
-              : getSlotUrgency(representativeTime);
-            const _minutesLeft = isPast
-              ? null
-              : getMinutesUntilClose(representativeTime);
+            if (hasNoDate) {
+              isPast = true;
+            } else {
+              const firstAvailable = slots.find((s) => !s.isPast) ?? slots[0];
+              representativeTime = firstAvailable?.time || null;
+              isSelected = slots.some((s) => s.time === selectedTime);
+              isPast = slots.length > 0 && slots.every((s) => s.isPast);
+              _urgency = isPast || !representativeTime
+                ? "none"
+                : getSlotUrgency(representativeTime);
+              _minutesLeft = isPast || !representativeTime
+                ? null
+                : getMinutesUntilClose(representativeTime);
+            }
+            
             void _urgency;
             void _minutesLeft;
 
             return (
               <button
                 key={period as string}
-                onClick={() => !isPast && onSelectTime(representativeTime)}
+                onClick={() => representativeTime && !isPast && onSelectTime(representativeTime)}
                 disabled={isPast}
                 className={`w-full rounded-xl border px-5 py-4 text-left transition-all ${
                   isPast
@@ -152,7 +158,11 @@ export function JourneyTimeSlotsSection({
                   </div>
 
                   <div className="text-right flex flex-col items-end gap-1">
-                    {isPast ? (
+                    {hasNoDate ? (
+                      <span className="text-xs text-gray-400 font-medium">
+                        Pilih Tanggal
+                      </span>
+                    ) : isPast ? (
                       <span className="text-xs text-gray-400 font-medium">
                         Berakhir
                       </span>
