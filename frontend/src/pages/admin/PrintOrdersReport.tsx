@@ -53,7 +53,7 @@ export default function PrintOrdersReport() {
         console.error('Error fetching print orders:', error);
         throw error;
       }
-      
+
       return (data || []) as PrintOrder[];
     },
   });
@@ -62,15 +62,15 @@ export default function PrintOrdersReport() {
   const filteredOrders = useMemo(() => {
     if (!startDate || !endDate) return printOrders;
     const start = new Date(startDate); start.setHours(0, 0, 0, 0);
-    const end   = new Date(endDate);   end.setHours(23, 59, 59, 999);
+    const end = new Date(endDate); end.setHours(23, 59, 59, 999);
     return printOrders.filter((o) => {
       const d = new Date(o.paid_at || o.created_at || '');
       return d >= start && d <= end;
     });
   }, [printOrders, startDate, endDate]);
 
-  const totalOrders  = filteredOrders.length;
-  const totalQty     = filteredOrders.reduce((s, o) => s + (o.qty    || 0), 0);
+  const totalOrders = filteredOrders.length;
+  const totalQty = filteredOrders.reduce((s, o) => s + (o.qty || 0), 0);
   const totalRevenue = filteredOrders.reduce((s, o) => s + (o.amount || 0), 0);
 
   const totalDays = useMemo(() => {
@@ -79,7 +79,7 @@ export default function PrintOrdersReport() {
       const sorted = [...printOrders].sort((a, b) =>
         new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime()
       );
-      const diff = new Date(sorted.at(-1)!.created_at || '').getTime() - new Date(sorted[0].created_at || '').getTime();
+      const diff = new Date(sorted[sorted.length - 1].created_at || '').getTime() - new Date(sorted[0].created_at || '').getTime();
       return Math.ceil(diff / 86400000) + 1;
     }
     return Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1;
@@ -90,7 +90,7 @@ export default function PrintOrdersReport() {
     if (!laporanSubmitted || !laporanStart || !laporanEnd) return [];
 
     const start = new Date(laporanStart); start.setHours(0, 0, 0, 0);
-    const end   = new Date(laporanEnd);   end.setHours(23, 59, 59, 999);
+    const end = new Date(laporanEnd); end.setHours(23, 59, 59, 999);
 
     const inRange = printOrders.filter((o) => {
       const d = new Date(o.paid_at || o.created_at || '');
@@ -114,8 +114,8 @@ export default function PrintOrdersReport() {
           orders: 0, qty: 0, revenue: 0,
         };
       }
-      byDate[key].orders  += 1;
-      byDate[key].qty     += o.qty    || 0;
+      byDate[key].orders += 1;
+      byDate[key].qty += o.qty || 0;
       byDate[key].revenue += o.amount || 0;
     });
 
@@ -123,8 +123,8 @@ export default function PrintOrdersReport() {
   }, [printOrders, laporanStart, laporanEnd, laporanSubmitted]);
 
   const laporanTotal = useMemo(() => ({
-    orders:  dailySummary.reduce((s, d) => s + d.orders,  0),
-    qty:     dailySummary.reduce((s, d) => s + d.qty,     0),
+    orders: dailySummary.reduce((s, d) => s + d.orders, 0),
+    qty: dailySummary.reduce((s, d) => s + d.qty, 0),
     revenue: dailySummary.reduce((s, d) => s + d.revenue, 0),
   }), [dailySummary]);
 
@@ -273,11 +273,10 @@ export default function PrintOrdersReport() {
                       <td className="px-4 py-3 text-gray-600 text-xs">{p.customer_email ?? '-'}</td>
                       <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">Rp {formatCurrency(p.amount || 0)}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          p.status === 'paid' ? 'bg-green-100 text-green-700' :
-                          p.status === 'PRINTED' ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-500'
-                        }`}>{p.status ?? '-'}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${p.status === 'paid' ? 'bg-green-100 text-green-700' :
+                            p.status === 'PRINTED' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-500'
+                          }`}>{p.status ?? '-'}</span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
                         {p.paid_at ? new Date(p.paid_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'}
@@ -374,38 +373,68 @@ export default function PrintOrdersReport() {
                     </div>
                   </div>
 
-                  {/* List teks per hari */}
+                  {/* Tabel per hari */}
                   {dailySummary.length === 0 ? (
                     <div className="py-12 text-center">
                       <span className="material-symbols-outlined text-4xl text-gray-300 block mb-2">search_off</span>
                       <p className="text-gray-500">Tidak ada data dalam periode ini</p>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-2">
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-3">Rekap Per Hari</p>
-                      {dailySummary.map((d, idx) => (
-                        <div key={d.date} className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
-                          <span className="text-gray-400 text-xs font-mono w-5 text-right shrink-0">{idx + 1}.</span>
-                          <p className="text-gray-800 text-sm leading-relaxed">
-                            <span className="font-bold">{d.displayDate}</span>
-                            {' — '}
-                            <span className="text-violet-700 font-semibold">{d.orders} transaksi</span>
-                            {', '}
-                            <span className="text-blue-700 font-semibold">{d.qty} print</span>
-                            {' · '}
-                            <span className="font-bold text-gray-900">Rp {formatCurrency(d.revenue)}</span>
-                          </p>
-                        </div>
-                      ))}
-                      {/* Total */}
-                      <div className="mt-3 pt-3 border-t-2 border-violet-300 flex items-center justify-between">
-                        <p className="font-black text-violet-900 uppercase text-sm">Total Keseluruhan</p>
-                        <p className="text-right">
-                          <span className="text-violet-700 font-bold text-sm">{laporanTotal.orders} transaksi · {laporanTotal.qty} print</span>
-                          <br />
-                          <span className="font-black text-violet-600 text-lg">Rp {formatCurrency(laporanTotal.revenue)}</span>
-                        </p>
+                    <div className="rounded-2xl overflow-hidden border border-gray-200">
+                      <div className="bg-violet-600 px-4 py-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-white text-[18px]">table_chart</span>
+                        <span className="font-bold text-white text-sm">
+                          Rekap Per Hari ({dailySummary.length} hari)
+                        </span>
                       </div>
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Transaksi</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Foto</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Pendapatan</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                          {dailySummary.map((d) => (
+                            <tr key={d.date} className="hover:bg-violet-50 transition-colors">
+                              <td className="px-4 py-3 font-semibold text-gray-800 text-xs">{d.displayDate}</td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 text-violet-700 font-black text-sm">
+                                  {d.orders}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-black text-sm">
+                                  {d.qty}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                                Rp {formatCurrency(d.revenue)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-violet-50 border-t-2 border-violet-300">
+                          <tr>
+                            <td className="px-4 py-3 font-black text-violet-900 uppercase text-xs">Total</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-violet-600 text-white font-black text-sm">
+                                {laporanTotal.orders}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-600 text-white font-black text-sm">
+                                {laporanTotal.qty}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-black text-violet-600 text-base whitespace-nowrap">
+                              Rp {formatCurrency(laporanTotal.revenue)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
                   )}
                 </>
