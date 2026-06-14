@@ -374,68 +374,38 @@ export default function PrintOrdersReport() {
                     </div>
                   </div>
 
-                  {/* Tabel per hari */}
+                  {/* List teks per hari */}
                   {dailySummary.length === 0 ? (
                     <div className="py-12 text-center">
                       <span className="material-symbols-outlined text-4xl text-gray-300 block mb-2">search_off</span>
                       <p className="text-gray-500">Tidak ada data dalam periode ini</p>
                     </div>
                   ) : (
-                    <div className="rounded-2xl overflow-hidden border border-gray-200">
-                      <div className="bg-violet-600 px-4 py-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-white text-[18px]">table_chart</span>
-                        <span className="font-bold text-white text-sm">
-                          Rekap Per Hari ({dailySummary.length} hari)
-                        </span>
+                    <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-2">
+                      <p className="text-xs font-bold text-gray-400 uppercase mb-3">Rekap Per Hari</p>
+                      {dailySummary.map((d, idx) => (
+                        <div key={d.date} className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
+                          <span className="text-gray-400 text-xs font-mono w-5 text-right shrink-0">{idx + 1}.</span>
+                          <p className="text-gray-800 text-sm leading-relaxed">
+                            <span className="font-bold">{d.displayDate}</span>
+                            {' — '}
+                            <span className="text-violet-700 font-semibold">{d.orders} transaksi</span>
+                            {', '}
+                            <span className="text-blue-700 font-semibold">{d.qty} print</span>
+                            {' · '}
+                            <span className="font-bold text-gray-900">Rp {formatCurrency(d.revenue)}</span>
+                          </p>
+                        </div>
+                      ))}
+                      {/* Total */}
+                      <div className="mt-3 pt-3 border-t-2 border-violet-300 flex items-center justify-between">
+                        <p className="font-black text-violet-900 uppercase text-sm">Total Keseluruhan</p>
+                        <p className="text-right">
+                          <span className="text-violet-700 font-bold text-sm">{laporanTotal.orders} transaksi · {laporanTotal.qty} print</span>
+                          <br />
+                          <span className="font-black text-violet-600 text-lg">Rp {formatCurrency(laporanTotal.revenue)}</span>
+                        </p>
                       </div>
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Transaksi</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Foto</th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Pendapatan</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                          {dailySummary.map((d) => (
-                            <tr key={d.date} className="hover:bg-violet-50 transition-colors">
-                              <td className="px-4 py-3 font-semibold text-gray-800 text-xs">{d.displayDate}</td>
-                              <td className="px-4 py-3 text-center">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 text-violet-700 font-black text-sm">
-                                  {d.orders}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-black text-sm">
-                                  {d.qty}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right font-bold text-gray-900 whitespace-nowrap">
-                                Rp {formatCurrency(d.revenue)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot className="bg-violet-50 border-t-2 border-violet-300">
-                          <tr>
-                            <td className="px-4 py-3 font-black text-violet-900 uppercase text-xs">Total</td>
-                            <td className="px-4 py-3 text-center">
-                              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-violet-600 text-white font-black text-sm">
-                                {laporanTotal.orders}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-600 text-white font-black text-sm">
-                                {laporanTotal.qty}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right font-black text-violet-600 text-base whitespace-nowrap">
-                              Rp {formatCurrency(laporanTotal.revenue)}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
                     </div>
                   )}
                 </>
