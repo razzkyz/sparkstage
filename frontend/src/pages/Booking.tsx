@@ -401,6 +401,51 @@ const Booking = () => {
                     }}
                   />
 
+                  {selectedDate ? (
+                    <div className="relative overflow-hidden rounded-xl shadow-lg shadow-pink-200/60">
+                      {/* Background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500  to-rose-500" />
+                      {/* Animated shimmer overlay */}
+                      <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background:
+                            "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2.5s ease-in-out infinite",
+                        }}
+                      />
+                      <div className="relative flex items-center justify-between md:justify-evenly  px-5 py-3.5 text-white">
+                        {/* Left: icons + text */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex gap-0.5 text-lg">
+                            <span
+                              className="inline-block animate-bounce"
+                              style={{ animationDelay: "0s" }}
+                            >
+                              ⚡
+                            </span>
+                          </div>
+                        </div>
+                        <div className="">
+                          <p className="text-sm md:text-base font-black leading-none">
+                            Selling Fast — Secure Your Spot Now!
+                          </p>
+                        </div>
+
+                        {/* Right: live dot + label */}
+                        <div className="flex gap-0.5 text-lg">
+                          <span
+                            className="inline-block animate-bounce"
+                            style={{ animationDelay: "0s" }}
+                          >
+                            ⚡
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <JourneyTimeSlotsSection
                     copy={bookingCopy}
                     selectedDate={selectedDate}
