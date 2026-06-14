@@ -107,7 +107,7 @@ const Login = () => {
                 navigate('/admin/cashier-dashboard');
                 break;
               case 'print':
-                navigate('/admin/retail-dashboard');
+                navigate('/admin/print-orders');
                 break;
               case 'dressing_room_admin':
                 navigate('/admin/dashboard');

@@ -33,9 +33,14 @@ export default function PrintOrdersReport() {
         .from('print_orders')
         .select('id, doku_order_id, customer_name, customer_email, queue_number, amount, qty, status, paid_at, created_at')
         .eq('status', 'paid')
-        .order('paid_at', { ascending: false, nullsFirst: false });
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching print orders:', error);
+        throw error;
+      }
+      
+      console.log('Print orders fetched:', data?.length || 0);
       return (data || []) as PrintOrder[];
     },
   });
@@ -52,8 +57,17 @@ export default function PrintOrdersReport() {
     end.setHours(23, 59, 59, 999);
 
     return printOrders.filter((order) => {
-      const orderDate = new Date(order.paid_at || order.created_at || '');
-      return orderDate >= start && orderDate <= end;
+      // Use created_at as fallback if paid_at is not available
+      const dateStr = order.paid_at || order.created_at;
+      if (!dateStr) return false;
+      
+      try {
+        const orderDate = new Date(dateStr);
+        return orderDate >= start && orderDate <= end;
+      } catch (e) {
+        console.error('Invalid date:', dateStr, e);
+        return false;
+      }
     });
   }, [printOrders, startDate, endDate, showReport]);
 
