@@ -23,7 +23,6 @@ export default function PrintOrdersReport() {
   const { signOut } = useAuth();
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [showReport, setShowReport] = useState(false);
 
   // Fetch all paid print orders
   const { data: printOrders = [], isLoading } = useQuery({
@@ -47,8 +46,8 @@ export default function PrintOrdersReport() {
 
   // Filter orders berdasarkan date range
   const filteredOrders = useMemo(() => {
-    if (!showReport || !startDate || !endDate) {
-      return [];
+    if (!startDate || !endDate) {
+      return printOrders;
     }
 
     const start = new Date(startDate);
@@ -69,7 +68,7 @@ export default function PrintOrdersReport() {
         return false;
       }
     });
-  }, [printOrders, startDate, endDate, showReport]);
+  }, [printOrders, startDate, endDate]);
 
   const totalOrders = filteredOrders.length;
   const totalQty = filteredOrders.reduce((sum, o) => sum + (o.qty || 0), 0);
@@ -77,30 +76,25 @@ export default function PrintOrdersReport() {
 
   // Hitung jumlah hari
   const totalDays = useMemo(() => {
-    if (!showReport || !startDate || !endDate) return 0;
+    if (!startDate || !endDate) {
+      if (printOrders.length === 0) return 0;
+      // if all time, calculate days between first and last order
+      const sorted = [...printOrders].sort((a, b) => new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime());
+      const first = new Date(sorted[0].created_at || '');
+      const last = new Date(sorted[sorted.length - 1].created_at || '');
+      const diffTime = Math.abs(last.getTime() - first.getTime());
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays;
-  }, [startDate, endDate, showReport]);
-
-  const handleGenerateReport = () => {
-    if (!startDate || !endDate) {
-      alert('Mohon pilih tanggal mulai dan tanggal akhir');
-      return;
-    }
-    if (new Date(startDate) > new Date(endDate)) {
-      alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
-      return;
-    }
-    setShowReport(true);
-  };
+  }, [printOrders, startDate, endDate]);
 
   const handleReset = () => {
     setStartDate('');
     setEndDate('');
-    setShowReport(false);
   };
 
   return (
@@ -147,26 +141,19 @@ export default function PrintOrdersReport() {
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={handleGenerateReport}
-              disabled={!startDate || !endDate || isLoading}
-              className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Loading...' : 'Lihat Laporan'}
-            </button>
-            {showReport && (
+            {(startDate || endDate) && (
               <button
                 onClick={handleReset}
-                className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-all"
+                className="w-full px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-all"
               >
-                Reset
+                Reset Filter
               </button>
             )}
           </div>
         </div>
 
         {/* Laporan Hasil */}
-        {showReport && (
+        <div className="space-y-6">
           <>
             {/* Summary Box */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-2xl p-6">
@@ -176,9 +163,15 @@ export default function PrintOrdersReport() {
                   <h3 className="text-xl font-black text-blue-900 uppercase">Total Keseluruhan</h3>
                 </div>
                 <p className="text-sm text-blue-700 font-medium">
-                  Periode: {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
-                  {' s/d '}
-                  {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {startDate && endDate ? (
+                    <>
+                      Periode: {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                      {' s/d '}
+                      {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </>
+                  ) : (
+                    'Semua Periode (Dari awal s/d sekarang)'
+                  )}
                 </p>
               </div>
               
@@ -227,56 +220,45 @@ export default function PrintOrdersReport() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-600 w-20">No</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Invoice</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-600 w-28">Queue</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-600 w-24">Foto</th>
-                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-gray-600 w-40">Amount</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-600 w-40">Tanggal</th>
+                        {['No', 'Doku Order ID', 'Nama Customer', 'Email', 'Amount', 'Status', 'Tanggal Bayar', 'Dibuat'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
-                      {filteredOrders.map((order, index) => (
-                        <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 text-gray-500 font-medium">{index + 1}</td>
-                          <td className="px-6 py-4 font-mono text-xs text-gray-900">{order.doku_order_id || '-'}</td>
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-gray-900">{order.customer_name || '-'}</p>
-                            <p className="text-xs text-gray-500">{order.customer_email || '-'}</p>
+                      {filteredOrders.map((p, i) => (
+                        <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-gray-500 text-xs">{i + 1}</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-gray-900 text-xs">{p.doku_order_id ?? '-'}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900 text-xs">{p.customer_name ?? '-'}</p>
                           </td>
-                          <td className="px-6 py-4 font-bold text-blue-600">{order.queue_number || '-'}</td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-black">
-                              {order.qty || 0}
-                            </span>
+                          <td className="px-4 py-3 text-gray-600 text-xs">{p.customer_email ?? '-'}</td>
+                          <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">Rp {formatCurrency(p.amount || 0)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              p.status === 'paid' ? 'bg-green-100 text-green-700' :
+                              p.status === 'PRINTED' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>{p.status ?? '-'}</span>
                           </td>
-                          <td className="px-6 py-4 text-right font-black text-gray-900">
-                            Rp {formatCurrency(order.amount || 0)}
+                          <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                            {p.paid_at ? new Date(p.paid_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'}
                           </td>
-                          <td className="px-6 py-4 text-center text-xs text-gray-600">
-                            {order.paid_at 
-                              ? new Date(order.paid_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                              : order.created_at
-                              ? new Date(order.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                              : '-'}
+                          <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                            {p.created_at ? new Date(p.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-blue-50 border-t-2 border-blue-300">
+                    <tfoot className="bg-gray-50 border-t border-gray-200">
                       <tr>
-                        <td colSpan={4} className="px-6 py-4 text-right font-bold uppercase tracking-wider text-blue-900">
+                        <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-900 text-xs uppercase">
                           Total
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-blue-600 text-white font-black text-base">
-                            {totalQty}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-black text-2xl text-blue-600" colSpan={2}>
+                        <td className="px-4 py-3 font-black text-gray-900 whitespace-nowrap text-sm" colSpan={4}>
                           Rp {formatCurrency(totalRevenue)}
                         </td>
                       </tr>
@@ -286,7 +268,7 @@ export default function PrintOrdersReport() {
               )}
             </div>
           </>
-        )}
+        </div>
       </div>
     </AdminLayout>
   );
