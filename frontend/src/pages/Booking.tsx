@@ -344,47 +344,68 @@ const Booking = () => {
                 </div>
               ) : (
                 <>
-                  {/* ⚠️ Booking reminder notice */}
+                  {/* ⚠️ Animated Warning Banner — heartbeat scale */}
                   <motion.div
-                    animate={{ scale: [1, 1.02, 1] }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 2,
-                      ease: "easeInOut",
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "10px",
-                      backgroundColor: "#fff8ed",
-                      border: "1px solid #f5c97a",
-                      borderRadius: "10px",
-                      padding: "11px 15px",
-                    }}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                    className="relative overflow-hidden rounded-xl shadow-[0_8px_20px_rgba(245,158,11,0.3)] border-2 border-amber-300 mb-8 group"
                   >
-                    <span
-                      className="material-symbols-outlined"
+                    {/* Amber Background */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400" />
+
+                    {/* Hazard Tape Diagonal Stripes */}
+                    <div
+                      className="absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none"
                       style={{
-                        fontSize: "17px",
-                        color: "#c87f00",
-                        marginTop: "2px",
-                        flexShrink: 0,
+                        backgroundImage:
+                          "repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(0,0,0,1) 20px, rgba(0,0,0,1) 40px)",
                       }}
-                    >
-                      warning
-                    </span>
-                    <p
-                      style={{
-                        fontSize: "13px",
-                        color: "#7a4f00",
-                        margin: 0,
-                        lineHeight: "1.55",
+                    />
+
+                    {/* Sweeping Highlight */}
+                    <motion.div
+                      className="absolute top-1/2 -left-32 w-64 h-64 bg-white/60 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
+                      animate={{ x: ["0%", "400%"] }}
+                      transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                    />
+
+                    {/* Content — no marquee, just static centered content */}
+                    <motion.div
+                      animate={{ scale: [1, 1.025, 1, 1.025, 1] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1.8,
+                        ease: "easeInOut",
+                        times: [0, 0.25, 0.5, 0.75, 1],
                       }}
+                      className="relative flex items-center justify-center gap-4 px-6 py-4 text-amber-950"
                     >
-                      <strong>Perhatian!</strong> Pastikan memilih jadwal dan
-                      tanggal yang benar,jangan sampai salah ya.{" "}
-                      <em>See you in stage! 🌟</em>
-                    </p>
+                      {/* Icon */}
+                      <motion.span
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
+                      >
+                        ⚠️
+                      </motion.span>
+
+                      {/* Text */}
+                      <p className="text-xs md:text-sm font-black tracking-wide uppercase text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] text-center leading-snug">
+                        <span className="text-amber-900">Perhatian!</span>{" "}
+                        Pastikan jadwal &amp; tanggal benar, jangan sampai salah ya.{" "}
+                        <span className="italic font-black">See you in stage! 🌟</span>
+                      </p>
+
+                      {/* Icon (mirrored right) */}
+                      <motion.span
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut", delay: 0.9 }}
+                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
+                      >
+                        ⚠️
+                      </motion.span>
+                    </motion.div>
                   </motion.div>
 
                   <JourneyCalendarSection
@@ -478,15 +499,21 @@ const Booking = () => {
                   <div className="animate-spin rounded-full h-10 w-10 border-4 border-main-200 border-t-main-600" />
                 </div>
               ) : sparkMap ? (
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 lg:p-8 group hover:shadow-2xl transition-all duration-300">
-                  <h3 className="text-2xl md:text-3xl font-black mb-6 italic text-gray-900">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+                  className="bg-white rounded-2xl shadow-[0_15px_40px_rgba(236,72,153,0.1)] border border-pink-100 p-6 lg:p-8 group hover:shadow-[0_20px_50px_rgba(236,72,153,0.2)] transition-all duration-500"
+                >
+                  <h3 className="text-2xl md:text-3xl font-black mb-6 italic text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-rose-500 uppercase tracking-wide flex items-center gap-3">
+                    <span className="material-symbols-outlined text-pink-500 text-3xl">map</span>
                     {sparkMap.title || "Spark Map"}
                   </h3>
-                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-gray-100 to-gray-200">
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-pink-50 to-rose-50 border-2 border-pink-100 group-hover:border-pink-300 transition-colors duration-500">
                     {sparkMap.image_url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) ? (
                       <video
                         src={sparkMap.image_url}
-                        className="w-full rounded-lg object-contain transition-transform duration-500 group-hover:scale-110"
+                        className="w-full rounded-lg object-contain transition-transform duration-700 group-hover:scale-[1.03]"
                         autoPlay
                         loop
                         muted
@@ -496,11 +523,11 @@ const Booking = () => {
                       <img
                         src={sparkMap.image_url}
                         alt={sparkMap.title || "Spark Stage 55 Map"}
-                        className="w-full rounded-lg object-contain transition-transform duration-500 group-hover:scale-110"
+                        className="w-full rounded-lg object-contain transition-transform duration-700 group-hover:scale-[1.03]"
                       />
                     )}
                   </div>
-                </div>
+                </motion.div>
               ) : null}
 
               {/* Booking Summary */}

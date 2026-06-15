@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import type { BookingPageSettings } from "../../hooks/useBookingPageSettings";
 import type { GroupedTimeSlots } from "./journeySelectionTypes";
 
@@ -37,6 +38,19 @@ const SESSION_LABEL_ID: Record<string, string> = {
   evening: "Sesi Malam",
 };
 
+const containerVars = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVars = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0 }
+};
+
 export function JourneyTimeSlotsSection({
   copy,
   selectedDate,
@@ -52,42 +66,49 @@ export function JourneyTimeSlotsSection({
 
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 md:p-8 border border-gray-200">
-      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="bg-white rounded-2xl p-5 md:p-8 border border-pink-100 shadow-[0_4px_25px_rgba(236,72,153,0.06)]"
+    >
+      <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-gray-900">
         {isAllDayTicket ? copy.access_type_title : copy.time_slots_title}
       </h3>
 
       {!hasBookableDates ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-xs md:text-sm text-amber-900">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 font-medium">
           Booking is not available right now. New dates have not been published
           yet.
-        </p>
+        </motion.p>
       ) : null}
 
       {hasBookableDates && isAllDayTicket ? (
         <div className="mb-4 md:mb-6">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onSelectTime(null)}
-            className={`w-full rounded-lg border px-4 md:px-6 py-3 md:py-4 text-left transition-colors ${
+            className={`w-full rounded-xl border-2 px-5 md:px-6 py-4 text-left transition-colors ${
               selectedTime === null
-                ? "border-main-600 bg-main-50 text-main-700"
-                : "border-gray-300 bg-white text-gray-800"
+                ? "border-pink-500 bg-pink-50 text-pink-700 shadow-md"
+                : "border-gray-200 bg-gray-50 text-gray-800 hover:border-pink-300"
             }`}
           >
-            <div className="font-bold text-sm md:text-base">
+            <div className="font-black text-base md:text-lg">
               {copy.all_day_access_label}
             </div>
-            <div className="text-xs opacity-70">
+            <div className="text-sm font-medium opacity-70 mt-1">
               {copy.all_day_access_helper}
             </div>
-          </button>
+          </motion.button>
         </div>
       ) : null}
 
       {hasBookableDates && (availableSlotsCount > 0 || !selectedDate) ? (
-        <div className="space-y-3 md:space-y-4">
+        <motion.div variants={containerVars} initial="hidden" animate="show" className="space-y-3 md:space-y-4">
           {isAllDayTicket && selectedDate ? (
-            <p className="text-xs md:text-sm font-black uppercase tracking-widest text-main-600/70">
+            <p className="text-xs md:text-sm font-black uppercase tracking-widest text-pink-500/80 mb-4">
               {copy.choose_specific_time_label}
             </p>
           ) : null}
@@ -131,27 +152,30 @@ export function JourneyTimeSlotsSection({
             void _minutesLeft;
 
             return (
-              <button
+              <motion.button
+                variants={itemVars}
+                whileHover={!isPast && !isSelected ? { scale: 1.02, y: -2 } : {}}
+                whileTap={!isPast ? { scale: 0.98 } : {}}
                 key={period as string}
                 onClick={() => representativeTime && !isPast && onSelectTime(representativeTime)}
                 disabled={isPast}
-                className={`w-full rounded-xl border px-5 py-4 text-left transition-all ${
+                className={`w-full rounded-xl border-2 px-5 md:px-6 py-4 md:py-5 text-left transition-all ${
                   isPast
-                    ? "opacity-40 cursor-not-allowed bg-gray-100 border-gray-200"
+                    ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-100"
                     : isSelected
-                      ? "border-main-600 bg-main-50 shadow-md"
-                      : "border-gray-300 bg-white hover:border-main-400 hover:bg-gray-50"
+                      ? "border-transparent bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-[0_8px_20px_rgba(236,72,153,0.3)]"
+                      : "border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/50 hover:shadow-lg"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">
+                    <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isSelected ? 'text-pink-100' : 'text-gray-400'}`}>
                       {periodLabel}
                     </p>
                     <p
                       className={`text-lg md:text-xl font-black ${
-                        isSelected ? "text-main-700" : "text-gray-800"
-                      } ${isPast ? "line-through" : ""}`}
+                        isSelected ? "text-white" : "text-gray-800"
+                      } ${isPast ? "line-through text-gray-400" : ""}`}
                     >
                       {sessionLabel}
                     </p>
@@ -159,42 +183,25 @@ export function JourneyTimeSlotsSection({
 
                   <div className="text-right flex flex-col items-end gap-1">
                     {hasNoDate ? (
-                      <span className="text-xs text-gray-400 font-medium">
-                        Pilih Tanggal
+                      <span className="text-xs font-bold text-pink-400 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
+                        Pilih Tanggal 👆
                       </span>
                     ) : isPast ? (
-                      <span className="text-xs text-gray-400 font-medium">
+                      <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                         Berakhir
                       </span>
                     ) : null}
-
-                    {/* {!isPast && minutesLeft !== null && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                          urgency === 'high'
-                            ? 'bg-red-500 text-white animate-pulse'
-                            : urgency === 'medium'
-                              ? 'bg-orange-500 text-white'
-                              : urgency === 'low'
-                                ? 'bg-yellow-400 text-black'
-                                : ''
-                        }`}
-                      >
-                        {Math.floor(minutesLeft / 60)}:
-                        {(minutesLeft % 60).toString().padStart(2, '0')} lagi
-                      </span>
-                    )} */}
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
       ) : hasBookableDates && !isAllDayTicket ? (
-        <p className="text-gray-500 text-center py-6 md:py-8 text-xs md:text-sm">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-gray-500 font-medium text-center py-6 md:py-8 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-300">
           {copy.empty_slots_message}
-        </p>
+        </motion.p>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
