@@ -45,7 +45,7 @@ export default function RetailProductDetailPage() {
           productId: product.id,
           productName: product.name,
           productImageUrl: imageUrl,
-          retailProductId: 0, // Fallback variant ID for retail products
+          retailProductId: product.id, // Gunakan product.id sebagai retailProductId
           variantName: product.variant || "Default",
           unitPrice: product.price,
         },
@@ -73,7 +73,7 @@ export default function RetailProductDetailPage() {
       productId: product.id,
       productName: product.name,
       productImageUrl: imageUrl,
-      retailProductId: 0,
+      retailProductId: product.id, // Gunakan product.id sebagai retailProductId
       variantName: product.variant || "Default",
       unitPrice: product.price,
       quantity: 1,

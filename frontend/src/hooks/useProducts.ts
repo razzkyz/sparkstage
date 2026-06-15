@@ -29,28 +29,14 @@ export interface ProductPickerOption {
 
 export type Product = ProductSummary;
 
-type ProductVariantRow = {
-  id?: unknown;
-  name?: unknown;
-  price?: unknown;
-  is_active?: unknown;
-  stock?: unknown;
-  reserved_stock?: unknown;
-};
-
-type ProductImageRow = {
-  image_url?: unknown;
-  is_primary?: unknown;
-  display_order?: unknown;
-};
-
 type ProductRow = {
   id: unknown;
   name?: unknown;
   description?: unknown;
-  categories?: { slug?: unknown } | null;
-  product_variants?: unknown;
-  product_images?: ProductImageRow[];
+  price?: unknown;
+  stock?: unknown;
+  image?: unknown;
+  retail_categories?: { slug?: unknown; is_active?: unknown } | null;
 };
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -62,118 +48,35 @@ const toNumber = (value: unknown, fallback = 0) => {
   return fallback;
 };
 
-function getPrimaryImage(productImages: ProductImageRow[] | undefined) {
-  if (!Array.isArray(productImages) || productImages.length === 0) return undefined;
-
-  const normalizedImages = productImages
-    .map((image) => ({
-      image_url: typeof image.image_url === 'string' ? image.image_url : '',
-      is_primary: Boolean(image.is_primary),
-      display_order: toNumber(image.display_order, 0),
-    }))
-    .filter((image) => image.image_url);
-
-  if (normalizedImages.length === 0) return undefined;
-
-  const primary = normalizedImages.find((image) => image.is_primary);
-  if (primary) return primary.image_url;
-
-  return normalizedImages.reduce((lowest, current) =>
-    lowest.display_order <= current.display_order ? lowest : current
-  ).image_url;
-}
-
-function getAllImages(productImages: ProductImageRow[] | undefined) {
-  if (!Array.isArray(productImages) || productImages.length === 0) return [];
-
-  const normalizedImages = productImages
-    .map((image) => ({
-      image_url: typeof image.image_url === 'string' ? image.image_url : '',
-      is_primary: Boolean(image.is_primary),
-      display_order: toNumber(image.display_order, 0),
-    }))
-    .filter((image) => image.image_url);
-
-  if (normalizedImages.length === 0) return [];
-
-  // Sort: primary first, then by display_order
-  return normalizedImages
-    .sort((a, b) => {
-      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
-      return a.display_order - b.display_order;
-    })
-    .map((img) => img.image_url);
-}
-
-function getActiveVariants(value: unknown): ProductVariantRow[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((variant): variant is ProductVariantRow => Boolean(variant));
-}
-
 function transformProductSummary(row: ProductRow): ProductSummary {
-  const variants = getActiveVariants(row.product_variants);
-  const image = getPrimaryImage(row.product_images);
-  const images = getAllImages(row.product_images);
-  let priceMin = Number.POSITIVE_INFINITY;
-  let defaultVariantId: number | undefined;
-  let defaultVariantName: string | undefined;
-  let defaultVariantPrice = Number.POSITIVE_INFINITY;
-
-  for (const variant of variants) {
-    if (variant.is_active === false) continue;
-
-    const price = toNumber(variant.price, 0);
-    if (Number.isFinite(price)) {
-      priceMin = Math.min(priceMin, price);
-    }
-
-    const available = toNumber(variant.stock, 0) - toNumber(variant.reserved_stock, 0);
-    if (available > 0 && price >= 0 && price < defaultVariantPrice) {
-      defaultVariantPrice = price;
-      defaultVariantId = toNumber(variant.id, 0);
-      defaultVariantName = typeof variant.name === 'string' ? variant.name : String(variant.name ?? '');
-    }
-  }
-
-  if (!Number.isFinite(priceMin)) priceMin = 0;
-
+  const price = toNumber(row.price, 0);
+  const image = typeof row.image === 'string' && row.image.trim() !== '' ? row.image : undefined;
+  
   return {
     id: toNumber(row.id, 0),
     name: typeof row.name === 'string' ? row.name : String(row.name ?? ''),
     description: typeof row.description === 'string' ? row.description : String(row.description ?? ''),
-    price: priceMin,
+    price,
     image,
-    images: images.length > 0 ? images : undefined,
+    images: image ? [image] : undefined,
     placeholder: image ? undefined : 'inventory_2',
-    categorySlug: typeof row.categories?.slug === 'string' ? row.categories.slug : null,
-    defaultVariantId,
-    defaultVariantName,
+    categorySlug: typeof row.retail_categories?.slug === 'string' ? row.retail_categories.slug : null,
+    defaultVariantId: toNumber(row.id, 0), // product is the variant
+    defaultVariantName: 'Default',
   };
 }
 
 function transformProductPickerOption(row: ProductRow): ProductPickerOption {
-  const variants = getActiveVariants(row.product_variants);
-  let priceMin = Number.POSITIVE_INFINITY;
-
-  for (const variant of variants) {
-    if (variant.is_active === false) continue;
-    const price = toNumber(variant.price, 0);
-    if (Number.isFinite(price)) {
-      priceMin = Math.min(priceMin, price);
-    }
-  }
-
-  if (!Number.isFinite(priceMin)) priceMin = 0;
-
-  const image = getPrimaryImage(row.product_images);
+  const price = toNumber(row.price, 0);
+  const image = typeof row.image === 'string' && row.image.trim() !== '' ? row.image : undefined;
 
   return {
     id: toNumber(row.id, 0),
     name: typeof row.name === 'string' ? row.name : String(row.name ?? ''),
-    price: priceMin,
+    price,
     image,
     placeholder: image ? undefined : 'inventory_2',
-    categorySlug: typeof row.categories?.slug === 'string' ? row.categories.slug : null,
+    categorySlug: typeof row.retail_categories?.slug === 'string' ? row.retail_categories.slug : null,
   };
 }
 
@@ -184,19 +87,19 @@ async function fetchProductSummaries(signal?: AbortSignal) {
     const rows = await supabasePaginatedFetcher<ProductRow>(
       (from, to) =>
         supabase
-          .from('products')
+          .from('product_retail')
           .select(
             `
             id,
             name,
             description,
-            categories(slug, is_active),
-            product_images(image_url, is_primary, display_order),
-            product_variants(id, name, price, is_active, stock, reserved_stock)
+            price,
+            stock,
+            image,
+            retail_categories!product_retail_retail_category_id_fkey(slug, is_active)
           `
           )
           .abortSignal(timeoutSignal)
-          .is('deleted_at', null)
           .eq('is_active', true)
           .order('name', { ascending: true })
           .range(from, to),
@@ -206,7 +109,7 @@ async function fetchProductSummaries(signal?: AbortSignal) {
     // Filter out products from inactive categories
     return rows
       .filter((row) => {
-        const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+        const category = Array.isArray(row.retail_categories) ? row.retail_categories[0] : row.retail_categories;
         return !category || category.is_active;
       })
       .map(transformProductSummary);
@@ -227,18 +130,17 @@ async function fetchProductPickerOptions(signal?: AbortSignal) {
     const rows = await supabasePaginatedFetcher<ProductRow>(
       (from, to) =>
         supabase
-          .from('products')
+          .from('product_retail')
           .select(
             `
             id,
             name,
-            categories(slug, is_active),
-            product_images(image_url, is_primary, display_order),
-            product_variants(price, is_active)
+            price,
+            image,
+            retail_categories!product_retail_retail_category_id_fkey(slug, is_active)
           `
           )
           .abortSignal(timeoutSignal)
-          .is('deleted_at', null)
           .eq('is_active', true)
           .order('name', { ascending: true })
           .range(from, to),
@@ -248,7 +150,7 @@ async function fetchProductPickerOptions(signal?: AbortSignal) {
     // Filter out products from inactive categories
     return rows
       .filter((row) => {
-        const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+        const category = Array.isArray(row.retail_categories) ? row.retail_categories[0] : row.retail_categories;
         return !category || category.is_active;
       })
       .map(transformProductPickerOption);

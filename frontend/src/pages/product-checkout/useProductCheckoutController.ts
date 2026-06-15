@@ -454,6 +454,11 @@ export function useProductCheckoutController({
       // Open fresh payment popup with correct PRD invoice
       openDokuCheckout(payload.payment_url, payload.order_number);
       showToast('info', 'Payment popup opened. We will keep checking your order status.');
+
+      // Clear the cart since the order has been successfully created in the backend
+      skipEmptyCartRedirectRef.current = true;
+      orderItems.map((item) => item.retail_product_id).forEach((id) => removeItem(id));
+
       navigate(`/order/product/success/${payload.order_number}?pending=1`, { state: { isPending: true } });
     } catch (payError) {
       setError(payError instanceof Error ? payError.message : 'Failed to process payment');

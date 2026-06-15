@@ -60,6 +60,17 @@ export async function syncProductOrderStatus(
         return requestProductOrderSync(orderNumber, freshToken);
       }
     }
+    // Di mode staging, kalau edge function belum di-deploy akan kena CORS/TypeError
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.warn('Sync function not available, ignoring to prevent UI crash in staging');
+      return { order: null };
+    }
+    
+    // Ignore 404 errors as well (missing function)
+    if (getSupabaseFunctionStatus(error) === 404) {
+      console.warn('Sync function 404, ignoring to prevent UI crash in staging');
+      return { order: null };
+    }
 
     throw error;
   }
