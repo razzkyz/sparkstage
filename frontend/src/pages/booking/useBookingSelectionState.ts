@@ -143,7 +143,7 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
         return previous;
       }
 
-      return firstBookableDate;
+      return null; // Do not auto-select, force user to pick manually
     });
 
     if (!firstBookableDate) return;
