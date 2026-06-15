@@ -143,7 +143,7 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
         return previous;
       }
 
-      return null;
+      return firstBookableDate;
     });
 
     if (!firstBookableDate) return;

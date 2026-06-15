@@ -402,48 +402,56 @@ const Booking = () => {
                   />
 
                   {selectedDate ? (
-                    <div className="relative overflow-hidden rounded-xl shadow-lg shadow-pink-200/60">
-                      {/* Background gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500  to-rose-500" />
-                      {/* Animated shimmer overlay */}
-                      <div
-                        className="absolute inset-0 opacity-30"
-                        style={{
-                          background:
-                            "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer 2.5s ease-in-out infinite",
-                        }}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="relative overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.5)] border border-pink-300/50 group cursor-pointer transform-gpu"
+                    >
+                      {/* Rich solid background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-rose-600 via-pink-500 to-rose-600" />
+                      
+                      {/* Diagonal speed stripes background */}
+                      <div className="absolute inset-0 opacity-20 mix-blend-overlay" 
+                           style={{ 
+                             backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 20px)' 
+                           }} 
                       />
-                      <div className="relative flex items-center justify-between md:justify-evenly  px-5 py-3.5 text-white">
-                        {/* Left: icons + text */}
-                        <div className="flex items-center gap-3">
-                          <div className="flex gap-0.5 text-lg">
-                            <span
-                              className="inline-block animate-bounce"
-                              style={{ animationDelay: "0s" }}
-                            >
-                              ⚡
-                            </span>
-                          </div>
-                        </div>
-                        <div className="">
-                          <p className="text-sm md:text-base font-black leading-none">
-                            Selling Fast — Secure Your Spot Now!
-                          </p>
-                        </div>
 
-                        {/* Right: live dot + label */}
-                        <div className="flex gap-0.5 text-lg">
-                          <span
-                            className="inline-block animate-bounce"
-                            style={{ animationDelay: "0s" }}
-                          >
-                            ⚡
-                          </span>
-                        </div>
+                      {/* Moving glowing lens flare behind the text */}
+                      <motion.div 
+                        className="absolute top-1/2 -left-32 w-64 h-64 bg-white/50 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
+                        animate={{ x: ["0%", "500%"] }}
+                        transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                      />
+
+                      <div className="relative flex items-center py-4 text-white overflow-hidden backdrop-blur-sm">
+                        <motion.div 
+                          className="flex whitespace-nowrap w-max"
+                          animate={{ x: [0, "-50%"] }}
+                          transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+                        >
+                          {[...Array(8)].map((_, i) => (
+                            <div key={i} className="flex items-center gap-6 px-6">
+                              {/* Icon in a glassmorphic glowing circle */}
+                              <span className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.4)] border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                                <span className={`text-lg md:text-xl drop-shadow-[0_0_10px_rgba(253,224,71,1)] text-yellow-300 ${i % 2 === 0 ? "animate-pulse" : "animate-bounce"}`}>
+                                  {i % 2 === 0 ? "🔥" : "⚡"}
+                                </span>
+                              </span>
+                              
+                              {/* Punchy Text */}
+                              <p className="text-sm md:text-lg font-black leading-none tracking-[0.15em] italic drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)] text-white group-hover:text-yellow-100 transition-colors duration-300">
+                                {i % 2 === 0 ? "SELLING FAST" : "SECURE YOUR SPOT NOW!"}
+                              </p>
+                              
+                              {/* Separator Dot */}
+                              <div className="w-1.5 h-1.5 rounded-full bg-white/50 shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                            </div>
+                          ))}
+                        </motion.div>
                       </div>
-                    </div>
+                    </motion.div>
                   ) : null}
 
                   <JourneyTimeSlotsSection
