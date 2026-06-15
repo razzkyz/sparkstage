@@ -132,18 +132,18 @@ export default function StaffDetailModal({ staffReport, onClose }: StaffDetailMo
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-3 mt-6">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-black">{filteredOrders.length}</p>
-              <p className="text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Transaksi</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-black">{filteredOrders.length}</p>
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Transaksi</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-black">{totalQuantity}</p>
-              <p className="text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Item Terjual</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-black">{totalQuantity}</p>
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Item Terjual</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-black">Rp {formatCurrency(totalRevenue)}</p>
-              <p className="text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Total Penjualan</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4 text-center col-span-2 sm:col-span-1">
+              <p className="text-xl sm:text-2xl font-black">Rp {formatCurrency(totalRevenue)}</p>
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1 text-white/80">Total Penjualan</p>
             </div>
           </div>
 

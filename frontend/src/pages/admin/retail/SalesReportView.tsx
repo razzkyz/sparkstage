@@ -198,7 +198,7 @@ export default function SalesReportView({ orders }: SalesReportViewProps) {
                 <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Item</p>
                 <p className="text-2xl font-black text-purple-900">{totalQuantity}</p>
               </div>
-              <div className="text-center bg-purple-600 rounded-xl p-4">
+              <div className="text-center bg-purple-600 rounded-xl p-4 col-span-2 md:col-span-1">
                 <p className="text-xs text-white font-semibold uppercase mb-1">Total</p>
                 <p className="text-xl font-black text-white">Rp {formatCurrency(totalRevenue)}</p>
               </div>

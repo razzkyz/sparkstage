@@ -151,18 +151,18 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
     <div className="space-y-6 animate-fade-in">
 
       {/* === SUMMARY STRIP === */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-[#ff4b86]">{staffReports.length}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Staff Aktif</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm">
+          <p className="text-xl sm:text-2xl font-black text-[#ff4b86]">{staffReports.length}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Staff Aktif</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-gray-900">{staffReports.reduce((s, r) => s + r.totalOrders, 0)}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Transaksi</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm">
+          <p className="text-xl sm:text-2xl font-black text-gray-900">{staffReports.reduce((s, r) => s + r.totalOrders, 0)}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Transaksi</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-gray-900">Rp {formatCurrency(grandTotal)}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Penjualan</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm col-span-2 sm:col-span-1">
+          <p className="text-xl sm:text-2xl font-black text-gray-900">Rp {formatCurrency(grandTotal)}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Penjualan</p>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
       <div className="mt-6 flex justify-center">
         <button
           onClick={() => setShowSimpleReport(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all w-full sm:w-auto"
         >
           <span className="material-symbols-outlined text-[20px]">assignment</span>
           Laporan Staff

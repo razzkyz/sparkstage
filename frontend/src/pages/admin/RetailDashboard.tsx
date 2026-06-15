@@ -84,7 +84,7 @@ export default function RetailDashboard() {
         {userRole !== 'owner' && userRole !== 'print' && (
           <button
             onClick={() => setActiveTab('claim')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
+            className={`flex items-center justify-center sm:justify-start gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
               activeTab === 'claim' 
                 ? 'bg-[#ff4b86] text-white shadow-md' 
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -101,7 +101,7 @@ export default function RetailDashboard() {
         )}
         <button
           onClick={() => setActiveTab('report')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center justify-center sm:justify-start gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
             activeTab === 'report' 
               ? 'bg-[#ff4b86] text-white shadow-md' 
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'

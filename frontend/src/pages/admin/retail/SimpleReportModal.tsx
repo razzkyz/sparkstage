@@ -223,19 +223,19 @@ export default function SimpleReportModal({ orders, onClose }: SimpleReportModal
                   <div className="space-y-2">
                     {staffSummaries.map((staff, index) => (
                       <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                               <span className="text-white font-black text-lg">{staff.staffName.charAt(0).toUpperCase()}</span>
                             </div>
-                            <div>
-                              <p className="font-black text-gray-900">{staff.staffName}</p>
+                            <div className="min-w-0">
+                              <p className="font-black text-gray-900 truncate">{staff.staffName}</p>
                               <p className="text-xs text-gray-500">{staff.totalOrders} Transaksi</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-black text-2xl text-purple-600">{staff.totalItems} Item</p>
-                            <p className="text-sm text-gray-900 font-bold">Rp {formatCurrency(staff.totalRevenue)}</p>
+                          <div className="text-left sm:text-right mt-1 sm:mt-0 ml-12 sm:ml-0">
+                            <p className="font-black text-xl sm:text-2xl text-purple-600">{staff.totalItems} Item</p>
+                            <p className="text-xs sm:text-sm text-gray-900 font-bold">Rp {formatCurrency(staff.totalRevenue)}</p>
                           </div>
                         </div>
                       </div>
