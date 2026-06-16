@@ -446,28 +446,23 @@ const Booking = () => {
                         transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
                       />
 
-                      <div className="relative flex items-center py-4 text-white overflow-hidden backdrop-blur-sm">
+                      <div className="relative flex items-center py-4 text-white overflow-hidden">
                         <motion.div 
                           className="flex whitespace-nowrap w-max"
-                          animate={{ x: [0, "-50%"] }}
-                          transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+                          animate={{ x: ["-50%", 0] }}
+                          transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
                         >
                           {[...Array(8)].map((_, i) => (
                             <div key={i} className="flex items-center gap-6 px-6">
-                              {/* Icon in a glassmorphic glowing circle */}
-                              <span className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.4)] border border-white/30 group-hover:scale-110 transition-transform duration-300">
-                                <span className={`text-lg md:text-xl drop-shadow-[0_0_10px_rgba(253,224,71,1)] text-yellow-300 ${i % 2 === 0 ? "animate-pulse" : "animate-bounce"}`}>
-                                  {i % 2 === 0 ? "🔥" : "⚡"}
-                                </span>
+                              <span className="text-lg md:text-xl text-yellow-300">
+                                {i % 2 === 0 ? "🔥" : "⚡"}
                               </span>
                               
-                              {/* Punchy Text */}
-                              <p className="text-sm md:text-lg font-black leading-none tracking-[0.15em] italic drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)] text-white group-hover:text-yellow-100 transition-colors duration-300">
+                              <p className="text-sm md:text-lg font-black leading-none tracking-[0.15em] italic text-white">
                                 {i % 2 === 0 ? "SELLING FAST" : "SECURE YOUR SPOT NOW!"}
                               </p>
                               
-                              {/* Separator Dot */}
-                              <div className="w-1.5 h-1.5 rounded-full bg-white/50 shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
                             </div>
                           ))}
                         </motion.div>

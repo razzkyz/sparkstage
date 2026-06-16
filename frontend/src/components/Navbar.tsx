@@ -182,7 +182,7 @@ const Navbar = () => {
     <>
       {/* ── Sticky Header Wrapper (Top Bar + Desktop Nav) ── */}
       <div
-        className={`sticky top-0 z-[110] transition-all duration-500 ${scrolled ? "bg-white/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(236,72,153,0.08)]" : "bg-gradient-to-b from-white via-pink-50/20 to-white"}`}
+        className={`sticky top-0 z-[110] bg-white ${scrolled ? "shadow-[0_8px_32px_rgba(236,72,153,0.08)]" : ""}`}
       >
         {/* Top Bar */}
         <div className="relative">
@@ -326,8 +326,7 @@ const Navbar = () => {
                     </Link>
                   )}
 
-                  {/* Divider */}
-                  <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
 
                   {/* My Tickets */}
                   <Link
@@ -535,45 +534,12 @@ const Navbar = () => {
                     );
                   }
 
-                  {/* BOOKING — special pill CTA */}
-                  if (item.key === "booking") {
-                    return (
-                      <Link
-                        key={item.key}
-                        ref={(el) => (desktopNavItemsRef.current[idx] = el)}
-                        to={item.to}
-                        className="group relative mx-2 my-1.5 flex items-center gap-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em] text-white transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
-                        style={{
-                          background: "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
-                          boxShadow: "0 4px 20px rgba(255,75,134,0.55), 0 0 0 3px rgba(255,75,134,0.1)",
-                        }}
-                      >
-                        {Icon && (
-                          <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
-                            <Icon className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                        {item.label}
-                        {/* Shimmer sweep */}
-                        <span
-                          className="absolute inset-0 pointer-events-none"
-                          style={{
-                            background:
-                              "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)",
-                            backgroundSize: "200% 100%",
-                            animation: "shimmer 2.5s linear infinite",
-                          }}
-                        />
-                      </Link>
-                    );
-                  }
-
                   return (
                     <Link
                       key={item.key}
                       ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                       to={item.to}
-                      className={`group relative text-[11px] font-black uppercase tracking-[0.15em] px-7 py-4 flex items-center justify-center whitespace-nowrap transition-all duration-200 ${
+                      className={`group relative text-[11px] font-black uppercase tracking-[0.15em] px-7 py-4 flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-200 ${
                         isActive
                           ? "text-pink-600"
                           : "text-gray-500 hover:text-pink-500"
@@ -588,6 +554,9 @@ const Navbar = () => {
                         />
                       )}
 
+                      {item.key === "booking" && Icon && (
+                        <Icon className="w-4 h-4 relative z-10" />
+                      )}
                       <span className="relative z-10">{item.label}</span>
 
                       {/* Active: sliding underline pill with glow */}
