@@ -8,10 +8,11 @@ import { buildImageKitThumbUrl } from '../lib/imagekit';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
 import type { ProductRetail } from '../types';
+import useSeo from '../hooks/useSeo';
 
 const PRODUCTS_PER_PAGE = 20;
 
-// ── Category Tabs ─────────────────────────────────────────────────────────────
+// ── Category Tabs (sub-categories within Spark Club) ─────────────────────────
 function CategoryTabs({
   categories,
   active,
@@ -128,7 +129,7 @@ function RetailProductGrid({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {paginated.map((product) => (
           <Link
-            to={`/shop/retail/product/${product.id}`}
+            to={`/shop/product/${product.id}`}
             key={product.id}
             className="group flex flex-col h-full rounded-xl border-2 border-gray-100 bg-white overflow-hidden duration-300 hover:border-[#ff4b86] hover:shadow-lg hover:shadow-pink-100"
           >
@@ -153,15 +154,6 @@ function RetailProductGrid({
                     Out of Stock
                   </span>
                 </div>
-              )}
-
-              {product.retail_category && (
-                <span className="absolute top-3 left-3 bg-[#ff4b86] text-white px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm">
-                  {product.retail_category === 'glam' ? 'Glam' : 
-                   product.retail_category === 'charmbar' ? 'Charm Bar' : 
-                   product.retail_category === 'sparkclub' ? 'Spark Club' : 
-                   product.retail_category}
-                </span>
               )}
             </div>
 
@@ -222,32 +214,43 @@ function RetailProductGrid({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RetailShopPage() {
-  const { data: products = [], isLoading, error } = useProductRetailSummaries();
+  useSeo({
+    title: 'Spark Club · Stage 55',
+    description: 'Discover Spark Club exclusive products at Stage 55.',
+    canonical: `${window.location.origin}/shop`,
+  });
+
+  const { data: allProducts = [], isLoading, error } = useProductRetailSummaries();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Define the main retail categories
-  const categories = useMemo(() => [
-    { name: 'Glam', slug: 'glam' },
-    { name: 'Charm Bar', slug: 'charmbar' },
-    { name: 'Spark Club', slug: 'sparkclub' },
-  ], []);
+  // Spark Club only — filter by retail_category
+  const sparkClubProducts = useMemo(
+    () => allProducts.filter((p) => p.retail_category === 'sparkclub'),
+    [allProducts],
+  );
 
-  // Reset to "all" if the active category no longer exists in the data
-  useEffect(() => {
-    if (activeCategory !== 'all' && !categories.find((c) => c.slug === activeCategory)) {
-      setActiveCategory('all');
+  // Sub-categories derived from retail_categories relation (unique)
+  const subCategories = useMemo(() => {
+    const seen = new Set<string>();
+    const cats: { name: string; slug: string }[] = [];
+    for (const p of sparkClubProducts) {
+      if (p.retail_categories?.slug && !seen.has(p.retail_categories.slug)) {
+        seen.add(p.retail_categories.slug);
+        cats.push({ name: p.retail_categories.name, slug: p.retail_categories.slug });
+      }
     }
-  }, [categories, activeCategory]);
+    return cats.sort((a, b) => a.name.localeCompare(b.name));
+  }, [sparkClubProducts]);
 
   const resetSignal = `${activeCategory}__${search}`;
 
-  // Client-side filter: category + search
+  // Client-side filter: sub-category + search
   const filtered = useMemo(() => {
-    let list = products;
+    let list = sparkClubProducts;
 
     if (activeCategory !== 'all') {
-      list = list.filter((p) => p.retail_category === activeCategory);
+      list = list.filter((p) => p.retail_categories?.slug === activeCategory);
     }
 
     if (search.trim()) {
@@ -255,13 +258,12 @@ export default function RetailShopPage() {
       list = list.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          (p.description ?? '').toLowerCase().includes(q) ||
-          (p.retail_category ?? '').toLowerCase().includes(q),
+          (p.description ?? '').toLowerCase().includes(q),
       );
     }
 
     return list;
-  }, [products, activeCategory, search]);
+  }, [sparkClubProducts, activeCategory, search]);
 
   return (
     <PageTransition>
@@ -272,7 +274,7 @@ export default function RetailShopPage() {
           <div className="mb-6">
             <div className="flex gap-2 sm:gap-3 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
               <Link
-                to="/beauty"
+                to="/glam"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">auto_awesome</span>
@@ -287,24 +289,21 @@ export default function RetailShopPage() {
               </Link>
               <Link
                 to="/shop"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
               >
                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">storefront</span>
                 Spark
               </Link>
-              <Link
-                to="/shop/retail"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">local_shipping</span>
-                Retail
-              </Link>
             </div>
           </div>
 
-          <h3 className="text-2xl italic tracking-wide text-center mb-6">
-            Spark Retail
-          </h3>
+          <div className="flex justify-center mb-6 mt-4">
+            <img
+              src="/images/landing/SPARK CLUB.webp"
+              alt="Spark Club"
+              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
+            />
+          </div>
 
           {/* ── Sticky filter bar ── */}
           <div className="sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6 mb-8 border-b border-gray-100 pb-4">
@@ -314,7 +313,7 @@ export default function RetailShopPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search retail products..."
+                placeholder="Search Spark Club products..."
                 className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] transition-colors"
               />
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -329,10 +328,10 @@ export default function RetailShopPage() {
               )}
             </div>
 
-            {/* Category tabs — only render once data is loaded */}
-            {!isLoading && categories.length > 0 && (
+            {/* Sub-category tabs — only if there are sub-categories */}
+            {!isLoading && subCategories.length > 0 && (
               <CategoryTabs
-                categories={categories}
+                categories={subCategories}
                 active={activeCategory}
                 onChange={setActiveCategory}
               />
@@ -343,7 +342,7 @@ export default function RetailShopPage() {
           {error && (
             <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
               <p className="text-sm text-red-700">
-                {error instanceof Error ? error.message : 'Failed to load retail products'}
+                {error instanceof Error ? error.message : 'Failed to load products'}
               </p>
             </div>
           )}

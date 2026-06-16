@@ -38,6 +38,4 @@ export const publicRouteConfigs: AppRouteConfig[] = [
   { path: "news", Page: News },
   { path: "journey", Page: JourneySelectionPage },
   { path: "booking", Page: Booking },
-  { path: "shop/retail", Page: RetailShopPage },
-  { path: "shop/retail/product/:productId", Page: RetailProductDetailPage },
 ];

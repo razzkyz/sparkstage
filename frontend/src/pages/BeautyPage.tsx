@@ -8,7 +8,7 @@ import {
   DEFAULT_GLAM_PAGE_SETTINGS,
   useGlamPageSettings,
 } from "../hooks/useGlamPageSettings";
-import { useProductSummaries } from "../hooks/useProducts";
+import { useProductRetailSummaries } from "../hooks/useProductRetail";
 import { formatCurrency } from "../utils/formatters";
 import { getCmsFontStyle } from "../lib/cmsTypography";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
@@ -17,7 +17,7 @@ import { useCart } from "../contexts/cartStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
 import useSeo from "../hooks/useSeo";
-import type { Product } from "../hooks/useProducts";
+import type { ProductRetail } from "../types";
 
 const GLAM_ASSET_BASE = "/images/glam%20page%20assets";
 const STAR_ASSET_BASE = `${GLAM_ASSET_BASE}/STAR%20GLITTER%20TRANSPARENT%20BG`;
@@ -64,10 +64,10 @@ export default function BeautyPage() {
   });
   const { settings, error: settingsError } = useGlamPageSettings();
   const {
-    data: products = [],
+    data: allProducts = [],
     isLoading: productsLoading,
     error: productsError,
-  } = useProductSummaries();
+  } = useProductRetailSummaries();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [quickView, setQuickView] = useState<QuickViewState>({
@@ -81,22 +81,28 @@ export default function BeautyPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
 
-  const handleAddToCart = (product: Product) => {
+  // Filter hanya produk Glam dari tabel product_retail
+  const products = useMemo(
+    () => allProducts.filter((p) => p.retail_category === 'glam'),
+    [allProducts],
+  );
+
+  const handleAddToCart = (product: ProductRetail) => {
     if (!user) {
       showToast("error", "Please login to add items to cart");
       navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
-    if (!product.defaultVariantId || !product.defaultVariantName) return;
+    if (product.stock <= 0) return;
 
     try {
       addItem(
         {
           productId: product.id,
           productName: product.name,
-          productImageUrl: product.image,
-          retailProductId: product.defaultVariantId,
-          variantName: product.defaultVariantName,
+          productImageUrl: product.image ?? undefined,
+          retailProductId: product.id,
+          variantName: product.variant || "Default",
           unitPrice: product.price,
         },
         1,
@@ -120,57 +126,22 @@ export default function BeautyPage() {
     () => new Map(content.look_star_links.map((link) => [link.slot, link])),
     [content.look_star_links],
   );
+
+  // QuickView masih menggunakan integer productId dari product_retail
   const productLookup = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products],
   );
 
-  const BASE_MAKEUP_SLUGS = [
-    "makeup",
-    "eyewear",
-    "glitter",
-    "headliner",
-    "popsocket",
-    "pop-socket",
-    "popsockets",
-    "body-glitter",
-  ];
-
-  const makeupProducts = useMemo(() => {
-    const slugs = new Set([
-      ...BASE_MAKEUP_SLUGS,
-      ...(content.product_categories || []),
-    ]);
+  // Filter berdasarkan search query
+  const filteredProducts = useMemo(() => {
+    if (!normalizedQuery) return products;
     return products.filter(
       (p) =>
-        (p.categorySlug != null && slugs.has(p.categorySlug)) ||
-        p.name.toLowerCase().includes("speckles") ||
-        p.name.toLowerCase().includes("patch"),
+        p.name.toLowerCase().includes(normalizedQuery) ||
+        (p.description ?? '').toLowerCase().includes(normalizedQuery),
     );
-  }, [products, content.product_categories]);
-
-  const filteredProducts = useMemo(() => {
-    const matches = makeupProducts.filter((product) => {
-      if (!normalizedQuery) return true;
-      return (
-        product.name.toLowerCase().includes(normalizedQuery) ||
-        product.description.toLowerCase().includes(normalizedQuery)
-      );
-    });
-
-    // Sort to put Speckles/Patch products first so they appear together side-by-side
-    return matches.sort((a, b) => {
-      const aIsSpeckles =
-        a.name.toLowerCase().includes("speckles") ||
-        a.name.toLowerCase().includes("patch");
-      const bIsSpeckles =
-        b.name.toLowerCase().includes("speckles") ||
-        b.name.toLowerCase().includes("patch");
-      if (aIsSpeckles && !bIsSpeckles) return -1;
-      if (!aIsSpeckles && bIsSpeckles) return 1;
-      return 0;
-    });
-  }, [normalizedQuery, makeupProducts]);
+  }, [normalizedQuery, products]);
 
   const PAGE_SIZE = 8;
   const totalPages = Math.max(
@@ -373,6 +344,7 @@ export default function BeautyPage() {
                 key={product.id}
                 to={`/shop/product/${product.id}`}
                 className="group cursor-pointer flex flex-col h-full rounded-2xl bg-white overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_15px_35px_-10px_rgba(255,75,134,0.25)] border border-gray-100 hover:border-pink-200"
+                onMouseEnter={undefined}
               >
                 <div className="relative overflow-hidden  bg-[#faf9f9] shrink-0">
                   {product.image ? (
@@ -391,12 +363,10 @@ export default function BeautyPage() {
                     </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <span className="material-symbols-outlined text-5xl">
-                        {product.placeholder}
-                      </span>
+                      <span className="material-symbols-outlined text-5xl">inventory_2</span>
                     </div>
                   )}
-                  {!product.defaultVariantId && (
+                  {product.stock <= 0 && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
                       <span className="text-[#ff4b86] text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 bg-white/90 rounded-full shadow-sm">
                         Out of Stock
@@ -409,18 +379,13 @@ export default function BeautyPage() {
                       e.stopPropagation();
                       handleAddToCart(product);
                     }}
-                    disabled={!product.defaultVariantId}
+                    disabled={product.stock <= 0}
                     className="absolute bottom-4 right-4 flex items-center justify-center w-10 h-10 bg-[#ff4b86] shadow-[0_4px_12px_rgba(255,75,134,0.3)] text-white rounded-full opacity-0 translate-y-4 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-100 group-hover:translate-y-0 hover:bg-[#e63d75] hover:scale-110 hover:shadow-pink-500/40 disabled:opacity-0 disabled:cursor-not-allowed z-20"
                   >
                     <span className="material-symbols-outlined text-[20px]">
                       add_shopping_cart
                     </span>
                   </button>
-                  {product.badge && (
-                    <span className="absolute top-4 left-4 bg-[#ff4b86] text-white px-3 py-1.5 text-[10px] uppercase tracking-[0.15em] font-bold rounded-full shadow-md z-20">
-                      {product.badge}
-                    </span>
-                  )}
                 </div>
                 <div className="p-4 flex flex-col flex-grow bg-white z-10 relative">
                   <h3
@@ -442,14 +407,6 @@ export default function BeautyPage() {
                     >
                       {formatCurrency(product.price)}
                     </span>
-                    {product.originalPrice ? (
-                      <span
-                        className="text-[11px] text-gray-400 line-through font-medium mb-[2px]"
-                        style={getCmsFontStyle(productFonts.body)}
-                      >
-                        {formatCurrency(product.originalPrice)}
-                      </span>
-                    ) : null}
                   </div>
                 </div>
               </Link>
