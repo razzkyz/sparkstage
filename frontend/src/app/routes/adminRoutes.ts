@@ -95,6 +95,10 @@ const StockOpnameDetail = lazy(
   () => import("../../pages/admin/StockOpnameDetail"),
 );
 
+const PrintOrdersReport = lazy(
+  () => import("../../pages/admin/PrintOrdersReport"),
+);
+
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
   { path: "/admin/retail-dashboard", Page: RetailDashboard },
@@ -139,4 +143,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/stock-adjustments/:adjustmentId", Page: StockAdjustmentDetail },
   { path: "/admin/stock-opname", Page: StockOpname },
   { path: "/admin/stock-opname/:opnameId", Page: StockOpnameDetail },
+  { path: "/admin/print-orders", Page: PrintOrdersReport },
 ];

@@ -212,6 +212,27 @@ Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/a
 - Review disabled products: Filter by "Inactive"
 - Data quality check: Combine filters (e.g., Active + No Category)
 
+## Custom Skills
+
+### SparkStage US Builder (NEW 2026-06-13)
+- **Location:** `.agents/skills/sparkstage-us-builder/`
+- **Purpose:** Expert agent for building US market version with Stripe/PayPal/Square replacing DOKU payments
+- **Quick Start:** `QUICKSTART_ID.md` (Bahasa Indonesia guide)
+- **Use Cases:**
+  - Migrate DOKU payments to Stripe
+  - Integrate US shipping providers (USPS/FedEx/UPS via EasyPost)
+  - Convert IDR to USD currency
+  - Update i18n from Indonesian to English
+  - Create Stripe webhook handlers
+- **Activation:** Say "Help me build US version of SparkStage" or "Migrate DOKU to Stripe"
+- **Documentation:**
+  - `SKILL.md` - Complete agent knowledge base
+  - `MIGRATION_COMPARISON.md` - DOKU vs Stripe detailed comparison
+  - `DEPLOYMENT_GUIDE.md` - Production deployment steps
+  - `TESTING_STRATEGY.md` - Testing workflow
+  - `us-dependencies.json` - All required dependencies
+- **Summary:** `SPARKSTAGE_US_SETUP_COMPLETE.md` at repo root
+
 ## Working Rules
 
 - Prefer TanStack Query patterns already used in the app.

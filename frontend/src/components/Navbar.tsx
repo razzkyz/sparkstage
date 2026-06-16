@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { StageQrScannerModal } from "./StageQrScannerModal";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -73,6 +74,7 @@ const Navbar = () => {
     const path = location.pathname;
     if (path === "/") return "on-stage";
     if (path.startsWith("/on-stage")) return "on-stage";
+    if (path.startsWith("/booking")) return "booking";
     if (path.startsWith("/events")) return "event";
     if (
       path.startsWith("/shop") ||
@@ -82,10 +84,9 @@ const Navbar = () => {
       path.startsWith("/chamr-bar")
     )
       return "shop";
-    // if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
-      return "dressing-room";
     if (path.startsWith("/news")) return "news";
-    if (path.startsWith("/booking")) return "booking";
+    if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
+      return "dressing-room";
     return "";
   })();
 
@@ -104,10 +105,7 @@ const Navbar = () => {
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
   ];
 
-  const activeIndex = Math.max(
-    0,
-    navItems.findIndex((item) => item.key === activeNavKey),
-  );
+  const activeIndex = navItems.findIndex((item) => item.key === activeNavKey);
   // const isIndonesian = currentLanguage.startsWith('id');
 
   const centerMobileActiveItem = useCallback(
@@ -184,10 +182,12 @@ const Navbar = () => {
     <>
       {/* ── Sticky Header Wrapper (Top Bar + Desktop Nav) ── */}
       <div
-        className={`sticky top-0 z-[110] bg-white transition-shadow duration-300 ${scrolled ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : ""}`}
+        className={`sticky top-0 z-[110] bg-white ${scrolled ? "shadow-[0_8px_32px_rgba(236,72,153,0.08)]" : ""}`}
       >
         {/* Top Bar */}
-        <div className="border-b border-gray-200 lg:border-b-3 lg:border-main-500">
+        <div className="relative">
+          {/* Pink gradient separator line at bottom of top bar (desktop only) */}
+          <div className="absolute bottom-0 inset-x-0 h-[1px] hidden lg:block" style={{ background: 'linear-gradient(90deg, transparent 0%, #ff4b86 30%, #ff6b9d 50%, #ff4b86 70%, transparent 100%)' }} />
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-2 lg:py-1">
               <div className="w-1/3 flex items-center gap-3">
@@ -254,59 +254,38 @@ const Navbar = () => {
               </div>
 
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
-                {/* Desktop icons — selalu tampil */}
-                <div className="hidden lg:flex items-center gap-3">
-                  {/* QR Scanner button — temporarily disabled */}
-                  {false && user && (
-                    <button
-                      id="navbar-qr-scanner-btn"
-                      type="button"
-                      onClick={() => setScannerOpen(true)}
-                      title="Scan Stage QR"
-                      aria-label="Scan Stage QR Code"
-                      className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40 flex-shrink-0"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 60%, #ff6b9d 100%)",
-                        boxShadow: "0 2px 8px rgba(255,75,134,0.45)",
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="w-4 h-4"
-                      >
-                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                        <rect x="7" y="7" width="3" height="3" />
-                        <rect x="14" y="7" width="3" height="3" />
-                        <rect x="7" y="14" width="3" height="3" />
-                        <path d="M14 14h3v3" />
-                      </svg>
-                    </button>
-                  )}
+                {/* ── Desktop Icons (Premium Redesign) ── */}
+                <div className="hidden lg:flex items-center gap-1">
+
                   {user ? (
                     <>
-                      <span className="text-sm font-medium text-gray-900">
-                        {getUserDisplayName(user)}
-                      </span>
+                      {/* Avatar + Name */}
+                      <div className="flex items-center gap-2 pr-3 mr-1 border-r border-gray-200">
+                        <div
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-black flex-shrink-0"
+                          style={{
+                            background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                            boxShadow: "0 2px 8px rgba(255,75,134,0.35)",
+                          }}
+                        >
+                          {getUserDisplayName(user).charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-bold text-gray-700 max-w-[80px] truncate">
+                          {getUserDisplayName(user)}
+                        </span>
+                      </div>
 
                       {isAdmin && (
                         <Link
                           to="/admin/dashboard"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#ff4b86] text-white rounded-md hover:bg-[#e63d75] transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_6px_20px_rgba(255,75,134,0.45)] active:scale-95"
+                          style={{
+                            background: "linear-gradient(135deg, #ff2d72, #ff4b86)",
+                            boxShadow: "0 3px 12px rgba(255,75,134,0.3)",
+                          }}
                           title="Admin Dashboard"
                         >
-                          <span className="material-symbols-outlined text-sm">
-                            dashboard
-                          </span>
+                          <span className="material-symbols-outlined text-[14px]">dashboard</span>
                           Dashboard
                         </Link>
                       )}
@@ -314,102 +293,100 @@ const Navbar = () => {
                       <button
                         onClick={handleSignOutClick}
                         disabled={loggingOut}
-                        className="text-gray-600 hover:text-primary transition-colors cursor-pointer"
+                        className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-all duration-200 active:scale-90"
                         title={t("auth.signOut")}
                       >
-                        <LogOut className="h-5 w-5" />
+                        <LogOut className="h-4 w-4" />
                       </button>
                     </>
                   ) : null}
 
-                  {/* Loyalty Points Badge — hanya saat login */}
+                  {/* Loyalty Points Badge */}
                   {user && (
                     <Link
                       to="/my-points"
                       className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
+                        background: "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
                         boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
                       }}
                       title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
                     >
-                      <span className="text-sm leading-none">
-                        {loyaltyRank.icon}
-                      </span>
+                      <span className="text-sm leading-none">{loyaltyRank.icon}</span>
                       <span className="text-xs font-black tracking-tight text-white">
                         {loyaltyPoints.toLocaleString()}
                       </span>
-                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
-                        pts
-                      </span>
+                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">pts</span>
                       <span
                         className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                         style={{
-                          background:
-                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
                         }}
                       />
                     </Link>
                   )}
 
-                  {/* Cart, My Tickets, My Orders — selalu tampil di desktop */}
+
+
+                  {/* My Tickets */}
                   <Link
                     to="/my-tickets"
-                    className="relative text-gray-600 hover:text-main-600 transition-colors"
+                    className="group relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90"
                     title={t("nav.myTickets")}
                   >
-                    <Ticket className="h-5 w-5" />
+                    <Ticket className="h-[18px] w-[18px]" />
                     {ticketCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      <span className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-[0_2px_6px_rgba(255,75,134,0.5)]">
                         {ticketCount}
                       </span>
                     )}
                   </Link>
 
+                  {/* My Orders — hidden */}
                   <Link
                     to="/my-orders"
-                    className="relative text-gray-600 hover:text-main-600 transition-colors hidden"
+                    className="group relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90 hidden"
                     title={t("nav.myOrders")}
                   >
-                    <ReceiptText className="h-5 w-5" />
+                    <ReceiptText className="h-[18px] w-[18px]" />
                     {orderCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      <span className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                         {orderCount}
                       </span>
                     )}
                   </Link>
 
+                  {/* Cart */}
                   <Link
                     to="/cart"
-                    className="relative text-gray-600 hover:text-main-600 transition-colors"
+                    className="group relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90"
                     aria-label={t("nav.cart")}
                   >
-                    <ShoppingCart className="h-5 w-5" />
+                    <ShoppingCart className="h-[18px] w-[18px]" />
                     {totalQuantity > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-main-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      <span className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-[0_2px_6px_rgba(255,75,134,0.5)]">
                         {totalQuantity}
                       </span>
                     )}
                   </Link>
 
-                  {/* Profile — hanya tampil saat login */}
+                  {/* Profile / Login */}
                   {user ? (
                     <Link
                       to="/profile"
-                      className="text-gray-600 hover:text-primary transition-colors"
+                      className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90"
                       title="Profile"
                     >
-                      <UserRound className="h-5 w-5" />
+                      <UserRound className="h-[18px] w-[18px]" />
                     </Link>
                   ) : (
                     <Link
                       to="/login"
-                      className="relative text-gray-600 hover:text-main-600 transition-colors"
+                      className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90"
                       aria-label={t("auth.signIn")}
                       title={t("auth.signIn")}
                     >
-                      <UserRound className="h-5 w-5" />
+                      <UserRound className="h-[18px] w-[18px]" />
                     </Link>
                   )}
                 </div>
@@ -523,21 +500,21 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Main Navigation - Desktop (inside sticky wrapper) */}
-        <nav className="hidden py-0.5 lg:block w-full relative bg-white border-b border-gray-200">
+        {/* ── Desktop Navigation Premium ── */}
+        <nav className="hidden lg:block w-full relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #fff5f8 0%, #ffffff 60%)' }}>
+          {/* Top accent line - vivid pink */}
+          <div className="absolute top-0 inset-x-0 h-[2.5px] pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, #ff2d72 20%, #ff4b86 50%, #ff2d72 80%, transparent 100%)' }} />
+          {/* Bottom glow line */}
+          <div className="absolute bottom-0 inset-x-0 h-[1px] pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,75,134,0.35) 30%, rgba(255,75,134,0.6) 50%, rgba(255,75,134,0.35) 70%, transparent 100%)' }} />
+
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {/* Star positioned relative to this wrapper */}
             <div
               ref={desktopNavContainerRef}
-              className="flex justify-center items-center relative "
+              className="flex justify-center items-center"
             >
-              {/* Nav items — equal-width grid so the middle item is always centred */}
               <div
                 ref={mobileNavScrollerRef}
-                className="grid relative z-10 w-3/5 "
-                style={{
-                  gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
-                }}
+                className="flex items-center"
               >
                 {navItems.map((item, idx) => {
                   const isActive = idx === activeIndex;
@@ -550,13 +527,8 @@ const Navbar = () => {
                         key={item.key}
                         ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                         disabled
-                        className="text-sm font-medium px-2 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap text-gray-400 cursor-not-allowed opacity-50 hover:opacity-50"
+                        className="relative text-[11px] font-black uppercase tracking-widest px-5 py-3.5 flex items-center justify-center whitespace-nowrap text-gray-300 cursor-not-allowed"
                       >
-                        {Icon && item.key === "booking" && (
-                          <div className="bg-main-500 rounded-full p-1">
-                            <Icon className="w-3 h-3 text-white" />
-                          </div>
-                        )}
                         {item.label}
                       </button>
                     );
@@ -567,18 +539,41 @@ const Navbar = () => {
                       key={item.key}
                       ref={(el) => (desktopNavItemsRef.current[idx] = el)}
                       to={item.to}
-                      className={`text-sm font-medium px-2 py-2 transition-colors flex items-center justify-center gap-2 z-10 relative whitespace-nowrap ${
+                      className={`group relative text-[11px] font-black uppercase tracking-[0.15em] px-7 py-4 flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-200 ${
                         isActive
-                          ? "text-main-500"
-                          : "text-black hover:text-main-500"
+                          ? "text-pink-600"
+                          : "text-gray-500 hover:text-pink-500"
                       }`}
                     >
-                      {Icon && item.key === "booking" && (
-                        <div className="bg-main-500 rounded-full p-1">
-                          <Icon className="w-3 h-3 text-white" />
-                        </div>
+                      {/* Active background chip */}
+                      {isActive && (
+                        <motion.span
+                          layoutId="desktop-nav-bg-chip"
+                          className="absolute inset-x-1 inset-y-2 rounded-xl bg-gradient-to-b from-pink-100/80 to-pink-50/60"
+                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                        />
                       )}
-                      {item.label}
+
+                      {item.key === "booking" && Icon && (
+                        <Icon className="w-4 h-4 relative z-10" />
+                      )}
+                      <span className="relative z-10">{item.label}</span>
+
+                      {/* Active: sliding underline pill with glow */}
+                      {isActive && (
+                        <motion.span
+                          layoutId="desktop-nav-underline"
+                          className="absolute bottom-0 left-4 right-4 h-[3px] rounded-full"
+                          style={{ background: "linear-gradient(90deg, #ff2d72, #ff4b86, #ff6b9d)", boxShadow: "0 0 10px rgba(255,75,134,0.7)" }}
+                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                        />
+                      )}
+
+                      {/* Hover dot indicator */}
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+
+                      {/* Hover underline */}
+                      <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-pink-200 rounded-full origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                     </Link>
                   );
                 })}

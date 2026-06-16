@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS, OWNER_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS, OWNER_MENU_SECTIONS, PRINT_MENU_SECTIONS } from '../../constants/adminMenu';
 import { useProductOrders } from '../../hooks/useProductOrders';
 import { lookupUserRole } from '../../auth/adminRole';
 
@@ -23,6 +23,10 @@ export default function RetailDashboard() {
         setUserRole(result.role ?? null);
         // Auto-redirect owner to report tab
         if (result.role === 'owner') {
+          setActiveTab('report');
+        }
+        // Auto-redirect print to report tab
+        if (result.role === 'print') {
           setActiveTab('report');
         }
       }
@@ -53,7 +57,7 @@ export default function RetailDashboard() {
     return completedOrders.filter(o => !o.sales_staff_name).length;
   }, [completedOrders]);
 
-  const menuSections = userRole === 'owner' ? OWNER_MENU_SECTIONS : CASHIER_MENU_SECTIONS;
+  const menuSections = userRole === 'owner' ? OWNER_MENU_SECTIONS : userRole === 'print' ? PRINT_MENU_SECTIONS : CASHIER_MENU_SECTIONS;
 
   return (
     <AdminLayout
@@ -77,10 +81,10 @@ export default function RetailDashboard() {
           <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
           Kasir (POS)
         </button> */}
-        {userRole !== 'owner' && (
+        {userRole !== 'owner' && userRole !== 'print' && (
           <button
             onClick={() => setActiveTab('claim')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
+            className={`flex items-center justify-center sm:justify-start gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all relative ${
               activeTab === 'claim' 
                 ? 'bg-[#ff4b86] text-white shadow-md' 
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -97,7 +101,7 @@ export default function RetailDashboard() {
         )}
         <button
           onClick={() => setActiveTab('report')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center justify-center sm:justify-start gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
             activeTab === 'report' 
               ? 'bg-[#ff4b86] text-white shadow-md' 
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'

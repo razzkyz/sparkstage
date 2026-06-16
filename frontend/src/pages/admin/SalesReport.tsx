@@ -331,17 +331,17 @@ export default function SalesReport() {
      queryError.message.includes('400'));
 
   // ── Client-side date filter ───────────────────────────────────────────
-  // Convert date strings to UTC timestamps for consistent filtering
-  const getUTCTimestamp = (dateStr: string, isEnd: boolean = false): number => {
+  // Convert date strings to local timestamps for consistent filtering
+  const getLocalTimestamp = (dateStr: string, isEnd: boolean = false): number => {
     if (!dateStr) return isEnd ? Infinity : 0;
     const [year, month, day] = dateStr.split('-').map(Number);
-    // Create UTC date
-    const date = new Date(Date.UTC(year, month - 1, day, isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0));
+    // Create Local date
+    const date = new Date(year, month - 1, day, isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0);
     return date.getTime();
   };
   
-  const fromMs = getUTCTimestamp(from, false);
-  const toMs   = getUTCTimestamp(to, true);
+  const fromMs = getLocalTimestamp(from, false);
+  const toMs   = getLocalTimestamp(to, true);
 
   const filteredTickets = useMemo(() =>
     tickets.filter(t => {

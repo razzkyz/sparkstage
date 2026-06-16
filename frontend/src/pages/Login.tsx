@@ -106,6 +106,9 @@ const Login = () => {
               case 'kasir':
                 navigate('/admin/cashier-dashboard');
                 break;
+              case 'print':
+                navigate('/admin/print-orders');
+                break;
               case 'dressing_room_admin':
                 navigate('/admin/dashboard');
                 break;

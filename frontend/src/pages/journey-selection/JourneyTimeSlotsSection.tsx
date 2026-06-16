@@ -1,15 +1,16 @@
-import type { BookingPageSettings } from '../../hooks/useBookingPageSettings';
-import type { GroupedTimeSlots } from './journeySelectionTypes';
+import { motion } from 'framer-motion';
+import type { BookingPageSettings } from "../../hooks/useBookingPageSettings";
+import type { GroupedTimeSlots } from "./journeySelectionTypes";
 
 type JourneyTimeSlotsSectionProps = {
   copy: Pick<
     BookingPageSettings,
-    | 'time_slots_title'
-    | 'empty_slots_message'
-    | 'access_type_title'
-    | 'all_day_access_label'
-    | 'all_day_access_helper'
-    | 'choose_specific_time_label'
+    | "time_slots_title"
+    | "empty_slots_message"
+    | "access_type_title"
+    | "all_day_access_label"
+    | "all_day_access_helper"
+    | "choose_specific_time_label"
   >;
   selectedDate: Date | null;
   hasBookableDates: boolean;
@@ -19,22 +20,35 @@ type JourneyTimeSlotsSectionProps = {
   groupedSlots: GroupedTimeSlots;
   onSelectTime: (time: string | null) => void;
   getMinutesUntilClose: (timeSlot: string) => number | null;
-  getSlotUrgency: (timeSlot: string) => 'none' | 'low' | 'medium' | 'high';
+  getSlotUrgency: (timeSlot: string) => "none" | "low" | "medium" | "high";
 };
 
 // One button per session group — label shown to user
 const SESSION_CONFIG: Record<string, { label: string }> = {
-  morning: { label: '09:00 – 11:30' },
-  afternoon1: { label: '12:00 – 14:30' },
-  afternoon2: { label: '15:00 – 17:30' },
-  evening: { label: '18:00 – 20:30' },
+  morning: { label: "09:00 – 11:30" },
+  afternoon1: { label: "12:00 – 14:30" },
+  afternoon2: { label: "15:00 – 17:30" },
+  evening: { label: "18:00 – 20:30" },
 };
 
 const SESSION_LABEL_ID: Record<string, string> = {
-  morning: 'Sesi Pagi',
-  afternoon1: 'Sesi Siang',
-  afternoon2: 'Sesi Sore',
-  evening: 'Sesi Malam',
+  morning: "Sesi Pagi",
+  afternoon1: "Sesi Siang",
+  afternoon2: "Sesi Sore",
+  evening: "Sesi Malam",
+};
+
+const containerVars = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVars = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0 }
 };
 
 export function JourneyTimeSlotsSection({
@@ -49,39 +63,52 @@ export function JourneyTimeSlotsSection({
   getMinutesUntilClose,
   getSlotUrgency,
 }: JourneyTimeSlotsSectionProps) {
-  if (!selectedDate && hasBookableDates) return null;
+
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 md:p-8 border border-gray-200">
-      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="bg-white rounded-2xl p-5 md:p-8 border border-pink-100 shadow-[0_4px_25px_rgba(236,72,153,0.06)]"
+    >
+      <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-gray-900">
         {isAllDayTicket ? copy.access_type_title : copy.time_slots_title}
       </h3>
 
       {!hasBookableDates ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-xs md:text-sm text-amber-900">
-          Booking is not available right now. New dates have not been published yet.
-        </p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 font-medium">
+          Booking is not available right now. New dates have not been published
+          yet.
+        </motion.p>
       ) : null}
 
       {hasBookableDates && isAllDayTicket ? (
         <div className="mb-4 md:mb-6">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onSelectTime(null)}
-            className={`w-full rounded-lg border px-4 md:px-6 py-3 md:py-4 text-left transition-colors ${selectedTime === null
-              ? 'border-main-600 bg-main-50 text-main-700'
-              : 'border-gray-300 bg-white text-gray-800'
-              }`}
+            className={`w-full rounded-xl border-2 px-5 md:px-6 py-4 text-left transition-colors ${
+              selectedTime === null
+                ? "border-pink-500 bg-pink-50 text-pink-700 shadow-md"
+                : "border-gray-200 bg-gray-50 text-gray-800 hover:border-pink-300"
+            }`}
           >
-            <div className="font-bold text-sm md:text-base">{copy.all_day_access_label}</div>
-            <div className="text-xs opacity-70">{copy.all_day_access_helper}</div>
-          </button>
+            <div className="font-black text-base md:text-lg">
+              {copy.all_day_access_label}
+            </div>
+            <div className="text-sm font-medium opacity-70 mt-1">
+              {copy.all_day_access_helper}
+            </div>
+          </motion.button>
         </div>
       ) : null}
 
-      {hasBookableDates && availableSlotsCount > 0 ? (
-        <div className="space-y-3 md:space-y-4">
-          {isAllDayTicket ? (
-            <p className="text-xs md:text-sm font-black uppercase tracking-widest text-main-600/70">
+      {hasBookableDates && (availableSlotsCount > 0 || !selectedDate) ? (
+        <motion.div variants={containerVars} initial="hidden" animate="show" className="space-y-3 md:space-y-4">
+          {isAllDayTicket && selectedDate ? (
+            <p className="text-xs md:text-sm font-black uppercase tracking-widest text-pink-500/80 mb-4">
               {copy.choose_specific_time_label}
             </p>
           ) : null}
@@ -91,94 +118,90 @@ export function JourneyTimeSlotsSection({
               [keyof GroupedTimeSlots, GroupedTimeSlots[keyof GroupedTimeSlots]]
             >
           ).map(([period, slots]) => {
-            if (slots.length === 0) return null;
+            const hasNoDate = !selectedDate;
+            if (period === "evening" && hasNoDate) return null;
+            if (!hasNoDate && slots.length === 0) return null;
 
             const cfg = SESSION_CONFIG[period as string];
             const sessionLabel = cfg?.label ?? (period as string);
-            const periodLabel = SESSION_LABEL_ID[period as string] ?? (period as string);
+            const periodLabel =
+              SESSION_LABEL_ID[period as string] ?? (period as string);
 
-            // Use the first non-past slot as representative; fall back to first slot
-            const firstAvailable = slots.find((s) => !s.isPast) ?? slots[0];
-            const representativeTime = firstAvailable.time;
+            let isPast = false;
+            let isSelected = false;
+            let representativeTime: string | null = null;
+            let _urgency = "none";
+            let _minutesLeft = null;
 
-            // Session is selected when selectedTime belongs to any slot in this group
-            const isSelected = slots.some((s) => s.time === selectedTime);
-            const isPast = slots.every((s) => s.isPast);
-
-            // Show the most conservative (minimum) capacity
-            const minAvailable = Math.min(...slots.map((s) => s.available));
-
-            const _urgency = isPast ? 'none' : getSlotUrgency(representativeTime);
-            const _minutesLeft = isPast ? null : getMinutesUntilClose(representativeTime);
-            void _urgency; void _minutesLeft;
+            if (hasNoDate) {
+              isPast = true;
+            } else {
+              const firstAvailable = slots.find((s) => !s.isPast) ?? slots[0];
+              representativeTime = firstAvailable?.time || null;
+              isSelected = slots.some((s) => s.time === selectedTime);
+              isPast = slots.length > 0 && slots.every((s) => s.isPast);
+              _urgency = isPast || !representativeTime
+                ? "none"
+                : getSlotUrgency(representativeTime);
+              _minutesLeft = isPast || !representativeTime
+                ? null
+                : getMinutesUntilClose(representativeTime);
+            }
+            
+            void _urgency;
+            void _minutesLeft;
 
             return (
-              <button
+              <motion.button
+                variants={itemVars}
+                whileHover={!isPast && !isSelected ? { scale: 1.02, y: -2 } : {}}
+                whileTap={!isPast ? { scale: 0.98 } : {}}
                 key={period as string}
-                onClick={() => !isPast && onSelectTime(representativeTime)}
+                onClick={() => representativeTime && !isPast && onSelectTime(representativeTime)}
                 disabled={isPast}
-                className={`w-full rounded-xl border px-5 py-4 text-left transition-all ${isPast
-                  ? 'opacity-40 cursor-not-allowed bg-gray-100 border-gray-200'
-                  : isSelected
-                    ? 'border-main-600 bg-main-50 shadow-md'
-                    : 'border-gray-300 bg-white hover:border-main-400 hover:bg-gray-50'
-                  }`}
+                className={`w-full rounded-xl border-2 px-5 md:px-6 py-4 md:py-5 text-left transition-all ${
+                  isPast
+                    ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-100"
+                    : isSelected
+                      ? "border-transparent bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-[0_8px_20px_rgba(236,72,153,0.3)]"
+                      : "border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/50 hover:shadow-lg"
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">
+                    <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isSelected ? 'text-pink-100' : 'text-gray-400'}`}>
                       {periodLabel}
                     </p>
                     <p
-                      className={`text-lg md:text-xl font-black ${isSelected ? 'text-main-700' : 'text-gray-800'
-                        } ${isPast ? 'line-through' : ''}`}
+                      className={`text-lg md:text-xl font-black ${
+                        isSelected ? "text-white" : "text-gray-800"
+                      } ${isPast ? "line-through text-gray-400" : ""}`}
                     >
                       {sessionLabel}
                     </p>
                   </div>
 
                   <div className="text-right flex flex-col items-end gap-1">
-                    {isPast ? (
-                      <span className="text-xs text-gray-400 font-medium">Berakhir</span>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold border shadow-md
-                          ${minAvailable <= 10
-                            ? 'bg-pink-500 text-white border-pink-400 animate-pulse'
-                            : 'bg-pink-100 text-pink-700 border-pink-200'
-                          }`}
-                      >
-                        🎟 {minAvailable} slot tersisa
+                    {hasNoDate ? (
+                      <span className="text-xs font-bold text-pink-400 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
+                        Pilih Tanggal 👆
                       </span>
-                    )}
-
-                    {/* {!isPast && minutesLeft !== null && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                          urgency === 'high'
-                            ? 'bg-red-500 text-white animate-pulse'
-                            : urgency === 'medium'
-                              ? 'bg-orange-500 text-white'
-                              : urgency === 'low'
-                                ? 'bg-yellow-400 text-black'
-                                : ''
-                        }`}
-                      >
-                        {Math.floor(minutesLeft / 60)}:
-                        {(minutesLeft % 60).toString().padStart(2, '0')} lagi
+                    ) : isPast ? (
+                      <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        Berakhir
                       </span>
-                    )} */}
+                    ) : null}
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
       ) : hasBookableDates && !isAllDayTicket ? (
-        <p className="text-gray-500 text-center py-6 md:py-8 text-xs md:text-sm">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-gray-500 font-medium text-center py-6 md:py-8 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-300">
           {copy.empty_slots_message}
-        </p>
+        </motion.p>
       ) : null}
-    </div>
+    </motion.div>
   );
 }

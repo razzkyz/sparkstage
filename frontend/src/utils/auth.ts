@@ -88,6 +88,10 @@ export const getMenuSectionsByRole = async (userId: string | undefined) => {
   if (result.ok && result.role === 'owner') {
     return OWNER_MENU_SECTIONS;
   }
+  if (result.ok && result.role === 'print') {
+    const { PRINT_MENU_SECTIONS } = await import('../constants/adminMenu');
+    return PRINT_MENU_SECTIONS;
+  }
   if (result.ok && result.role === 'dressing_room_admin') {
     return DRESSING_ROOM_ADMIN_MENU_SECTIONS;
   }

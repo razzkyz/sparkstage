@@ -189,7 +189,7 @@ export default function ClaimTab({ orders, isLoading, searchQuery: propsSearchQu
       {/* === CLAIM PANEL === */}
       {viewMode === 'product' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="grid gap-4 lg:grid-cols-[1.3fr_1.7fr]">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[1.3fr_1.7fr]">
             <div className="space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>

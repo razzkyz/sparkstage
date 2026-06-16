@@ -7,6 +7,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import StaffDetailModal from './StaffDetailModal';
+import AllStaffReportModal from './AllStaffReportModal';
+import SalesReportView from './SalesReportView';
+import SimpleReportModal from './SimpleReportModal';
 
 type ReportTabProps = {
   orders: OrderSummaryRow[];
@@ -43,8 +46,10 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<OrderSummaryRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState<'staff' | 'print'>('staff');
+  const [viewMode, setViewMode] = useState<'staff' | 'print' | 'report-view'>('staff');
   const [selectedStaffReport, setSelectedStaffReport] = useState<StaffReport | null>(null);
+  const [showAllStaffReport, setShowAllStaffReport] = useState(false);
+  const [showSimpleReport, setShowSimpleReport] = useState(false);
 
   const claimedOrders = orders.filter((o) => o.sales_staff_name);
 
@@ -146,19 +151,30 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
     <div className="space-y-6 animate-fade-in">
 
       {/* === SUMMARY STRIP === */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-[#ff4b86]">{staffReports.length}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Staff Aktif</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm">
+          <p className="text-xl sm:text-2xl font-black text-[#ff4b86]">{staffReports.length}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Staff Aktif</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-gray-900">{staffReports.reduce((s, r) => s + r.totalOrders, 0)}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Transaksi</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm">
+          <p className="text-xl sm:text-2xl font-black text-gray-900">{staffReports.reduce((s, r) => s + r.totalOrders, 0)}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Transaksi</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-          <p className="text-2xl font-black text-gray-900">Rp {formatCurrency(grandTotal)}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Penjualan</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 text-center shadow-sm col-span-2 sm:col-span-1">
+          <p className="text-xl sm:text-2xl font-black text-gray-900">Rp {formatCurrency(grandTotal)}</p>
+          <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-wider">Total Penjualan</p>
         </div>
+      </div>
+
+      {/* Button Laporan Staff */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => setShowSimpleReport(true)}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm hover:shadow-xl hover:scale-105 transition-all w-full sm:w-auto"
+        >
+          <span className="material-symbols-outlined text-[20px]">assignment</span>
+          Laporan Staff
+        </button>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
@@ -172,6 +188,17 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
           }`}
         >
           Staff
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('report-view')}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            viewMode === 'report-view'
+              ? 'bg-[#ff4b86] text-white shadow-sm'
+              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          Laporan Penjualan
         </button>
         {/* PRINT_FEATURE_DISABLED - print tab button (komment untuk disable)
         <button
@@ -335,6 +362,8 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
             </div>
           );
         })
+      ) : viewMode === 'report-view' ? (
+        <SalesReportView orders={claimedOrders} />
       ) : null}
       {/* PRINT_FEATURE_DISABLED - print view rendering disabled:
       ) : isLoadingPrintOrders ? (
@@ -407,6 +436,20 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
         <StaffDetailModal
           staffReport={selectedStaffReport}
           onClose={() => setSelectedStaffReport(null)}
+        />
+      )}
+
+      {showAllStaffReport && (
+        <AllStaffReportModal
+          orders={claimedOrders}
+          onClose={() => setShowAllStaffReport(false)}
+        />
+      )}
+
+      {showSimpleReport && (
+        <SimpleReportModal
+          orders={claimedOrders}
+          onClose={() => setShowSimpleReport(false)}
         />
       )}
     </div>
