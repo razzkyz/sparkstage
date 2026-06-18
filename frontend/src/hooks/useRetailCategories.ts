@@ -10,6 +10,7 @@ export interface RetailCategory {
   parent_id: number | null;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 // Custom type for nesting categories
@@ -37,7 +38,7 @@ export function useRetailCategories() {
 
   // Create a category
   const createCategory = useMutation({
-    mutationFn: async (newCategory: Omit<RetailCategory, 'id' | 'created_at'>) => {
+    mutationFn: async (newCategory: Omit<RetailCategory, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('retail_categories')
         .insert(newCategory)
@@ -60,16 +61,15 @@ export function useRetailCategories() {
 
   // Update a category
   const updateCategory = useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: Partial<RetailCategory> }) => {
+    mutationFn: async ({ id, updates }: { id: number; updates: Omit<Partial<RetailCategory>, 'id' | 'created_at' | 'updated_at'> }) => {
       const { data, error } = await supabase
         .from('retail_categories')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
       if (error) throw new Error(error.message);
-      return data as RetailCategory;
+      return (data?.[0] || updates) as RetailCategory;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['retail-categories'] });

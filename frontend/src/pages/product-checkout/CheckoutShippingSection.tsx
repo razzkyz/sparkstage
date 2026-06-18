@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useShipping } from "../../hooks/useShipping";
 import { MapPin, Map, Building, Truck, CheckCircle2, XCircle } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
@@ -67,7 +67,7 @@ export function CheckoutShippingSection({
     fetchCities,
     fetchSubdistricts,
     fetchShippingCost,
-  } = useShipping(provinceId, cityId, totalWeight);
+  } = useShipping(totalWeight);
 
   const [localCourier, setLocalCourier] = useState<string>(
     selectedCourier || "jne",
@@ -81,24 +81,24 @@ export function CheckoutShippingSection({
     if (deliveryMethod === 'shipping' && provinces.length === 0) {
       fetchProvinces();
     }
-  }, [deliveryMethod]);
+  }, [deliveryMethod, provinces.length, fetchProvinces]);
 
   // Fetch cities when province changes - ONLY if shipping is selected
   useEffect(() => {
     if (deliveryMethod === 'shipping' && provinceId) {
       fetchCities(provinceId);
     }
-  }, [provinceId, deliveryMethod]);
+  }, [provinceId, deliveryMethod, fetchCities]);
 
   // Fetch subdistricts when city changes - ONLY if shipping is selected
   useEffect(() => {
     if (deliveryMethod === 'shipping' && cityId) {
       fetchSubdistricts(cityId);
     }
-  }, [cityId, deliveryMethod]);
+  }, [cityId, deliveryMethod, fetchSubdistricts]);
 
   // Check availability on demand (when courier clicked)
-  const handleCourierSelect = async (courierCode: string) => {
+  const handleCourierSelect = useCallback(async (courierCode: string) => {
     setLocalCourier(courierCode);
     
     // If already checked, just select it
@@ -121,7 +121,7 @@ export function CheckoutShippingSection({
     } catch (error) {
       setCourierAvailability(prev => ({ ...prev, [courierCode]: 'unavailable' }));
     }
-  };
+  }, [cityId, fetchShippingCost, courierAvailability]);
 
   return (
     <div className="space-y-5 mb-8">

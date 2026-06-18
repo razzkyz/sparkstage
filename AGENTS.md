@@ -200,6 +200,10 @@ Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/a
 - Status: ✅ RLS Enabled and Configured
 - Migration file: `20260612000000_create_retail_categories_with_rls.sql`
 - Documentation: `docs/runbooks/retail-categories-rls.md`
+- **UPDATE FIX (2026-06-18):** Fixed RLS policy causing "record 'new' has no field 'updated_at'" error
+  - Migration: `20260618000000_fix_retail_categories_update_policy.sql`
+  - Fix: Changed `WITH CHECK (public.is_admin())` to `WITH CHECK (true)` to avoid RLS evaluation before trigger
+  - Deployment: `DEPLOY_RETAIL_CATEGORIES_FIX.md` (Quick fix via Supabase SQL Editor recommended)
 - **Access Control:**
   - Public/Anonymous: View active categories only
   - Admin roles: Full CRUD access to all categories

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -108,13 +108,13 @@ export default function RetailProductManager() {
     is_active: true,
   });
 
-  const resetCatForm = () => {
+  const resetCatForm = useCallback(() => {
     setCatFormData({ name: "", slug: "", is_active: true });
     setCatEditingId(null);
     setCatParentId(null);
-  };
+  }, []);
 
-  const handleCatSave = async () => {
+  const handleCatSave = useCallback(async () => {
     if (!catFormData.name || !catFormData.slug) {
       showToast("error", "Name dan Slug wajib diisi");
       return;
@@ -140,9 +140,9 @@ export default function RetailProductManager() {
     } catch (err: any) {
       showToast("error", err.message);
     }
-  };
+  }, [catEditingId, catFormData, catActiveDept, catParentId, updateCategory, createCategory, showToast, resetCatForm]);
 
-  const handleCatDelete = async (id: number, name: string) => {
+  const handleCatDelete = useCallback(async (id: number, name: string) => {
     if (!window.confirm(`Delete category "${name}"?`)) return;
     try {
       await deleteCategory(id);
@@ -150,13 +150,14 @@ export default function RetailProductManager() {
     } catch (err: any) {
       showToast("error", err.message);
     }
-  };
+  }, [deleteCategory, showToast]);
 
-  const handleSlugify = (name: string) =>
+  const handleSlugify = useCallback((name: string) =>
     name
       .toLowerCase()
       .trim()
-      .replace(/[\s\W-]+/g, "-");
+      .replace(/[\s\W-]+/g, "-"),
+  []);
 
   const filteredProducts = useMemo(() => {
     let list = products;
@@ -200,7 +201,7 @@ export default function RetailProductManager() {
     return filteredProducts.slice(start, start + PAGE_SIZE);
   }, [filteredProducts, currentPage]);
 
-  const openAddModal = () => {
+  const openAddModal = useCallback(() => {
     setEditingId(null);
     setImageFile(null);
     setFormData({
@@ -221,9 +222,9 @@ export default function RetailProductManager() {
       variant: "",
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const openEditModal = (product: ProductRetail) => {
+  const openEditModal = useCallback((product: ProductRetail) => {
     setEditingId(product.id);
     setImageFile(null);
     setGalleryUrlInput("");
@@ -245,9 +246,9 @@ export default function RetailProductManager() {
       variant: product.variant || "",
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: number, name: string) => {
+  const handleDelete = useCallback(async (id: number, name: string) => {
     if (!window.confirm(`Delete ${name}?`)) return;
     try {
       await deleteProduct(id);
@@ -255,9 +256,9 @@ export default function RetailProductManager() {
     } catch (err: any) {
       showToast("error", err.message);
     }
-  };
+  }, [deleteProduct, showToast]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (
       !formData.name ||
       !formData.slug ||
@@ -373,7 +374,7 @@ export default function RetailProductManager() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [editingId, formData, imageFile, updateProduct, createProduct, showToast, queryClient]);
 
   // 3-tier form options
   const formCategories = useMemo(() => {
@@ -411,6 +412,14 @@ export default function RetailProductManager() {
       });
     return map;
   }, [categories, catActiveDept]);
+
+  // Memoized product stats to avoid recalculation on every render
+  const productStats = useMemo(() => ({
+    total: products.length,
+    active: products.filter((p) => p.is_active).length,
+    inactive: products.filter((p) => !p.is_active).length,
+    noCategory: products.filter((p) => !p.retail_category_id).length,
+  }), [products]);
 
   return (
     <AdminLayout
@@ -773,32 +782,32 @@ export default function RetailProductManager() {
         </div>
 
         {/* Row 3: Stats Summary */}
-        {products.length > 0 && (
+        {productStats.total > 0 && (
           <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
               <span className="text-gray-600">Total:</span>
-              <span className="font-bold text-gray-900">{products.length}</span>
+              <span className="font-bold text-gray-900">{productStats.total}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-gray-600">Active:</span>
               <span className="font-bold text-green-700">
-                {products.filter((p) => p.is_active).length}
+                {productStats.active}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
               <span className="text-gray-600">Inactive:</span>
               <span className="font-bold text-red-700">
-                {products.filter((p) => !p.is_active).length}
+                {productStats.inactive}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-2 h-2 rounded-full bg-orange-500"></div>
               <span className="text-gray-600">No Category:</span>
               <span className="font-bold text-orange-700">
-                {products.filter((p) => !p.retail_category_id).length}
+                {productStats.noCategory}
               </span>
             </div>
           </div>

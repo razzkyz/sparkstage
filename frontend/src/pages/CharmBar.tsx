@@ -402,7 +402,8 @@ export default function CharmBar() {
             </div>
           </div>
 
-          {/* Category Image Grid */}
+          {/* Category Image Grid (Temporarily disabled, kept for future use when CMS is fixed) */}
+          {/*
           <div className="mb-5">
             <div className="relative">
               <button
@@ -476,10 +477,11 @@ export default function CharmBar() {
               </button>
             </div>
           </div>
+          */}
 
-          {/* <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
+          {/* Text-based Category Scroller (Spark Club style) */}
+          <div className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-2">
             <div className="flex flex-col space-y-4">
-
               <div className="relative">
                 <div className="flex items-center">
                   <button
@@ -497,39 +499,25 @@ export default function CharmBar() {
                   
                   <div 
                     id="category-scroll-container"
-                    className="flex space-x-4 md:space-x-6 overflow-x-auto w-full pb-0 hide-scrollbar px-8 md:px-12 justify-center md:justify-start scroll-smooth"
+                    className="flex space-x-4 md:space-x-8 overflow-x-auto w-full pb-0 hide-scrollbar px-8 md:px-12 justify-center md:justify-start scroll-smooth"
                   >
                     <button
                       type="button"
-                      onClick={() => {
-                        updateFilters({
-                          category: null,
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                        scrollToCategory(0);
-                      }}
+                      onClick={() => setActiveCategory('all')}
                       className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                        activeCategory === null
+                        activeCategory === 'all'
                           ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
                           : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
                       }`}
                     >
                       All Products
                     </button>
-                    {availableCategories.map((category, index) => (
+                    {subCategories.map((category) => (
                       <button
-                        key={category.id}
+                        key={category.slug}
                         type="button"
-                        onClick={() => {
-                          updateFilters({
-                            category: category.slug,
-                            subcategory: null,
-                            subsubcategory: null,
-                          });
-                          scrollToCategory(index + 1);
-                        }}
-                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
+                        onClick={() => setActiveCategory(category.slug)}
+                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color uppercase tracking-wider ${
                           activeCategory === category.slug
                             ? 'font-semibold text-[#ff4b86] border-[#ff4b86]'
                             : 'font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]'
@@ -554,82 +542,8 @@ export default function CharmBar() {
                   </button>
                 </div>
               </div>
-
-              {activeCategory !== 'all' && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-2 px-2">
-                  <div className="flex gap-1.5 md:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === null
-                          ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() => {
-                          updateFilters({
-                            subcategory: subcategory.slug,
-                            subsubcategory: null,
-                          });
-                        }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
-                            ? 'bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]'
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {activeCategory !== 'all' && activeSubcategory !== 'all' && activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-3 px-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === null
-                          ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
-                          : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() => updateFilters({ subsubcategory: subcategory.slug })}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
-                            ? 'bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30'
-                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]'
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
-          </div> */}
+          </div>
 
           {productsError ? (
             <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">

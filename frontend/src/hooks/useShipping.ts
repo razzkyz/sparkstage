@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface Province {
@@ -86,7 +86,7 @@ export interface CourierService {
   costs: ShippingCost[];
 }
 
-export const useShipping = (provinceId?: string, cityId?: string, weight: number = 1000) => {
+export const useShipping = (weight: number = 1000) => {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [subdistricts, setSubdistricts] = useState<Subdistrict[]>([]);
@@ -97,7 +97,7 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
   const [isLoadingCost, setIsLoadingCost] = useState(false);
 
   // Manual fetch functions to avoid auto-firing and rate limiting
-  const fetchProvinces = async () => {
+  const fetchProvinces = useCallback(async () => {
     setIsLoadingProvinces(true);
     try {
       // 1. Check cache first
@@ -160,9 +160,9 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
     } finally {
       setIsLoadingProvinces(false);
     }
-  };
+  }, []);
 
-  const fetchCities = async (targetProvinceId: string) => {
+  const fetchCities = useCallback(async (targetProvinceId: string) => {
     if (!targetProvinceId) return [];
     setIsLoadingCities(true);
     try {
@@ -233,9 +233,9 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
     } finally {
       setIsLoadingCities(false);
     }
-  };
+  }, []);
 
-  const fetchSubdistricts = async (targetCityId: string) => {
+  const fetchSubdistricts = useCallback(async (targetCityId: string) => {
     if (!targetCityId) return [];
     setIsLoadingSubdistricts(true);
     try {
@@ -309,31 +309,20 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
     } finally {
       setIsLoadingSubdistricts(false);
     }
-  };
+  }, []);
 
   // Auto-fetch disabled to prevent rate limiting
   // Provinces will be fetched manually when needed via fetchProvinces()
 
   // Auto-fetch disabled to prevent rate limiting
   // Cities will be fetched manually when needed via fetchCities()
-  // Clear cities/subdistricts when province changes
-  useEffect(() => {
-    if (!provinceId) {
-      setCities([]);
-      setSubdistricts([]);
-    }
-  }, [provinceId]);
+  // Clear cities/subdistricts when province changes (removed useEffect)
 
   // Auto-fetch disabled to prevent rate limiting
   // Subdistricts will be fetched manually when needed via fetchSubdistricts()
-  // Clear subdistricts when city changes
-  useEffect(() => {
-    if (!cityId) {
-      setSubdistricts([]);
-    }
-  }, [cityId]);
+  // Clear subdistricts when city changes (removed useEffect)
 
-  const fetchShippingCost = async (destinationCityId: string, originCityId: string = defaultOriginCityId, courier: string = 'jne') => { // origin default (e.g. Jakarta Selatan)
+  const fetchShippingCost = useCallback(async (destinationCityId: string, originCityId: string = defaultOriginCityId, courier: string = 'jne') => { // origin default (e.g. Jakarta Selatan)
     if (!destinationCityId) return [];
     setIsLoadingCost(true);
     try {
@@ -381,7 +370,7 @@ export const useShipping = (provinceId?: string, cityId?: string, weight: number
     } finally {
       setIsLoadingCost(false);
     }
-  };
+  }, [weight]);
 
   return {
     provinces,

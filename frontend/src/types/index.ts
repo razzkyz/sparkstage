@@ -63,6 +63,14 @@ export interface ProductRetail {
     department: string;
     name: string;
     slug: string;
+    is_active?: boolean;
+  } | null;
+  retail_subcategories?: {
+    id: number;
+    department: string;
+    name: string;
+    slug: string;
+    is_active?: boolean;
   } | null;
 }
 

@@ -30,7 +30,8 @@ async function fetchProductRetailSummaries(
       retail_subcategory_id,
       variant,
       categories(id, name, slug, is_active),
-      retail_categories!retail_category_id(id, department, name, slug)
+      retail_categories!retail_category_id(id, department, name, slug, is_active),
+      retail_subcategories:retail_categories!retail_subcategory_id(id, department, name, slug, is_active)
     `,
     )
     .eq("is_active", true)
@@ -45,56 +46,88 @@ async function fetchProductRetailSummaries(
   if (error) throw new Error(error.message);
 
   // Supabase mengembalikan relasi JOIN sebagai array; normalise ke objek tunggal | null
-  return (data ?? []).map((row) => {
-    const cat = Array.isArray(row.categories)
-      ? (row.categories[0] ?? null)
-      : (row.categories ?? null);
-    const rCat = Array.isArray(row.retail_categories)
-      ? (row.retail_categories[0] ?? null)
-      : (row.retail_categories ?? null);
+  return (data ?? [])
+    .filter((row) => {
+      // Filter out products whose assigned category is inactive or deleted/filtered by RLS
+      const rCat = Array.isArray(row.retail_categories)
+        ? (row.retail_categories[0] ?? null)
+        : (row.retail_categories ?? null);
+      if (row.retail_category_id && (!rCat || rCat.is_active === false)) {
+        return false;
+      }
+      
+      const rSubCat = Array.isArray((row as any).retail_subcategories)
+        ? ((row as any).retail_subcategories[0] ?? null)
+        : ((row as any).retail_subcategories ?? null);
+      if (row.retail_subcategory_id && (!rSubCat || rSubCat.is_active === false)) {
+        return false;
+      }
+      
+      return true;
+    })
+    .map((row) => {
+      const cat = Array.isArray(row.categories)
+        ? (row.categories[0] ?? null)
+        : (row.categories ?? null);
+      const rCat = Array.isArray(row.retail_categories)
+        ? (row.retail_categories[0] ?? null)
+        : (row.retail_categories ?? null);
+      const rSubCat = Array.isArray((row as any).retail_subcategories)
+        ? ((row as any).retail_subcategories[0] ?? null)
+        : ((row as any).retail_subcategories ?? null);
 
-    return {
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      description: row.description ?? null,
-      category_id: row.category_id ?? null,
-      price: Number(row.price ?? 0),
-      stock: Number(row.stock ?? 0),
-      weight: Number(row.weight ?? 0),
-      length: row.length ?? null,
-      width: row.width ?? null,
-      height: row.height ?? null,
-      image: row.image ?? null,
-      is_active: Boolean(row.is_active),
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      retail_category: row.retail_category as
-        | "glam"
-        | "charmbar"
-        | "sparkclub"
-        | null,
-      retail_category_id: (row as any).retail_category_id ?? null,
-      categories: cat
-        ? {
-            id: cat.id,
-            name: cat.name,
-            slug: cat.slug,
-            is_active: Boolean(cat.is_active),
-          }
-        : null,
-      retail_subcategory_id: row.retail_subcategory_id ?? null,
-      variant: (row as any).variant ?? null,
-      retail_categories: rCat
-        ? {
-            id: rCat.id,
-            department: rCat.department,
-            name: rCat.name,
-            slug: rCat.slug,
-          }
-        : null,
-    } satisfies ProductRetail;
-  });
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        description: row.description ?? null,
+        category_id: row.category_id ?? null,
+        price: Number(row.price ?? 0),
+        stock: Number(row.stock ?? 0),
+        weight: Number(row.weight ?? 0),
+        length: row.length ?? null,
+        width: row.width ?? null,
+        height: row.height ?? null,
+        image: row.image ?? null,
+        is_active: Boolean(row.is_active),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        retail_category: row.retail_category as
+          | "glam"
+          | "charmbar"
+          | "sparkclub"
+          | null,
+        retail_category_id: (row as any).retail_category_id ?? null,
+        categories: cat
+          ? {
+              id: cat.id,
+              name: cat.name,
+              slug: cat.slug,
+              is_active: Boolean(cat.is_active),
+            }
+          : null,
+        retail_subcategory_id: row.retail_subcategory_id ?? null,
+        variant: (row as any).variant ?? null,
+        retail_categories: rCat
+          ? {
+              id: rCat.id,
+              department: rCat.department,
+              name: rCat.name,
+              slug: rCat.slug,
+              is_active: rCat.is_active,
+            }
+          : null,
+        retail_subcategories: rSubCat
+          ? {
+              id: rSubCat.id,
+              department: rSubCat.department,
+              name: rSubCat.name,
+              slug: rSubCat.slug,
+              is_active: rSubCat.is_active,
+            }
+          : null,
+      } satisfies ProductRetail;
+    });
 }
 
 export function useProductRetailSummaries() {
@@ -135,7 +168,8 @@ export async function fetchProductRetailDetail(
       retail_subcategory_id,
       variant,
       categories(id, name, slug, is_active),
-      retail_categories!retail_category_id(id, department, name, slug),
+      retail_categories!retail_category_id(id, department, name, slug, is_active),
+      retail_subcategories:retail_categories!retail_subcategory_id(id, department, name, slug, is_active),
       product_retail_images(image_url, is_primary, display_order)
     `,
     )
@@ -155,6 +189,17 @@ export async function fetchProductRetailDetail(
   const rCat = Array.isArray(row.retail_categories)
     ? (row.retail_categories[0] ?? null)
     : (row.retail_categories ?? null);
+  const rSubCat = Array.isArray((row as any).retail_subcategories)
+    ? ((row as any).retail_subcategories[0] ?? null)
+    : ((row as any).retail_subcategories ?? null);
+
+  // If the product belongs to an inactive category, it shouldn't be viewable
+  if (row.retail_category_id && (!rCat || rCat.is_active === false)) {
+    throw new Error("Product category is inactive");
+  }
+  if (row.retail_subcategory_id && (!rSubCat || rSubCat.is_active === false)) {
+    throw new Error("Product subcategory is inactive");
+  }
 
   // Mapping product_retail_images to imageUrls
   const productImages = ((row as any).product_retail_images || []) as {
@@ -210,6 +255,16 @@ export async function fetchProductRetailDetail(
           department: rCat.department,
           name: rCat.name,
           slug: rCat.slug,
+          is_active: rCat.is_active,
+        }
+      : null,
+    retail_subcategories: rSubCat
+      ? {
+          id: rSubCat.id,
+          department: rSubCat.department,
+          name: rSubCat.name,
+          slug: rSubCat.slug,
+          is_active: rSubCat.is_active,
         }
       : null,
     imageUrls,
