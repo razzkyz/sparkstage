@@ -9,7 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { formatCurrency } from "../utils/formatters";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
+import { useRetailCategories } from "../hooks/useRetailCategories";
 // import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from "../hooks/useProduct";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
@@ -24,6 +24,7 @@ import { useShopFilters } from "./shop/useShopFilters";
 import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
+import { SubCategoryBar } from "../components/SubCategoryBar";
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -249,7 +250,7 @@ const Shop = () => {
     error: categoriesError,
     isLoading: categoriesLoading,
     refetch: refetchCategories,
-  } = useCategories();
+  } = useRetailCategories();
   // const { data: shopBanners = [] } = useBanners('shop');
   const { settings: charmBarSettings, isLoading: charmBarLoading } =
     useCharmBarSettings();
@@ -271,9 +272,11 @@ const Shop = () => {
   const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
     useMemo(() => buildShopCategoryIndex(categories), [categories]);
 
+  // Categories that should be filtered out from Shop products
+  // Note: "eyewear"/"glasses" removed to allow them in Shop
   const GLAM_CATEGORY_SLUGS = new Set([
     "makeup",
-    "eyewear",
+    // "eyewear",  // ← Removed: Allow GLASSES products to show in Shop
     "glitter",
     "headliner",
     "starglitter",
@@ -312,35 +315,48 @@ const Shop = () => {
     [products],
   );
 
-  const filteredProducts = useMemo(
-    () =>
-      filterShopProducts({
-        products: nonCharmBarProducts,
-        activeCategory,
-        activeSubcategory,
-        activeSubSubcategory,
-        searchQuery: deferredSearchQuery,
-        allowedSlugMap,
-        bestSellerIds: charmBarSettings?.best_seller_charms || [],
-      }),
-    [
-      nonCharmBarProducts,
+  const filteredProducts = useMemo(() => {
+    const result = filterShopProducts({
+      products: nonCharmBarProducts,
       activeCategory,
       activeSubcategory,
       activeSubSubcategory,
-      deferredSearchQuery,
+      searchQuery: deferredSearchQuery,
       allowedSlugMap,
-      charmBarSettings,
-    ],
-  );
+      bestSellerIds: charmBarSettings?.best_seller_charms || [],
+    });
+    
+    // DEBUG: Log current filter state
+    console.log('🔍 FILTER STATE:', {
+      activeCategory,
+      activeSubcategory,
+      activeSubSubcategory,
+      totalInputProducts: nonCharmBarProducts.length,
+      filteredCount: result.length,
+      sampleFiltered: result.slice(0, 3).map(p => ({ name: p.name, slug: p.categorySlug })),
+    });
+    
+    return result;
+  }, [
+    nonCharmBarProducts,
+    activeCategory,
+    activeSubcategory,
+    activeSubSubcategory,
+    deferredSearchQuery,
+    allowedSlugMap,
+    charmBarSettings,
+  ]);
 
   const activeSubcategories = useMemo(() => {
     if (activeCategory === "all") return [];
+    // Return ALL active subcategories, regardless of whether they have products
+    // Subcategories are already filtered by is_active in buildShopCategoryIndex
     return childCategoriesByParentSlug.get(activeCategory) ?? [];
   }, [activeCategory, childCategoriesByParentSlug]);
 
   const activeSubSubcategories = useMemo(() => {
     if (activeSubcategory === "all") return [];
+    // Return ALL active sub-subcategories, regardless of whether they have products
     return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
   }, [activeSubcategory, childCategoriesByParentSlug]);
 
@@ -627,84 +643,35 @@ const Shop = () => {
               </div>
 
               {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-2 px-2">
-                  <div className="flex gap-1.5 md:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === "all"
-                          ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                          : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() => {
-                          updateFilters({
-                            subcategory: subcategory.slug,
-                            subsubcategory: null,
-                          });
-                        }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                            : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <SubCategoryBar
+                  subcategories={activeSubcategories}
+                  activeSlug={activeSubcategory}
+                  onSelectSubcategory={(slug: string | null) => {
+                    console.log('🔘 SUBCATEGORY CLICKED:', slug);
+                    console.log('🔘 Current activeSubcategory:', activeSubcategory);
+                    updateFilters({
+                      subcategory: slug,
+                      subsubcategory: null,
+                    });
+                    console.log('🔘 Updated filters with subcategory:', slug);
+                  }}
+                  allButtonLabel="All"
+                  className="mt-2"
+                />
               ) : null}
 
               {activeCategory !== "all" &&
               activeSubcategory !== "all" &&
               activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-3 px-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === "all"
-                          ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All{" "}
-                      {activeSubcategories.find(
-                        (s) => s.slug === activeSubcategory,
-                      )?.name || ""}
-                    </button>
-                    {activeSubSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() =>
-                          updateFilters({ subsubcategory: subcategory.slug })
-                        }
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <SubCategoryBar
+                  subcategories={activeSubSubcategories}
+                  activeSlug={activeSubSubcategory}
+                  onSelectSubcategory={(slug: string | null) => {
+                    updateFilters({ subsubcategory: slug });
+                  }}
+                  allButtonLabel={`All ${activeSubcategories.find((s) => s.slug === activeSubcategory)?.name || ""}`}
+                  className="mt-1"
+                />
               ) : null}
             </div>
           </div>

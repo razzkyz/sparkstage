@@ -345,7 +345,7 @@ const Navbar = () => {
                   {/* My Orders — hidden */}
                   <Link
                     to="/my-orders"
-                    className="group relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90 hidden"
+                    className="group relative hidden items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90 "
                     title={t("nav.myOrders")}
                   >
                     <ReceiptText className="h-[18px] w-[18px]" />

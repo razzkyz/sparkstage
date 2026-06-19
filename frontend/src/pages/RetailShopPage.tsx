@@ -7,8 +7,10 @@ import { formatCurrency } from '../utils/formatters';
 import { buildImageKitThumbUrl } from '../lib/imagekit';
 import { PageTransition } from '../components/PageTransition';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
+import { SubCategoryBar } from '../components/SubCategoryBar';
 import type { ProductRetail } from '../types';
 import useSeo from '../hooks/useSeo';
+import { useRetailCategories } from '../hooks/useRetailCategories';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -221,8 +223,10 @@ export default function RetailShopPage() {
   });
 
   const { data: allProducts = [], isLoading, error } = useProductRetailSummaries();
+  const { data: allRetailCategories = [] } = useRetailCategories();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeSubcategory, setActiveSubcategory] = useState('all');
 
   // Spark Club only — filter by retail_category
   const sparkClubProducts = useMemo(
@@ -230,27 +234,39 @@ export default function RetailShopPage() {
     [allProducts],
   );
 
-  // Sub-categories derived from retail_categories relation (unique)
-  const subCategories = useMemo(() => {
-    const seen = new Set<string>();
-    const cats: { name: string; slug: string }[] = [];
-    for (const p of sparkClubProducts) {
-      if (p.retail_categories?.slug && !seen.has(p.retail_categories.slug)) {
-        seen.add(p.retail_categories.slug);
-        cats.push({ name: p.retail_categories.name, slug: p.retail_categories.slug });
-      }
-    }
-    return cats.sort((a, b) => a.name.localeCompare(b.name));
-  }, [sparkClubProducts]);
+  // Parent categories from retail_categories (sparkclub department only)
+  const parentCategories = useMemo(() => {
+    return allRetailCategories
+      .filter(c => c.department === 'sparkclub' && !c.parent_id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allRetailCategories]);
+  
+  // Subcategories for active parent category
+  const activeSubcategories = useMemo(() => {
+    if (activeCategory === 'all') return [];
+    
+    const parent = parentCategories.find(c => c.slug === activeCategory);
+    if (!parent) return [];
+    
+    return allRetailCategories
+      .filter(c => c.parent_id === parent.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [activeCategory, parentCategories, allRetailCategories]);
 
-  const resetSignal = `${activeCategory}__${search}`;
+  const resetSignal = `${activeCategory}__${activeSubcategory}__${search}`;
 
-  // Client-side filter: sub-category + search
+  // Client-side filter: category + sub-category + search
   const filtered = useMemo(() => {
     let list = sparkClubProducts;
 
+    // Filter by parent category
     if (activeCategory !== 'all') {
       list = list.filter((p) => p.retail_categories?.slug === activeCategory);
+    }
+    
+    // Filter by subcategory
+    if (activeSubcategory !== 'all') {
+      list = list.filter((p) => p.retail_subcategories?.slug === activeSubcategory);
     }
 
     if (search.trim()) {
@@ -328,13 +344,34 @@ export default function RetailShopPage() {
               )}
             </div>
 
-            {/* Sub-category tabs — only if there are sub-categories */}
-            {!isLoading && subCategories.length > 0 && (
-              <CategoryTabs
-                categories={subCategories}
-                active={activeCategory}
-                onChange={setActiveCategory}
-              />
+            {/* Category tabs */}
+            {!isLoading && parentCategories.length > 0 && (
+              <div className="mb-4">
+                <CategoryTabs
+                  categories={parentCategories.map(c => ({ name: c.name, slug: c.slug }))}
+                  active={activeCategory}
+                  onChange={(slug) => {
+                    setActiveCategory(slug);
+                    setActiveSubcategory('all'); // Reset subcategory when category changes
+                  }}
+                />
+                
+                {/* SubCategory Bar - shows when active category has children */}
+                {activeCategory !== 'all' && activeSubcategories.length > 0 && (
+                  <div className="mt-4">
+                    <SubCategoryBar
+                      subcategories={activeSubcategories.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        slug: c.slug
+                      }))}
+                      activeSlug={activeSubcategory}
+                      onSelectSubcategory={(slug) => setActiveSubcategory(slug || 'all')}
+                      allButtonLabel="All"
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

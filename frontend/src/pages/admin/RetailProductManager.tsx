@@ -23,7 +23,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../components/Toast";
 import { useAdminRetailProducts } from "../../hooks/useAdminRetailProducts";
-import { useRetailCategories } from "../../hooks/useRetailCategories";
+import { useAdminRetailCategories } from "../../hooks/useAdminRetailCategories";
 import { uploadPublicAssetToImageKit } from "../../lib/publicImagekitUpload";
 import { uploadToR2 } from "../../lib/r2Upload";
 import { supabase } from "../../lib/supabase";
@@ -53,7 +53,7 @@ export default function RetailProductManager() {
     createCategory,
     updateCategory,
     deleteCategory,
-  } = useRetailCategories();
+  } = useAdminRetailCategories();
 
   const [search, setSearch] = useState("");
   const [activeDept, setActiveDept] = useState<string>("all");

@@ -5,6 +5,7 @@ export const queryKeys = {
   productRetailSummaries: () => ['product-retail', 'summaries'] as const,
   product: (productId: number | string) => ['product', productId] as const,
   categories: () => ['categories'] as const,
+  retailCategories: () => ['retail-categories'] as const,
   inventory: () => ['inventory'] as const,
   inventoryList: (
     page: number,

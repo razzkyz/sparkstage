@@ -14,15 +14,21 @@ export function useShopFilters() {
   }, [searchQueryParam]);
 
   const updateFilters = (updates: Record<string, string | null>) => {
+    console.log('📝 updateFilters called with:', updates);
+    console.log('📝 Current searchParams:', Object.fromEntries(searchParams.entries()));
+    
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
       Object.entries(updates).forEach(([key, value]) => {
         if (value === null || value === 'all' || value === '') {
+          console.log(`  ❌ Deleting param: ${key}`);
           next.delete(key);
         } else {
+          console.log(`  ✅ Setting param: ${key} = ${value}`);
           next.set(key, value);
         }
       });
+      console.log('📝 New searchParams:', Object.fromEntries(next.entries()));
       return next;
     }, { replace: true });
   };

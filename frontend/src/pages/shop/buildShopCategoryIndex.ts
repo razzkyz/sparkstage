@@ -25,9 +25,11 @@ const CHARM_BAR_ONLY_CATEGORIES = new Set([
 ]);
 
 // Categories that should only appear in Glam, not in Shop
+// Note: "glasses" and "eyewear" removed to allow them in Shop
 const GLAM_ONLY_CATEGORIES = new Set([
   "makeup",
-  "eyewear",
+  // "eyewear",  // ← Removed: Allow GLASSES to show in Shop with subcategories
+  // "glasses",  // ← Also removed if slug is "glasses"
   "glitter",
   "headliner",
   "starglitter",
