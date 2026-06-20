@@ -127,6 +127,14 @@ export function JourneyTimeSlotsSection({
             const periodLabel =
               SESSION_LABEL_ID[period as string] ?? (period as string);
 
+            // Use the minimum available across non-past slots in this session
+            // to reflect the real remaining capacity (not inflated sum)
+            const activeSlots = slots.filter((s) => !s.isPast);
+            const totalAvailable = activeSlots.length > 0
+              ? Math.min(...activeSlots.map((s) => s.available))
+              : 0;
+            const isFull = activeSlots.length === 0 || totalAvailable === 0;
+
             let isPast = false;
             let isSelected = false;
             let representativeTime: string | null = null;
@@ -154,43 +162,118 @@ export function JourneyTimeSlotsSection({
             return (
               <motion.button
                 variants={itemVars}
-                whileHover={!isPast && !isSelected ? { scale: 1.02, y: -2 } : {}}
-                whileTap={!isPast ? { scale: 0.98 } : {}}
+                whileHover={!isPast && !isSelected && !isFull ? { scale: 1.02, y: -2 } : {}}
+                whileTap={!isPast && !isFull ? { scale: 0.98 } : {}}
                 key={period as string}
-                onClick={() => representativeTime && !isPast && onSelectTime(representativeTime)}
-                disabled={isPast}
-                className={`w-full rounded-xl border-2 px-5 md:px-6 py-4 md:py-5 text-left transition-all ${
+                onClick={() => representativeTime && !isPast && !isFull && onSelectTime(representativeTime)}
+                disabled={isPast || isFull}
+                className={`w-full rounded-2xl border-2 px-5 md:px-6 py-4 md:py-5 text-left transition-all overflow-hidden ${
                   isPast
                     ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-100"
-                    : isSelected
-                      ? "border-transparent bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-[0_8px_20px_rgba(236,72,153,0.3)]"
-                      : "border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/50 hover:shadow-lg"
+                    : isFull
+                      ? "opacity-60 cursor-not-allowed bg-rose-50/50 border-rose-200"
+                      : isSelected
+                        ? "border-transparent bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-[0_8px_25px_rgba(236,72,153,0.35)]"
+                        : "border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/30 hover:shadow-[0_8px_30px_rgba(236,72,153,0.1)]"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-xs font-black uppercase tracking-widest mb-1 ${isSelected ? 'text-pink-100' : 'text-gray-400'}`}>
+                <div className="flex items-center gap-4">
+                  {/* Ticket Icon */}
+                  <div className={`shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-colors ${
+                    isPast
+                      ? 'bg-gray-200/60'
+                      : isFull
+                        ? 'bg-rose-100'
+                        : isSelected
+                          ? 'bg-white/20'
+                          : totalAvailable <= 10
+                            ? 'bg-rose-100'
+                            : totalAvailable <= 30
+                              ? 'bg-amber-100'
+                              : 'bg-pink-100'
+                  }`}>
+                    <span className={`material-symbols-outlined text-[22px] md:text-[24px] ${
+                      isPast
+                        ? 'text-gray-400'
+                        : isFull
+                          ? 'text-rose-400'
+                          : isSelected
+                            ? 'text-white'
+                            : totalAvailable <= 10
+                              ? 'text-rose-500'
+                              : totalAvailable <= 30
+                                ? 'text-amber-600'
+                                : 'text-pink-500'
+                    }`}>
+                      confirmation_number
+                    </span>
+                  </div>
+
+                  {/* Session Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[10px] md:text-xs font-black uppercase tracking-widest mb-0.5 ${
+                      isSelected ? 'text-pink-100' : isPast ? 'text-gray-400' : 'text-gray-400'
+                    }`}>
                       {periodLabel}
                     </p>
-                    <p
-                      className={`text-lg md:text-xl font-black ${
-                        isSelected ? "text-white" : "text-gray-800"
-                      } ${isPast ? "line-through text-gray-400" : ""}`}
-                    >
+                    <p className={`text-base md:text-lg font-black leading-tight ${
+                      isSelected ? "text-white" : isPast ? "text-gray-400 line-through" : "text-gray-800"
+                    }`}>
                       {sessionLabel}
                     </p>
                   </div>
 
-                  <div className="text-right flex flex-col items-end gap-1">
+                  {/* Status Badge */}
+                  <div className="shrink-0">
                     {hasNoDate ? (
-                      <span className="text-xs font-bold text-pink-400 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
+                      <span className="text-[11px] font-bold text-pink-400 bg-pink-50 px-3 py-1.5 rounded-full border border-pink-100 whitespace-nowrap">
                         Pilih Tanggal 👆
                       </span>
                     ) : isPast ? (
-                      <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                      <span className="text-[11px] font-bold text-gray-400 bg-gray-100/80 px-3 py-1.5 rounded-full flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">schedule</span>
                         Berakhir
                       </span>
-                    ) : null}
+                    ) : isFull ? (
+                      <span className="text-[11px] font-black text-rose-500 bg-rose-100 px-3 py-1.5 rounded-full border border-rose-200 flex items-center gap-1 whitespace-nowrap">
+                        <span className="material-symbols-outlined text-[14px]">block</span>
+                        Penuh
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap ${
+                          totalAvailable <= 10
+                            ? 'text-rose-700 bg-rose-50 border border-rose-200 shadow-[0_2px_8px_rgba(244,63,94,0.15)]'
+                            : totalAvailable <= 30
+                              ? 'text-amber-700 bg-amber-50 border border-amber-200 shadow-[0_2px_8px_rgba(245,158,11,0.12)]'
+                              : 'text-emerald-700 bg-emerald-50 border border-emerald-200 shadow-[0_2px_8px_rgba(16,185,129,0.12)]'
+                        }`}>
+                          <span className={`material-symbols-outlined text-[14px] ${
+                            totalAvailable <= 10
+                              ? 'text-rose-500'
+                              : totalAvailable <= 30
+                                ? 'text-amber-500'
+                                : 'text-emerald-500'
+                          }`}>
+                            {totalAvailable <= 10 ? 'local_fire_department' : totalAvailable <= 30 ? 'trending_down' : 'check_circle'}
+                          </span>
+                          {totalAvailable <= 10 ? 'Sisa ' : 'Tersisa '}{totalAvailable}
+                        </span>
+                        {/* Mini capacity bar */}
+                        <div className="w-16 h-1 rounded-full bg-gray-200/80 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              totalAvailable <= 10
+                                ? 'bg-rose-400'
+                                : totalAvailable <= 30
+                                  ? 'bg-amber-400'
+                                  : 'bg-emerald-400'
+                            }`}
+                            style={{ width: `${Math.min(100, (totalAvailable / 100) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.button>
