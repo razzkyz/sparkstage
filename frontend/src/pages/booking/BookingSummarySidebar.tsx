@@ -76,7 +76,7 @@ export function BookingSummarySidebar(props: BookingSummarySidebarProps) {
               <p className="text-sm font-bold uppercase tracking-tighter opacity-60">{copy.date_label}</p>
               <p className="font-display font-medium">
                 {selectedDate
-                  ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+                  ? selectedDate.toLocaleDateString('id-ID', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
                   : copy.not_selected_label}
               </p>
             </div>
@@ -100,8 +100,8 @@ export function BookingSummarySidebar(props: BookingSummarySidebarProps) {
                       <div className="flex items-start gap-1">
                         <span className="material-symbols-outlined text-sm">warning</span>
                         <div>
-                          <p className="font-bold">Session ends in {minutesLeft} minutes!</p>
-                          <p className="mt-1 opacity-80">Complete payment quickly to secure your booking.</p>
+                          <p className="font-bold">Sesi berakhir dalam {minutesLeft} menit!</p>
+                          <p className="mt-1 opacity-80">Segera selesaikan pembayaran untuk mengamankan pesanan Anda.</p>
                         </div>
                       </div>
                     </div>
@@ -113,7 +113,7 @@ export function BookingSummarySidebar(props: BookingSummarySidebarProps) {
                     <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">schedule</span>
-                        <span>Session ends in {minutesLeft} minutes</span>
+                        <span>Sesi berakhir dalam {minutesLeft} menit</span>
                       </div>
                     </div>
                   );
@@ -124,7 +124,7 @@ export function BookingSummarySidebar(props: BookingSummarySidebarProps) {
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">info</span>
-                        <span>Session ends in {minutesLeft} minutes</span>
+                        <span>Sesi berakhir dalam {minutesLeft} menit</span>
                       </div>
                     </div>
                   );

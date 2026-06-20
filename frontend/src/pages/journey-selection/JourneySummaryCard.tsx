@@ -66,9 +66,9 @@ export function JourneySummaryCard({
             <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">{copy.date_label}</p>
             <p className={`font-bold text-sm md:text-base ${selectedDate ? 'text-gray-900' : 'text-gray-400 italic'}`}>
               {selectedDate
-                ? selectedDate.toLocaleDateString('en-US', {
+                ? selectedDate.toLocaleDateString('id-ID', {
                     weekday: 'long',
-                    month: 'short',
+                    month: 'long',
                     day: 'numeric',
                     year: 'numeric',
                   })

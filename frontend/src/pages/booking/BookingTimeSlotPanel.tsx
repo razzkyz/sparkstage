@@ -150,7 +150,7 @@ export function BookingTimeSlotPanel(props: BookingTimeSlotPanelProps) {
                           <div className="hidden md:block absolute top-full mt-2 left-1/2 -translate-x-1/2 z-10 w-48 bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
                             <div className="flex items-start gap-1">
                               <span className="material-symbols-outlined text-sm">warning</span>
-                              <span>Session ends in {minutesLeft} min. Complete payment quickly!</span>
+                              <span>Sesi berakhir dalam {minutesLeft} mnt. Segera selesaikan pembayaran!</span>
                             </div>
                           </div>
                         )}
