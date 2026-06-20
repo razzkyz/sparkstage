@@ -25,6 +25,8 @@ export type ProductDraft = {
   slug: string;
   description: string;
   category_id: number | null;
+  retail_category_id: number | null;
+  retail_subcategory_id: number | null;
   sku: string;
   is_active: boolean;
   variants: ProductVariantDraft[];

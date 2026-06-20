@@ -26,6 +26,31 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
           {controller.error ? (
             <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">{controller.error}</div>
           ) : null}
+          {controller.success ? (
+            <div className="mb-4 rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700 font-medium">
+              {controller.success}
+            </div>
+          ) : null}
+
+          {/* Department Tabs */}
+          <div className="mb-6 flex space-x-2 border-b border-gray-200">
+            {(['glam', 'charmbar', 'sparkclub'] as const).map((dept) => (
+              <button
+                key={dept}
+                onClick={() => {
+                  controller.setSelectedDepartment(dept);
+                  controller.handleNew();
+                }}
+                className={`px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors ${
+                  controller.selectedDepartment === dept
+                    ? 'border-[#ff4b86] text-[#ff4b86]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {dept}
+              </button>
+            ))}
+          </div>
 
           <CategoryEditorPanel
             editingId={controller.editingId}

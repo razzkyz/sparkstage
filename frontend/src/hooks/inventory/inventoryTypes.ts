@@ -22,6 +22,8 @@ export type ProductRow = {
   slug: string;
   description: string | null;
   category_id: number | null;
+  retail_category_id?: number | null;
+  retail_subcategory_id?: number | null;
   sku: string;
   is_active: boolean;
   deleted_at: string | null;

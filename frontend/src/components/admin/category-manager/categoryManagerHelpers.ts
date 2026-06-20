@@ -1,6 +1,7 @@
 import type { Category, CategoryDraft } from './categoryManagerTypes';
 
 export const emptyCategoryDraft = (): CategoryDraft => ({
+  department: '',
   name: '',
   slug: '',
   is_active: true,
@@ -9,6 +10,7 @@ export const emptyCategoryDraft = (): CategoryDraft => ({
 
 export const toCategoryDraft = (category: Category): CategoryDraft => ({
   id: category.id,
+  department: category.department,
   name: category.name,
   slug: category.slug,
   is_active: category.is_active,

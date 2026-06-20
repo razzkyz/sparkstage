@@ -16,6 +16,11 @@ export interface ProductSummary {
   categorySlug?: string | null;
   defaultVariantId?: number;
   defaultVariantName?: string;
+  retail_category_id?: number | null;
+  retail_subcategory_id?: number | null;
+  department?: string | null;
+  retailCategoryName?: string | null;
+  retailSubcategoryName?: string | null;
 }
 
 export interface ProductPickerOption {
@@ -51,6 +56,10 @@ type ProductRow = {
   categories?: { slug?: unknown } | null;
   product_variants?: unknown;
   product_images?: ProductImageRow[];
+  retail_category_id?: unknown;
+  retail_subcategory_id?: unknown;
+  retail_categories?: { department?: unknown; name?: unknown; slug?: unknown } | null;
+  retail_subcategories?: { name?: unknown; slug?: unknown } | null;
 };
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -148,6 +157,11 @@ function transformProductSummary(row: ProductRow): ProductSummary {
     categorySlug: typeof row.categories?.slug === 'string' ? row.categories.slug : null,
     defaultVariantId,
     defaultVariantName,
+    retail_category_id: toNumber(row.retail_category_id, null as any),
+    retail_subcategory_id: toNumber(row.retail_subcategory_id, null as any),
+    department: typeof row.retail_categories?.department === 'string' ? row.retail_categories.department : null,
+    retailCategoryName: typeof row.retail_categories?.name === 'string' ? row.retail_categories.name : null,
+    retailSubcategoryName: typeof row.retail_subcategories?.name === 'string' ? row.retail_subcategories.name : null,
   };
 }
 
@@ -190,7 +204,11 @@ async function fetchProductSummaries(signal?: AbortSignal) {
             id,
             name,
             description,
+            retail_category_id,
+            retail_subcategory_id,
             categories(slug, is_active),
+            retail_categories!products_retail_category_id_fkey(department, name, slug),
+            retail_subcategories:retail_categories!products_retail_subcategory_id_fkey(name, slug),
             product_images(image_url, is_primary, display_order),
             product_variants(id, name, price, is_active, stock, reserved_stock)
           `

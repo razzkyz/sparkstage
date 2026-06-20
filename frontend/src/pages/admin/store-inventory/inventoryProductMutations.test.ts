@@ -29,6 +29,8 @@ function createDraft(overrides: Partial<Parameters<typeof saveInventoryProductMu
     slug: overrides.slug ?? 'glow-kit',
     description: overrides.description ?? 'Test product',
     category_id: overrides.category_id ?? 2,
+    retail_category_id: overrides.retail_category_id ?? null,
+    retail_subcategory_id: overrides.retail_subcategory_id ?? null,
     sku: overrides.sku ?? 'GLOW-001',
     is_active: overrides.is_active ?? true,
     variants:

@@ -45,6 +45,8 @@ const mapProductRowToDraft = (row: ProductRow): ProductDraft => {
     slug: row.slug,
     description: row.description ?? '',
     category_id: row.category_id ?? null,
+    retail_category_id: row.retail_category_id ?? null,
+    retail_subcategory_id: row.retail_subcategory_id ?? null,
     sku: row.sku,
     is_active: row.is_active,
     variants: mappedVariants.length ? mappedVariants : [{ name: 'Default', sku: '', price: '', stock: 0 }],
@@ -178,6 +180,8 @@ export function useInventoryProductActions(params: UseInventoryProductActionsPar
       await refetch();
       if (result?.cleanupWarnings?.length) {
         showToast('info', `Product saved. ${result.cleanupWarnings.join(' ')}`);
+      } else {
+        showToast('success', 'Produk berhasil disimpan!');
       }
     } catch (error) {
       const message = formatInventoryProductMutationError(error);

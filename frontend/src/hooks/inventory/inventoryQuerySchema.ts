@@ -8,6 +8,8 @@ export const getInventorySelect = (categoryFilter: string) => {
   slug,
   description,
   category_id,
+  retail_category_id,
+  retail_subcategory_id,
   sku,
   is_active,
   deleted_at,

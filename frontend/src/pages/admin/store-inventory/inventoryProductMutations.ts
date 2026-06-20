@@ -231,6 +231,8 @@ async function saveInventoryProductOnServer(params: {
     slug: normalizedDraft.slug,
     description: normalizedDraft.description || null,
     categoryId: normalizedDraft.category_id,
+    retailCategoryId: normalizedDraft.retail_category_id,
+    retailSubcategoryId: normalizedDraft.retail_subcategory_id,
     sku: normalizedDraft.sku,
     isActive: normalizedDraft.is_active,
     syncVariants,

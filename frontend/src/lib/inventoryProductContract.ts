@@ -14,6 +14,8 @@ export type InventorySavePayload = {
   slug?: string
   description?: string | null
   categoryId?: number | string | null
+  retailCategoryId?: number | string | null
+  retailSubcategoryId?: number | string | null
   sku?: string
   isActive?: boolean
   syncVariants?: boolean
@@ -36,6 +38,8 @@ export type NormalizedInventorySavePayload = {
   slug: string
   description: string | null
   categoryId: number | null
+  retailCategoryId: number | null
+  retailSubcategoryId: number | null
   sku: string
   isActive: boolean
   syncVariants: boolean
@@ -121,6 +125,8 @@ export function normalizeInventorySavePayload(body: InventorySavePayload): Norma
     slug: normalizeSlug(body.slug),
     description: toNullableTrimmedString(body.description),
     categoryId: body.categoryId == null ? null : toValidNumber(body.categoryId),
+    retailCategoryId: body.retailCategoryId == null ? null : toValidNumber(body.retailCategoryId),
+    retailSubcategoryId: body.retailSubcategoryId == null ? null : toValidNumber(body.retailSubcategoryId),
     sku: normalizeSku(body.sku),
     isActive: body.isActive ?? true,
     syncVariants: body.syncVariants ?? true,

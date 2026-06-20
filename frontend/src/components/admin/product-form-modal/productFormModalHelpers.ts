@@ -27,6 +27,8 @@ export function emptyDraft(): ProductDraft {
     slug: '',
     description: '',
     category_id: null,
+    retail_category_id: null,
+    retail_subcategory_id: null,
     sku: '',
     is_active: true,
     variants: [{ name: 'Default', sku: '', price: '', stock: 0 }],

@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { slugify } from '../../../utils/merchant';
+import { useRetailCategories } from '../../../hooks/useRetailCategories';
 import type { CategoryOption, ProductDraft } from './productFormModalTypes';
 
 type ProductDetailsSectionProps = {
@@ -34,6 +36,23 @@ export function ProductDetailsSection({
   const rootOptions = categoryOptions.filter((c) => !c.parent_id);
   const subOptions = rootId ? categoryOptions.filter((c) => c.parent_id === rootId) : [];
   const subsubOptions = subId ? categoryOptions.filter((c) => c.parent_id === subId) : [];
+
+  const { categories: retailCategories } = useRetailCategories();
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+
+  useEffect(() => {
+    if (draft.retail_category_id && retailCategories.length > 0) {
+      const cat = retailCategories.find(c => c.id === draft.retail_category_id);
+      if (cat) {
+        setSelectedDepartment(cat.department);
+      }
+    }
+  }, [draft.retail_category_id, retailCategories]);
+
+  const retailRootOptions = retailCategories.filter(c => !c.parent_id && c.department === selectedDepartment);
+  const retailSubOptions = draft.retail_category_id 
+    ? retailCategories.filter(c => c.parent_id === draft.retail_category_id)
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -141,6 +160,71 @@ export function ProductDetailsSection({
           </select>
         </label>
       )}
+
+      {/* --- NEW RETAIL CATEGORIES --- */}
+      <div className="mt-2 flex flex-col gap-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+        <h4 className="text-sm font-bold text-blue-900">E-Commerce & Retail Classification</h4>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-blue-800">Department</span>
+            <select
+              value={selectedDepartment}
+              onChange={(event) => {
+                setSelectedDepartment(event.target.value);
+                setDraft((current) => ({ ...current, retail_category_id: null, retail_subcategory_id: null }));
+              }}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select department</option>
+              <option value="glam">Glam</option>
+              <option value="charmbar">Charmbar</option>
+              <option value="sparkclub">Sparkclub</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-blue-800">Category</span>
+            <select
+              value={draft.retail_category_id ?? ''}
+              onChange={(event) => {
+                const val = event.target.value ? Number(event.target.value) : null;
+                setDraft((current) => ({ ...current, retail_category_id: val, retail_subcategory_id: null }));
+              }}
+              disabled={!selectedDepartment}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">Select category</option>
+              {retailRootOptions.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {retailSubOptions.length > 0 && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-blue-800">Sub-Category</span>
+            <select
+              value={draft.retail_subcategory_id ?? ''}
+              onChange={(event) => {
+                const val = event.target.value ? Number(event.target.value) : null;
+                setDraft((current) => ({ ...current, retail_subcategory_id: val }));
+              }}
+              className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select subcategory</option>
+              {retailSubOptions.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+      {/* --- END NEW RETAIL CATEGORIES --- */}
 
       <label className="flex flex-col gap-1">
         <span className="text-xs font-bold text-gray-600">Description</span>

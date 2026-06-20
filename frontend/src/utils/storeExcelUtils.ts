@@ -121,6 +121,8 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
                 productName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
               description: String(row['description'] ?? '').trim(),
               category_id: row['category_id'] ? Number(row['category_id']) : null,
+              retail_category_id: null,
+              retail_subcategory_id: null,
               sku: String(row['sku'] ?? '').trim(),
               is_active: String(row['is_active'] ?? 'ya').trim().toLowerCase() !== 'tidak',
               variants: [],

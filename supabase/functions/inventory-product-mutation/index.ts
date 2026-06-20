@@ -26,6 +26,8 @@ type SaveRequest = {
   slug?: string
   description?: string | null
   categoryId?: number | string | null
+  retailCategoryId?: number | string | null
+  retailSubcategoryId?: number | string | null
   sku?: string
   isActive?: boolean
   syncVariants?: boolean
@@ -291,6 +293,8 @@ serve(async (req: Request) => {
         p_slug: normalizedPayload.slug,
         p_description: normalizedPayload.description,
         p_category_id: normalizedPayload.categoryId,
+        p_retail_category_id: normalizedPayload.retailCategoryId,
+        p_retail_subcategory_id: normalizedPayload.retailSubcategoryId,
         p_sku: normalizedPayload.sku,
         p_is_active: normalizedPayload.isActive,
         p_sync_variants: normalizedPayload.syncVariants,

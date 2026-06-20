@@ -29,6 +29,7 @@
     "supabase:functions:deploy:complete-product-pickup": "supabase functions deploy complete-product-pickup",
     "supabase:functions:deploy:create-doku-product-checkout": "supabase functions deploy create-doku-product-checkout",
     "supabase:functions:deploy:create-doku-ticket-checkout": "supabase functions deploy create-doku-ticket-checkout",
+    "supabase:functions:deploy:inventory-product-mutation": "supabase functions deploy inventory-product-mutation",
     "supabase:functions:deploy:doku-webhook": "supabase functions deploy doku-webhook",
     "supabase:functions:deploy:send-whatsapp-invoice": "supabase functions deploy send-whatsapp-invoice",
     "supabase:functions:deploy:sync-doku-ticket-status": "supabase functions deploy sync-doku-ticket-status",

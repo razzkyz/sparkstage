@@ -16,15 +16,22 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [draft, setDraft] = useState<CategoryDraft>(emptyCategoryDraft);
-  const [slugTouched, setSlugTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [expandedParents, setExpandedParents] = useState<number[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<'glam' | 'charmbar' | 'sparkclub'>('glam');
+
+  const [draft, setDraft] = useState<CategoryDraft>(() => {
+    const d = emptyCategoryDraft();
+    d.department = 'glam';
+    return d;
+  });
+  const [slugTouched, setSlugTouched] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase.from('categories').select('*').order('name', { ascending: true });
+      const { data, error: fetchError } = await supabase.from('retail_categories').select('*').order('name', { ascending: true });
       if (fetchError) throw fetchError;
       setCategories(data || []);
     } catch (caughtError) {
@@ -45,14 +52,18 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
     setDraft(toCategoryDraft(category));
     setSlugTouched(true);
     setError(null);
+    setSuccess(null);
   }, []);
 
   const handleNew = useCallback(() => {
     setEditingId(null);
-    setDraft(emptyCategoryDraft());
+    const emptyDraft = emptyCategoryDraft();
+    emptyDraft.department = selectedDepartment;
+    setDraft(emptyDraft);
     setSlugTouched(false);
     setError(null);
-  }, []);
+    setSuccess(null);
+  }, [selectedDepartment]);
 
   const handleSave = useCallback(async () => {
     if (!draft.name.trim()) {
@@ -67,21 +78,24 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
 
       if (draft.id) {
         const { error: updateError } = await supabase
-          .from('categories')
+          .from('retail_categories')
           .update({
+            department: draft.department,
             name: draft.name,
             slug: draft.slug,
             is_active: draft.is_active,
             parent_id: draft.parent_id,
-            updated_at: new Date().toISOString(),
+            // updated_at is not standard on retail_categories
           })
           .eq('id', draft.id);
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase.from('categories').insert({
+        const { error: insertError } = await supabase.from('retail_categories').insert({
+          department: draft.department,
           name: draft.name,
           slug: draft.slug,
           is_active: draft.is_active,
@@ -93,8 +107,18 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
       await fetchCategories();
       onUpdate();
       setEditingId(null);
-      setDraft(emptyCategoryDraft());
+      
+      const newDraft = emptyCategoryDraft();
+      newDraft.department = selectedDepartment;
+      setDraft(newDraft);
+      
       setSlugTouched(false);
+      setSuccess('Category saved successfully!');
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to save category');
     } finally {
@@ -111,8 +135,8 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
         // Check if there are products using this category
         const { count, error: countError } = await supabase
           .from('products')
-          .select('*', { count: 'exact', head: true })
-          .eq('category_id', id)
+          .select('id', { count: 'exact', head: true })
+          .or(`retail_category_id.eq.${id},retail_subcategory_id.eq.${id}`)
           .is('deleted_at', null);
 
         if (countError) throw countError;
@@ -127,7 +151,7 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
           return;
         }
 
-        const { error: deleteError } = await supabase.from('categories').delete().eq('id', id);
+        const { error: deleteError } = await supabase.from('retail_categories').delete().eq('id', id);
         if (deleteError) throw deleteError;
 
         await fetchCategories();
@@ -157,10 +181,9 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
 
         // Update all affected categories (parent and descendants)
         const { error: updateError } = await supabase
-          .from('categories')
+          .from('retail_categories')
           .update({
             is_active: resolvedStatus,
-            updated_at: new Date().toISOString(),
           })
           .in('id', allAffectedIds);
 
@@ -173,7 +196,7 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
             is_active: resolvedStatus,
             updated_at: new Date().toISOString(),
           })
-          .in('category_id', allAffectedIds)
+          .or(`retail_category_id.in.(${allAffectedIds.join(',')}),retail_subcategory_id.in.(${allAffectedIds.join(',')})`)
           .is('deleted_at', null); // Only update non-deleted products
 
         if (productUpdateError) throw productUpdateError;
@@ -190,10 +213,14 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
     [categories, fetchCategories, onUpdate]
   );
 
-  const parentOptions = useMemo(() => getParentOptions(categories, editingId), [categories, editingId]);
-  const parents = useMemo(() => getParents(categories), [categories]);
-  const childrenByParent = useMemo(() => getChildrenByParent(categories), [categories]);
-  const orphanChildren = useMemo(() => getOrphanChildren(categories), [categories]);
+  const filteredCategories = useMemo(() => {
+    return categories.filter((c) => c.department === selectedDepartment);
+  }, [categories, selectedDepartment]);
+
+  const parentOptions = useMemo(() => getParentOptions(filteredCategories, editingId), [filteredCategories, editingId]);
+  const parents = useMemo(() => getParents(filteredCategories), [filteredCategories]);
+  const childrenByParent = useMemo(() => getChildrenByParent(filteredCategories), [filteredCategories]);
+  const orphanChildren = useMemo(() => getOrphanChildren(filteredCategories), [filteredCategories]);
   const parentNameMap = useMemo(() => getParentNameMap(categories), [categories]);
 
   useEffect(() => {
@@ -209,12 +236,15 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
   }, []);
 
   return {
-    categories,
+    categories: filteredCategories,
+    selectedDepartment,
+    setSelectedDepartment,
     loading,
     editingId,
     draft,
     slugTouched,
     error,
+    success,
     expandedParents,
     setDraft,
     setSlugTouched,

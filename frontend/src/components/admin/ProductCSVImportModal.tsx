@@ -47,6 +47,8 @@ export function ProductCSVImportModal({
         slug: p.slug,
         description: p.description,
         category_id: p.category_id,
+        retail_category_id: null,
+        retail_subcategory_id: null,
         sku: p.sku,
         is_active: p.is_active,
         variants: p.variants,
