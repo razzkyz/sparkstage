@@ -47,6 +47,7 @@ export type UseInventoryParams = {
   categoryFilter: string;
   stockFilter: '' | 'in' | 'low' | 'out';
   activeFilter: '' | 'active' | 'inactive';
+  departmentFilter?: string;
 };
 
 export type InventorySource = 'rpc' | 'rpc-fallback';
@@ -68,6 +69,7 @@ export type InventoryQueryData = {
 export type InventoryListFilters = {
   searchQuery: string;
   categoryFilter: string;
+  departmentFilter?: string;
 };
 
 export type InventoryProductFetchResult = {

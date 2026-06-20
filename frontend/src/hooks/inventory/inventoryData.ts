@@ -34,7 +34,7 @@ async function fetchInventoryProductDetails(
 
   const { data: detailData, error: detailError } = await supabase
     .from('products')
-    .select(getInventorySelect(categoryFilter))
+    .select(getInventorySelect(categoryFilter, ''))
     .abortSignal(signal)
     .is('deleted_at', null)
     .in('id', productIds);
@@ -50,7 +50,7 @@ async function fetchInventoryPageByRpc(
   signal: AbortSignal,
   page: number,
   pageSize: number,
-  filters: { searchQuery: string; categoryFilter: string },
+  filters: { searchQuery: string; categoryFilter: string; activeFilter?: string; departmentFilter?: string },
   stockFilter: UseInventoryParams['stockFilter']
 ): Promise<InventoryProductFetchResult> {
   const safePage = Math.max(1, page);
@@ -63,6 +63,8 @@ async function fetchInventoryPageByRpc(
       p_search_query: normalizedSearch,
       p_category_slug: normalizedCategory,
       p_stock_filter: stockFilter,
+      p_active_filter: filters.activeFilter || '',
+      p_department_filter: filters.departmentFilter || '',
       p_page: safePage,
       p_page_size: safePageSize,
     })
@@ -92,7 +94,7 @@ async function fetchInventoryPageDirect(
   signal: AbortSignal,
   page: number,
   pageSize: number,
-  filters: { searchQuery: string; categoryFilter: string; activeFilter: string }
+  filters: { searchQuery: string; categoryFilter: string; activeFilter: string; departmentFilter?: string }
 ): Promise<InventoryProductFetchResult> {
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, pageSize);
@@ -101,7 +103,7 @@ async function fetchInventoryPageDirect(
 
   let query = supabase
     .from('products')
-    .select(getInventorySelect(filters.categoryFilter), { count: 'exact' })
+    .select(getInventorySelect(filters.categoryFilter, filters.departmentFilter), { count: 'exact' })
     .abortSignal(signal)
     .is('deleted_at', null)
     .order('is_active', { ascending: false }) // active first
@@ -136,7 +138,7 @@ async function fetchInventoryPage(
   signal: AbortSignal,
   page: number,
   pageSize: number,
-  filters: { searchQuery: string; categoryFilter: string; activeFilter: string }
+  filters: { searchQuery: string; categoryFilter: string; activeFilter: string; departmentFilter?: string }
 ): Promise<InventoryProductFetchResult> {
   const normalizedSearch = normalizeSearchTerm(filters.searchQuery);
   if (!normalizedSearch) {
@@ -164,7 +166,7 @@ async function fetchInventoryStockFilteredPage(
   signal: AbortSignal,
   page: number,
   pageSize: number,
-  filters: { searchQuery: string; categoryFilter: string; activeFilter: string },
+  filters: { searchQuery: string; categoryFilter: string; activeFilter: string; departmentFilter?: string },
   stockFilter: UseInventoryParams['stockFilter']
 ): Promise<InventoryProductFetchResult> {
   try {
@@ -197,6 +199,7 @@ export async function fetchInventoryQueryData(
       searchQuery: params.searchQuery,
       categoryFilter: params.categoryFilter,
       activeFilter: params.activeFilter,
+      departmentFilter: params.departmentFilter,
     };
 
     const categoriesPromise = supabase
@@ -262,5 +265,6 @@ export const getInventoryQueryKey = (params: UseInventoryParams) =>
     params.searchQuery,
     params.categoryFilter,
     params.stockFilter,
-    params.activeFilter
+    params.activeFilter,
+    params.departmentFilter
   );

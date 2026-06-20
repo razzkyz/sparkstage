@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type SetStateAction } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { buildSearchParams, parseSearchParams } from './storeInventoryUrlState';
-import type { ActiveFilter, StockFilter } from './storeInventoryTypes';
+import type { ActiveFilter, StockFilter, DepartmentFilter } from './storeInventoryTypes';
 
 type UseStoreInventoryFiltersParams = {
   pathname: string;
@@ -26,6 +26,7 @@ export function useStoreInventoryFilters(params: UseStoreInventoryFiltersParams)
             categoryFilter?: string;
             stockFilter?: StockFilter;
             activeFilter?: ActiveFilter;
+            departmentFilter?: DepartmentFilter;
             page?: number;
           }
         | ((current: ReturnType<typeof parseSearchParams>) => {
@@ -33,6 +34,7 @@ export function useStoreInventoryFilters(params: UseStoreInventoryFiltersParams)
             categoryFilter: string;
             stockFilter: StockFilter;
             activeFilter: ActiveFilter;
+            departmentFilter: DepartmentFilter;
             page: number;
           })
     ) => {
@@ -42,6 +44,7 @@ export function useStoreInventoryFilters(params: UseStoreInventoryFiltersParams)
         categoryFilter: nextState.categoryFilter,
         stockFilter: nextState.stockFilter,
         activeFilter: nextState.activeFilter,
+        departmentFilter: nextState.departmentFilter,
         page: Math.max(1, Math.floor(nextState.page)),
       });
 
@@ -100,6 +103,17 @@ export function useStoreInventoryFilters(params: UseStoreInventoryFiltersParams)
     [navigateWithFilters]
   );
 
+  const setDepartmentFilter = useCallback(
+    (value: DepartmentFilter) => {
+      navigateWithFilters((current) => ({
+        ...current,
+        departmentFilter: value,
+        page: 1,
+      }));
+    },
+    [navigateWithFilters]
+  );
+
   const setCurrentPage = useCallback(
     (value: SetStateAction<number>) => {
       navigateWithFilters((current) => {
@@ -119,11 +133,13 @@ export function useStoreInventoryFilters(params: UseStoreInventoryFiltersParams)
     categoryFilter: parsedParams.categoryFilter,
     stockFilter: parsedParams.stockFilter,
     activeFilter: parsedParams.activeFilter,
+    departmentFilter: parsedParams.departmentFilter,
     currentPage: parsedParams.page,
     setSearchInput,
     setCategoryFilter,
     setStockFilter,
     setActiveFilter,
+    setDepartmentFilter,
     setCurrentPage,
     commitSearchInput: () => {
       navigateWithFilters((current) => ({

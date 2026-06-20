@@ -12,8 +12,9 @@ export const queryKeys = {
     searchQuery: string,
     categoryFilter: string,
     stockFilter: '' | 'in' | 'low' | 'out',
-    activeFilter: '' | 'active' | 'inactive'
-  ) => ['inventory', page, pageSize, searchQuery, categoryFilter, stockFilter, activeFilter] as const,
+    activeFilter: '' | 'active' | 'inactive',
+    departmentFilter?: string
+  ) => ['inventory', page, pageSize, searchQuery, categoryFilter, stockFilter, activeFilter, departmentFilter ?? 'all'] as const,
 
   tickets: () => ['tickets'] as const,
   ticket: (slug: string) => ['ticket', slug] as const,

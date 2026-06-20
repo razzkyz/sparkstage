@@ -9,6 +9,7 @@ describe('storeInventoryUrlState', () => {
       categoryFilter: '',
       stockFilter: '',
       activeFilter: '',
+      departmentFilter: 'all',
     });
   });
 
@@ -18,6 +19,7 @@ describe('storeInventoryUrlState', () => {
       categoryFilter: 'beauty',
       stockFilter: 'low',
       activeFilter: '',
+      departmentFilter: 'all',
       page: 2,
     });
 
@@ -28,6 +30,7 @@ describe('storeInventoryUrlState', () => {
       categoryFilter: 'beauty',
       stockFilter: 'low',
       activeFilter: '',
+      departmentFilter: 'all',
     });
   });
 });

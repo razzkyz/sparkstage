@@ -16,6 +16,7 @@ export type InventoryProduct = {
 
 export type StockFilter = '' | 'in' | 'low' | 'out';
 export type ActiveFilter = '' | 'active' | 'inactive';
+export type DepartmentFilter = 'all' | 'glam' | 'charmbar' | 'sparkclub';
 
 export type DeletingProduct = {
   id: number;

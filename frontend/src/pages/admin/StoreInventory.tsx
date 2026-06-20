@@ -54,6 +54,7 @@ const StoreInventory = () => {
     categoryFilter: filters.categoryFilter,
     stockFilter: filters.stockFilter,
     activeFilter: filters.activeFilter,
+    departmentFilter: filters.departmentFilter,
   });
   const resolvedTotalProducts = data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(resolvedTotalProducts / INVENTORY_PRODUCTS_PER_PAGE));
@@ -157,7 +158,7 @@ const StoreInventory = () => {
     try {
       const { data: allProducts, error } = await supabase
         .from('products')
-        .select(getInventorySelect(''))
+        .select(getInventorySelect('', ''))
         .is('deleted_at', null)
         .order('name', { ascending: true });
 
@@ -253,10 +254,12 @@ const StoreInventory = () => {
           categoryFilter={filters.categoryFilter}
           stockFilter={filters.stockFilter}
           activeFilter={filters.activeFilter}
+          departmentFilter={filters.departmentFilter}
           categoryOptions={categoryOptions}
           onCategoryFilterChange={filters.setCategoryFilter}
           onStockFilterChange={filters.setStockFilter}
           onActiveFilterChange={filters.setActiveFilter}
+          onDepartmentFilterChange={filters.setDepartmentFilter}
         />
 
         {isLoading ? (

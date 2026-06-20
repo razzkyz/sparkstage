@@ -1,7 +1,8 @@
 import type { InventoryListFilters, ProductRow } from './inventoryTypes';
 
-export const getInventorySelect = (categoryFilter: string) => {
+export const getInventorySelect = (categoryFilter: string, departmentFilter?: string) => {
   const isFilteringByCategory = categoryFilter.trim() !== '' && categoryFilter.trim() !== 'uncategorized';
+  const isFilteringByDept = !!departmentFilter && departmentFilter.trim() !== '' && departmentFilter.trim() !== 'all';
   return `
   id,
   name,
@@ -14,6 +15,7 @@ export const getInventorySelect = (categoryFilter: string) => {
   is_active,
   deleted_at,
   categories${isFilteringByCategory ? '!inner' : ''}(id, name, slug),
+  retail_categories!products_retail_category_id_fkey${isFilteringByDept ? '!inner' : ''}(id, department),
   product_images(image_url, is_primary, display_order),
   product_variants(
     id,
@@ -64,6 +66,11 @@ export const applyInventoryFilters = <T>(query: T, filters: InventoryListFilters
     } else {
       next = next.eq('categories.slug', normalizedCategory) as typeof next;
     }
+  }
+
+  const departmentFilter = filters.departmentFilter?.trim();
+  if (departmentFilter && departmentFilter !== 'all') {
+    next = next.eq('retail_categories.department', departmentFilter) as typeof next;
   }
 
   return next as unknown as T;

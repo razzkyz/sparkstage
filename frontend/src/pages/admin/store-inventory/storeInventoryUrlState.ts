@@ -1,7 +1,8 @@
-import type { ActiveFilter, StockFilter } from './storeInventoryTypes';
+import type { ActiveFilter, StockFilter, DepartmentFilter } from './storeInventoryTypes';
 
 const STOCK_FILTER_VALUES: ReadonlySet<StockFilter> = new Set(['in', 'low', 'out']);
 const ACTIVE_FILTER_VALUES: ReadonlySet<ActiveFilter> = new Set(['active', 'inactive']);
+const DEPARTMENT_FILTER_VALUES: ReadonlySet<DepartmentFilter> = new Set(['all', 'glam', 'charmbar', 'sparkclub']);
 
 export const parseQueryInt = (value: string | null, fallback: number) => {
   if (!value) return fallback;
@@ -20,12 +21,16 @@ export const parseSearchParams = (search: string) => {
   const activeRaw = params.get('active')?.trim() ?? '';
   const activeFilter: ActiveFilter = ACTIVE_FILTER_VALUES.has(activeRaw as ActiveFilter) ? (activeRaw as ActiveFilter) : '';
 
+  const departmentRaw = params.get('dept')?.trim() ?? 'all';
+  const departmentFilter: DepartmentFilter = DEPARTMENT_FILTER_VALUES.has(departmentRaw as DepartmentFilter) ? (departmentRaw as DepartmentFilter) : 'all';
+
   return {
     page,
     searchQuery,
     categoryFilter,
     stockFilter,
     activeFilter,
+    departmentFilter,
   };
 };
 
@@ -34,6 +39,7 @@ export const buildSearchParams = (params: {
   categoryFilter: string;
   stockFilter: StockFilter;
   activeFilter: ActiveFilter;
+  departmentFilter: DepartmentFilter;
   page: number;
 }) => {
   const next = new URLSearchParams();
@@ -41,6 +47,7 @@ export const buildSearchParams = (params: {
   if (params.categoryFilter) next.set('category', params.categoryFilter);
   if (params.stockFilter) next.set('stock', params.stockFilter);
   if (params.activeFilter) next.set('active', params.activeFilter);
+  if (params.departmentFilter && params.departmentFilter !== 'all') next.set('dept', params.departmentFilter);
   if (params.page > 1) next.set('page', String(params.page));
   const built = next.toString();
   return built ? `?${built}` : '';
