@@ -9,6 +9,7 @@ import {
   useGlamPageSettings,
 } from "../hooks/useGlamPageSettings";
 import { useProductSummaries } from "../hooks/useProducts";
+import { useRetailCategories } from "../hooks/useRetailCategories";
 import { formatCurrency } from "../utils/formatters";
 import { getCmsFontStyle } from "../lib/cmsTypography";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
@@ -56,6 +57,50 @@ type QuickViewState = {
   productId: number | null;
 };
 
+function CategoryTabs({
+  categories,
+  active,
+  onChange,
+}: {
+  categories: { name: string; slug: string }[];
+  active: string;
+  onChange: (slug: string) => void;
+}) {
+  return (
+    <div className="w-full mt-4 mb-2">
+      <div className="mx-auto w-fit max-w-full overflow-x-auto hide-scrollbar px-4 sm:px-6">
+        <div className="flex items-center space-x-6 md:space-x-8 pb-2">
+          <button
+            type="button"
+            onClick={() => onChange("all")}
+            className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+              active === "all"
+                ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+            }`}
+          >
+            All Products
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.slug}
+              type="button"
+              onClick={() => onChange(cat.slug)}
+              className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                active === cat.slug
+                  ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                  : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BeautyPage() {
   useSeo({
     title: "Glam Room · Stage 55",
@@ -63,12 +108,14 @@ export default function BeautyPage() {
     canonical: `${window.location.origin}/glam`,
   });
   const { settings, error: settingsError } = useGlamPageSettings();
+  const { categories, isLoading: categoriesLoading } = useRetailCategories();
   const {
     data: products = [],
     isLoading: productsLoading,
     error: productsError,
   } = useProductSummaries();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [page, setPage] = useState(1);
   const [quickView, setQuickView] = useState<QuickViewState>({
     open: false,
@@ -109,7 +156,7 @@ export default function BeautyPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [deferredSearchQuery]);
+  }, [deferredSearchQuery, activeCategory]);
 
   const content = settings ?? DEFAULT_GLAM_PAGE_SETTINGS;
   const heroFonts = content.section_fonts.hero;
@@ -136,21 +183,37 @@ export default function BeautyPage() {
     "body-glitter",
   ];
 
+  const glamCategories = useMemo(() => {
+    return categories.filter((c) => c.department === "glam" && c.is_active);
+  }, [categories]);
+
   const makeupProducts = useMemo(() => {
     const slugs = new Set([
       ...BASE_MAKEUP_SLUGS,
       ...(content.product_categories || []),
     ]);
-    return products.filter(
-      (p) =>
+    return products.filter((p) => {
+      // Include product if department is 'glam' or it matches legacy logic
+      return (
+        p.department === "glam" ||
         (p.categorySlug != null && slugs.has(p.categorySlug)) ||
         p.name.toLowerCase().includes("speckles") ||
-        p.name.toLowerCase().includes("patch"),
-    );
+        p.name.toLowerCase().includes("patch")
+      );
+    });
   }, [products, content.product_categories]);
 
   const filteredProducts = useMemo(() => {
     const matches = makeupProducts.filter((product) => {
+      // 1. Check category filter
+      if (activeCategory !== "all") {
+        const cat = glamCategories.find((c) => c.slug === activeCategory);
+        if (cat && product.retail_category_id !== cat.id) {
+          return false;
+        }
+      }
+
+      // 2. Check search filter
       if (!normalizedQuery) return true;
       return (
         product.name.toLowerCase().includes(normalizedQuery) ||
@@ -170,7 +233,7 @@ export default function BeautyPage() {
       if (!aIsSpeckles && bIsSpeckles) return 1;
       return 0;
     });
-  }, [normalizedQuery, makeupProducts]);
+  }, [normalizedQuery, makeupProducts, activeCategory, glamCategories]);
 
   const PAGE_SIZE = 8;
   const totalPages = Math.max(
@@ -346,6 +409,7 @@ export default function BeautyPage() {
               {content.product_section_title}
             </h3>
 
+            {/* Search Input */}
             <label className="relative w-full max-w-[400px]">
               <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40" />
               <input
@@ -365,6 +429,15 @@ export default function BeautyPage() {
                 className="w-full rounded-full border border-black/30 bg-white py-3.5 pl-12 pr-6 text-sm outline-none transition-colors focus:border-black"
               />
             </label>
+
+            {/* Category Tabs */}
+            {!categoriesLoading && glamCategories.length > 0 && (
+              <CategoryTabs
+                categories={glamCategories}
+                active={activeCategory}
+                onChange={setActiveCategory}
+              />
+            )}
           </div>
 
           <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mx-auto">

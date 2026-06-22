@@ -20,6 +20,7 @@ export interface ProductSummary {
   retail_subcategory_id?: number | null;
   department?: string | null;
   retailCategoryName?: string | null;
+  retailCategorySlug?: string | null;
   retailSubcategoryName?: string | null;
 }
 
@@ -161,6 +162,7 @@ function transformProductSummary(row: ProductRow): ProductSummary {
     retail_subcategory_id: toNumber(row.retail_subcategory_id, null as any),
     department: typeof row.retail_categories?.department === 'string' ? row.retail_categories.department : null,
     retailCategoryName: typeof row.retail_categories?.name === 'string' ? row.retail_categories.name : null,
+    retailCategorySlug: typeof row.retail_categories?.slug === 'string' ? row.retail_categories.slug : null,
     retailSubcategoryName: typeof row.retail_subcategories?.name === 'string' ? row.retail_subcategories.name : null,
   };
 }
