@@ -225,7 +225,6 @@ const Shop = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const firstCategoryRef = useRef<HTMLButtonElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const {
     activeCategory,
@@ -370,21 +369,6 @@ const Shop = () => {
     }
   };
 
-  const scrollToCategory = (index: number) => {
-    const container = document.getElementById("category-scroll-container");
-    if (container) {
-      const buttons = container.querySelectorAll("button");
-      const targetButton = buttons[index];
-      if (targetButton) {
-        targetButton.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
-      }
-    }
-  };
-
   const scrollToProducts = () => {
     if (productsRef.current) {
       productsRef.current.scrollIntoView({
@@ -506,7 +490,7 @@ const Shop = () => {
 
           <div
             ref={productsRef}
-            className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6"
+            className="mb-3 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6"
           >
             <div className="flex flex-col space-y-4">
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">
@@ -546,27 +530,9 @@ const Shop = () => {
                 </div>
               </div>
 
-              <div className="relative">
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "category-scroll-container",
-                      );
-                      if (container) {
-                        container.scrollBy({ left: -200, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute left-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden -mt-2"
-                  >
-                    <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
-                  </button>
-
-                  <div
-                    id="category-scroll-container"
-                    className="flex space-x-4 md:space-x-6 overflow-x-auto w-full pb-0 hide-scrollbar px-4 md:px-12 justify-start md:justify-center scroll-smooth"
-                  >
+              <div className="w-full mt-4 mb-5">
+                <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
+                  <div className="flex items-center space-x-6 md:space-x-8 pb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -575,60 +541,46 @@ const Shop = () => {
                           subcategory: null,
                           subsubcategory: null,
                         });
-                        scrollToCategory(0);
                       }}
-                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                        activeCategory === "all"
+                      className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                        !activeCategory || activeCategory === "all"
                           ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
                           : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
                       }`}
                     >
                       All Products
                     </button>
-                    {parentCategories.map((category, index) => (
-                      <button
-                        type="button"
-                        key={category.slug}
-                        ref={index === 0 ? firstCategoryRef : null}
-                        onClick={() => {
-                          updateFilters({
-                            category: category.slug,
-                            subcategory: null,
-                            subsubcategory: null,
-                          });
-                          scrollToCategory(index + 1);
-                        }}
-                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                          activeCategory === category.slug
-                            ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
-                            : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "category-scroll-container",
+                    {parentCategories.map((category) => {
+                      const isActive = activeCategory === category.slug;
+                      return (
+                        <button
+                          key={category.slug}
+                          type="button"
+                          onClick={() => {
+                            updateFilters({
+                              category: isActive ? null : category.slug,
+                              subcategory: null,
+                              subsubcategory: null,
+                            });
+                          }}
+                          className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                            isActive
+                              ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                              : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                          }`}
+                        >
+                          {category.name}
+                        </button>
                       );
-                      if (container) {
-                        container.scrollBy({ left: 200, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute right-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden -mt-2"
-                  >
-                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
-                  </button>
+                    })}
+                  </div>
                 </div>
               </div>
 
               {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-2 px-2">
-                  <div className="flex gap-1.5 md:gap-2">
+                <div className="w-full mt-2 mb-2">
+                  <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-2">
+                    <div className="flex gap-1.5 md:gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -666,13 +618,15 @@ const Shop = () => {
                     ))}
                   </div>
                 </div>
+                </div>
               ) : null}
 
               {activeCategory !== "all" &&
               activeSubcategory !== "all" &&
               activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-center flex overflow-x-auto hide-scrollbar pb-3 px-2">
-                  <div className="flex gap-2">
+                <div className="w-full mt-1 mb-2">
+                  <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-3">
+                    <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => updateFilters({ subsubcategory: null })}
@@ -704,6 +658,7 @@ const Shop = () => {
                       </button>
                     ))}
                   </div>
+                </div>
                 </div>
               ) : null}
             </div>

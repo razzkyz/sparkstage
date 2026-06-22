@@ -68,7 +68,7 @@ function CategoryTabs({
 }) {
   return (
     <div className="w-full mt-4 mb-2">
-      <div className="mx-auto w-fit max-w-full overflow-x-auto hide-scrollbar px-4 sm:px-6">
+      <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
         <div className="flex items-center space-x-6 md:space-x-8 pb-2">
           <button
             type="button"
@@ -440,7 +440,7 @@ export default function BeautyPage() {
             )}
           </div>
 
-          <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mx-auto">
+          <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mx-auto">
             {paginatedProducts.map((product) => (
               <Link
                 key={product.id}

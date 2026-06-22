@@ -4,19 +4,17 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import gsap from "gsap";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
+import { useRetailCategories } from "../hooks/useRetailCategories";
 import { useCart } from "../contexts/cartStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
 import { PageTransition } from "../components/PageTransition";
 import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
-import { buildShopCategoryIndex } from "./shop/buildShopCategoryIndex";
-import { filterShopProducts } from "./shop/filterShopProducts";
+
 import { useShopFilters } from "./shop/useShopFilters";
 import { queryKeys } from "../lib/queryKeys";
 import { fetchProductDetail } from "../hooks/useProduct";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
-import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
 import useSeo from "../hooks/useSeo";
 
@@ -352,12 +350,11 @@ export default function CharmBar() {
     error: productsError,
     refetch: refetchProducts,
   } = useProductSummaries();
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useCategories();
+  const { categories = [], isLoading: categoriesLoading } =
+    useRetailCategories();
   const { addItem } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { settings: charmBarSettings } = useCharmBarSettings();
   const productsRef = useRef<HTMLDivElement>(null);
   const categoryContainerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLImageElement>(null);
@@ -367,8 +364,6 @@ export default function CharmBar() {
 
   const {
     activeCategory,
-    activeSubcategory,
-    activeSubSubcategory,
     searchQuery,
     updateFilters,
   } = useShopFilters();
@@ -403,41 +398,49 @@ export default function CharmBar() {
     }
   }, []);
 
-  const categoryIndex = useMemo(
-    () => (categories ? buildShopCategoryIndex(categories) : null),
-    [categories],
-  );
+  const charmBarCategories = useMemo(() => {
+    return categories.filter((c) => c.department === "charmbar" && c.is_active);
+  }, [categories]);
 
   const filteredProducts = useMemo(() => {
     if (!products || !categories) return [];
 
-    // Filter to only show active Charm Bar specific categories
-    const charmBarSlugs = CHARM_BAR_CATEGORIES.filter(
-      (cat) => cat.isActive,
-    ).map((cat) => cat.slug);
-    const charmBarProducts = products.filter((product) => {
-      if (!product.categorySlug) return false;
+    let charmBarProducts = products.filter((p) => {
+      if (p.department === "charmbar") return true;
 
-      // Check if category is in Charm Bar categories
-      return charmBarSlugs.includes(product.categorySlug);
+      // Legacy fallback
+      const charmBarSlugs = CHARM_BAR_CATEGORIES.filter((cat) => cat.isActive).map((cat) => cat.slug);
+      if (p.categorySlug && charmBarSlugs.includes(p.categorySlug)) return true;
+
+      return false;
     });
 
-    return filterShopProducts({
-      products: charmBarProducts,
-      activeCategory: activeCategory || "all",
-      activeSubcategory: activeSubcategory || "all",
-      activeSubSubcategory: activeSubSubcategory || "all",
-      searchQuery: searchQuery || "",
-      allowedSlugMap: categoryIndex?.allowedSlugMap || new Map(),
-      bestSellerIds: [],
-    });
+    if (activeCategory && activeCategory !== "all") {
+      const cat = charmBarCategories.find((c) => c.slug === activeCategory);
+      if (cat) {
+        charmBarProducts = charmBarProducts.filter(product => product.retail_category_id === cat.id);
+      } else {
+        charmBarProducts = charmBarProducts.filter(product => 
+          product.retailCategorySlug === activeCategory || 
+          product.categorySlug === activeCategory
+        );
+      }
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      charmBarProducts = charmBarProducts.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    }
+
+    return charmBarProducts;
   }, [
     products,
     categories,
-    categoryIndex,
+    charmBarCategories,
     activeCategory,
-    activeSubcategory,
-    activeSubSubcategory,
     searchQuery,
   ]);
 
@@ -616,35 +619,30 @@ export default function CharmBar() {
             </div>
           </div>
 
-          {/* Category Image Grid */}
-          <div className="mb-5">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  const container = document.getElementById(
-                    "category-grid-container",
-                  );
-                  if (container) {
-                    container.scrollBy({ left: -300, behavior: "smooth" });
-                  }
-                }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-700" />
-              </button>
-
-              <div
-                ref={categoryContainerRef}
-                id="category-grid-container"
-                className="flex gap-4 overflow-x-auto hide-scrollbar px-4 md:px-12 py-4 scroll-smooth"
-              >
-                {CHARM_BAR_CATEGORIES.filter((cat) => cat.isActive).map(
-                  (category, index) => {
+          {/* Category Tabs */}
+          {!categoriesLoading && charmBarCategories.length > 0 && (
+            <div className="w-full mt-4 mb-2">
+              <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
+                <div className="flex items-center space-x-6 md:space-x-8 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateFilters({
+                        category: null,
+                        subcategory: null,
+                        subsubcategory: null,
+                      });
+                    }}
+                    className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                      !activeCategory || activeCategory === "all"
+                        ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                        : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                    }`}
+                  >
+                    All Products
+                  </button>
+                  {charmBarCategories.map((category) => {
                     const isActive = activeCategory === category.slug;
-                    const categoryImage =
-                      charmBarSettings?.category_images[index] ||
-                      category.image;
                     return (
                       <button
                         key={category.slug}
@@ -656,57 +654,21 @@ export default function CharmBar() {
                             subsubcategory: null,
                           });
                         }}
-                        className="group flex-shrink-0 text-center w-24 sm:w-28 md:w-32 lg:w-36"
+                        className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                          isActive
+                            ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                            : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                        }`}
                       >
-                        <div
-                          className={`relative aspect-square overflow-hidden rounded-[20%] border-2 transition-all duration-300 ${
-                            isActive
-                              ? "border-[#ff4b86] shadow-lg scale-105"
-                              : "border-gray-200 hover:border-[#ff4b86] hover:scale-105"
-                          }`}
-                        >
-                          <img
-                            src={buildImageKitThumbUrl(categoryImage, {
-                              width: 320,
-                              quality: 60,
-                            })}
-                            alt={category.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
-                            loading="lazy"
-                          />
-                          {isActive && (
-                            <div className="absolute inset-0 bg-[#ff4b86]/20 flex items-center justify-center">
-                              <div className="bg-[#ff4b86] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                                Selected
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-gray-700 group-hover:text-[#ff4b86] transition-colors">
-                          {category.name}
-                        </p>
+                        {category.name}
                       </button>
                     );
-                  },
-                )}
+                  })}
+                </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const container = document.getElementById(
-                    "category-grid-container",
-                  );
-                  if (container) {
-                    container.scrollBy({ left: 300, behavior: "smooth" });
-                  }
-                }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-700" />
-              </button>
             </div>
-          </div>
+          )}
+
 
           {/* <div ref={productsRef} className="mb-8 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6">
             <div className="flex flex-col space-y-4">

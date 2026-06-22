@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { formatCurrency } from "../utils/formatters";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
+import { useRetailCategories } from "../hooks/useRetailCategories";
 import { useBanners } from "../hooks/useBanners";
 import { fetchProductDetail } from "../hooks/useProduct";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
@@ -17,8 +17,6 @@ import { PageTransition } from "../components/PageTransition";
 import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
 import { queryKeys } from "../lib/queryKeys";
 import { HeroBannerCarousel } from "../components/HeroBannerCarousel";
-import { buildShopCategoryIndex } from "./shop/buildShopCategoryIndex";
-import { filterShopProducts } from "./shop/filterShopProducts";
 import { useShopFilters } from "./shop/useShopFilters";
 import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
@@ -219,12 +217,9 @@ const SparkClub = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const firstCategoryRef = useRef<HTMLButtonElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const {
     activeCategory,
-    activeSubcategory,
-    activeSubSubcategory,
     searchQuery,
     setSearchQuery,
     updateFilters,
@@ -239,14 +234,19 @@ const SparkClub = () => {
     refetch: refetchProducts,
   } = useProductSummaries();
   const {
-    data: categories = [],
+    categories = [],
     error: categoriesError,
     isLoading: categoriesLoading,
-    refetch: refetchCategories,
-  } = useCategories();
+  } = useRetailCategories();
   const { data: sparkClubBanners = [] } = useBanners("spark-club");
   const { settings: charmBarSettings, isLoading: charmBarLoading } =
     useCharmBarSettings();
+
+  const sparkClubCategoriesFlat = useMemo(() => {
+    return categories.filter(
+      (c) => c.department === "sparkclub" && c.is_active,
+    );
+  }, [categories]);
 
   const loading =
     (productsLoading || categoriesLoading || charmBarLoading) &&
@@ -263,9 +263,6 @@ const SparkClub = () => {
       );
     }
   }, [error, showToast]);
-
-  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
-    useMemo(() => buildShopCategoryIndex(categories), [categories]);
 
   const GLAM_CATEGORY_SLUGS = new Set([
     "makeup",
@@ -307,38 +304,58 @@ const SparkClub = () => {
     [products],
   );
 
-  const filteredProducts = useMemo(
-    () =>
-      filterShopProducts({
-        products: nonCharmBarProducts,
-        activeCategory,
-        activeSubcategory,
-        activeSubSubcategory,
-        searchQuery: deferredSearchQuery,
-        allowedSlugMap,
-        bestSellerIds: charmBarSettings?.best_seller_charms || [],
-      }),
-    [
-      nonCharmBarProducts,
-      activeCategory,
-      activeSubcategory,
-      activeSubSubcategory,
-      deferredSearchQuery,
-      allowedSlugMap,
-      charmBarSettings,
-    ],
-  );
+  const filteredProducts = useMemo(() => {
+    let matches = nonCharmBarProducts;
 
-  const activeSubcategories = useMemo(() => {
-    if (activeCategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeCategory) ?? [];
-  }, [activeCategory, childCategoriesByParentSlug]);
+    // 1. Filter by category
+    const currentActiveCategory =
+      activeCategory === null ? "all" : activeCategory;
+    if (currentActiveCategory !== "all") {
+      const cat = sparkClubCategoriesFlat.find(
+        (c) => c.slug === currentActiveCategory,
+      );
+      if (cat) {
+        matches = matches.filter(
+          (product) => product.retail_category_id === cat.id,
+        );
+      } else {
+        matches = matches.filter(
+          (product) =>
+            product.retailCategorySlug === currentActiveCategory ||
+            product.categorySlug === currentActiveCategory,
+        );
+      }
+    }
 
-  const activeSubSubcategories = useMemo(() => {
-    if (activeSubcategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
-  }, [activeSubcategory, childCategoriesByParentSlug]);
+    // 2. Search
+    if (deferredSearchQuery) {
+      const q = deferredSearchQuery.toLowerCase();
+      matches = matches.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.description && p.description.toLowerCase().includes(q)),
+      );
+    }
 
+    // Sort best sellers if needed
+    if (charmBarSettings?.best_seller_charms?.length) {
+      matches.sort((a, b) => {
+        const aIndex = charmBarSettings.best_seller_charms.indexOf(a.id);
+        const bIndex = charmBarSettings.best_seller_charms.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    }
+
+    return matches;
+  }, [
+    activeCategory,
+    deferredSearchQuery,
+    sparkClubCategoriesFlat,
+    charmBarSettings,
+  ]);
   const handleAddToCart = (product: Product) => {
     if (!user) {
       showToast("error", "Please login to add items to cart");
@@ -365,21 +382,6 @@ const SparkClub = () => {
     }
   };
 
-  const scrollToCategory = (index: number) => {
-    const container = document.getElementById("category-scroll-container");
-    if (container) {
-      const buttons = container.querySelectorAll("button");
-      const targetButton = buttons[index];
-      if (targetButton) {
-        targetButton.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
-      }
-    }
-  };
-
   const scrollToProducts = () => {
     if (productsRef.current) {
       productsRef.current.scrollIntoView({
@@ -395,7 +397,7 @@ const SparkClub = () => {
 
   useEffect(() => {
     handleCategoryChange();
-  }, [activeCategory, activeSubcategory, activeSubSubcategory]);
+  }, [activeCategory]);
 
   const prefetchProduct = (productId: number) => {
     void queryClient.prefetchQuery({
@@ -479,27 +481,9 @@ const SparkClub = () => {
                 </div>
               </div>
 
-              <div className="relative">
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "category-scroll-container",
-                      );
-                      if (container) {
-                        container.scrollBy({ left: -200, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute left-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden"
-                  >
-                    <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
-                  </button>
-
-                  <div
-                    id="category-scroll-container"
-                    className="flex space-x-4 md:space-x-6 overflow-x-auto w-full pb-0 hide-scrollbar px-8 md:px-12 justify-center md:justify-start scroll-smooth"
-                  >
+              <div className="w-full mt-4 mb-2">
+                <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
+                  <div className="flex items-center space-x-6 md:space-x-8 pb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -508,137 +492,41 @@ const SparkClub = () => {
                           subcategory: null,
                           subsubcategory: null,
                         });
-                        scrollToCategory(0);
                       }}
-                      className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                        activeCategory === "all"
+                      className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                        !activeCategory || activeCategory === "all"
                           ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
                           : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
                       }`}
                     >
                       All Products
                     </button>
-                    {parentCategories.map((category, index) => (
-                      <button
-                        type="button"
-                        key={category.slug}
-                        ref={index === 0 ? firstCategoryRef : null}
-                        onClick={() => {
-                          updateFilters({
-                            category: category.slug,
-                            subcategory: null,
-                            subsubcategory: null,
-                          });
-                          scrollToCategory(index + 1);
-                        }}
-                        className={`text-sm whitespace-nowrap pb-3 border-b-2 px-2 ux-transition-color ${
-                          activeCategory === category.slug
-                            ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
-                            : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "category-scroll-container",
+                    {sparkClubCategoriesFlat.map((category) => {
+                      const isActive = activeCategory === category.slug;
+                      return (
+                        <button
+                          key={category.slug}
+                          type="button"
+                          onClick={() => {
+                            updateFilters({
+                              category: isActive ? null : category.slug,
+                              subcategory: null,
+                              subsubcategory: null,
+                            });
+                          }}
+                          className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                            isActive
+                              ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                              : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                          }`}
+                        >
+                          {category.name}
+                        </button>
                       );
-                      if (container) {
-                        container.scrollBy({ left: 200, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute right-0 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:shadow-xl hover:scale-105 md:p-2.5 md:block hidden"
-                  >
-                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
-                  </button>
+                    })}
+                  </div>
                 </div>
               </div>
-
-              {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-2 px-2">
-                  <div className="flex gap-1.5 md:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === "all"
-                          ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                          : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() => {
-                          updateFilters({
-                            subcategory: subcategory.slug,
-                            subsubcategory: null,
-                          });
-                        }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                            : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {activeCategory !== "all" &&
-              activeSubcategory !== "all" &&
-              activeSubSubcategories.length > 0 ? (
-                <div className="w-full justify-center md:justify-start flex overflow-x-auto hide-scrollbar pb-3 px-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === "all"
-                          ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All{" "}
-                      {activeSubcategories.find(
-                        (s) => s.slug === activeSubcategory,
-                      )?.name || ""}
-                    </button>
-                    {activeSubSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() =>
-                          updateFilters({ subsubcategory: subcategory.slug })
-                        }
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
           </div>
 
@@ -653,7 +541,6 @@ const SparkClub = () => {
                 type="button"
                 onClick={() => {
                   refetchProducts();
-                  refetchCategories();
                 }}
                 className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark ux-transition-color text-sm font-medium"
               >
