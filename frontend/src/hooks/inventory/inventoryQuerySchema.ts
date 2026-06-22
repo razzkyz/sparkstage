@@ -1,7 +1,8 @@
 import type { InventoryListFilters, ProductRow } from './inventoryTypes';
 
 export const getInventorySelect = (categoryFilter: string, departmentFilter?: string) => {
-  const isFilteringByCategory = categoryFilter.trim() !== '' && categoryFilter.trim() !== 'uncategorized';
+  const trimmedCategory = categoryFilter.trim();
+  const isFilteringByOldCategory = trimmedCategory !== '' && trimmedCategory !== 'uncategorized' && !trimmedCategory.startsWith('rc-');
   const isFilteringByDept = !!departmentFilter && departmentFilter.trim() !== '' && departmentFilter.trim() !== 'all';
   return `
   id,
@@ -14,7 +15,7 @@ export const getInventorySelect = (categoryFilter: string, departmentFilter?: st
   sku,
   is_active,
   deleted_at,
-  categories${isFilteringByCategory ? '!inner' : ''}(id, name, slug),
+  categories${isFilteringByOldCategory ? '!inner' : ''}(id, name, slug),
   retail_categories!products_retail_category_id_fkey${isFilteringByDept ? '!inner' : ''}(id, department),
   product_images(image_url, is_primary, display_order),
   product_variants(
@@ -63,6 +64,10 @@ export const applyInventoryFilters = <T>(query: T, filters: InventoryListFilters
   if (normalizedCategory) {
     if (normalizedCategory === 'uncategorized') {
       next = next.is('category_id', null) as typeof next;
+    } else if (normalizedCategory.startsWith('rc-')) {
+      // Retail category ID filter — filter by retail_category_id
+      const rcId = normalizedCategory.replace('rc-', '');
+      next = next.eq('retail_category_id', rcId) as typeof next;
     } else {
       next = next.eq('categories.slug', normalizedCategory) as typeof next;
     }

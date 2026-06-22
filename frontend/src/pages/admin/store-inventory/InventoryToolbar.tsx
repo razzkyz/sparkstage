@@ -120,7 +120,7 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
             >
               <option value="">All Categories</option>
               {categoryOptions.map((category) => (
-                <option key={category.id} value={category.slug}>
+                <option key={category.id} value={`rc-${category.id}`}>
                   {category.name}
                 </option>
               ))}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import CategoryManager from '../../components/admin/CategoryManager';
@@ -11,6 +11,7 @@ import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useInventory } from '../../hooks/useInventory';
+import { useRetailCategories } from '../../hooks/useRetailCategories';
 import { supabase } from '../../lib/supabase';
 import { getInventorySelect } from '../../hooks/inventory/inventoryQuerySchema';
 import { exportStoreStockReportToExcel } from '../../utils/storeExcelUtils';
@@ -81,17 +82,35 @@ const StoreInventory = () => {
     }
   }, [error, showToast]);
 
-  const inventoryCategories = useMemo(() => data?.categories ?? [], [data?.categories]);
+  const { categories: retailCategories } = useRetailCategories();
+
+  // Filter category dropdown options by currently selected department
   const categoryOptions = useMemo(
-    (): CategoryOption[] =>
-      inventoryCategories.map((category) => ({
+    (): CategoryOption[] => {
+      // Only show root categories (parent_id === null)
+      let rootCats = retailCategories.filter((c) => c.parent_id === null);
+      // Filter by department unless "all"
+      if (filters.departmentFilter && filters.departmentFilter !== 'all') {
+        rootCats = rootCats.filter((c) => c.department === filters.departmentFilter);
+      }
+      return rootCats.map((category) => ({
         id: category.id,
         name: category.name,
         slug: category.slug,
         is_active: category.is_active ?? undefined,
         parent_id: category.parent_id ?? null,
-      })),
-    [inventoryCategories]
+      }));
+    },
+    [retailCategories, filters.departmentFilter]
+  );
+
+  // Reset category filter when department changes
+  const handleDepartmentFilterChange = useCallback(
+    (value: Parameters<typeof filters.setDepartmentFilter>[0]) => {
+      filters.setDepartmentFilter(value);
+      filters.setCategoryFilter('');
+    },
+    [filters]
   );
   const inventoryProducts = useMemo(() => mapInventoryProducts(data?.products ?? []), [data?.products]);
   const { thumbFallbackIds, trackImageResult, markThumbFallback } = useInventoryImageMetrics(inventoryProducts, currentPage);
@@ -259,7 +278,7 @@ const StoreInventory = () => {
           onCategoryFilterChange={filters.setCategoryFilter}
           onStockFilterChange={filters.setStockFilter}
           onActiveFilterChange={filters.setActiveFilter}
-          onDepartmentFilterChange={filters.setDepartmentFilter}
+          onDepartmentFilterChange={handleDepartmentFilterChange}
         />
 
         {isLoading ? (

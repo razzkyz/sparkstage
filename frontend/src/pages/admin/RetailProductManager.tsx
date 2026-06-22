@@ -58,7 +58,7 @@ export default function RetailProductManager() {
   const [search, setSearch] = useState("");
   const [activeDept, setActiveDept] = useState<string>("all");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all"); // all, active, inactive
-  const [categoryFilter, setCategoryFilter] = useState<string>("all"); // all, no-category
+  const [categoryFilter, setCategoryFilter] = useState<string>("all"); // all, no-category, or "cat-<id>"
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -158,6 +158,14 @@ export default function RetailProductManager() {
       .trim()
       .replace(/[\s\W-]+/g, "-");
 
+  // Category options for the dropdown, filtered by department
+  const filteredCategoryOptions = useMemo(() => {
+    // Only show root categories (parent_id === null)
+    const rootCats = categories.filter((c) => c.parent_id === null);
+    if (activeDept === "all") return rootCats;
+    return rootCats.filter((c) => c.department === activeDept);
+  }, [categories, activeDept]);
+
   const filteredProducts = useMemo(() => {
     let list = products;
     
@@ -173,9 +181,18 @@ export default function RetailProductManager() {
       list = list.filter((p) => p.is_active === false);
     }
     
-    // Filter by category presence
+    // Filter by category
     if (categoryFilter === "no-category") {
       list = list.filter((p) => !p.retail_category_id);
+    } else if (categoryFilter.startsWith("cat-")) {
+      const catId = Number(categoryFilter.replace("cat-", ""));
+      // Match products whose retail_category_id is the selected category
+      // OR whose retail_category_id is a subcategory of the selected category
+      const childIds = categories
+        .filter((c) => c.parent_id === catId)
+        .map((c) => c.id);
+      const matchIds = new Set([catId, ...childIds]);
+      list = list.filter((p) => p.retail_category_id && matchIds.has(p.retail_category_id));
     }
     
     // Search filter
@@ -188,7 +205,7 @@ export default function RetailProductManager() {
     }
     
     return list;
-  }, [products, activeDept, activeStatusFilter, categoryFilter, search]);
+  }, [products, categories, activeDept, activeStatusFilter, categoryFilter, search]);
 
   // Reset to first page when filters change
   const totalPages = Math.max(
@@ -657,6 +674,7 @@ export default function RetailProductManager() {
           <button
             onClick={() => {
               setActiveDept("all");
+              setCategoryFilter("all");
               setCurrentPage(1);
             }}
             className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${activeDept === "all" ? "bg-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
@@ -668,6 +686,7 @@ export default function RetailProductManager() {
               key={d.id}
               onClick={() => {
                 setActiveDept(d.id);
+                setCategoryFilter("all");
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${activeDept === d.id ? "bg-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
@@ -713,19 +732,26 @@ export default function RetailProductManager() {
             </div>
 
             {/* Category Filter */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => {
-                  setCategoryFilter("all");
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg items-center">
+              <select
+                className="bg-transparent text-xs font-bold text-gray-700 outline-none px-2 py-1 cursor-pointer"
+                value={categoryFilter.startsWith("cat-") ? categoryFilter : ""}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value || "all");
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "all" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
               >
-                All Categories
-              </button>
+                <option value="">All Categories</option>
+                {filteredCategoryOptions.map((c) => (
+                  <option key={c.id} value={`cat-${c.id}`}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <div className="w-px h-4 bg-gray-300 mx-1"></div>
               <button
                 onClick={() => {
-                  setCategoryFilter("no-category");
+                  setCategoryFilter(categoryFilter === "no-category" ? "all" : "no-category");
                   setCurrentPage(1);
                 }}
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-category" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
