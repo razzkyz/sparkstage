@@ -163,7 +163,6 @@ export function ProductDetailsSection({
 
       {/* --- NEW RETAIL CATEGORIES --- */}
       <div className="mt-2 flex flex-col gap-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-        <h4 className="text-sm font-bold text-blue-900">E-Commerce & Retail Classification</h4>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-bold text-blue-800">Department</span>

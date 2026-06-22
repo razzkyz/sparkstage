@@ -182,36 +182,6 @@ Current roles: `admin`, `super_admin`, `starguide`, `kasir`
 
 Role assignment: `user_role_assignments` table, managed via `frontend/src/auth/adminRole.ts`
 
-## E-Commerce Retail Product Management (NEW 2026-06-11)
-
-**Migration:** Products from `products` + `product_variants` → `product_retail`
-- Status: ✅ Complete (784 products migrated)
-- Migration file: `20260611010000_smart_migrate_products_to_retail.sql`
-- Documentation: `RETAIL_PRODUCT_MIGRATION_SUMMARY.md`
-
-**Admin Filters (NEW 2026-06-11):** `/admin/retail-products`
-- ✅ Active/Inactive status filter
-- ✅ No Category filter (finds products without `retail_category_id`)
-- ✅ Real-time stats summary (Total, Active, Inactive, No Category)
-- ✅ Visual badges on product cards for status and missing category
-- Documentation: `RETAIL_PRODUCT_FILTERS_FEATURE.md`
-
-**Retail Categories RLS (NEW 2026-06-12):** `retail_categories` table
-- Status: ✅ RLS Enabled and Configured
-- Migration file: `20260612000000_create_retail_categories_with_rls.sql`
-- Documentation: `docs/runbooks/retail-categories-rls.md`
-- **Access Control:**
-  - Public/Anonymous: View active categories only
-  - Admin roles: Full CRUD access to all categories
-  - Non-admin authenticated: View active categories only
-- **Departments:** `glam`, `charmbar`, `sparkclub`
-- **Features:** Hierarchical (parent_id), slug-based URLs, soft delete (is_active)
-
-**Common Admin Tasks:**
-- Find products needing categories: Filter by "No Category"
-- Review disabled products: Filter by "Inactive"
-- Data quality check: Combine filters (e.g., Active + No Category)
-
 ## Custom Skills
 
 ### SparkStage US Builder (NEW 2026-06-13)

@@ -242,12 +242,13 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         path: "/admin/stock-opname",
         highlight: true,
       },
-      {
-        id: "retail-products",
-        label: "Produk Retail (E-Com)",
-        icon: "storefront",
-        path: "/admin/retail-products",
-      },
+      // DISABLED: E-Commerce Retail Classification
+      // {
+      //   id: "retail-products",
+      //   label: "Produk Retail (E-Com)",
+      //   icon: "storefront",
+      //   path: "/admin/retail-products",
+      // },
     ],
   },
   {
@@ -471,12 +472,13 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         path: "/admin/stock-opname",
         highlight: true,
       },
-      {
-        id: "retail-products",
-        label: "Produk Retail (E-Com)",
-        icon: "storefront",
-        path: "/admin/retail-products",
-      },
+      // DISABLED: E-Commerce Retail Classification
+      // {
+      //   id: "retail-products",
+      //   label: "Produk Retail (E-Com)",
+      //   icon: "storefront",
+      //   path: "/admin/retail-products",
+      // },
     ],
   },
   {
