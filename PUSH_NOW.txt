@@ -12,6 +12,12 @@ git push origin main
   AFTER PUSH - URGENT!
 ==========================================
 Rotate R2 credentials immediately!
-See: SECURITY_FIX_ENV_FILES.md
+See: docs/SECURITY_FIX_ENV_FILES.md
+
+==========================================
+  NEED DETAILED GUIDE?
+==========================================
+See: docs/READY_TO_PUSH.md
+Or: docs/PUSH_GUIDE.md
 
 ==========================================
