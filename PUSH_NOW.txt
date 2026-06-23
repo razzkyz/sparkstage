@@ -1,0 +1,17 @@
+==========================================
+  COPY & PASTE - 3 COMMANDS TO PUSH
+==========================================
+
+git add .
+
+git commit -m "refactor: major repository cleanup and security fix - remove .env credentials, organize 120+ files into proper folders"
+
+git push origin main
+
+==========================================
+  AFTER PUSH - URGENT!
+==========================================
+Rotate R2 credentials immediately!
+See: SECURITY_FIX_ENV_FILES.md
+
+==========================================

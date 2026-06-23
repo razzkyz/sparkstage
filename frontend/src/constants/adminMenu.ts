@@ -255,44 +255,49 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
     id: "dressing-room",
     label: "Dressing Room",
     items: [
-      {
-        id: "dressing-room-dashboard",
-        label: "Dashboard Dressing",
-        icon: "dashboard",
-        path: "/admin/dressing-room-dashboard",
-      },
-      {
-        id: "dressing-room-inventory",
-        label: "Inventory & Stok",
-        icon: "inventory_2",
-        path: "/admin/dressing-room-inventory",
-      },
-      {
-        id: "dressing-room-products",
-        label: "Produk Dressing Room",
-        icon: "shopping_bag",
-        path: "/admin/dressing-room-products",
-      },
+      // DISABLED: Dashboard Dressing
+      // {
+      //   id: "dressing-room-dashboard",
+      //   label: "Dashboard Dressing",
+      //   icon: "dashboard",
+      //   path: "/admin/dressing-room-dashboard",
+      // },
+      // DISABLED: Inventory & Stok
+      // {
+      //   id: "dressing-room-inventory",
+      //   label: "Inventory & Stok",
+      //   icon: "inventory_2",
+      //   path: "/admin/dressing-room-inventory",
+      // },
+      // DISABLED: Produk Dressing Room
+      // {
+      //   id: "dressing-room-products",
+      //   label: "Produk Dressing Room",
+      //   icon: "shopping_bag",
+      //   path: "/admin/dressing-room-products",
+      // },
       {
         id: "dressing-room",
         label: "Dressing Room Manager",
         icon: "styler",
         path: "/admin/dressing-room",
       },
-      {
-        id: "rental-orders",
-        label: "Sewa Dressing Room",
-        icon: "checkroom",
-        path: "/admin/rental-orders",
-        highlight: true,
-      },
-      {
-        id: "rental-scanner",
-        label: "Scan QR Rental Pickup",
-        icon: "qr_code_scanner",
-        path: "/admin/rental-scanner",
-        highlight: true,
-      },
+      // DISABLED: Sewa Dressing Room
+      // {
+      //   id: "rental-orders",
+      //   label: "Sewa Dressing Room",
+      //   icon: "checkroom",
+      //   path: "/admin/rental-orders",
+      //   highlight: true,
+      // },
+      // DISABLED: Scan QR Rental Pickup
+      // {
+      //   id: "rental-scanner",
+      //   label: "Scan QR Rental Pickup",
+      //   icon: "qr_code_scanner",
+      //   path: "/admin/rental-scanner",
+      //   highlight: true,
+      // },
     ],
   },
 ];
@@ -485,44 +490,49 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
     id: "dressing-room",
     label: "Dressing Room",
     items: [
-      {
-        id: "dressing-room-dashboard",
-        label: "Dashboard Dressing",
-        icon: "dashboard",
-        path: "/admin/dressing-room-dashboard",
-      },
-      {
-        id: "dressing-room-inventory",
-        label: "Inventory & Stok",
-        icon: "inventory_2",
-        path: "/admin/dressing-room-inventory",
-      },
-      {
-        id: "dressing-room-products",
-        label: "Produk Dressing Room",
-        icon: "shopping_bag",
-        path: "/admin/dressing-room-products",
-      },
+      // DISABLED: Dashboard Dressing
+      // {
+      //   id: "dressing-room-dashboard",
+      //   label: "Dashboard Dressing",
+      //   icon: "dashboard",
+      //   path: "/admin/dressing-room-dashboard",
+      // },
+      // DISABLED: Inventory & Stok
+      // {
+      //   id: "dressing-room-inventory",
+      //   label: "Inventory & Stok",
+      //   icon: "inventory_2",
+      //   path: "/admin/dressing-room-inventory",
+      // },
+      // DISABLED: Produk Dressing Room
+      // {
+      //   id: "dressing-room-products",
+      //   label: "Produk Dressing Room",
+      //   icon: "shopping_bag",
+      //   path: "/admin/dressing-room-products",
+      // },
       {
         id: "dressing-room",
         label: "Dressing Room Manager",
         icon: "styler",
         path: "/admin/dressing-room",
       },
-      {
-        id: "rental-orders",
-        label: "Sewa Dressing Room",
-        icon: "checkroom",
-        path: "/admin/rental-orders",
-        highlight: true,
-      },
-      {
-        id: "rental-scanner",
-        label: "Scan QR Rental Pickup",
-        icon: "qr_code_scanner",
-        path: "/admin/rental-scanner",
-        highlight: true,
-      },
+      // DISABLED: Sewa Dressing Room
+      // {
+      //   id: "rental-orders",
+      //   label: "Sewa Dressing Room",
+      //   icon: "checkroom",
+      //   path: "/admin/rental-orders",
+      //   highlight: true,
+      // },
+      // DISABLED: Scan QR Rental Pickup
+      // {
+      //   id: "rental-scanner",
+      //   label: "Scan QR Rental Pickup",
+      //   icon: "qr_code_scanner",
+      //   path: "/admin/rental-scanner",
+      //   highlight: true,
+      // },
     ],
   },
   {

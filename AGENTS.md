@@ -21,6 +21,17 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - `docs/architecture.md`: current architecture and risk zones
 - `docs/runbooks/`: operational runbooks
 - `docs/decisions/`: stable feature decisions and constraints
+- `docs/archive/`: archived documentation (completed features, migrations, historical records)
+  - `docs/archive/r2-migration/`: R2/ImageKit migration docs
+  - `docs/archive/shipping/`: RajaOngkir & shipping integration
+  - `docs/archive/stock-opname/`: Stock management system docs
+  - `docs/archive/migrations/`: Data migration documentation
+  - `docs/archive/deployment/`: Deployment procedures
+  - `docs/archive/features/`: Completed feature documentation
+- `scripts/sql-archive/`: archived SQL test/debug/migration scripts
+- `scripts/test-scripts/`: test and verification scripts (Node.js, Deno)
+- `scripts/debug-scripts/`: debugging and troubleshooting scripts
+- `scripts/utility-scripts/`: one-off utility scripts and code fragments
 
 ## Source Of Truth
 

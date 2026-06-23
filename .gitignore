@@ -13,13 +13,17 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
-# Environment variables
+# Environment variables - NEVER commit actual .env files!
+# Only .env.*.example files should be tracked
 .env
+.env.*
+!.env.*.example
 .env.local
 .env.staging
 .env.production
 .env.imagekit-migration
 .env.r2-migration
+.env.r2-upload
 
 # Editor directories and files
 .vscode/*
