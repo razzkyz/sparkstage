@@ -43,13 +43,7 @@ export default function ProductCheckoutPage() {
   const {
     customerName,
     customerPhone,
-    customerAddress,
     deliveryMethod,
-    provinceId,
-    cityId,
-    subdistrictId,
-    shippingCourier,
-    shippingService,
     shippingCost,
     error,
     loading,
@@ -65,14 +59,7 @@ export default function ProductCheckoutPage() {
     canCheckout,
     setCustomerName,
     setCustomerPhone,
-    setCustomerAddress,
     setDeliveryMethod,
-    setProvinceId,
-    setCityId,
-    setSubdistrictId,
-    setShippingCourier,
-    setShippingService,
-    setShippingCost,
     setVoucherCode,
     handleApplyVoucher,
     handleRemoveVoucher,
@@ -169,25 +156,8 @@ export default function ProductCheckoutPage() {
               />
 
               <CheckoutShippingSection
-                customerAddress={customerAddress}
                 deliveryMethod={deliveryMethod}
-                provinceId={provinceId}
-                cityId={cityId}
-                subdistrictId={subdistrictId}
-                selectedCourier={shippingCourier}
-                selectedService={shippingService}
-                loading={loading}
-                totalWeight={orderItems.reduce((sum, item) => sum + (item.quantity * 1000), 0)} // Assume 1kg per item for now if not available
                 onChangeDeliveryMethod={setDeliveryMethod}
-                onChangeAddress={setCustomerAddress}
-                onChangeProvince={setProvinceId}
-                onChangeCity={setCityId}
-                onChangeSubdistrict={setSubdistrictId}
-                onChangeShipping={(courier, service, cost) => {
-                  setShippingCourier(courier);
-                  setShippingService(service);
-                  setShippingCost(cost);
-                }}
               />
 
               <CheckoutVoucherSection
