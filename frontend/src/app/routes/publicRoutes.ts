@@ -24,8 +24,10 @@ const DressingRoomCollectionPage = lazy(
 const BeautyPage = lazy(() => import("../../pages/BeautyPage"));
 const Booking = lazy(() => import("../../pages/Booking"));
 const RetailShopPage = lazy(() => import("../../pages/RetailShopPage"));
+const RollerbladePage = lazy(() => import("../../pages/RollerbladePage"));
 
 export const publicRouteConfigs: AppRouteConfig[] = [
+  { path: "rollerblade", Page: RollerbladePage },
   { path: "shop", Page: Shop },
   { path: "dressing-room", Page: DressingRoomLandingPage },
   { path: "dressing-room/look/:lookNumber", Page: DressingRoomLookPage },

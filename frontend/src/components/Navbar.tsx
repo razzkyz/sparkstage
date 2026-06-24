@@ -87,19 +87,20 @@ const Navbar = () => {
     if (path.startsWith("/news")) return "news";
     if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
       return "dressing-room";
+    if (path.startsWith("/rollerblade")) return "rollerblade";
     return "";
   })();
 
   const navItems: NavItem[] = [
-    { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
+    { key: "on-stage", label: "HOME", to: "/on-stage", icon: Camera },
     {
       key: "booking",
-      label: "BOOKING",
+      label: "ON STAGE",
       to: "/booking",
       isPink: true,
       icon: Ticket,
     },
-    // { key: "dressing-room", label: "FASHION ON DEMAND", to: "/dressing-room" },
+    // { key: "rollerblade", label: "ROLLER BLADE", to: "/rollerblade", icon: ShoppingBag },
     { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
@@ -187,7 +188,13 @@ const Navbar = () => {
         {/* Top Bar */}
         <div className="relative">
           {/* Pink gradient separator line at bottom of top bar (desktop only) */}
-          <div className="absolute bottom-0 inset-x-0 h-[1px] hidden lg:block" style={{ background: 'linear-gradient(90deg, transparent 0%, #ff4b86 30%, #ff6b9d 50%, #ff4b86 70%, transparent 100%)' }} />
+          <div
+            className="absolute bottom-0 inset-x-0 h-[1px] hidden lg:block"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, #ff4b86 30%, #ff6b9d 50%, #ff4b86 70%, transparent 100%)",
+            }}
+          />
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-2 lg:py-1">
               <div className="w-1/3 flex items-center gap-3">
@@ -256,7 +263,6 @@ const Navbar = () => {
               <div className="ml-auto w-1/3 flex items-center justify-end gap-3 lg:gap-4">
                 {/* ── Desktop Icons (Premium Redesign) ── */}
                 <div className="hidden lg:flex items-center gap-1">
-
                   {user ? (
                     <>
                       {/* Avatar + Name */}
@@ -264,7 +270,8 @@ const Navbar = () => {
                         <div
                           className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-black flex-shrink-0"
                           style={{
-                            background: "linear-gradient(135deg, #ff2d72, #ff6b9d)",
+                            background:
+                              "linear-gradient(135deg, #ff2d72, #ff6b9d)",
                             boxShadow: "0 2px 8px rgba(255,75,134,0.35)",
                           }}
                         >
@@ -280,12 +287,15 @@ const Navbar = () => {
                           to="/admin/dashboard"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_6px_20px_rgba(255,75,134,0.45)] active:scale-95"
                           style={{
-                            background: "linear-gradient(135deg, #ff2d72, #ff4b86)",
+                            background:
+                              "linear-gradient(135deg, #ff2d72, #ff4b86)",
                             boxShadow: "0 3px 12px rgba(255,75,134,0.3)",
                           }}
                           title="Admin Dashboard"
                         >
-                          <span className="material-symbols-outlined text-[14px]">dashboard</span>
+                          <span className="material-symbols-outlined text-[14px]">
+                            dashboard
+                          </span>
                           Dashboard
                         </Link>
                       )}
@@ -307,26 +317,30 @@ const Navbar = () => {
                       to="/my-points"
                       className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-pink-400/40"
                       style={{
-                        background: "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
+                        background:
+                          "linear-gradient(135deg, #ff2d72 0%, #ff4b86 50%, #ff6b9d 100%)",
                         boxShadow: "0 2px 10px rgba(255,75,134,0.4)",
                       }}
                       title={`SPARK CLUB · ${loyaltyRank.label} · ${loyaltyPoints.toLocaleString()} poin`}
                     >
-                      <span className="text-sm leading-none">{loyaltyRank.icon}</span>
+                      <span className="text-sm leading-none">
+                        {loyaltyRank.icon}
+                      </span>
                       <span className="text-xs font-black tracking-tight text-white">
                         {loyaltyPoints.toLocaleString()}
                       </span>
-                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">pts</span>
+                      <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">
+                        pts
+                      </span>
                       <span
                         className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                         style={{
-                          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
                         }}
                       />
                     </Link>
                   )}
-
-
 
                   {/* My Tickets */}
                   <Link
@@ -501,21 +515,35 @@ const Navbar = () => {
         </div>
 
         {/* ── Desktop Navigation Premium ── */}
-        <nav className="hidden lg:block w-full relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #fff5f8 0%, #ffffff 60%)' }}>
+        <nav
+          className="hidden lg:block w-full relative overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg, #fff5f8 0%, #ffffff 60%)",
+          }}
+        >
           {/* Top accent line - vivid pink */}
-          <div className="absolute top-0 inset-x-0 h-[2.5px] pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, #ff2d72 20%, #ff4b86 50%, #ff2d72 80%, transparent 100%)' }} />
+          <div
+            className="absolute top-0 inset-x-0 h-[2.5px] pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, #ff2d72 20%, #ff4b86 50%, #ff2d72 80%, transparent 100%)",
+            }}
+          />
           {/* Bottom glow line */}
-          <div className="absolute bottom-0 inset-x-0 h-[1px] pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,75,134,0.35) 30%, rgba(255,75,134,0.6) 50%, rgba(255,75,134,0.35) 70%, transparent 100%)' }} />
+          <div
+            className="absolute bottom-0 inset-x-0 h-[1px] pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,75,134,0.35) 30%, rgba(255,75,134,0.6) 50%, rgba(255,75,134,0.35) 70%, transparent 100%)",
+            }}
+          />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div
               ref={desktopNavContainerRef}
               className="flex justify-center items-center"
             >
-              <div
-                ref={mobileNavScrollerRef}
-                className="flex items-center"
-              >
+              <div ref={mobileNavScrollerRef} className="flex items-center">
                 {navItems.map((item, idx) => {
                   const isActive = idx === activeIndex;
                   const Icon = item.icon;
@@ -550,7 +578,11 @@ const Navbar = () => {
                         <motion.span
                           layoutId="desktop-nav-bg-chip"
                           className="absolute inset-x-1 inset-y-2 rounded-xl bg-gradient-to-b from-pink-100/80 to-pink-50/60"
-                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 40,
+                          }}
                         />
                       )}
 
@@ -564,8 +596,16 @@ const Navbar = () => {
                         <motion.span
                           layoutId="desktop-nav-underline"
                           className="absolute bottom-0 left-4 right-4 h-[3px] rounded-full"
-                          style={{ background: "linear-gradient(90deg, #ff2d72, #ff4b86, #ff6b9d)", boxShadow: "0 0 10px rgba(255,75,134,0.7)" }}
-                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                          style={{
+                            background:
+                              "linear-gradient(90deg, #ff2d72, #ff4b86, #ff6b9d)",
+                            boxShadow: "0 0 10px rgba(255,75,134,0.7)",
+                          }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 40,
+                          }}
                         />
                       )}
 
