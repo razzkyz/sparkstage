@@ -99,6 +99,13 @@ const PrintOrdersReport = lazy(
   () => import("../../pages/admin/PrintOrdersReport"),
 );
 
+const RentalTransactions = lazy(
+  () => import("../../pages/admin/RentalTransactions"),
+);
+const CreateRentalTransaction = lazy(
+  () => import("../../pages/admin/CreateRentalTransaction"),
+);
+
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
   { path: "/admin/retail-dashboard", Page: RetailDashboard },
@@ -144,4 +151,6 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/stock-opname", Page: StockOpname },
   { path: "/admin/stock-opname/:opnameId", Page: StockOpnameDetail },
   { path: "/admin/print-orders", Page: PrintOrdersReport },
+  { path: "/admin/rental-transactions", Page: RentalTransactions },
+  { path: "/admin/rental-order", Page: CreateRentalTransaction },
 ];

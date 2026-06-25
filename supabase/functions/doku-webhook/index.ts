@@ -14,7 +14,7 @@ import {
 } from '../_shared/payment-effects.ts'
 import { processRentalOrderTransition } from '../_shared/payment-processors.ts'
 
-type PaymentType = 'ticket' | 'product' | 'rental'
+type PaymentType = 'ticket' | 'product' | 'rental' | 'rollerblade'
 
 /**
  * Extract payment type from invoice number prefix
@@ -27,6 +27,7 @@ function extractPaymentTypeFromInvoice(invoiceNumber: string): PaymentType | nul
   if (prefix === 'PRD-') return 'product'
   if (prefix === 'SPK-') return 'ticket'
   if (prefix === 'RTL-') return 'rental'
+  if (prefix === 'RBL-') return 'rollerblade'
   return null
 }
 
@@ -52,6 +53,7 @@ function validatePaymentTypeMatch(
     let expectedPrefix = 'SPK-'
     if (foundOrderType === 'product') expectedPrefix = 'PRD-'
     else if (foundOrderType === 'rental') expectedPrefix = 'RTL-'
+    else if (foundOrderType === 'rollerblade') expectedPrefix = 'RBL-'
     
     console.error(
       `[DOKU WEBHOOK] CRITICAL: Payment type mismatch for ${orderNumber}`,
@@ -724,6 +726,98 @@ serve(async (req: Request) => {
       })
 
       console.log('[DOKU WEBHOOK] Print order processed successfully')
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    
+    // Check if it's a rollerblade rental order
+    const { data: rollerbladeOrder, error: rollerbladeError } = await supabase
+      .from('rentals')
+      .select('id, invoice_number, payment_status, rental_status, paid_at')
+      .eq('invoice_number', orderNumber)
+      .maybeSingle()
+      
+    if (rollerbladeOrder) {
+      const isPaymentTypeValid = validatePaymentTypeMatch('rollerblade', invoicePaymentType, orderNumber)
+
+      if (!isPaymentTypeValid) {
+        console.error('[DOKU WEBHOOK] CRITICAL ERROR: Payment type mismatch detected', {
+          orderNumber,
+          invoicePaymentType,
+          foundOrderType: 'rollerblade',
+          expectedPrefix: 'RBL-',
+        })
+
+        await logWebhookEvent(supabase, {
+          orderNumber,
+          eventType: 'payment_type_mismatch',
+          payload: {
+            notification,
+            error: 'Rollerblade invoice being applied to wrong order type',
+            invoicePaymentType,
+            foundOrderType: 'rollerblade',
+          },
+          success: false,
+          errorMessage: `Payment type mismatch: invoice has type ${invoicePaymentType} but found rollerblade order`,
+          processedAt: nowIso,
+        })
+
+        return jsonErrorWithDetails(
+          req,
+          422,
+          {
+            error: 'Payment type mismatch',
+            code: 'PAYMENT_TYPE_MISMATCH',
+            details: `Invoice type ${invoicePaymentType} does not match found order type rollerblade`,
+          },
+          { allowAllOrigins: true }
+        )
+      }
+
+      console.log('[DOKU WEBHOOK] Processing rollerblade order transition to:', providerStatus)
+      
+      const updateData: Record<string, unknown> = {
+        payment_status: providerStatus,
+        updated_at: nowIso,
+      };
+
+      if (providerStatus === 'paid' && !rollerbladeOrder.paid_at) {
+        updateData.paid_at = nowIso;
+      }
+
+      const { error: updateError } = await supabase
+        .from('rentals')
+        .update(updateData)
+        .eq('id', rollerbladeOrder.id);
+
+      await logWebhookEvent(supabase, {
+        orderNumber,
+        eventType: 'rollerblade_order_processed',
+        payload: {
+          notification,
+          next_status: providerStatus,
+        },
+        success: !updateError,
+        errorMessage: updateError?.message ?? null,
+        processedAt: nowIso,
+      })
+
+      if (updateError) {
+        console.log('[DOKU WEBHOOK] ERROR: Rollerblade order transition failed')
+        return jsonErrorWithDetails(
+          req,
+          500,
+          {
+            error: 'Failed to process rollerblade payment webhook',
+            code: 'ROLLERBLADE_WEBHOOK_FAILED',
+            details: updateError.message,
+          },
+          { allowAllOrigins: true }
+        )
+      }
+
+      console.log('[DOKU WEBHOOK] Rollerblade order processed successfully')
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

@@ -96,6 +96,26 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
     ],
   },
   {
+    id: "rental",
+    label: "Rental Rollerblade",
+    items: [
+      {
+        id: "rental-transactions",
+        label: "Transaksi Rental",
+        icon: "roller_skating",
+        path: "/admin/rental-transactions",
+        highlight: true,
+      },
+      {
+        id: "rental-order",
+        label: "Rental Order",
+        icon: "add_shopping_cart",
+        path: "/admin/rental-order",
+        highlight: true,
+      },
+    ],
+  },
+  {
     id: "laporan",
     label: "Laporan",
     items: [
@@ -104,6 +124,30 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Laporan Penjualan",
         icon: "assessment",
         path: "/admin/sales-report",
+        highlight: true,
+      },
+    ],
+  },
+];
+
+// Menu khusus untuk role "rollerblade" - HANYA rental transactions
+export const ROLLERBLADE_MENU_SECTIONS: AdminMenuSection[] = [
+  {
+    id: "rental",
+    label: "Rental Rollerblade",
+    items: [
+      {
+        id: "rental-transactions",
+        label: "Transaksi Rental",
+        icon: "roller_skating",
+        path: "/admin/rental-transactions",
+        highlight: true,
+      },
+      {
+        id: "rental-order",
+        label: "Rental Order",
+        icon: "add_shopping_cart",
+        path: "/admin/rental-order",
         highlight: true,
       },
     ],
