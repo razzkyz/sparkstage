@@ -591,4 +591,17 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       },
     ],
   },
+  {
+    id: "rollerblade",
+    label: "Rollerblade",
+    items: [
+      {
+        id: "rollerblade-cms",
+        label: "Rollerblade CMS",
+        icon: "roller_skating",
+        path: "/admin/rollerblade-page",
+        highlight: true,
+      },
+    ],
+  },
 ];

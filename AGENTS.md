@@ -80,6 +80,37 @@ Spark Stage is a fullstack booking ticket and commerce app.
   - Phase 1 Complete: `SHIPPING_PHASE1_COMPLETE.md`
   - Full roadmap: `SHIPPING_INTEGRATION_COMPLETE.md`
 
+## Rollerblade CMS (NEW 2026-06-25)
+
+**Status:** ✅ COMPLETE & PRODUCTION READY
+
+Fullstack CMS untuk Rollerblade page dengan admin editing capability.
+
+**Features:**
+- ✅ Full CRUD: Hero, Features, Gallery, CTA sections
+- ✅ Admin UI: `/admin/rollerblade-page` dengan sidebar tersendiri
+- ✅ Image Upload: R2 bucket integration
+- ✅ Frontend: Dynamic content dari database
+- ✅ Responsive: Mobile, tablet, desktop
+- ✅ Real-time: TanStack Query caching (5 min)
+
+**Files:**
+- Migration: `supabase/migrations/20260625114824_add_rollerblade_page_settings.sql`
+- Hook: `frontend/src/hooks/useRollerbladeSettings.ts`
+- Admin: `frontend/src/pages/admin/RollerbladePageManager.tsx`
+- Frontend: `frontend/src/pages/RollerbladePage.tsx`
+- Plan: `docs/decisions/ROLLERBLADE_CMS_PLAN.md`
+
+**Usage:**
+```bash
+# Admin edit: http://localhost:5173/admin/rollerblade-page
+# Public view: http://localhost:5173/rollerblade
+```
+
+**Time:** ~3 hours total (Database 45min + Admin UI 90min + Frontend 30min)
+
+---
+
 ## Frontend Stock Management Pages (100% COMPLETE ✅)
 
 All three stock management pages are fully implemented, tested, and ready to deploy with **Complete CRUD Operations** and **✨ Realtime Auto-Refresh**:
