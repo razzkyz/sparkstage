@@ -103,7 +103,7 @@ export default function RollerbladePageManager() {
   const addFeature = () => {
     const newFeature: RollerbladeFeature = {
       id: getNextFeatureId(draft.features),
-      icon: '✨',
+      image: '',
       title: 'New Feature',
       description: 'Feature description',
       details: ['Detail 1', 'Detail 2'],
@@ -153,7 +153,6 @@ export default function RollerbladePageManager() {
       id: getNextGalleryItemId(draft.gallery_items),
       image: '',
       caption: 'New Gallery Item',
-      category: 'activity',
     };
     updateDraft({ gallery_items: [...draft.gallery_items, newItem] });
   };
@@ -286,19 +285,22 @@ export default function RollerbladePageManager() {
                 </div>
 
                 <div className="grid gap-4">
-                  <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
-                      Icon (Emoji)
-                    </label>
-                    <input
-                      type="text"
-                      value={feature.icon}
-                      onChange={(e) => updateFeature(featureIndex, 'icon', e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-2xl focus:border-black focus:outline-none"
-                      placeholder="🛼"
-                      maxLength={4}
-                    />
-                  </div>
+                  <CmsAssetField
+                    label="Background Image"
+                    value={feature.image}
+                    kind="image"
+                    onChange={(value) => updateFeature(featureIndex, 'image', value)}
+                    onUpload={(file) =>
+                      void handleUploadImage(
+                        file,
+                        (url) => updateFeature(featureIndex, 'image', url),
+                        `feature-${featureIndex + 1}`
+                      )
+                    }
+                    previewClassName="h-32 w-full rounded-xl border border-gray-200 bg-white object-cover"
+                    uploadLabel="Upload image"
+                    placeholder="Paste image URL"
+                  />
 
                   <div>
                     <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
@@ -434,27 +436,6 @@ export default function RollerbladePageManager() {
                       onChange={(e) => updateGalleryItem(index, 'caption', e.target.value)}
                       className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs focus:border-black focus:outline-none"
                     />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                      Category
-                    </label>
-                    <select
-                      value={item.category}
-                      onChange={(e) =>
-                        updateGalleryItem(
-                          index,
-                          'category',
-                          e.target.value as 'venue' | 'equipment' | 'activity'
-                        )
-                      }
-                      className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs focus:border-black focus:outline-none"
-                    >
-                      <option value="venue">🏟️ Venue</option>
-                      <option value="equipment">🛼 Equipment</option>
-                      <option value="activity">⚡ Activity</option>
-                    </select>
                   </div>
                 </div>
               </div>

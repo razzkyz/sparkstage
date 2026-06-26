@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 
 export interface RollerbladeFeature {
   id: number;
-  icon: string;
+  image: string; // Background image URL
   title: string;
   description: string;
   details: string[];
@@ -17,7 +17,6 @@ export interface RollerbladeGalleryItem {
   id: number;
   image: string;
   caption: string;
-  category: 'venue' | 'equipment' | 'activity';
 }
 
 export interface SectionFonts {
@@ -56,7 +55,7 @@ export const DEFAULT_ROLLERBLADE_PAGE_SETTINGS: Omit<RollerbladePageSettings, 'i
   features: [
     {
       id: 1,
-      icon: '🛼',
+      image: '/images/rollerblade-feature-1.jpg',
       title: 'Peralatan Berkualitas',
       description: 'Peralatan lengkap dari sepatu rollerblade hingga alat keselamatan untuk semua usia',
       details: [
@@ -68,7 +67,7 @@ export const DEFAULT_ROLLERBLADE_PAGE_SETTINGS: Omit<RollerbladePageSettings, 'i
     },
     {
       id: 2,
-      icon: '🏢',
+      image: '/images/rollerblade-feature-2.jpg',
       title: 'Arena Indoor Nyaman',
       description: 'Ruang bermain dalam gedung yang luas, aman, dan nyaman untuk segala cuaca',
       details: [
@@ -80,7 +79,7 @@ export const DEFAULT_ROLLERBLADE_PAGE_SETTINGS: Omit<RollerbladePageSettings, 'i
     },
     {
       id: 3,
-      icon: '⏰',
+      image: '/images/rollerblade-feature-3.jpg',
       title: 'Jam Operasional Fleksibel',
       description: 'Sesi bermain yang fleksibel setiap hari, cocok untuk jadwal sibuk Anda',
       details: [
@@ -92,7 +91,7 @@ export const DEFAULT_ROLLERBLADE_PAGE_SETTINGS: Omit<RollerbladePageSettings, 'i
     },
     {
       id: 4,
-      icon: '☕',
+      image: '/images/rollerblade-feature-4.jpg',
       title: 'Cafe & Ruang Tunggu',
       description: 'Area istirahat yang nyaman dengan cafe untuk menikmati makanan dan minuman',
       details: [
@@ -104,12 +103,12 @@ export const DEFAULT_ROLLERBLADE_PAGE_SETTINGS: Omit<RollerbladePageSettings, 'i
     },
   ],
   gallery_items: [
-    { id: 1, image: '/images/rollerblade-gallery-1.jpg', caption: 'Arena Luas & Aman', category: 'venue' },
-    { id: 2, image: '/images/rollerblade-gallery-2.jpg', caption: 'Peralatan Berkualitas', category: 'equipment' },
-    { id: 3, image: '/images/rollerblade-gallery-3.jpg', caption: 'Seru Bersama Teman', category: 'activity' },
-    { id: 4, image: '/images/rollerblade-gallery-4.jpg', caption: 'Pengalaman Tak Terlupakan', category: 'activity' },
-    { id: 5, image: '/images/rollerblade-gallery-5.jpg', caption: 'Fasilitas Lengkap', category: 'venue' },
-    { id: 6, image: '/images/rollerblade-gallery-6.jpg', caption: 'Momen Kebersamaan', category: 'activity' },
+    { id: 1, image: '/images/rollerblade-gallery-1.jpg', caption: 'Arena Luas & Aman' },
+    { id: 2, image: '/images/rollerblade-gallery-2.jpg', caption: 'Peralatan Berkualitas' },
+    { id: 3, image: '/images/rollerblade-gallery-3.jpg', caption: 'Seru Bersama Teman' },
+    { id: 4, image: '/images/rollerblade-gallery-4.jpg', caption: 'Pengalaman Tak Terlupakan' },
+    { id: 5, image: '/images/rollerblade-gallery-5.jpg', caption: 'Fasilitas Lengkap' },
+    { id: 6, image: '/images/rollerblade-gallery-6.jpg', caption: 'Momen Kebersamaan' },
   ],
   cta_image_url: '/images/rollerblade-cta.jpg',
   cta_title: 'Siap untuk Pengalaman Rollerblade Seru?',
@@ -211,8 +210,8 @@ export function getNextGalleryItemId(items: RollerbladeGalleryItem[]): number {
 export function isValidFeature(feature: Partial<RollerbladeFeature>): feature is RollerbladeFeature {
   return (
     typeof feature.id === 'number' &&
-    typeof feature.icon === 'string' &&
-    feature.icon.length > 0 &&
+    typeof feature.image === 'string' &&
+    feature.image.length > 0 &&
     typeof feature.title === 'string' &&
     feature.title.length > 0 &&
     typeof feature.description === 'string' &&
@@ -232,8 +231,6 @@ export function isValidGalleryItem(item: Partial<RollerbladeGalleryItem>): item 
     typeof item.image === 'string' &&
     item.image.length > 0 &&
     typeof item.caption === 'string' &&
-    item.caption.length > 0 &&
-    typeof item.category === 'string' &&
-    ['venue', 'equipment', 'activity'].includes(item.category)
+    item.caption.length > 0
   );
 }

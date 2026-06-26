@@ -72,41 +72,69 @@ export default function RollerbladePage() {
           </div>
 
           {pageData.features && pageData.features.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2  gap-4 md:gap-6">
               {pageData.features.map((feature) => {
                 const isExpanded = expandedFeature === feature.id;
                 return (
                   <div
                     key={feature.id}
-                    className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-pink-100"
+                    className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer h-72 md:h-86 xl:h-96"
                     onClick={() => setExpandedFeature(isExpanded ? null : feature.id)}
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 bg-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span className="text-4xl">{feature.icon || '✨'}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-xl font-bold text-gray-900">{feature.title || 'Feature'}</h3>
-                          <svg className={`w-5 h-5 text-pink-500 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-3">{feature.description || ''}</p>
-                        {feature.details && feature.details.length > 0 && (
-                          <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-                            <div className="pt-3 border-t border-gray-100">
-                              <ul className="space-y-2">
-                                {feature.details.map((detail, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                                    <span className="text-pink-500 mt-1 flex-shrink-0">✓</span>
-                                    <span>{detail}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                    {/* Background Image - Now using feature.image from database */}
+                    <div className="absolute inset-0 w-full h-full">
+                      <img 
+                        src={feature.image || '/images/rollerblade-feature-default.jpg'} 
+                        alt={feature.title || 'Feature'} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      {/* Gradient Overlay - Light gradient for title readability, darker on hover/expand */}
+                      <div className={`absolute inset-0 bg-gradient-to-b transition-all duration-500 ${
+                        isExpanded 
+                          ? 'from-black/90 via-black/75 to-black/90' 
+                          : 'from-black/50 via-transparent to-transparent md:from-black/40 md:opacity-0 md:group-hover:opacity-100 md:group-hover:from-black/90 md:group-hover:via-black/75 md:group-hover:to-black/90'
+                      }`} />
+                    </div>
+
+                    {/* Content Container */}
+                    <div className="relative z-10 h-full flex flex-col p-4 md:p-5">
+                      {/* Title - Always Visible at Top */}
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg md:text-xl font-bold text-white drop-shadow-lg leading-tight flex-1">
+                          {feature.title || 'Feature'}
+                        </h3>
+                        
+                        {/* Mobile Tap Indicator - Only on mobile, only when NOT expanded */}
+                        <div className={`md:hidden ml-2 ${isExpanded ? 'hidden' : 'block'}`}>
+                          <div className="w-7 h-7 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full animate-bounce flex-shrink-0">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
-                        )}
+                        </div>
+                      </div>
+
+                      {/* Description & Details - Scrollable Content */}
+                      <div className={`
+                        flex-1 overflow-hidden transition-all duration-500
+                        md:max-h-0 md:opacity-0 md:group-hover:max-h-full md:group-hover:opacity-100
+                        ${isExpanded ? 'max-h-full opacity-100' : 'max-h-0 opacity-0 md:max-h-0 md:opacity-0'}
+                      `}>
+                        <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
+                          <p className="text-white/90 text-xs md:text-sm leading-relaxed mb-3 drop-shadow-md">
+                            {feature.description || ''}
+                          </p>
+                          {feature.details && feature.details.length > 0 && (
+                            <div className="space-y-1.5">
+                              {feature.details.map((detail, idx) => (
+                                <div key={idx} className="flex items-start gap-1.5">
+                                  <span className="text-pink-400 mt-0.5 flex-shrink-0 font-bold text-sm">✓</span>
+                                  <span className="text-white/85 text-xs md:text-sm">{detail}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -119,7 +147,10 @@ export default function RollerbladePage() {
             </div>
           )}
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500 italic">💡 Klik pada setiap kartu untuk melihat detail lebih lanjut</p>
+            <p className="text-sm text-gray-500 italic">
+              <span className="md:hidden">💡 Tap pada setiap box untuk melihat detail lebih lanjut</span>
+              <span className="hidden md:inline">💡 Hover pada setiap box untuk melihat detail lebih lanjut</span>
+            </p>
           </div>
         </section>
 
@@ -144,11 +175,6 @@ export default function RollerbladePage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-95 transition-opacity duration-500" />
                       <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
                         <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                          <span className="inline-block px-2.5 md:px-3 py-1 bg-pink-500/90 backdrop-blur-sm text-white text-xs md:text-sm font-semibold rounded-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                            {item.category === 'venue' && '🏟️ Venue'}
-                            {item.category === 'equipment' && '🛼 Equipment'}
-                            {item.category === 'activity' && '⚡ Activity'}
-                          </span>
                           <p className="text-white font-bold text-sm md:text-base lg:text-lg leading-tight drop-shadow-lg">{item.caption || 'Gallery Item'}</p>
                         </div>
                       </div>

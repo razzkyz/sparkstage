@@ -15,6 +15,7 @@ const ALLOWED_PUBLIC_FOLDER_PATTERNS = [
   /^\/public\/charm-bar-assets\/[a-z0-9-]+$/,
   /^\/public\/dressing-room\/[0-9]+$/,
   /^\/public\/events-schedule\/[a-z0-9-]+$/,
+  /^\/public\/rollerblade-assets\/[a-z0-9-]+$/,
   /^\/public\/stage-gallery$/,
   /^\/public\/retail-products$/,
   /^\/public\/retail-products\/[0-9]+$/,

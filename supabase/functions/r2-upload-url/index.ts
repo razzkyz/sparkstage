@@ -53,7 +53,7 @@ serve(async (req) => {
     // Parse request body
     const { fileName, fileType, productId }: UploadRequest = await req.json()
 
-    if (!fileName || !fileType || !productId) {
+    if (!fileName || !fileType || productId === undefined || productId === null) {
       throw new Error('Missing required fields: fileName, fileType, productId')
     }
 
@@ -66,7 +66,13 @@ serve(async (req) => {
     // Generate unique file name
     const fileExt = fileName.split('.').pop()
     const uniqueFileName = `${crypto.randomUUID()}.${fileExt}`
-    const s3Key = `products/${productId}/${uniqueFileName}`
+    
+    // Dynamic folder structure:
+    // - CMS assets (productId = 0): cms/<asset-type>/
+    // - Product assets (productId > 0): products/<productId>/
+    const s3Key = productId === 0 
+      ? `cms/${uniqueFileName}`  // CMS assets go to cms/ folder
+      : `products/${productId}/${uniqueFileName}`  // Product assets go to products/<id>/
 
     // Configure R2 S3 client
     const s3Client = new S3Client({

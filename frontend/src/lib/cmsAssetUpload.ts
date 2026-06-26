@@ -1,13 +1,18 @@
 import { supabase } from './supabase';
 import { uploadPublicAssetToImageKit } from './publicImagekitUpload';
+import { uploadToR2 } from './r2Upload';
 import { slugify } from '../utils/merchant';
 
 export type CmsAssetKind = 'image' | 'video';
 
 const IMAGEKIT_CMS_BUCKET_FOLDERS: Partial<Record<string, string>> = {
   'charm-bar-assets': 'charm-bar-assets',
+  'rollerblade-assets': 'rollerblade-assets',
   'events-schedule': 'events-schedule',
 };
+
+// R2-enabled buckets (rollerblade uses R2)
+const R2_CMS_BUCKETS = ['rollerblade-assets'];
 
 export async function uploadCmsAsset(params: {
   file: File;
@@ -38,8 +43,38 @@ export async function uploadCmsAsset(params: {
 
   showToast?.('success', `Uploading ${kind}...`);
 
-  const imageKitBucketFolder = IMAGEKIT_CMS_BUCKET_FOLDERS[bucket];
+  // Priority 1: R2 upload for specific buckets (Rollerblade CMS)
+  // SAFETY: Only use R2 if explicitly enabled via environment variable
+  const useR2 = R2_CMS_BUCKETS.includes(bucket) && 
+                import.meta.env.VITE_USE_R2_UPLOAD === 'true';
+  
+  if (useR2) {
+    try {
+      console.log('[CMS Upload] Using R2 upload (productId = 0 for CMS)');
+      
+      // Use R2 with special CMS identifier (productId = 0 for CMS assets)
+      const publicUrl = await uploadToR2({
+        file,
+        productId: 0, // Special ID for CMS assets (non-product images)
+        onProgress: (progress) => {
+          if (progress === 100) {
+            showToast?.('success', `${kind === 'image' ? 'Image' : 'Video'} uploaded successfully to R2`);
+          }
+        },
+      });
 
+      onUploaded?.(publicUrl);
+      return publicUrl;
+    } catch (error) {
+      console.warn('[CMS Upload] R2 upload failed, using Supabase Storage fallback:', error);
+      // Silent fallback - continue to Supabase Storage without showing error to user
+    }
+  } else {
+    console.log('[CMS Upload] R2 disabled (VITE_USE_R2_UPLOAD not set to "true"), using fallback');
+  }
+
+  // Priority 2: ImageKit upload for specific buckets
+  const imageKitBucketFolder = IMAGEKIT_CMS_BUCKET_FOLDERS[bucket];
   if (imageKitBucketFolder) {
     const publicUrl = await uploadPublicAssetToImageKit({
       file,
@@ -52,6 +87,7 @@ export async function uploadCmsAsset(params: {
     return publicUrl;
   }
 
+  // Priority 3: Fallback to Supabase Storage
   const { error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(filePath, file, { upsert: true, cacheControl: '31536000' });
