@@ -37,14 +37,12 @@ interface CreateRentalCheckoutRequest {
 }
 
 interface CreateRentalCheckoutResponse {
-  success: boolean;
-  rentalId: number;
-  invoiceNumber: string;
-  totalPrice: number;
-  paymentUrl: string;
-  paymentId: string;
-  checkoutSdkUrl: string;
-  expiresAt: string | null;
+  payment_provider: string;
+  payment_url: string;
+  payment_sdk_url: string;
+  payment_due_date: string | null;
+  order_number: string;
+  order_id: number;
 }
 
 const DEFAULT_PRICE_PER_HOUR = 85000;
@@ -113,21 +111,30 @@ serve(async (req: Request) => {
   let createdRentalId: number | null = null;
 
   try {
+    // Auth check
+    const authResult = await requireAuthenticatedRequest(req);
+    if (authResult.response) return authResult.response;
+    const auth = authResult.context!;
+
+    // Create Supabase client with SERVICE ROLE KEY for database operations (since we're server side)
+    const supabase = createServiceClient(
+      auth.supabaseEnv.url,
+      auth.supabaseEnv.serviceRoleKey,
+    );
+
     // Rate limit check
-    const rateLimitResult = await checkRateLimit({
-      key: `rental-checkout:${requestOrigin || "unknown"}`,
-      limit: 10,
-      windowMs: 60000,
-    });
+    const rateLimitResult = await checkRateLimit(
+      supabase,
+      `rental-checkout:${requestOrigin || "unknown"}`,
+      {
+        maxRequests: 10,
+        windowMs: 60000,
+        keyPrefix: "checkout",
+      }
+    );
 
     if (!rateLimitResult.allowed) {
       return jsonError(req, 429, "Too many requests");
-    }
-
-    // Auth check
-    const auth = await requireAuthenticatedRequest(req);
-    if (!auth.user) {
-      return jsonError(req, 401, "Unauthorized");
     }
 
     // Get DOKU environment
@@ -184,10 +191,7 @@ serve(async (req: Request) => {
     const invoiceNumber = generateInvoiceNumber();
     const expiryTime = calculateExpiryTime();
 
-    // Create Supabase client
-    const supabase = createServiceClient(
-      req.headers.get("Authorization") ?? "",
-    );
+    // Supabase client already created above
 
     // Create rental order
     const { data: rental, error: rentalError } = await supabase
@@ -336,30 +340,22 @@ serve(async (req: Request) => {
       paymentExpiredAt: checkoutResponse.providerExpiresAt,
     });
 
-    // Return success response
-    const response: CreateRentalCheckoutResponse = {
-      success: true,
-      rentalId: rental.id,
-      invoiceNumber: rental.invoice_number,
-      totalPrice,
-      paymentUrl: checkoutResponse.paymentUrl,
-      paymentId: checkoutResponse.paymentId || requestId,
-      checkoutSdkUrl: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
-      expiresAt: checkoutResponse.providerExpiresAt,
-    };
-
-    return json(req, response);
+    return json(req, {
+      payment_provider: "doku_checkout",
+      payment_url: checkoutResponse.paymentUrl,
+      payment_sdk_url: getDokuCheckoutSdkUrl(dokuEnv.isProduction),
+      payment_due_date: checkoutResponse.providerExpiresAt,
+      order_number: rental.invoice_number,
+      order_id: rental.id,
+    });
   } catch (error) {
-    // Rollback on error
-    if (createdRentalId) {
-      const supabase = createServiceClient(
-        req.headers.get("Authorization") ?? "",
-      );
-      await supabase.from("rentals").delete().eq("id", createdRentalId);
-    }
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error("[create-doku-rental-checkout] Unhandled error:", errMsg);
 
-    console.error("[create-doku-rental-checkout] Unhandled error:", error);
-
-    return jsonError(req, 500, "Internal server error");
+    return jsonErrorWithDetails(req, 500, {
+      error: "Internal server error",
+      code: "UNHANDLED_ERROR",
+      details: errMsg,
+    });
   }
 });

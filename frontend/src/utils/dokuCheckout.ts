@@ -7,7 +7,7 @@ declare global {
   }
 }
 
-export type PaymentType = 'ticket' | 'product';
+export type PaymentType = 'ticket' | 'product' | 'rental';
 
 const PAYMENT_TYPE_KEY = 'doku_payment_type';
 const PAYMENT_URL_KEY = 'doku_payment_url';
@@ -114,7 +114,7 @@ export function openDokuCheckout(paymentUrl: string, invoiceNumber?: string) {
   
   if (invoiceNumber) {
     const invoicePrefix = invoiceNumber.substring(0, 4);
-    const invoiceType = invoicePrefix === 'PRD-' ? 'PRODUCT' : invoicePrefix === 'SPK-' ? 'TICKET' : 'UNKNOWN';
+    const invoiceType = invoicePrefix === 'PRD-' ? 'PRODUCT' : invoicePrefix === 'SPK-' ? 'TICKET' : invoicePrefix === 'RBL-' ? 'RENTAL' : 'UNKNOWN';
     console.log('[dokuCheckout] Invoice type from order number:', invoiceType, `(${invoicePrefix})`);
   }
   

@@ -8,6 +8,7 @@ import { ROLLERBLADE_MENU_SECTIONS, ADMIN_MENU_ITEMS } from '../../constants/adm
 import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
 import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
+import { loadDokuCheckoutScript, openDokuCheckout, resetDokuCheckoutState, storePaymentContext } from '../../utils/dokuCheckout';
 
 interface CreateRentalRequest {
   customerName: string;
@@ -18,14 +19,12 @@ interface CreateRentalRequest {
 }
 
 interface CreateRentalResponse {
-  success: boolean;
-  rentalId: number;
-  invoiceNumber: string;
-  totalPrice: number;
-  paymentUrl: string;
-  paymentId: string;
-  checkoutSdkUrl: string;
-  expiresAt: string | null;
+  payment_provider: string;
+  payment_url: string;
+  payment_sdk_url: string;
+  payment_due_date: string | null;
+  order_number: string;
+  order_id: number;
 }
 
 const PRICE_PER_HOUR = 85000;
@@ -44,8 +43,10 @@ export default function CreateRentalTransaction() {
 
   const effectiveMenuSections = menuSections.length > 0 ? menuSections : ROLLERBLADE_MENU_SECTIONS;
 
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentData, setPaymentData] = useState<CreateRentalResponse | null>(null);
+  // Load DOKU script on mount
+  useEffect(() => {
+    loadDokuCheckoutScript();
+  }, []);
 
   // Form state
   const [customerName, setCustomerName] = useState('');
@@ -73,11 +74,19 @@ export default function CreateRentalTransaction() {
       return response;
     },
     onSuccess: (data) => {
-      setPaymentData(data);
-      setShowPaymentModal(true);
+      // Setup DOKU - same flow as ticket checkout
+      resetDokuCheckoutState();
+      storePaymentContext('rental', data.order_number, data.payment_url);
+      
+      // Open DOKU popup (QRIS, VA, GoPay, etc.)
+      openDokuCheckout(data.payment_url, data.order_number);
+      
       queryClient.invalidateQueries({ queryKey: ['rentals-list'] });
       queryClient.invalidateQueries({ queryKey: ['rental-stats-today'] });
-      showToast('success', `Transaksi ${data.invoiceNumber} berhasil dibuat!`);
+      showToast('success', `Transaksi ${data.order_number} berhasil. Selesaikan pembayaran!`);
+      
+      // Redirect to list so admin can monitor
+      navigate('/admin/rental-transactions');
     },
     onError: (err) => {
       showToast('error', err instanceof Error ? err.message : 'Gagal membuat transaksi');
@@ -302,64 +311,6 @@ export default function CreateRentalTransaction() {
         </LazyMotion>
       </div>
 
-      {/* ===== PAYMENT MODAL ===== */}
-      {showPaymentModal && paymentData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="px-6 py-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-center">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
-                <span className="material-symbols-outlined text-2xl">qr_code</span>
-              </div>
-              <h2 className="text-xl font-black">Pembayaran QRIS</h2>
-              <p className="text-sm text-white/80 mt-1">Scan untuk bayar</p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="space-y-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                {[
-                  { label: 'Invoice', value: paymentData.invoiceNumber },
-                  { label: 'Customer', value: customerName },
-                  { label: 'Total', value: formatRupiah(paymentData.totalPrice), highlight: true },
-                ].map((item) => (
-                  <div key={item.label} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500">{item.label}</span>
-                    <span className={item.highlight ? 'font-black text-lg text-emerald-600' : 'font-semibold text-gray-800'}>
-                      {item.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                <span className="material-symbols-outlined text-amber-500">schedule</span>
-                <div>
-                  <p className="text-xs font-bold text-amber-700">Waktu Terbatas!</p>
-                  <p className="text-xs text-amber-600">Kode QRIS valid selama 15 menit</p>
-                </div>
-              </div>
-
-              <div id="doku-payment-container" className="min-h-[280px] flex items-center justify-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200">
-                <div className="text-center text-gray-400">
-                  <span className="material-symbols-outlined text-4xl animate-pulse text-emerald-400">qr_code_scanner</span>
-                  <p className="text-sm mt-2 font-medium">Loading QRIS...</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setPaymentData(null);
-                  queryClient.invalidateQueries({ queryKey: ['rentals-list'] });
-                  navigate('/admin/rental-transactions');
-                }}
-                className="w-full py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Tutup & Kembali
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminLayout>
   );
 }
