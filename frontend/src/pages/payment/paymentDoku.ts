@@ -75,30 +75,44 @@ export async function createCheckoutPayment(params: {
 
   let accessToken = params.token;
   let data: CheckoutPaymentResponse | null = null;
+  let networkRetries = 1;
 
-  try {
-    data = await invoke(accessToken);
-  } catch (error) {
-    if (getSupabaseFunctionStatus(error) === 401) {
-      const { data: refreshData, error: refreshError } = await withTimeout(
-        supabase.auth.refreshSession(),
-        5000,
-        'Session refresh timeout. Please try again.'
-      );
+  while (networkRetries >= 0) {
+    try {
+      data = await invoke(accessToken);
+      break; // Success, exit loop
+    } catch (error) {
+      const isAuthError = getSupabaseFunctionStatus(error) === 401;
+      const isNetworkError = error instanceof Error && error.message.includes('Failed to fetch');
 
-      if (!refreshError) {
-        const refreshedToken = await ensureFreshToken(refreshData.session ?? null);
-        if (refreshedToken) {
-          accessToken = refreshedToken;
-          data = await invoke(accessToken);
+      if (isAuthError) {
+        const { data: refreshData, error: refreshError } = await withTimeout(
+          supabase.auth.refreshSession(),
+          5000,
+          'Session refresh timeout. Please try again.'
+        );
+
+        if (!refreshError) {
+          const refreshedToken = await ensureFreshToken(refreshData.session ?? null);
+          if (refreshedToken) {
+            accessToken = refreshedToken;
+            data = await invoke(accessToken);
+            break;
+          } else {
+            throw error;
+          }
         } else {
           throw error;
         }
+      } else if (isNetworkError && networkRetries > 0) {
+        console.warn(`[paymentDoku] Network error detected. Retrying checkout request... (${networkRetries} left)`);
+        networkRetries--;
+        // Wait 1 second before retrying to let the network stabilize or let Deno cold start finish
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue; // Try again
       } else {
         throw error;
       }
-    } else {
-      throw error;
     }
   }
 
