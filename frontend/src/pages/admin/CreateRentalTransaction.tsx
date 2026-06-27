@@ -28,7 +28,7 @@ interface CreateRentalResponse {
   expiresAt: string | null;
 }
 
-const PRICE_PER_HOUR = 20000;
+const PRICE_PER_HOUR = 85000;
 const SHOE_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6];
 

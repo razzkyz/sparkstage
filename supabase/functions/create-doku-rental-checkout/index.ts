@@ -47,7 +47,7 @@ interface CreateRentalCheckoutResponse {
   expiresAt: string | null;
 }
 
-const DEFAULT_PRICE_PER_HOUR = 20000;
+const DEFAULT_PRICE_PER_HOUR = 85000;
 const PAYMENT_EXPIRY_MINUTES = 15;
 
 function generateInvoiceNumber(): string {
