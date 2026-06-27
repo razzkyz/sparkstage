@@ -43,9 +43,19 @@ export default function CreateRentalTransaction() {
 
   const effectiveMenuSections = menuSections.length > 0 ? menuSections : ROLLERBLADE_MENU_SECTIONS;
 
-  // Load DOKU script on mount
+  // Load DOKU script on mount + cleanup on unmount (same pattern as ticket checkout)
+  const [dokuReady, setDokuReady] = useState(false);
   useEffect(() => {
-    loadDokuCheckoutScript();
+    loadDokuCheckoutScript()
+      .then(() => setDokuReady(true))
+      .catch((err) => {
+        console.error('[CreateRentalTransaction] Failed to load DOKU Checkout:', err);
+        showToast('error', 'Gagal memuat sistem pembayaran. Coba refresh halaman.');
+      });
+
+    return () => {
+      resetDokuCheckoutState();
+    };
   }, []);
 
   // Form state
@@ -73,7 +83,15 @@ export default function CreateRentalTransaction() {
       });
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Ensure DOKU script is loaded before opening checkout
+      try {
+        await loadDokuCheckoutScript();
+      } catch {
+        showToast('error', 'Gagal memuat sistem pembayaran. Coba refresh.');
+        return;
+      }
+
       // Setup DOKU - same flow as ticket checkout
       resetDokuCheckoutState();
       storePaymentContext('rental', data.order_number, data.payment_url);
@@ -271,7 +289,7 @@ export default function CreateRentalTransaction() {
 
             <button
               type="submit"
-              disabled={createRentalMutation.isPending}
+              disabled={createRentalMutation.isPending || !dokuReady}
               className="w-full py-4 mt-6 rounded-2xl text-lg font-black text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-pink-300/40 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-3 shadow-[0_8px_20px_rgba(236,72,153,0.25)] relative overflow-hidden group"
               style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e, #d946ef)', backgroundSize: '200% auto' }}
             >
@@ -281,10 +299,15 @@ export default function CreateRentalTransaction() {
                   <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
                   Sedang Memproses...
                 </>
+              ) : !dokuReady ? (
+                <>
+                  <span className="material-symbols-outlined text-xl animate-spin">sync</span>
+                  Menyiapkan Pembayaran...
+                </>
               ) : (
                 <>
                   <span className="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">qr_code</span>
-                  Lanjutkan Pembayaran QRIS
+                  Lanjutkan Pembayaran
                 </>
               )}
             </button>
