@@ -19,8 +19,7 @@ DROP POLICY IF EXISTS "Authenticated upload rollerblade assets" ON storage.objec
 DROP POLICY IF EXISTS "Authenticated update rollerblade assets" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated delete rollerblade assets" ON storage.objects;
 
--- Step 3: Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Step 3: (RLS already enabled by default on storage.objects in Supabase - no action needed)
 
 -- Step 4: Policy - Public read access for rollerblade assets
 CREATE POLICY "Public read rollerblade assets"
@@ -58,7 +57,6 @@ CREATE POLICY "Authenticated delete rollerblade assets"
     )
   );
 
--- Step 8: Add comment for documentation
-COMMENT ON COLUMN storage.buckets.id IS 'rollerblade-assets bucket for CMS image uploads (fallback when R2 is unavailable)';
+-- Step 8: (Cannot add comment on storage.buckets - not owned by migration role)
 
 -- Migration complete: Storage bucket ready for CMS uploads
