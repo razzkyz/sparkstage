@@ -108,24 +108,6 @@ export default function CreateRentalTransaction() {
     });
   };
 
-  // Load DOKU checkout SDK
-  useEffect(() => {
-    if (paymentData && showPaymentModal) {
-      const script = document.createElement('script');
-      script.src = paymentData.checkoutSdkUrl;
-      script.async = true;
-      script.onload = () => {
-        // @ts-ignore
-        if (window.doku && paymentData.paymentUrl) {
-          // @ts-ignore
-          window.doku.loadCheckout({ url: paymentData.paymentUrl });
-        }
-      };
-      document.body.appendChild(script);
-      return () => { document.body.removeChild(script); };
-    }
-  }, [paymentData, showPaymentModal]);
-
   const totalPrice = PRICE_PER_HOUR * durationHours;
 
   return (
