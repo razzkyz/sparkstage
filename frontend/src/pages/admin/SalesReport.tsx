@@ -81,9 +81,9 @@ interface RentalOrderRow {
   customer_email: string;
   customer_phone: string | null;
   duration_days: number;
-  subtotal: number;
-  deposit_amount: number;
-  total: number;
+  total_rental_cost: number;
+  total_deposit: number;
+  total_amount: number;
   status: string;
   payment_status: string;
   created_at: string;
@@ -266,7 +266,7 @@ function useDressingRoomSales(enabled: boolean) {
       while (true) {
         const { data, error } = await supabase
           .from('rental_orders')
-          .select('id, order_number, customer_name, customer_email, customer_phone, duration_days, subtotal, deposit_amount, total, status, payment_status, created_at, updated_at, rental_order_items(*)')
+          .select('id, order_number, customer_name, customer_email, customer_phone, duration_days, total_rental_cost, total_deposit, total_amount, status, payment_status, created_at, updated_at, rental_order_items(*)')
           .eq('payment_status', 'paid')
           .order('created_at', { ascending: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -513,7 +513,7 @@ export default function SalesReport() {
 
   const dressingRoomStats = useMemo(() => {
     const orders = filteredDressingRooms.length;
-    const revenue = filteredDressingRooms.reduce((s, d) => s + (d.total || 0), 0);
+    const revenue = filteredDressingRooms.reduce((s, d) => s + (d.total_amount || 0), 0);
     const items = filteredDressingRooms.reduce((s, d) => s + (d.rental_order_items?.reduce((ss, i) => ss + i.quantity, 0) || 0), 0);
     console.log(`[SalesReport] Dressing Room - Count: ${orders}, Revenue: ${revenue}, Items: ${items}`);
     return { orders, revenue, items };
@@ -644,9 +644,9 @@ export default function SalesReport() {
       'Email': d.customer_email,
       'Telepon': d.customer_phone ?? '-',
       'Durasi (Hari)': d.duration_days,
-      'Subtotal (Rp)': d.subtotal,
-      'Deposit (Rp)': d.deposit_amount,
-      'Total (Rp)': d.total,
+      'Subtotal (Rp)': d.total_rental_cost,
+      'Deposit (Rp)': d.total_deposit,
+      'Total (Rp)': d.total_amount,
       'Status': d.status,
       'Tanggal Order': formatDatetime(d.created_at),
     }));
@@ -1345,7 +1345,7 @@ export default function SalesReport() {
                         </td>
                         <td className="px-4 py-3 text-gray-500 text-xs">{d.customer_email}</td>
                         <td className="px-4 py-3 text-gray-700 text-center font-bold">{d.duration_days}</td>
-                        <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{formatRupiah(d.total)}</td>
+                        <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{formatRupiah(d.total_amount)}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                             d.status === 'returned' ? 'bg-green-100 text-green-700' :
