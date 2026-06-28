@@ -11,7 +11,7 @@ import {
 } from "../hooks/useBookingPageSettings";
 import { JourneyCalendarSection } from "./journey-selection/JourneyCalendarSection";
 import { JourneySummaryCard } from "./journey-selection/JourneySummaryCard";
-import { JourneyTimeSlotsSection } from "./journey-selection/JourneyTimeSlotsSection";
+// import { JourneyTimeSlotsSection } from "./journey-selection/JourneyTimeSlotsSection";
 import { useJourneySelectionController } from "./journey-selection/useJourneySelectionController";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
 import { useBanners } from "../hooks/useBanners";
@@ -34,9 +34,6 @@ const Booking = () => {
     selectedDate,
     selectedTime,
     calendarDays,
-    availableTimeSlots,
-    groupedSlots,
-    hasBookableDates,
     isAllDayTicket,
     canGoPrevMonth,
     canGoNextMonth,
@@ -45,8 +42,6 @@ const Booking = () => {
     setSelectedTime,
     handlePrevMonth,
     handleNextMonth,
-    getMinutesUntilClose,
-    getSlotUrgency,
   } = useJourneySelectionController();
 
   const { data: sparkMapBanners = [], isLoading: sparkMapLoading } =
@@ -148,11 +143,12 @@ const Booking = () => {
       showToast("pink", "Silakan pilih tanggal terlebih dahulu");
       return;
     }
-    const isAllDay = isAllDayTicket && !selectedTime;
-    if (!isAllDay && !selectedTime) {
-      showToast("pink", "Silakan pilih sesi terlebih dahulu");
-      return;
-    }
+    // Sesi dinonaktifkan
+    // const isAllDay = isAllDayTicket && !selectedTime;
+    // if (!isAllDay && !selectedTime) {
+    //   showToast("pink", "Silakan pilih sesi terlebih dahulu");
+    //   return;
+    // }
     if (!user) {
       showToast("pink", "Silakan login terlebih dahulu");
       navigate("/login", { state: { returnTo: "/booking" } });
@@ -367,7 +363,11 @@ const Booking = () => {
                     <motion.div
                       className="absolute top-1/2 -left-32 w-64 h-64 bg-white/60 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
                       animate={{ x: ["0%", "400%"] }}
-                      transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 4,
+                        ease: "linear",
+                      }}
                     />
 
                     {/* Content — no marquee, just static centered content */}
@@ -384,7 +384,11 @@ const Booking = () => {
                       {/* Icon */}
                       <motion.span
                         animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.8,
+                          ease: "easeInOut",
+                        }}
                         className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
                       >
                         ⚠️
@@ -393,14 +397,22 @@ const Booking = () => {
                       {/* Text */}
                       <p className="text-xs md:text-sm font-black tracking-wide uppercase text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] text-center leading-snug">
                         <span className="text-amber-900">Perhatian!</span>{" "}
-                        Pastikan jadwal &amp; tanggal benar, jangan sampai salah ya.{" "}
-                        <span className="italic font-black">See you in stage! 🌟</span>
+                        Pastikan jadwal &amp; tanggal benar, jangan sampai salah
+                        ya.{" "}
+                        <span className="italic font-black">
+                          See you in stage! 🌟
+                        </span>
                       </p>
 
                       {/* Icon (mirrored right) */}
                       <motion.span
                         animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut", delay: 0.9 }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.8,
+                          ease: "easeInOut",
+                          delay: 0.9,
+                        }}
                         className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
                       >
                         ⚠️
@@ -423,45 +435,64 @@ const Booking = () => {
                   />
 
                   {selectedDate ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
                       className="relative overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.5)] border border-pink-300/50 group cursor-pointer transform-gpu"
                     >
                       {/* Rich solid background */}
                       <div className="absolute inset-0 bg-gradient-to-r from-rose-600 via-pink-500 to-rose-600" />
-                      
+
                       {/* Diagonal speed stripes background */}
-                      <div className="absolute inset-0 opacity-20 mix-blend-overlay" 
-                           style={{ 
-                             backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 20px)' 
-                           }} 
+                      <div
+                        className="absolute inset-0 opacity-20 mix-blend-overlay"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 20px)",
+                        }}
                       />
 
                       {/* Moving glowing lens flare behind the text */}
-                      <motion.div 
+                      <motion.div
                         className="absolute top-1/2 -left-32 w-64 h-64 bg-white/50 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
                         animate={{ x: ["0%", "500%"] }}
-                        transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 2.5,
+                          ease: "linear",
+                        }}
                       />
 
                       <div className="relative flex items-center py-4 text-white overflow-hidden">
-                        <motion.div 
+                        <motion.div
                           className="flex whitespace-nowrap w-max"
                           animate={{ x: ["-50%", 0] }}
-                          transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 15,
+                            ease: "linear",
+                          }}
                         >
                           {[...Array(8)].map((_, i) => (
-                            <div key={i} className="flex items-center gap-6 px-6">
+                            <div
+                              key={i}
+                              className="flex items-center gap-6 px-6"
+                            >
                               <span className="text-lg md:text-xl text-yellow-300">
                                 {i % 2 === 0 ? "🔥" : "⚡"}
                               </span>
-                              
+
                               <p className="text-sm md:text-lg font-black leading-none tracking-[0.15em] italic text-white">
-                                {i % 2 === 0 ? "SELLING FAST" : "SECURE YOUR SPOT NOW!"}
+                                {i % 2 === 0
+                                  ? "SELLING FAST"
+                                  : "SECURE YOUR SPOT NOW!"}
                               </p>
-                              
+
                               <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
                             </div>
                           ))}
@@ -470,7 +501,8 @@ const Booking = () => {
                     </motion.div>
                   ) : null}
 
-                  <JourneyTimeSlotsSection
+                  {/* Sesi dinonaktifkan */}
+                  {/* <JourneyTimeSlotsSection
                     copy={bookingCopy}
                     selectedDate={selectedDate}
                     hasBookableDates={hasBookableDates}
@@ -481,7 +513,7 @@ const Booking = () => {
                     onSelectTime={setSelectedTime}
                     getMinutesUntilClose={getMinutesUntilClose}
                     getSlotUrgency={getSlotUrgency}
-                  />
+                  /> */}
                 </>
               )}
             </div>
@@ -494,14 +526,16 @@ const Booking = () => {
                   <div className="animate-spin rounded-full h-10 w-10 border-4 border-main-200 border-t-main-600" />
                 </div>
               ) : sparkMap ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
                   className="bg-white rounded-2xl shadow-[0_15px_40px_rgba(236,72,153,0.1)] border border-pink-100 p-6 lg:p-8 group hover:shadow-[0_20px_50px_rgba(236,72,153,0.2)] transition-all duration-500"
                 >
                   <h3 className="text-2xl md:text-3xl font-black mb-6 italic text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-rose-500 uppercase tracking-wide flex items-center gap-3">
-                    <span className="material-symbols-outlined text-pink-500 text-3xl">map</span>
+                    <span className="material-symbols-outlined text-pink-500 text-3xl">
+                      map
+                    </span>
                     {sparkMap.title || "Spark Map"}
                   </h3>
                   <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-pink-50 to-rose-50 border-2 border-pink-100 group-hover:border-pink-300 transition-colors duration-500">

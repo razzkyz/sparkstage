@@ -527,36 +527,6 @@ const OnStage = () => {
     }
   }, []);
 
-  // if (loading) {
-  //   return (
-  //     <div className="bg-white min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
-  //     </div>
-  //   );
-  // }
-
-  // if (error && !hasData) {
-  //   return (
-  //     <div className="bg-white min-h-screen flex items-center justify-center">
-  //       <div className="text-center px-6 py-12 bg-white rounded-none border-2 border-black">
-  //         <div className="mb-4 text-4xl">⚠️</div>
-  //         <p className="text-lg text-black mb-6 font-bold uppercase tracking-widest">
-  //           Gagal memuat konten. Coba lagi.
-  //         </p>
-  //         <button
-  //           type="button"
-  //           onClick={() => {
-  //             refetchProcess();
-  //           }}
-  //           className="inline-flex items-center justify-center rounded-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 px-10 py-4 text-white font-black uppercase tracking-widest transition-colors duration-300 hover:scale-105 active:scale-95"
-  //         >
-  //           🔄 Muat ulang
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   return (
     <div className="bg-white min-h-screen">
       {/* Landing Modal */}

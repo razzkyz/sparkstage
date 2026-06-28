@@ -104,15 +104,15 @@ export function JourneySummaryCard({
       </motion.div>
 
       <motion.button
-        whileHover={selectedDate && (selectedTime || isAllDayTicket) ? { scale: 1.02, boxShadow: "0 10px 25px rgba(236,72,153,0.3)" } : {}}
-        whileTap={selectedDate && (selectedTime || isAllDayTicket) ? { scale: 0.98 } : {}}
+        whileHover={selectedDate ? { scale: 1.02, boxShadow: "0 10px 25px rgba(236,72,153,0.3)" } : {}}
+        whileTap={selectedDate ? { scale: 0.98 } : {}}
         onClick={onProceed}
-        disabled={!selectedDate || (!selectedTime && !isAllDayTicket)}
+        disabled={!selectedDate}
         className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 md:py-5 rounded-xl transition-all shadow-[0_8px_20px_rgba(236,72,153,0.25)] text-sm md:text-base overflow-hidden relative group"
       >
         <span className="relative z-10">{copy.proceed_button_label}</span>
         {/* Button shine effect */}
-        {selectedDate && (selectedTime || isAllDayTicket) && (
+        {selectedDate && (
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover:animate-[shimmer_1.5s_infinite] skew-x-12" />
         )}
       </motion.button>
