@@ -8,8 +8,6 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import * as XLSX from 'xlsx';
 
-const TICKET_PRICE = 85_000;
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface TicketRow {
@@ -20,11 +18,11 @@ interface TicketRow {
   status: string;
   created_at: string;
   used_at: string | null;
-  tickets: { name: string } | null;
+  tickets: { name: string; price: number } | null;
 }
 
 type TicketRowRaw = TicketRow & {
-  tickets: { name: string }[] | { name: string } | null;
+  tickets: { name: string; price: number }[] | { name: string; price: number } | null;
 };
 
 interface ProductOrderRow {
@@ -143,8 +141,8 @@ function useTicketSales(enabled: boolean) {
       while (true) {
         const { data, error } = await supabase
           .from('purchased_tickets')
-          .select('id, ticket_code, valid_date, time_slot, status, created_at, used_at, tickets(name)')
-          .eq('status', 'used')
+          .select('id, ticket_code, valid_date, time_slot, status, created_at, used_at, tickets(name, price)')
+          .in('status', ['active', 'used', 'expired'])
           .order('created_at', { ascending: false })
           .range(page * pageSize, (page + 1) * pageSize - 1);
         if (error) throw error;
@@ -294,6 +292,8 @@ export default function SalesReport() {
 
   const [from, setFrom] = useState(firstOfMonth);
   const [to,   setTo]   = useState(today);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | 'used' | 'active'>('all');
+  const [ticketDateFilterType, setTicketDateFilterType] = useState<'created_at' | 'valid_date'>('created_at');
   const [tab, setTab] = useState<'tickets' | 'products' | 'prints' | 'socks' | 'dressing-room'>('tickets');
   const [ticketPage, setTicketPage] = useState(1);
   const [productPage, setProductPage] = useState(1);
@@ -345,10 +345,18 @@ export default function SalesReport() {
 
   const filteredTickets = useMemo(() =>
     tickets.filter(t => {
-      const ms = new Date(t.created_at).getTime();
-      return ms >= fromMs && ms <= toMs;
+      const dateStr = ticketDateFilterType === 'valid_date' ? t.valid_date : t.created_at;
+      const ms = new Date(dateStr).getTime();
+      const inDateRange = ms >= fromMs && ms <= toMs;
+      
+      const statusMatch = 
+        ticketStatusFilter === 'all' ? true :
+        ticketStatusFilter === 'used' ? t.status === 'used' :
+        (t.status === 'active' || t.status === 'expired');
+
+      return inDateRange && statusMatch;
     }),
-    [tickets, fromMs, toMs]
+    [tickets, fromMs, toMs, ticketStatusFilter, ticketDateFilterType]
   );
 
   const filteredProducts = useMemo(() =>
@@ -474,9 +482,10 @@ export default function SalesReport() {
   // ── Summaries ────────────────────────────────────────────────────────────
   const ticketStats = useMemo(() => {
     const paid = filteredTickets.length;
-    const revenue = paid * TICKET_PRICE;
+    const revenue = filteredTickets.reduce((sum, t) => sum + (t.tickets?.price || 0), 0);
+    const used = filteredTickets.filter(t => t.status === 'used').length;
     console.log(`[SalesReport] Tickets - Count: ${paid}, Revenue: ${revenue}`);
-    return { paid, revenue, used: paid };
+    return { paid, revenue, used };
   }, [filteredTickets]);
   
   // Reset pages when filters change
@@ -532,7 +541,7 @@ export default function SalesReport() {
       'Tanggal Valid': formatDate(t.valid_date),
       'Sesi': t.time_slot ?? '-',
       'Status': t.status,
-      'Harga (Rp)': TICKET_PRICE,
+      'Harga (Rp)': t.tickets?.price ?? 0,
       'Tanggal Beli': formatDatetime(t.created_at),
       'Tanggal Pakai': formatDatetime(t.used_at),
     }));
@@ -732,32 +741,63 @@ export default function SalesReport() {
       </div>
 
       {/* ── Filter Bar ────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <span className="material-symbols-outlined text-gray-400 hidden sm:block">filter_list</span>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label className="text-xs text-gray-500 whitespace-nowrap">Dari</label>
-          <input
-            type="date"
-            value={from}
-            onChange={e => setFrom(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500"
-          />
+      <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col xl:flex-row items-start xl:items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4 w-full xl:w-auto flex-wrap">
+          <span className="material-symbols-outlined text-gray-400 hidden xl:block">filter_list</span>
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500 whitespace-nowrap">Dari</label>
+            <input
+              type="date"
+              value={from}
+              onChange={e => setFrom(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500 w-full"
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500 whitespace-nowrap">Sampai</label>
+            <input
+              type="date"
+              value={to}
+              onChange={e => setTo(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500 w-full"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label className="text-xs text-gray-500 whitespace-nowrap">Sampai</label>
-          <input
-            type="date"
-            value={to}
-            onChange={e => setTo(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500"
-          />
-        </div>
+        
+        {tab === 'tickets' && (
+          <div className="flex items-center gap-4 w-full xl:w-auto flex-wrap xl:border-l xl:border-gray-200 xl:pl-4">
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <label className="text-xs text-gray-500 whitespace-nowrap">Dasar Tanggal</label>
+              <select
+                value={ticketDateFilterType}
+                onChange={(e) => setTicketDateFilterType(e.target.value as 'created_at' | 'valid_date')}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500 bg-white w-full"
+              >
+                <option value="created_at">Transaksi / Beli</option>
+                <option value="valid_date">Booking / Datang</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <label className="text-xs text-gray-500 whitespace-nowrap">Status Tiket</label>
+              <select
+                value={ticketStatusFilter}
+                onChange={(e) => setTicketStatusFilter(e.target.value as 'all' | 'used' | 'active')}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-main-500 bg-white w-full"
+              >
+                <option value="all">Semua</option>
+                <option value="used">Sudah Dipakai</option>
+                <option value="active">Belum Dipakai</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={() => { setFrom(firstOfMonth); setTo(today); }}
-          className="text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1 ml-auto"
+          onClick={() => { setFrom(firstOfMonth); setTo(today); setTicketStatusFilter('all'); setTicketDateFilterType('created_at'); }}
+          className="text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1 xl:ml-auto w-full xl:w-auto justify-center xl:justify-start py-2 xl:py-0 border border-gray-200 xl:border-none rounded-lg xl:rounded-none mt-2 xl:mt-0"
         >
           <span className="material-symbols-outlined text-sm">restart_alt</span>
-          Reset
+          Reset Filter
         </button>
       </div>
 
@@ -813,25 +853,38 @@ export default function SalesReport() {
             </button>
           </div>
 
-          {/* Export Button */}
-          <button
-            onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : tab === 'prints' ? exportPrintsXLSX : tab === 'socks' ? exportSocksXLSX : exportDressingRoomXLSX}
-            disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : tab === 'prints' ? prints.length === 0 : tab === 'socks' ? socks.length === 0 : dressingRooms.length === 0)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            Export Excel
-          </button>
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                refetchTickets();
+                refetchProducts();
+                refetchPrints();
+                refetchSocks();
+                refetchDressingRooms();
+              }}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              title="Refresh Data"
+            >
+              <span className={`material-symbols-outlined text-[18px] ${isLoading ? 'animate-spin text-main-500' : ''}`}>refresh</span>
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <button
+              onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : tab === 'prints' ? exportPrintsXLSX : tab === 'socks' ? exportSocksXLSX : exportDressingRoomXLSX}
+              disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : tab === 'prints' ? prints.length === 0 : tab === 'socks' ? socks.length === 0 : dressingRooms.length === 0)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="hidden sm:inline">Export Excel</span>
+            </button>
+          </div>
         </div>
 
         {/* ── Tickets Table ──────────────────────────────────────── */}
         {tab === 'tickets' && (
           <>
             <div className="px-4 py-2 bg-violet-50 border-b border-violet-100 flex items-center gap-2">
-              <span className="text-xs text-violet-700">
-                Harga per tiket: <strong>{formatRupiah(TICKET_PRICE)}</strong>
-              </span>
-              <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-violet-700">
                 Total: <strong>{formatRupiah(ticketStats.revenue)}</strong>
               </span>
@@ -880,7 +933,7 @@ export default function SalesReport() {
                           'bg-red-100 text-red-700'
                         }`}>{t.status}</span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{formatRupiah(TICKET_PRICE)}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{formatRupiah(t.tickets?.price ?? 0)}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(t.created_at)}</td>
                     </tr>
                   ))}
