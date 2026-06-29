@@ -116,7 +116,7 @@ export default function RollerbladePage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
                 { step: 1, title: "Kunjungi Kasir", desc: "Datang langsung ke kasir SparkStage di lantai 2.", icon: <MapPin className="w-6 h-6" /> },
-                { step: 2, title: "Lakukan Pembayaran", desc: "Bayar tiket masuk via Cash atau QRIS.", icon: <CreditCard className="w-6 h-6" /> },
+                { step: 2, title: "Lakukan Pembayaran", desc: "Pembayaran via QRIS, Virtual Account, DANA, dll.", icon: <CreditCard className="w-6 h-6" /> },
                 { step: 3, title: "Ambil Perlengkapan", desc: "Tukar struk dengan sepatu dan pelindung.", icon: <ShieldCheck className="w-6 h-6" /> },
                 { step: 4, title: "Let's Roll!", desc: "Nikmati arena rollerblade bersama teman-teman.", icon: <Footprints className="w-6 h-6" /> }
               ].map((item) => (
