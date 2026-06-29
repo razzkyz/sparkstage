@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCallback } from 'react'
+import * as XLSX from 'xlsx'
 
 export type AuditAction =
   | 'admin_role_assigned'
@@ -237,17 +238,13 @@ export function useExportAuditLogs() {
           new Date(log.created_at).toLocaleString(),
         ])
 
-        const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
-
-        // Download
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement('a')
-        link.setAttribute('href', URL.createObjectURL(blob))
-        link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`)
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        // Convert to XLSX
+        const wsData = [headers, ...rows]
+        const ws = XLSX.utils.aoa_to_sheet(wsData)
+        ws['!cols'] = headers.map(() => ({ wch: 20 }))
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Audit Logs')
+        XLSX.writeFile(wb, `audit-logs-${new Date().toISOString().split('T')[0]}.xlsx`)
       } catch (error) {
         console.error('Error exporting audit logs:', error)
         alert('Failed to export audit logs')

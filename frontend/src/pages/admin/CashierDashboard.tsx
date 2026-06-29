@@ -10,6 +10,7 @@ import { useToast } from '../../components/Toast';
 import { LazyMotion, m } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
 import { nowWIB, toLocalDateString } from '../../utils/timezone';
+import * as XLSX from 'xlsx';
 import type { AdminMenuSection } from '../../components/AdminLayout';
 
 const CashierDashboard = () => {
@@ -69,30 +70,15 @@ const CashierDashboard = () => {
         ['TOTAL', (stats.ticketSalesMonth + stats.productSalesMonth).toString(), (stats.ticketRevenueMonth + stats.productRevenueMonth).toString()],
       ];
 
-      // Convert to CSV format
-      const csvContent = csvData
-        .map((row) =>
-          row
-            .map((cell) => {
-              // Escape quotes and wrap in quotes if contains comma
-              const escaped = String(cell).replace(/"/g, '""');
-              return escaped.includes(',') ? `"${escaped}"` : escaped;
-            })
-            .join(',')
-        )
-        .join('\n');
-
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `penjualan-kasir-${today}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Convert to XLSX format
+      const ws = XLSX.utils.aoa_to_sheet(csvData);
+      
+      // Auto-size columns based on content
+      ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 20 }];
+      
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Laporan Penjualan Kasir');
+      XLSX.writeFile(wb, `penjualan-kasir-${today}.xlsx`);
 
       showToast('success', 'Laporan berhasil diunduh');
     } catch (err) {

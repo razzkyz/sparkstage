@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import type { ProductDraft } from './ProductFormModal';
 import { downloadStoreProductTemplateExcel, parseStoreProductsFromFile } from '../../utils/storeExcelUtils';
+import { useCategories } from '../../hooks/useCategories';
+import { useRetailCategories } from '../../hooks/useRetailCategories';
 
 interface ProductCSVImportModalProps {
   isOpen: boolean;
@@ -19,6 +21,9 @@ export function ProductCSVImportModal({
   const [parsedProducts, setParsedProducts] = useState<ProductDraft[]>([]);
   const [error, setError] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { data: categories } = useCategories();
+  const { categories: retailCategories } = useRetailCategories();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,18 +46,38 @@ export function ProductCSVImportModal({
     if (parsedProducts.length === 0) return;
 
     try {
-      const drafts: ProductDraft[] = parsedProducts.map((p) => ({
-        id: undefined,
-        name: p.name,
-        slug: p.slug,
-        description: p.description,
-        category_id: p.category_id,
-        retail_category_id: null,
-        retail_subcategory_id: null,
-        sku: p.sku,
-        is_active: p.is_active,
-        variants: p.variants,
-      }));
+      const drafts: ProductDraft[] = parsedProducts.map((p) => {
+        let matchedCategoryId = p.category_id;
+        if (!matchedCategoryId && p.category_name && categories) {
+          const matched = categories.find(c => c.name.toLowerCase() === p.category_name!.toLowerCase());
+          if (matched) {
+            matchedCategoryId = matched.id;
+          }
+        }
+
+        let matchedRetailCategoryId = p.retail_category_id;
+        if (!matchedRetailCategoryId && p.retail_category_name && retailCategories) {
+          const matchedRetail = retailCategories.find(c => c.name.toLowerCase() === p.retail_category_name!.toLowerCase());
+          if (matchedRetail) {
+            matchedRetailCategoryId = matchedRetail.id;
+          }
+        }
+
+        return {
+          id: undefined,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          category_id: matchedCategoryId,
+          category_name: p.category_name,
+          retail_category_id: matchedRetailCategoryId,
+          retail_category_name: p.retail_category_name,
+          retail_subcategory_id: null,
+          sku: p.sku,
+          is_active: p.is_active,
+          variants: p.variants,
+        };
+      });
 
       await onImport(drafts);
       setParsedProducts([]);
@@ -90,18 +115,24 @@ export function ProductCSVImportModal({
             <div>
               <p className="text-sm text-blue-900 font-semibold mb-1">Import Excel Produk</p>
               <p className="text-xs text-blue-800 font-mono leading-5">
-                product_name, sku, description, category_id, price, stock, variant_name, variant_sku, color, size, is_active, slug
+                product_name, sku, description, kategori_utama, kategori_retail, price, stock, variant_name, variant_sku, color, size, is_active, slug
               </p>
               <p className="text-xs text-blue-800 mt-2">
-                Wajib: product_name, sku | Opsional: kolom lainnya
+                Wajib: product_name, sku | Opsional: kolom lainnya (isi "kategori_utama" / "kategori_retail" dengan nama kategorinya)
               </p>
             </div>
             <button
               type="button"
-              onClick={downloadStoreProductTemplateExcel}
-              className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+              disabled={isDownloading}
+              onClick={async () => {
+                setIsDownloading(true);
+                await downloadStoreProductTemplateExcel(categories || [], retailCategories || []);
+                setIsDownloading(false);
+              }}
+              className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              Download Template Excel
+              {isDownloading && <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />}
+              {isDownloading ? 'Downloading...' : 'Download Template Excel'}
             </button>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import * as XLSX from 'xlsx';
 import type { InventoryProduct } from '../pages/admin/store-inventory/storeInventoryTypes';
 import type { ProductDraft, ProductVariantDraft } from '../components/admin/product-form-modal/productFormModalTypes';
+import type { CategoryOption } from '../components/admin/product-form-modal/productFormModalTypes';
+import { supabase } from '../lib/supabase';
 
 // ─── EXPORT: Stock Report ─────────────────────────────────────────────────────
 
@@ -28,61 +30,153 @@ export function exportStoreStockReportToExcel(products: InventoryProduct[]) {
 
 // ─── TEMPLATE ─────────────────────────────────────────────────────────────────
 
-export function downloadStoreProductTemplateExcel() {
-  const sample = [
-    {
-      product_name: 'Kaos Polos Hitam',
-      slug: 'kaos-polos-hitam',
-      sku: 'KPH-001',
-      description: 'Kaos polos bahan katun combed',
-      category_id: '',
-      is_active: 'ya',
-      variant_name: 'Size S',
-      variant_sku: 'KPH-S-001',
-      price: 85000,
-      stock: 10,
-      size: 'S',
-      color: 'Hitam',
-    },
-    {
-      product_name: '',
-      slug: '',
-      sku: '',
-      description: '',
-      category_id: '',
-      is_active: '',
-      variant_name: 'Size M',
-      variant_sku: 'KPH-M-001',
-      price: 85000,
-      stock: 15,
-      size: 'M',
-      color: 'Hitam',
-    },
-    {
-      product_name: 'Celana Cargo Olive',
-      slug: 'celana-cargo-olive',
-      sku: 'CCO-001',
-      description: 'Celana cargo panjang warna olive',
-      category_id: '',
-      is_active: 'ya',
-      variant_name: 'Size 30',
-      variant_sku: 'CCO-30-001',
-      price: 150000,
-      stock: 5,
-      size: '30',
-      color: 'Olive',
-    },
-  ];
+export async function downloadStoreProductTemplateExcel(categories: CategoryOption[] = [], retailCategories: CategoryOption[] = []) {
+  const defaultCategory = categories.length > 0 ? categories[0].name : 'Apparel';
+  let sample: any[] = [];
 
+  try {
+    const { data: dbProducts, error } = await supabase
+      .from('products')
+      .select(`
+        name, slug, sku, description, is_active,
+        categories (name),
+        retail_categories!products_retail_category_id_fkey (name),
+        product_variants (name, sku, price, stock, is_active)
+      `)
+      .is('deleted_at', null)
+      .order('name', { ascending: true });
+
+    if (!error && dbProducts && dbProducts.length > 0) {
+      dbProducts.forEach((p: any) => {
+        const categoryName = p.categories?.name || '';
+        const retailCategoryName = p.retail_categories?.name || '';
+        const variants = Array.isArray(p.product_variants) 
+          ? p.product_variants.filter((v: any) => v.is_active !== false)
+          : [];
+        
+        if (variants.length > 0) {
+          variants.forEach((v: any, index: number) => {
+            sample.push({
+              product_name: index === 0 ? p.name : '',
+              slug: index === 0 ? (p.slug || '') : '',
+              sku: index === 0 ? (p.sku || '') : '',
+              description: index === 0 ? (p.description || '') : '',
+              kategori_utama: index === 0 ? categoryName : '',
+              kategori_retail: index === 0 ? retailCategoryName : '',
+              is_active: index === 0 ? (p.is_active ? 'ya' : 'tidak') : '',
+              variant_name: v.name,
+              variant_sku: v.sku,
+              price: v.price || 0,
+              stock: v.stock || 0,
+              size: '',
+              color: '',
+            });
+          });
+        } else {
+          sample.push({
+            product_name: p.name,
+            slug: p.slug || '',
+            sku: p.sku || '',
+            description: p.description || '',
+            kategori_utama: categoryName,
+            kategori_retail: retailCategoryName,
+            is_active: p.is_active ? 'ya' : 'tidak',
+            variant_name: 'Default',
+            variant_sku: p.sku || '',
+            price: 0,
+            stock: 0,
+            size: '',
+            color: '',
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Failed to fetch products for template', err);
+  }
+
+  if (sample.length === 0) {
+    sample = [
+      {
+        product_name: 'Kaos Polos Hitam',
+        slug: 'kaos-polos-hitam',
+        sku: 'KPH-001',
+        description: 'Kaos polos bahan katun combed',
+        kategori_utama: defaultCategory,
+        kategori_retail: '',
+        is_active: 'ya',
+        variant_name: 'Size S',
+        variant_sku: 'KPH-S-001',
+        price: 85000,
+        stock: 10,
+        size: 'S',
+        color: 'Hitam',
+      },
+      {
+        product_name: '',
+        slug: '',
+        sku: '',
+        description: '',
+        kategori_utama: '',
+        kategori_retail: '',
+        is_active: '',
+        variant_name: 'Size M',
+        variant_sku: 'KPH-M-001',
+        price: 85000,
+        stock: 15,
+        size: 'M',
+        color: 'Hitam',
+      },
+      {
+        product_name: 'Celana Cargo Olive',
+        slug: 'celana-cargo-olive',
+        sku: 'CCO-001',
+        description: 'Celana cargo panjang warna olive',
+        kategori_utama: defaultCategory,
+        kategori_retail: '',
+        is_active: 'ya',
+        variant_name: 'Size 30',
+        variant_sku: 'CCO-30-001',
+        price: 150000,
+        stock: 5,
+        size: '30',
+        color: 'Olive',
+      },
+    ];
+  }
+
+  const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(sample);
-  const csv = XLSX.utils.sheet_to_csv(ws);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'template-import-produk-store.csv';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template Import');
+
+  const categoryData: { 'Nama Kategori': string; 'Tipe': string; 'Keterangan': string }[] = [];
+  
+  if (categories.length > 0) {
+    categories.forEach(c => {
+      categoryData.push({
+        'Nama Kategori': c.name,
+        'Tipe': 'Kategori Utama',
+        'Keterangan': 'Copy ke kolom kategori_utama'
+      });
+    });
+  }
+
+  if (retailCategories.length > 0) {
+    retailCategories.forEach(c => {
+      categoryData.push({
+        'Nama Kategori': c.name,
+        'Tipe': 'Kategori Retail (Charm Bar dll)',
+        'Keterangan': 'Copy ke kolom kategori_retail'
+      });
+    });
+  }
+
+  if (categoryData.length > 0) {
+    const wsCat = XLSX.utils.json_to_sheet(categoryData);
+    XLSX.utils.book_append_sheet(wb, wsCat, 'Daftar Kategori');
+  }
+
+  XLSX.writeFile(wb, 'template-import-produk-store.xlsx');
 }
 
 // ─── PARSE IMPORT ─────────────────────────────────────────────────────────────
@@ -120,8 +214,10 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
               slug: String(row['slug'] ?? '').trim() ||
                 productName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
               description: String(row['description'] ?? '').trim(),
-              category_id: row['category_id'] ? Number(row['category_id']) : null,
+              category_id: null,
+              category_name: String(row['kategori_utama'] ?? row['kategori'] ?? row['category_id'] ?? '').trim(),
               retail_category_id: null,
+              retail_category_name: String(row['kategori_retail'] ?? '').trim(),
               retail_subcategory_id: null,
               sku: String(row['sku'] ?? '').trim(),
               is_active: String(row['is_active'] ?? 'ya').trim().toLowerCase() !== 'tidak',
