@@ -5,6 +5,7 @@ import {
   useRollerbladeSettings,
   DEFAULT_ROLLERBLADE_PAGE_SETTINGS,
 } from "../hooks/useRollerbladeSettings";
+import { Ticket, Clock, MapPin, CreditCard, ShieldCheck, Footprints, Info, AlertTriangle } from "lucide-react";
 
 export default function RollerbladePage() {
   const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
@@ -66,6 +67,74 @@ export default function RollerbladePage() {
                     "Nikmati pengalaman bermain rollerblade yang seru"}
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Info & Pricing Cards */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-24 relative z-20 mb-8 sm:mb-16">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center transform transition-transform md:hover:-translate-y-2">
+              <div className="w-16 h-16 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mb-4">
+                <Ticket className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Harga Sewa</h3>
+              <p className="text-3xl font-black text-pink-600 mb-2">Rp 85.000</p>
+              <p className="text-gray-500 text-sm">per orang / 1 Jam bermain</p>
+              <p className="text-gray-400 text-xs mt-1">*Termasuk Sepatu & Pelindung</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center transform transition-transform md:hover:-translate-y-2">
+              <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Jam Buka</h3>
+              <div className="text-gray-600 space-y-1">
+                <p><strong>Setiap Hari:</strong> 09:00 - 17:00</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center transform transition-transform md:hover:-translate-y-2">
+              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                <MapPin className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Lokasi Kasir</h3>
+              <p className="text-gray-600">
+                Pembelian tiket dilakukan secara offline langsung di <strong>Lantai 2 SparkStage</strong>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* How to Play / Alur Sewa */}
+        <section className="bg-gray-50 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Cara Sewa Rollerblade</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">4 langkah mudah untuk mulai meluncur di arena kami</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                { step: 1, title: "Kunjungi Kasir", desc: "Datang langsung ke kasir SparkStage di lantai 2.", icon: <MapPin className="w-6 h-6" /> },
+                { step: 2, title: "Lakukan Pembayaran", desc: "Bayar tiket masuk via Cash atau QRIS.", icon: <CreditCard className="w-6 h-6" /> },
+                { step: 3, title: "Ambil Perlengkapan", desc: "Tukar struk dengan sepatu dan pelindung.", icon: <ShieldCheck className="w-6 h-6" /> },
+                { step: 4, title: "Let's Roll!", desc: "Nikmati arena rollerblade bersama teman-teman.", icon: <Footprints className="w-6 h-6" /> }
+              ].map((item) => (
+                <div key={item.step} className="relative flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-pink-500 text-pink-500 mb-4 z-10 relative">
+                    {item.icon}
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white rounded-full text-xs font-bold flex items-center justify-center">
+                      {item.step}
+                    </div>
+                  </div>
+                  {/* Decorative line */}
+                  {item.step !== 4 && (
+                    <div className="hidden lg:block absolute top-8 left-[60%] w-full h-[2px] bg-pink-200" />
+                  )}
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -194,6 +263,51 @@ export default function RollerbladePage() {
                 💡 Hover pada setiap box untuk melihat detail lebih lanjut
               </span>
             </p>
+          </div>
+        </section>
+
+        {/* Aturan & Persiapan */}
+        <section className="py-16">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-pink-50 rounded-3xl p-8 md:p-12 border border-pink-100 flex flex-col md:flex-row gap-8 items-center">
+              <div className="md:w-1/3 text-center md:text-left">
+                <div className="w-20 h-20 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mb-6 mx-auto md:mx-0">
+                  <AlertTriangle className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Hal Penting!</h2>
+                <p className="text-gray-600">Pastikan Anda membaca panduan ini sebelum bermain untuk kenyamanan bersama.</p>
+              </div>
+              <div className="md:w-2/3 grid sm:grid-cols-2 gap-6">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <Footprints className="w-5 h-5 text-pink-500" />
+                    Wajib Kaos Kaki
+                  </h4>
+                  <p className="text-sm text-gray-600">Anda diwajibkan memakai kaos kaki. Bawa dari rumah atau beli di kasir.</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-500" />
+                    Pakaian Nyaman
+                  </h4>
+                  <p className="text-sm text-gray-600">Gunakan pakaian kasual yang nyaman dan menyerap keringat.</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-green-500" />
+                    Gunakan Pelindung
+                  </h4>
+                  <p className="text-sm text-gray-600">Helm dan pelindung lutut/siku disediakan. Sangat disarankan untuk dipakai.</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-purple-500" />
+                    Batas Waktu
+                  </h4>
+                  <p className="text-sm text-gray-600">Sewa berlaku untuk 1 jam. Keterlambatan mungkin dikenakan biaya tambahan.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
