@@ -245,9 +245,8 @@ serve(async (req: Request) => {
       },
       payment: {
         payment_due_date: PAYMENT_EXPIRY_MINUTES,
-        payment_method_types: dokuEnv.paymentMethodTypes.includes("QRIS")
-          ? ["QRIS"]
-          : dokuEnv.paymentMethodTypes,
+        // No payment_method_types filter - show all available methods (QRIS, VA, e-wallet, etc.)
+        // Same behavior as ticket checkout
       },
       customer: {
         name: sanitizeDokuString(payload.customerName, 255),
