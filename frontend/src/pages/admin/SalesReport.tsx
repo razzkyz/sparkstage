@@ -96,6 +96,22 @@ interface RentalOrderRow {
   }[];
 }
 
+interface RollerbladeRow {
+  id: number;
+  invoice_number: string;
+  customer_name: string;
+  customer_phone: string | null;
+  rental_date: string;
+  shoe_size: string;
+  duration_hours: number;
+  price_per_hour: number;
+  total_price: number;
+  payment_status: string;
+  rental_status: string;
+  paid_at: string | null;
+  created_at: string;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatRupiah(n: number) {
@@ -278,6 +294,31 @@ function useDressingRoomSales(enabled: boolean) {
   });
 }
 
+function useRollerbladeSales(enabled: boolean) {
+  return useQuery({
+    queryKey: ['sales-report-rollerblade'],
+    enabled,
+    queryFn: async () => {
+      let allData: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('rentals')
+          .select('id, invoice_number, customer_name, customer_phone, rental_date, shoe_size, duration_hours, price_per_hour, total_price, payment_status, rental_status, paid_at, created_at')
+          .eq('payment_status', 'paid')
+          .order('paid_at', { ascending: false, nullsFirst: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (error) throw error;
+        allData = [...allData, ...(data ?? [])];
+        if (!data || data.length < pageSize) break;
+        page++;
+      }
+      return allData as unknown as RollerbladeRow[];
+    },
+  });
+}
+
 export default function SalesReport() {
   const { signOut, session } = useAuth();
   const menuSections = useAdminMenuSections();
@@ -294,18 +335,20 @@ export default function SalesReport() {
   const [to,   setTo]   = useState(today);
   const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | 'used' | 'active'>('all');
   const [ticketDateFilterType, setTicketDateFilterType] = useState<'created_at' | 'valid_date'>('created_at');
-  const [tab, setTab] = useState<'tickets' | 'products' | 'prints' | 'socks' | 'dressing-room'>('tickets');
+  const [tab, setTab] = useState<'tickets' | 'products' | 'prints' | 'socks' | 'dressing-room' | 'rollerblade'>('tickets');
   const [ticketPage, setTicketPage] = useState(1);
   const [productPage, setProductPage] = useState(1);
   const [printPage, setPrintPage] = useState(1);
   const [sockPage, setSockPage] = useState(1);
   const [dressingRoomPage, setDressingRoomPage] = useState(1);
+  const [rollerbladePage, setRollerbladePage] = useState(1);
 
   const { data: tickets  = [], isLoading: ticketsLoading,  error: ticketsError, refetch: refetchTickets } = useTicketSales(queryEnabled);
   const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProductSales(queryEnabled);
   const { data: prints   = [], isLoading: printsLoading,   error: printsError, refetch: refetchPrints } = usePrintSales(queryEnabled);
   const { data: socks    = [], isLoading: socksLoading,    error: socksError, refetch: refetchSocks } = useSockSales(queryEnabled);
   const { data: dressingRooms = [], isLoading: dressingRoomsLoading, error: dressingRoomsError, refetch: refetchDressingRooms } = useDressingRoomSales(queryEnabled);
+  const { data: rollerblades = [], isLoading: rollerbladesLoading, error: rollerbladesError, refetch: refetchRollerblades } = useRollerbladeSales(queryEnabled);
 
   // Auto-refresh effect (every 10 seconds, silent)
   useEffect(() => {
@@ -317,12 +360,13 @@ export default function SalesReport() {
       refetchPrints();
       refetchSocks();
       refetchDressingRooms();
+      refetchRollerblades();
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-  }, [queryEnabled, refetchTickets, refetchProducts, refetchPrints, refetchSocks, refetchDressingRooms]);
+  }, [queryEnabled, refetchTickets, refetchProducts, refetchPrints, refetchSocks, refetchDressingRooms, refetchRollerblades]);
 
-  const queryError = ticketsError || productsError || printsError || socksError || dressingRoomsError;
+  const queryError = ticketsError || productsError || printsError || socksError || dressingRoomsError || rollerbladesError;
   const isAuthError = queryError instanceof Error &&
     (queryError.message.includes('JWT') ||
      queryError.message.includes('token') ||
@@ -399,6 +443,17 @@ export default function SalesReport() {
       return ms >= fromMs && ms <= toMs;
     }),
     [dressingRooms, fromMs, toMs]
+  );
+
+  const filteredRollerblades = useMemo(() =>
+    rollerblades.filter(r => {
+      // Use paid_at or created_at for filtering
+      const dateStr = r.paid_at || r.created_at;
+      if (!dateStr) return false;
+      const ms = new Date(dateStr).getTime();
+      return ms >= fromMs && ms <= toMs;
+    }),
+    [rollerblades, fromMs, toMs]
   );
 
   // ── Pagination ───────────────────────────────────────────────────
@@ -479,6 +534,21 @@ export default function SalesReport() {
     };
   }, [filteredDressingRooms, dressingRoomPage]);
 
+  const rollerbladePagination = useMemo(() => {
+    const total = filteredRollerblades.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    const page = Math.max(1, Math.min(rollerbladePage, totalPages));
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      data: filteredRollerblades.slice(start, end),
+      page,
+      totalPages,
+      total,
+      start,
+    };
+  }, [filteredRollerblades, rollerbladePage]);
+
   // ── Summaries ────────────────────────────────────────────────────────────
   const ticketStats = useMemo(() => {
     const paid = filteredTickets.length;
@@ -495,6 +565,7 @@ export default function SalesReport() {
     setPrintPage(1);
     setSockPage(1);
     setDressingRoomPage(1);
+    setRollerbladePage(1);
   }, [from, to]);
   
   const productStats = useMemo(() => {
@@ -527,9 +598,16 @@ export default function SalesReport() {
     console.log(`[SalesReport] Dressing Room - Count: ${orders}, Revenue: ${revenue}, Items: ${items}`);
     return { orders, revenue, items };
   }, [filteredDressingRooms]);
+  const rollerbladeStats = useMemo(() => {
+    const orders = filteredRollerblades.length;
+    const revenue = filteredRollerblades.reduce((s, r) => s + (r.total_price || 0), 0);
+    const hours = filteredRollerblades.reduce((s, r) => s + (r.duration_hours || 0), 0);
+    console.log(`[SalesReport] Rollerblade - Count: ${orders}, Revenue: ${revenue}, Hours: ${hours}`);
+    return { orders, revenue, hours };
+  }, [filteredRollerblades]);
 
-  const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue + sockStats.revenue + dressingRoomStats.revenue;
-  console.log(`[SalesReport] TOTAL REVENUE: ${totalRevenue} (Tickets: ${ticketStats.revenue} + Products: ${productStats.revenue} + Prints: ${printStats.revenue} + Socks: ${sockStats.revenue} + Dressing Room: ${dressingRoomStats.revenue})`);
+  const totalRevenue = ticketStats.revenue + productStats.revenue + printStats.revenue + sockStats.revenue + dressingRoomStats.revenue + rollerbladeStats.revenue;
+  console.log(`[SalesReport] TOTAL REVENUE: ${totalRevenue} (Tickets: ${ticketStats.revenue} + Products: ${productStats.revenue} + Prints: ${printStats.revenue} + Socks: ${sockStats.revenue} + Dressing Room: ${dressingRoomStats.revenue} + Rollerblade: ${rollerbladeStats.revenue})`);
 
   // ── XLSX Exports ──────────────────────────────────────────────────────────
   function exportTicketsXLSX() {
@@ -548,6 +626,27 @@ export default function SalesReport() {
     // Totals row
     rows.push({ 'No': '', 'Kode Tiket': '', 'Nama Tiket': 'TOTAL', 'Tanggal Valid': '', 'Sesi': '', 'Status': '', 'Harga (Rp)': ticketStats.revenue, 'Tanggal Beli': '', 'Tanggal Pakai': '' } as any);
     downloadXLSX(`laporan-tiket-${ts}.xlsx`, [{ name: 'Tiket Terjual', rows }]);
+  }
+
+  function exportRollerbladeXLSX() {
+    const ts = new Date().toISOString().slice(0, 10);
+    const rows = filteredRollerblades.map((r, i) => ({
+      'No': i + 1,
+      'No. Invoice': r.invoice_number,
+      'Nama Customer': r.customer_name,
+      'No. HP': r.customer_phone ?? '-',
+      'Tanggal Main': formatDate(r.rental_date),
+      'Durasi (Jam)': r.duration_hours,
+      'Ukuran Sepatu': r.shoe_size,
+      'Harga per Jam (Rp)': r.price_per_hour,
+      'Total (Rp)': r.total_price,
+      'Status Bayar': r.payment_status,
+      'Status Sewa': r.rental_status,
+      'Tanggal Bayar': formatDatetime(r.paid_at),
+      'Tanggal Buat': formatDatetime(r.created_at),
+    }));
+    rows.push({ 'No': '', 'No. Invoice': 'TOTAL', 'Nama Customer': '', 'No. HP': '', 'Tanggal Main': '', 'Durasi (Jam)': rollerbladeStats.hours, 'Ukuran Sepatu': '', 'Harga per Jam (Rp)': '', 'Total (Rp)': rollerbladeStats.revenue, 'Status Bayar': '', 'Status Sewa': '', 'Tanggal Bayar': '', 'Tanggal Buat': '' } as any);
+    downloadXLSX(`laporan-rollerblade-${ts}.xlsx`, [{ name: 'Sewa Rollerblade', rows }]);
   }
 
   function exportProductsXLSX() {
@@ -684,7 +783,7 @@ export default function SalesReport() {
     ]);
   }
 
-  const isLoading = tab === 'tickets' ? ticketsLoading : tab === 'products' ? productsLoading : tab === 'prints' ? printsLoading : tab === 'socks' ? socksLoading : dressingRoomsLoading;
+  const isLoading = tab === 'tickets' ? ticketsLoading : tab === 'products' ? productsLoading : tab === 'prints' ? printsLoading : tab === 'socks' ? socksLoading : tab === 'dressing-room' ? dressingRoomsLoading : rollerbladesLoading;
 
   return (
     <AdminLayout
@@ -720,7 +819,7 @@ export default function SalesReport() {
         </div>
       )}
       {/* ── Summary Cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         {[
           { label: 'Total Pendapatan', value: formatRupiah(totalRevenue), icon: 'payments', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
           { label: 'Tiket Terpakai', value: `${ticketStats.paid} tiket`, icon: 'confirmation_number', color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
@@ -729,6 +828,7 @@ export default function SalesReport() {
           { label: 'Pendapatan Cetak', value: formatRupiah(printStats.revenue), icon: 'print', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
           { label: 'Pendapatan Kaos Kaki', value: formatRupiah(sockStats.revenue), icon: 'checkroom', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200' },
           { label: 'Pendapatan Dressing Room', value: formatRupiah(dressingRoomStats.revenue), icon: 'checkroom', color: 'text-cyan-600', bg: 'bg-cyan-50 border-cyan-200' },
+          { label: 'Pendapatan Rollerblade', value: formatRupiah(rollerbladeStats.revenue), icon: 'roller_skating', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200' },
         ].map(card => (
           <div key={card.label} className={`rounded-xl border ${card.bg} p-4 flex flex-col gap-2`}>
             <div className="flex items-center gap-2">
@@ -851,6 +951,15 @@ export default function SalesReport() {
                 Dressing Room ({dressingRoomStats.orders})
               </span>
             </button>
+            <button
+              onClick={() => setTab('rollerblade')}
+              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${tab === 'rollerblade' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px]">roller_skating</span>
+                Rollerblade ({rollerbladeStats.orders})
+              </span>
+            </button>
           </div>
 
           {/* Actions */}
@@ -862,6 +971,7 @@ export default function SalesReport() {
                 refetchPrints();
                 refetchSocks();
                 refetchDressingRooms();
+                refetchRollerblades();
               }}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -871,8 +981,8 @@ export default function SalesReport() {
               <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
-              onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : tab === 'prints' ? exportPrintsXLSX : tab === 'socks' ? exportSocksXLSX : exportDressingRoomXLSX}
-              disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : tab === 'prints' ? prints.length === 0 : tab === 'socks' ? socks.length === 0 : dressingRooms.length === 0)}
+              onClick={tab === 'tickets' ? exportTicketsXLSX : tab === 'products' ? exportProductsXLSX : tab === 'prints' ? exportPrintsXLSX : tab === 'socks' ? exportSocksXLSX : tab === 'dressing-room' ? exportDressingRoomXLSX : exportRollerbladeXLSX}
+              disabled={isLoading || (tab === 'tickets' ? tickets.length === 0 : tab === 'products' ? products.length === 0 : tab === 'prints' ? prints.length === 0 : tab === 'socks' ? socks.length === 0 : tab === 'dressing-room' ? dressingRooms.length === 0 : rollerblades.length === 0)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
@@ -1459,6 +1569,122 @@ export default function SalesReport() {
                       onClick={() => setDressingRoomPage(p => Math.min(dressingRoomPagination.totalPages, p + 1))}
                       disabled={dressingRoomPagination.page === dressingRoomPagination.totalPages}
                       className="flex items-center gap-1 px-3 py-1.5 border border-cyan-300 rounded-lg text-sm font-medium text-cyan-700 hover:bg-cyan-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-700 disabled:hover:bg-gray-100"
+                    >
+                      Berikutnya
+                      <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === 'rollerblade' && (
+          <>
+            <div className="overflow-x-auto min-h-[400px]">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-gray-50/80 border-b border-gray-200">
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">No</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">No. Invoice</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Main</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Durasi (Jam)</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Ukuran</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Total (Rp)</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status Sewa</th>
+                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Order</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 9 }).map((_, j) => (
+                          <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse w-20" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : rollerbladePagination.data.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
+                        <span className="material-symbols-outlined text-4xl mb-2 block">inbox</span>
+                        Tidak ada data rollerblade di periode ini
+                      </td>
+                    </tr>
+                  ) : (
+                    rollerbladePagination.data.map((r, i) => (
+                      <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-500 text-xs">{rollerbladePagination.start + i + 1}</td>
+                        <td className="px-4 py-3 font-mono font-semibold text-gray-900 text-xs whitespace-nowrap">{r.invoice_number}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900 text-xs">{r.customer_name}</p>
+                          <p className="text-gray-400 text-xs">{r.customer_phone ?? '-'}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-900 text-xs font-bold">{formatDate(r.rental_date)}</td>
+                        <td className="px-4 py-3 text-gray-700 font-bold">{r.duration_hours}</td>
+                        <td className="px-4 py-3 text-gray-700 text-xs">{r.shoe_size}</td>
+                        <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{formatRupiah(r.total_price)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            r.rental_status === 'completed' ? 'bg-green-100 text-green-700' :
+                            r.rental_status === 'rental_active' ? 'bg-blue-100 text-blue-700' :
+                            r.rental_status === 'waiting_payment' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>{r.rental_status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDatetime(r.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {!isLoading && rollerbladePagination.data.length > 0 && (
+              <div className="px-4 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-gray-600">
+                  <span>
+                    Menampilkan <strong>{rollerbladePagination.start + 1}–{Math.min(rollerbladePagination.start + ITEMS_PER_PAGE, rollerbladePagination.total)}</strong> dari <strong>{rollerbladePagination.total}</strong> pesanan
+                  </span>
+                  <span>·</span>
+                  <span className="font-bold text-gray-900">{formatRupiah(rollerbladeStats.revenue)}</span>
+                </div>
+                
+                {rollerbladePagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setRollerbladePage(p => Math.max(1, p - 1))}
+                      disabled={rollerbladePagination.page === 1}
+                      className="flex items-center gap-1 px-3 py-1.5 border border-pink-300 rounded-lg text-sm font-medium text-pink-700 hover:bg-pink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-700 disabled:hover:bg-gray-100"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                      Sebelumnya
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: rollerbladePagination.totalPages }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setRollerbladePage(pageNum)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              rollerbladePagination.page === pageNum
+                                ? 'bg-pink-600 text-white'
+                                : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setRollerbladePage(p => Math.min(rollerbladePagination.totalPages, p + 1))}
+                      disabled={rollerbladePagination.page === rollerbladePagination.totalPages}
+                      className="flex items-center gap-1 px-3 py-1.5 border border-pink-300 rounded-lg text-sm font-medium text-pink-700 hover:bg-pink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-700 disabled:hover:bg-gray-100"
                     >
                       Berikutnya
                       <span className="material-symbols-outlined text-[16px]">chevron_right</span>
