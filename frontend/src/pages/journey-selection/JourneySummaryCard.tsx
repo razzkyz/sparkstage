@@ -84,7 +84,7 @@ export function JourneySummaryCard({
           <div className="flex-1 pt-1">
             <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">{copy.time_label}</p>
             <p className={`font-bold text-sm md:text-base ${(selectedTime || isAllDayTicket) ? 'text-gray-900' : 'text-gray-400 italic'}`}>
-              {selectedTime ? selectedTime.substring(0, 5) : isAllDayTicket ? copy.all_day_access_value_label : copy.not_selected_label}
+              {selectedTime ? selectedTime.substring(0, 5) : isAllDayTicket ? "2,5 hours all stage access" : copy.not_selected_label}
             </p>
           </div>
         </motion.div>

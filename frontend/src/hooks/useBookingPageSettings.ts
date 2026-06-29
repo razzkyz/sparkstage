@@ -48,7 +48,7 @@ export const DEFAULT_BOOKING_PAGE_SETTINGS: BookingPageSettings = {
   date_label: 'Tanggal',
   time_label: 'Akses',
   not_selected_label: 'Belum dipilih',
-  all_day_access_value_label: 'All Day Experience',
+  all_day_access_value_label: '2,5 hours all stage access',
   quantity_label: 'Berapa Tiket?',
   max_tickets_label_template: 'Maks {count} per pesanan',
   ticket_price_label: 'Harga Tiket',
