@@ -55,10 +55,10 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
     setSuccess(null);
   }, []);
 
-  const handleNew = useCallback(() => {
+  const handleNew = useCallback((deptOverride?: typeof selectedDepartment) => {
     setEditingId(null);
     const emptyDraft = emptyCategoryDraft();
-    emptyDraft.department = selectedDepartment;
+    emptyDraft.department = deptOverride ?? selectedDepartment;
     setDraft(emptyDraft);
     setSlugTouched(false);
     setError(null);
@@ -107,11 +107,12 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
       await fetchCategories();
       onUpdate();
       setEditingId(null);
-      
+
+      // Use draft.department (not selectedDepartment) to avoid stale closure
       const newDraft = emptyCategoryDraft();
-      newDraft.department = selectedDepartment;
+      newDraft.department = draft.department;
       setDraft(newDraft);
-      
+
       setSlugTouched(false);
       setSuccess('Category saved successfully!');
       

@@ -35,6 +35,9 @@ export const mapInventoryProducts = (productsRaw: ProductRow[]): InventoryProduc
     const variants = (row.product_variants || []).filter((variant) => variant.is_active !== false);
     const categoryName = row.categories?.name || 'Uncategorized';
     const categorySlug = row.categories?.slug;
+    const departmentName = row.retail_categories?.department || '';
+    const retailCategoryName = row.retail_categories?.name || '';
+    const subCategoryName = row.sub_categories?.name || '';
 
     let stockAvailable = 0;
     let priceMin = Number.POSITIVE_INFINITY;
@@ -73,6 +76,9 @@ export const mapInventoryProducts = (productsRaw: ProductRow[]): InventoryProduc
       is_active: row.is_active,
       category: categoryName,
       category_slug: categorySlug,
+      department: departmentName,
+      retail_category_name: retailCategoryName,
+      sub_category: subCategoryName,
       stock_available: stockAvailable,
       stock_status: computeStockStatus(stockAvailable),
       price_min: priceMin,

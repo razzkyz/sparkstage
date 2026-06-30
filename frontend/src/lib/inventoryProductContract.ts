@@ -166,7 +166,10 @@ export function validateInventorySavePayload(
     }
   }
 
-  if (payload.categoryId == null || payload.categoryId <= 0) {
+  if (
+    (payload.categoryId == null || payload.categoryId <= 0) &&
+    (payload.retailCategoryId == null || payload.retailCategoryId <= 0)
+  ) {
     return {
       message: 'Kategori produk wajib dipilih.',
       code: 'INVENTORY_CATEGORY_REQUIRED',

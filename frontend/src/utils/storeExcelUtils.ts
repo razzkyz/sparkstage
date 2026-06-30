@@ -10,7 +10,9 @@ export function exportStoreStockReportToExcel(products: InventoryProduct[]) {
   const rows: Record<string, unknown>[] = products.map((product) => ({
     product_name: product.name,
     sku: product.sku,
-    category: product.category,
+    department: product.department || '',
+    category: product.retail_category_name || product.category,
+    sub_category: product.sub_category || '',
     is_active: product.is_active ? 'ya' : 'tidak',
     price_min: product.price_min,
     price_max: product.price_max,

@@ -55,22 +55,23 @@ Di `frontend/src/utils/storeExcelUtils.ts`, kita akan mengubah logika parsing:
 
 ## 4. Fase Eksekusi
 
-### Fase 1: Database Migration (SQL)
-- Membuat file migrasi baru di `supabase/migrations/`.
-- Membuat tabel hierarki baru (jika belum ada) dan menambahkan kolom relasi ke `products` tanpa menghapus yang lama.
-- Membuat RLS (Row Level Security) untuk tabel-tabel kategori yang baru.
+### Fase 1: Database Migration (SQL) - ✅ SELESAI
+- ✅ Membuat file migrasi baru di `supabase/migrations/`.
+- ✅ Membuat tabel hierarki baru (seperti `departments`) dan menambahkan kolom relasi ke `products` tanpa menghapus yang lama.
+- ✅ Migrasi Kategori "Dressing" dan "Spark Club" yang terstruktur dengan hierarki baru.
 
-### Fase 2: Auto-Backfill Migrasi Data (Otomatis tanpa isi manual)
-- Di dalam script SQL yang sama (atau terpisah), kita akan menyisipkan perintah untuk **menyalin dan memetakan data lama secara otomatis** ke kolom baru.
-- **Contoh:** Produk yang tadinya punya Kategori Utama "Fashion" akan otomatis diset `Department = Fashion`.
-- Ini memastikan bahwa saat Anda pertama kali meng-export Excel dengan sistem baru, kolom Department dan Category **sudah terisi penuh oleh sistem**, sehingga Anda tidak perlu mengetik ulang secara manual dari awal.
+### Fase 2: Auto-Backfill Migrasi Data (Otomatis tanpa isi manual) - ✅ SELESAI
+- ✅ Menyisipkan perintah untuk **menyalin dan memetakan data lama secara otomatis** ke kolom baru.
+- ✅ Script `automap_dressing_products` dibuat untuk mengelompokkan produk tanpa kategori (seperti tas, celana, dll) masuk otomatis ke departemen "Dressing" dengan kategorinya masing-masing.
+- ✅ Memastikan transaksi production berjalan tanpa hambatan.
 
-### Fase 3: Backend Types & Helpers
-- Menjalankan sinkronisasi tipe TS (`database.types.ts`).
-- Mengupdate hooks (seperti `useCategories.ts`) untuk mengambil data dari struktur hierarki yang baru.
+### Fase 3: Backend Types & Helpers - ✅ SELESAI
+- ✅ Menjalankan sinkronisasi tipe TS / manual update interface (seperti `ProductRow` & `InventoryProduct`) agar membaca `department` dan `sub_categories`.
+- ✅ Mengupdate hooks (`useCategories.ts`, `inventoryQuerySchema.ts`, `inventoryProducts.ts`) untuk mengambil dan memetakan data dari struktur hierarki yang baru (`retail_categories` untuk department & subcategory).
 
-### Fase 4: Update Fitur Excel (Frontend)
-- Mengubah `ProductCSVImportModal.tsx` untuk menampilkan instruksi format kolom yang baru.
-- Mengubah fungsi `downloadStoreProductTemplateExcel` dan `parseStoreProductsFromFile` di `storeExcelUtils.ts` untuk mengakomodasi teks `Department`, `Category`, dan `Sub-Category`.
-- Setelah ini selesai, saat Anda menekan tombol Export, data yang keluar sudah terisi lengkap dengan struktur baru.
+### Fase 4: Update Fitur Excel (Frontend) - ✅ SELESAI
+- ✅ Mengubah `ProductCSVImportModal.tsx` untuk menampilkan instruksi format kolom yang baru dan mengakomodasi auto-matching `department`, `category`, dan `sub_category`.
+- ✅ Mengubah fungsi `downloadStoreProductTemplateExcel` dan `parseStoreProductsFromFile` di `storeExcelUtils.ts` untuk mengakomodasi teks Department, Category, dan Sub-Category.
+- ✅ Memperbarui fungsi `exportStoreStockReportToExcel` agar laporan stok yang di-download sudah mengekspor kolom `Department`, `Category`, dan `Sub-Category`.
+- ✅ Ekspor dan Impor produk dengan hierarki kategori kini dapat berjalan mulus menggunakan antarmuka berbasis teks untuk admin.
 

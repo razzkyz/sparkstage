@@ -39,7 +39,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
                 key={dept}
                 onClick={() => {
                   controller.setSelectedDepartment(dept);
-                  controller.handleNew();
+                  controller.handleNew(dept);
                 }}
                 className={`px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors ${
                   controller.selectedDepartment === dept

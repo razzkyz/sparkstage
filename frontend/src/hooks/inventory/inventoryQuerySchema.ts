@@ -16,7 +16,8 @@ export const getInventorySelect = (categoryFilter: string, departmentFilter?: st
   is_active,
   deleted_at,
   categories${isFilteringByOldCategory ? '!inner' : ''}(id, name, slug),
-  retail_categories!products_retail_category_id_fkey${isFilteringByDept ? '!inner' : ''}(id, department),
+  retail_categories!products_retail_category_id_fkey${isFilteringByDept ? '!inner' : ''}(id, name, department),
+  sub_categories:retail_categories!products_retail_subcategory_id_fkey(id, name),
   product_images(image_url, is_primary, display_order),
   product_variants(
     id,

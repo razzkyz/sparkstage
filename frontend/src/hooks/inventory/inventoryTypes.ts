@@ -28,6 +28,8 @@ export type ProductRow = {
   is_active: boolean;
   deleted_at: string | null;
   categories?: { id: number; name: string; slug: string; is_active: boolean | null } | null;
+  retail_categories?: { id: number; name: string; department: string } | null;
+  sub_categories?: { id: number; name: string } | null;
   product_variants?: ProductVariantRow[] | null;
   product_images?: ProductImageRow[] | null;
 };

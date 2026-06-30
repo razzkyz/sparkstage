@@ -3,6 +3,7 @@ import type { ProductDraft } from './ProductFormModal';
 import { downloadStoreProductTemplateExcel, parseStoreProductsFromFile } from '../../utils/storeExcelUtils';
 import { useCategories } from '../../hooks/useCategories';
 import { useRetailCategories } from '../../hooks/useRetailCategories';
+import { supabase } from '../../lib/supabase';
 
 interface ProductCSVImportModalProps {
   isOpen: boolean;
@@ -49,6 +50,16 @@ export function ProductCSVImportModal({
       const drafts: ProductDraft[] = [];
       let currentRetailCategories = [...(retailCategories || [])];
 
+      // Ambil daftar slug produk yang sudah ada untuk fitur UPSERT (Update/Insert)
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('id, slug')
+        .is('deleted_at', null);
+      
+      const existingSlugMap = new Map(
+        (existingProducts || []).map(p => [p.slug, p.id])
+      );
+
       for (const p of parsedProducts) {
         let matchedCategoryId = p.category_id;
         if (!matchedCategoryId && p.category_name && categories) {
@@ -74,7 +85,7 @@ export function ProductCSVImportModal({
             const newCategory = await createCategory({
               name: p.retail_category_name,
               department: validDept,
-              slug: p.retail_category_name.toLowerCase().replace(/\s+/g, '-'),
+              slug: `${validDept}-${p.retail_category_name.toLowerCase().replace(/\s+/g, '-')}`,
               parent_id: null,
               is_active: true
             });
@@ -102,7 +113,7 @@ export function ProductCSVImportModal({
             const newSub = await createCategory({
               name: p.retail_subcategory_name,
               department: validDept,
-              slug: p.retail_subcategory_name.toLowerCase().replace(/\s+/g, '-'),
+              slug: `${validDept}-${p.retail_category_name?.toLowerCase().replace(/\s+/g, '-')}-${p.retail_subcategory_name.toLowerCase().replace(/\s+/g, '-')}`,
               parent_id: matchedRetailCategoryId,
               is_active: true
             });
@@ -115,8 +126,10 @@ export function ProductCSVImportModal({
           }
         }
 
+        const productId = existingSlugMap.get(p.slug) || undefined;
+
         drafts.push({
-          id: undefined,
+          id: productId,
           name: p.name,
           slug: p.slug,
           description: p.description,
