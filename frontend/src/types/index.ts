@@ -39,7 +39,7 @@ export interface ProductRetail {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  retail_category: "glam" | "charmbar" | "sparkclub" | null;
+  retail_category: "glam" | "charmbar" | "sparkclub" | "dressing" | null;
   retail_category_id: number | null;
   retail_subcategory_id: number | null;
   variant: string | null;

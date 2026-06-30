@@ -19,7 +19,7 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [expandedParents, setExpandedParents] = useState<number[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<'glam' | 'charmbar' | 'sparkclub'>('glam');
+  const [selectedDepartment, setSelectedDepartment] = useState<'glam' | 'charmbar' | 'sparkclub' | 'dressing'>('glam');
 
   const [draft, setDraft] = useState<CategoryDraft>(() => {
     const d = emptyCategoryDraft();

@@ -31,7 +31,6 @@ export function exportStoreStockReportToExcel(products: InventoryProduct[]) {
 // ─── TEMPLATE ─────────────────────────────────────────────────────────────────
 
 export async function downloadStoreProductTemplateExcel(categories: CategoryOption[] = [], retailCategories: CategoryOption[] = []) {
-  const defaultCategory = categories.length > 0 ? categories[0].name : 'Apparel';
   let sample: any[] = [];
 
   try {
@@ -40,7 +39,8 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
       .select(`
         name, slug, sku, description, is_active,
         categories (name),
-        retail_categories!products_retail_category_id_fkey (name),
+        retail_categories!products_retail_category_id_fkey (name, department),
+        sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
         product_variants (name, sku, price, stock, is_active)
       `)
       .is('deleted_at', null)
@@ -48,8 +48,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
 
     if (!error && dbProducts && dbProducts.length > 0) {
       dbProducts.forEach((p: any) => {
-        const categoryName = p.categories?.name || '';
-        const retailCategoryName = p.retail_categories?.name || '';
+        const departmentName = p.retail_categories?.department || '';
+        const categoryName = p.retail_categories?.name || '';
+        const subCategoryName = p.sub_categories?.name || '';
         const variants = Array.isArray(p.product_variants) 
           ? p.product_variants.filter((v: any) => v.is_active !== false)
           : [];
@@ -61,8 +62,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
               slug: index === 0 ? (p.slug || '') : '',
               sku: index === 0 ? (p.sku || '') : '',
               description: index === 0 ? (p.description || '') : '',
-              kategori_utama: index === 0 ? categoryName : '',
-              kategori_retail: index === 0 ? retailCategoryName : '',
+              department: index === 0 ? departmentName : '',
+              category: index === 0 ? categoryName : '',
+              sub_category: index === 0 ? subCategoryName : '',
               is_active: index === 0 ? (p.is_active ? 'ya' : 'tidak') : '',
               variant_name: v.name,
               variant_sku: v.sku,
@@ -78,8 +80,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
             slug: p.slug || '',
             sku: p.sku || '',
             description: p.description || '',
-            kategori_utama: categoryName,
-            kategori_retail: retailCategoryName,
+            department: departmentName,
+            category: categoryName,
+            sub_category: subCategoryName,
             is_active: p.is_active ? 'ya' : 'tidak',
             variant_name: 'Default',
             variant_sku: p.sku || '',
@@ -102,8 +105,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         slug: 'kaos-polos-hitam',
         sku: 'KPH-001',
         description: 'Kaos polos bahan katun combed',
-        kategori_utama: defaultCategory,
-        kategori_retail: '',
+        department: 'sparkclub',
+        category: 'Apparel',
+        sub_category: 't-shirts',
         is_active: 'ya',
         variant_name: 'Size S',
         variant_sku: 'KPH-S-001',
@@ -117,8 +121,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         slug: '',
         sku: '',
         description: '',
-        kategori_utama: '',
-        kategori_retail: '',
+        department: '',
+        category: '',
+        sub_category: '',
         is_active: '',
         variant_name: 'Size M',
         variant_sku: 'KPH-M-001',
@@ -128,14 +133,15 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         color: 'Hitam',
       },
       {
-        product_name: 'Celana Cargo Olive',
-        slug: 'celana-cargo-olive',
-        sku: 'CCO-001',
-        description: 'Celana cargo panjang warna olive',
-        kategori_utama: defaultCategory,
-        kategori_retail: '',
+        product_name: 'Kacamata Retro',
+        slug: 'kacamata-retro',
+        sku: 'GLS-001',
+        description: 'Kacamata gaya retro vintage',
+        department: 'glam',
+        category: 'GLASSES',
+        sub_category: 'sunglasses',
         is_active: 'ya',
-        variant_name: 'Size 30',
+        variant_name: 'Hitam',
         variant_sku: 'CCO-30-001',
         price: 150000,
         stock: 5,
@@ -152,12 +158,22 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
   const categoryData: { 'Nama Kategori': string; 'Tipe': string; 'Keterangan': string }[] = [];
   
   if (categories.length > 0) {
-    categories.forEach(c => {
-      categoryData.push({
-        'Nama Kategori': c.name,
-        'Tipe': 'Kategori Utama',
-        'Keterangan': 'Copy ke kolom kategori_utama'
-      });
+    categoryData.push({
+      'Nama Kategori': 'sparkclub',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
+    }, {
+      'Nama Kategori': 'glam',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
+    }, {
+      'Nama Kategori': 'charmbar',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
+    }, {
+      'Nama Kategori': 'dressing',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
     });
   }
 
@@ -165,8 +181,8 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
     retailCategories.forEach(c => {
       categoryData.push({
         'Nama Kategori': c.name,
-        'Tipe': 'Kategori Retail (Charm Bar dll)',
-        'Keterangan': 'Copy ke kolom kategori_retail'
+        'Tipe': 'Category',
+        'Keterangan': 'Copy ke kolom category'
       });
     });
   }
@@ -215,10 +231,11 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
                 productName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
               description: String(row['description'] ?? '').trim(),
               category_id: null,
-              category_name: String(row['kategori_utama'] ?? row['kategori'] ?? row['category_id'] ?? '').trim(),
+              category_name: String(row['department'] ?? row['kategori_utama'] ?? row['category_id'] ?? '').trim(),
               retail_category_id: null,
-              retail_category_name: String(row['kategori_retail'] ?? '').trim(),
+              retail_category_name: String(row['category'] ?? row['kategori_retail'] ?? '').trim(),
               retail_subcategory_id: null,
+              retail_subcategory_name: String(row['sub_category'] ?? '').trim(),
               sku: String(row['sku'] ?? '').trim(),
               is_active: String(row['is_active'] ?? 'ya').trim().toLowerCase() !== 'tidak',
               variants: [],

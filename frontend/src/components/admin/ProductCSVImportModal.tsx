@@ -23,7 +23,7 @@ export function ProductCSVImportModal({
   const [fileName, setFileName] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
   const { data: categories } = useCategories();
-  const { categories: retailCategories } = useRetailCategories();
+  const { categories: retailCategories, createCategory } = useRetailCategories();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,7 +46,10 @@ export function ProductCSVImportModal({
     if (parsedProducts.length === 0) return;
 
     try {
-      const drafts: ProductDraft[] = parsedProducts.map((p) => {
+      const drafts: ProductDraft[] = [];
+      let currentRetailCategories = [...(retailCategories || [])];
+
+      for (const p of parsedProducts) {
         let matchedCategoryId = p.category_id;
         if (!matchedCategoryId && p.category_name && categories) {
           const matched = categories.find(c => c.name.toLowerCase() === p.category_name!.toLowerCase());
@@ -56,14 +59,63 @@ export function ProductCSVImportModal({
         }
 
         let matchedRetailCategoryId = p.retail_category_id;
-        if (!matchedRetailCategoryId && p.retail_category_name && retailCategories) {
-          const matchedRetail = retailCategories.find(c => c.name.toLowerCase() === p.retail_category_name!.toLowerCase());
+        if (!matchedRetailCategoryId && p.retail_category_name) {
+          const dept = p.category_name?.toLowerCase() || 'glam';
+          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing') : 'glam';
+
+          let matchedRetail = currentRetailCategories.find(c => 
+            c.name.toLowerCase() === p.retail_category_name!.toLowerCase() &&
+            c.parent_id === null &&
+            c.department.toLowerCase() === validDept
+          );
+
+          if (!matchedRetail && createCategory) {
+            // Auto-create category
+            const newCategory = await createCategory({
+              name: p.retail_category_name,
+              department: validDept,
+              slug: p.retail_category_name.toLowerCase().replace(/\s+/g, '-'),
+              parent_id: null,
+              is_active: true
+            });
+            currentRetailCategories.push(newCategory);
+            matchedRetail = newCategory;
+          }
+
           if (matchedRetail) {
             matchedRetailCategoryId = matchedRetail.id;
           }
         }
 
-        return {
+        let matchedRetailSubcategoryId = p.retail_subcategory_id;
+        if (!matchedRetailSubcategoryId && p.retail_subcategory_name && matchedRetailCategoryId) {
+          const dept = p.category_name?.toLowerCase() || 'glam';
+          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing') : 'glam';
+
+          let matchedSub = currentRetailCategories.find(c => 
+            c.name.toLowerCase() === p.retail_subcategory_name!.toLowerCase() &&
+            c.parent_id === matchedRetailCategoryId
+          );
+
+          if (!matchedSub && createCategory) {
+            // Auto-create subcategory
+            const newSub = await createCategory({
+              name: p.retail_subcategory_name,
+              department: validDept,
+              slug: p.retail_subcategory_name.toLowerCase().replace(/\s+/g, '-'),
+              parent_id: matchedRetailCategoryId,
+              is_active: true
+            });
+            currentRetailCategories.push(newSub);
+            matchedSub = newSub;
+          }
+
+          if (matchedSub) {
+            matchedRetailSubcategoryId = matchedSub.id;
+          }
+        }
+
+        drafts.push({
           id: undefined,
           name: p.name,
           slug: p.slug,
@@ -72,12 +124,13 @@ export function ProductCSVImportModal({
           category_name: p.category_name,
           retail_category_id: matchedRetailCategoryId,
           retail_category_name: p.retail_category_name,
-          retail_subcategory_id: null,
+          retail_subcategory_id: matchedRetailSubcategoryId,
+          retail_subcategory_name: p.retail_subcategory_name,
           sku: p.sku,
           is_active: p.is_active,
           variants: p.variants,
-        };
-      });
+        });
+      }
 
       await onImport(drafts);
       setParsedProducts([]);
@@ -115,10 +168,10 @@ export function ProductCSVImportModal({
             <div>
               <p className="text-sm text-blue-900 font-semibold mb-1">Import Excel Produk</p>
               <p className="text-xs text-blue-800 font-mono leading-5">
-                product_name, sku, description, kategori_utama, kategori_retail, price, stock, variant_name, variant_sku, color, size, is_active, slug
+                product_name, sku, description, department, category, sub_category, price, stock, variant_name, variant_sku, color, size, is_active, slug
               </p>
               <p className="text-xs text-blue-800 mt-2">
-                Wajib: product_name, sku | Opsional: kolom lainnya (isi "kategori_utama" / "kategori_retail" dengan nama kategorinya)
+                Wajib: product_name, sku | Opsional: kolom lainnya (isi "department" / "category" / "sub_category" dengan teks nama kategorinya)
               </p>
             </div>
             <button

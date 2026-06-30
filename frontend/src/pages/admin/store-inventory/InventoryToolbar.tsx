@@ -34,12 +34,13 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
     <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
       {/* Row 1: Department Filter */}
       <div className="flex border-b border-gray-200">
-        {(['all', 'glam', 'charmbar', 'sparkclub'] as DepartmentFilter[]).map((dept) => {
+        {(['all', 'glam', 'charmbar', 'sparkclub', 'dressing'] as DepartmentFilter[]).map((dept) => {
           const labels: Record<DepartmentFilter, string> = {
             all: 'All Departments',
             glam: 'Glam',
             charmbar: 'Charm Bar',
             sparkclub: 'Spark Club',
+            dressing: 'Dressing',
           };
           return (
             <button
