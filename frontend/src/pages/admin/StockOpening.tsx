@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AdminLayout from '../../components/AdminLayout';
-import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
-import { useAuth } from '../../contexts/AuthContext';
-import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
-import { useUserRole } from '../../hooks/useUserRole';
-import { useStockOpeningList } from '../../hooks/useStockOpnameNew';
-import { StockOpeningTable } from './stock-opening/StockOpeningTable';
-import { StockOpeningFormModal } from './stock-opening/StockOpeningFormModal';
-import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import AdminLayout from "../../components/AdminLayout";
+import { useToast } from "../../components/Toast";
+import { ADMIN_MENU_ITEMS } from "../../constants/adminMenu";
+import { useAuth } from "../../contexts/AuthContext";
+import { useAdminMenuSections } from "../../hooks/useAdminMenuSections";
+import { useUserRole } from "../../hooks/useUserRole";
+import { useStockOpeningList } from "../../hooks/useStockOpnameNew";
+import { StockOpeningTable } from "./stock-opening/StockOpeningTable";
+import { StockOpeningFormModal } from "./stock-opening/StockOpeningFormModal";
+import TableRowSkeleton from "../../components/skeletons/TableRowSkeleton";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -20,14 +20,19 @@ const StockOpening = () => {
   const menuSections = useAdminMenuSections();
   const navigate = useNavigate();
 
-  const isOwner = role === 'owner';
+  const isOwner = role === "owner";
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [editingOpening, setEditingOpening] = useState<typeof stockOpeningList[0] | null>(null);
+  const [editingOpening, setEditingOpening] = useState<
+    (typeof stockOpeningList)[0] | null
+  >(null);
 
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-  const { data, isLoading, error, refetch } = useStockOpeningList(ITEMS_PER_PAGE, offset);
+  const { data, isLoading, error, refetch } = useStockOpeningList(
+    ITEMS_PER_PAGE,
+    offset,
+  );
 
   const stockOpeningList = data?.data ?? [];
   const totalCount = data?.total_count ?? 0;
@@ -37,14 +42,14 @@ const StockOpening = () => {
     navigate(`/admin/stock-opening/${openingId}`);
   };
 
-  const handleEdit = (opening: typeof stockOpeningList[0]) => {
+  const handleEdit = (opening: (typeof stockOpeningList)[0]) => {
     setEditingOpening(opening);
     setShowFormModal(true);
   };
 
   const handleCreateSuccess = (openingNumber: string) => {
-    const action = editingOpening ? 'diupdate' : 'dibuat';
-    showToast('success', `Stock opening ${openingNumber} berhasil ${action}!`);
+    const action = editingOpening ? "diupdate" : "dibuat";
+    showToast("success", `Stock opening ${openingNumber} berhasil ${action}!`);
     setShowFormModal(false);
     setEditingOpening(null);
     refetch();
@@ -57,33 +62,39 @@ const StockOpening = () => {
 
   const exportToXLSX = () => {
     if (stockOpeningList.length === 0) {
-      showToast('warning', 'Tidak ada data untuk diekspor');
+      showToast("warning", "Tidak ada data untuk diekspor");
       return;
     }
 
     try {
-      import('xlsx').then((XLSX) => {
+      import("xlsx").then((XLSX) => {
         const exportData = stockOpeningList.map((item) => ({
-          'Nomor Opening': item.opening_number,
-          'Tanggal': new Date(item.opening_date).toLocaleDateString('id-ID'),
-          'Lokasi': item.location,
-          'Status': {
-            draft: 'Draft',
-            confirmed: 'Confirmed',
-          }[item.status] || item.status,
-          'Jumlah Item': item.items_count || 0,
-          'Dibuat Oleh': item.created_by_email || '-',
-          'Tanggal Dibuat': new Date(item.created_at).toLocaleDateString('id-ID'),
+          "Nomor Opening": item.opening_number,
+          Tanggal: new Date(item.opening_date).toLocaleDateString("id-ID"),
+          Lokasi: item.location,
+          Status:
+            {
+              draft: "Draft",
+              confirmed: "Confirmed",
+            }[item.status] || item.status,
+          "Jumlah Item": item.items_count || 0,
+          "Dibuat Oleh": item.created_by_email || "-",
+          "Tanggal Dibuat": new Date(item.created_at).toLocaleDateString(
+            "id-ID",
+          ),
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock Opening');
-        XLSX.writeFile(workbook, `stock-opening-${new Date().toISOString().split('T')[0]}.xlsx`);
-        showToast('success', 'Data berhasil diekspor');
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Opening");
+        XLSX.writeFile(
+          workbook,
+          `stock-opening-${new Date().toISOString().split("T")[0]}.xlsx`,
+        );
+        showToast("success", "Data berhasil diekspor");
       });
     } catch (err) {
-      showToast('error', 'Gagal mengekspor data');
+      showToast("error", "Gagal mengekspor data");
     }
   };
 
@@ -101,7 +112,9 @@ const StockOpening = () => {
             aria-label="Export to XLSX"
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-green-600 px-3 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-green-700 sm:px-4"
           >
-            <span className="material-symbols-outlined text-[20px]">download</span>
+            <span className="material-symbols-outlined text-[20px]">
+              download
+            </span>
             <span className="hidden sm:inline">Export XLSX</span>
             <span className="sm:hidden">Export</span>
           </button>
@@ -123,7 +136,9 @@ const StockOpening = () => {
       <section className="flex flex-col gap-6">
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error instanceof Error ? error.message : 'Gagal memuat data stock opening'}
+            {error instanceof Error
+              ? error.message
+              : "Gagal memuat data stock opening"}
           </div>
         )}
 
@@ -148,11 +163,13 @@ const StockOpening = () => {
             <span className="material-symbols-outlined mb-4 text-6xl text-gray-400">
               inventory_2
             </span>
-            <h3 className="mb-2 text-lg font-bold text-gray-900">Belum ada stock opening</h3>
+            <h3 className="mb-2 text-lg font-bold text-gray-900">
+              Belum ada stock opening
+            </h3>
             <p className="mb-6 text-sm text-gray-500">
               {isOwner
-                ? 'Stock opening hanya bisa dibuat oleh admin'
-                : 'Mulai dengan membuat stock opening untuk hari ini'}
+                ? "Stock opening hanya bisa dibuat oleh admin"
+                : "Mulai dengan membuat stock opening untuk hari ini"}
             </p>
             {!isOwner && (
               <button
@@ -179,21 +196,29 @@ const StockOpening = () => {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage <= 1}
                     className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      chevron_left
+                    </span>
                     Prev
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage >= totalPages}
                     className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
-                    <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      chevron_right
+                    </span>
                   </button>
                 </div>
               </div>

@@ -1,37 +1,47 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import AdminLayout from '@/components/AdminLayout';
-import { AlertCircle, Upload, Search, Download } from 'lucide-react';
-import { ADMIN_MENU_ITEMS } from '@/constants/adminMenu';
-import { useAdminMenuSections } from '@/hooks/useAdminMenuSections';
-import { useAuth } from '@/contexts/AuthContext';
-import { DressingRoomCSVImportModal, type DressingRoomProductDraft } from '@/components/admin/DressingRoomCSVImportModal';
-import { DressingRoomProductModal } from '@/components/admin/DressingRoomProductModal';
-import { DressingRoomProductCard } from './dressing-room/DressingRoomProductCard';
-import TableRowSkeleton from '@/components/skeletons/TableRowSkeleton';
-import { exportDressingRoomProductsToExcel } from '@/utils/dressingRoomExcelUtils';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import AdminLayout from "@/components/AdminLayout";
+import { AlertCircle, Upload, Search, Download } from "lucide-react";
+import { ADMIN_MENU_ITEMS } from "@/constants/adminMenu";
+import { useAdminMenuSections } from "@/hooks/useAdminMenuSections";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DressingRoomCSVImportModal,
+  type DressingRoomProductDraft,
+} from "@/components/admin/DressingRoomCSVImportModal";
+import { DressingRoomProductModal } from "@/components/admin/DressingRoomProductModal";
+import { DressingRoomProductCard } from "./dressing-room/DressingRoomProductCard";
+import TableRowSkeleton from "@/components/skeletons/TableRowSkeleton";
+import { exportDressingRoomProductsToExcel } from "@/utils/dressingRoomExcelUtils";
 
 function DressingRoomProductList() {
   const queryClient = useQueryClient();
   const menuSections = useAdminMenuSections();
   const { signOut } = useAuth();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-asc' | 'name-desc'>('newest');
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "name-asc" | "name-desc"
+  >("newest");
   const [showImportModal, setShowImportModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Fetch products
-  const { data: products, isLoading, error } = useQuery({
-    queryKey: ['dressing-room-products'],
+  const {
+    data: products,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["dressing-room-products"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('dressing_room_products')
-        .select(`
+        .from("dressing_room_products")
+        .select(
+          `
           id,
           name,
           slug,
@@ -41,8 +51,9 @@ function DressingRoomProductList() {
           is_active,
           created_at,
           dressing_room_product_variants(id, name, sku, size_label, color, price, daily_rental_fee, total_quantity, is_active)
-        `)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -50,53 +61,70 @@ function DressingRoomProductList() {
   });
 
   // Filter and sort products
-  const filteredProducts = products?.filter((product: any) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return product.name.toLowerCase().includes(term) || product.slug.toLowerCase().includes(term);
-  }).sort((a: any, b: any) => {
-    if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
-    if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
-    return 0;
-  });
+  const filteredProducts = products
+    ?.filter((product: any) => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        product.name.toLowerCase().includes(term) ||
+        product.slug.toLowerCase().includes(term)
+      );
+    })
+    .sort((a: any, b: any) => {
+      if (sortBy === "newest")
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      if (sortBy === "oldest")
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      if (sortBy === "name-asc") return a.name.localeCompare(b.name);
+      if (sortBy === "name-desc") return b.name.localeCompare(a.name);
+      return 0;
+    });
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: number) => {
       const { error } = await supabase
-        .from('dressing_room_products')
+        .from("dressing_room_products")
         .delete()
-        .eq('id', productId);
+        .eq("id", productId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dressing-room-products'] });
+      queryClient.invalidateQueries({ queryKey: ["dressing-room-products"] });
     },
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ productId, isActive }: { productId: number, isActive: boolean }) => {
+    mutationFn: async ({
+      productId,
+      isActive,
+    }: {
+      productId: number;
+      isActive: boolean;
+    }) => {
       const { error } = await supabase
-        .from('dressing_room_products')
+        .from("dressing_room_products")
         .update({ is_active: isActive })
-        .eq('id', productId);
+        .eq("id", productId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dressing-room-products'] });
+      queryClient.invalidateQueries({ queryKey: ["dressing-room-products"] });
     },
   });
 
   const handleEdit = async (product: any) => {
     // Fetch full product data including variants for the modal
     const { data } = await supabase
-      .from('dressing_room_products')
-      .select('*, dressing_room_product_variants(*)')
-      .eq('id', product.id)
+      .from("dressing_room_products")
+      .select("*, dressing_room_product_variants(*)")
+      .eq("id", product.id)
       .single();
-    
+
     setEditingProduct(data);
     setModalOpen(true);
   };
@@ -116,7 +144,7 @@ function DressingRoomProductList() {
     try {
       for (const draft of drafts) {
         const { data: productData, error: productError } = await supabase
-          .from('dressing_room_products')
+          .from("dressing_room_products")
           .insert({
             name: draft.name,
             slug: draft.slug,
@@ -129,29 +157,27 @@ function DressingRoomProductList() {
           .single();
 
         if (productError) {
-          console.error('Failed to import product:', productError);
-          continue; 
+          console.error("Failed to import product:", productError);
+          continue;
         }
 
         for (const variant of draft.variants) {
-          await supabase
-            .from('dressing_room_product_variants')
-            .insert({
-              dressing_room_product_id: productData.id,
-              name: variant.name,
-              sku: variant.sku,
-              size_label: variant.size_label,
-              color: variant.color,
-              price: variant.price,
-              daily_rental_fee: variant.daily_rental_fee,
-              total_quantity: variant.total_quantity,
-              is_active: true,
-            });
+          await supabase.from("dressing_room_product_variants").insert({
+            dressing_room_product_id: productData.id,
+            name: variant.name,
+            sku: variant.sku,
+            size_label: variant.size_label,
+            color: variant.color,
+            price: variant.price,
+            daily_rental_fee: variant.daily_rental_fee,
+            total_quantity: variant.total_quantity,
+            is_active: true,
+          });
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['dressing-room-products'] });
+      queryClient.invalidateQueries({ queryKey: ["dressing-room-products"] });
     } catch (err) {
-      console.error('Error importing:', err);
+      console.error("Error importing:", err);
     } finally {
       setIsImporting(false);
       setShowImportModal(false);
@@ -170,8 +196,12 @@ function DressingRoomProductList() {
         <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-red-900">Error loading products</h3>
-            <p className="text-sm text-red-700">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            <h3 className="font-semibold text-red-900">
+              Error loading products
+            </h3>
+            <p className="text-sm text-red-700">
+              {error instanceof Error ? error.message : "Unknown error"}
+            </p>
           </div>
         </div>
       </AdminLayout>
@@ -196,15 +226,18 @@ function DressingRoomProductList() {
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Export Excel</span>
           </button>
-          <button 
+          <button
             onClick={() => setShowImportModal(true)}
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 sm:px-4"
           >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Import Excel</span>
           </button>
-          <button 
-            onClick={() => { setEditingProduct(null); setModalOpen(true); }}
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setModalOpen(true);
+            }}
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[#ff4b86] px-3 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-[#ff6a9a] sm:px-4"
           >
             <span className="material-symbols-outlined text-[20px]">add</span>
@@ -240,7 +273,9 @@ function DressingRoomProductList() {
             </select>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-500">
-            <div className="font-bold text-gray-900">{filteredProducts?.length || 0} items</div>
+            <div className="font-bold text-gray-900">
+              {filteredProducts?.length || 0} items
+            </div>
           </div>
         </div>
 
@@ -271,22 +306,32 @@ function DressingRoomProductList() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200">
               <Search className="h-6 w-6 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak ada produk ditemukan</h3>
-            <p className="text-sm text-gray-600 mb-6">Coba sesuaikan kata kunci pencarian Anda atau tambahkan produk baru.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Tidak ada produk ditemukan
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Coba sesuaikan kata kunci pencarian Anda atau tambahkan produk
+              baru.
+            </p>
             <div className="flex justify-center gap-3">
               {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
+                <button
+                  onClick={() => setSearchTerm("")}
                   className="inline-flex items-center px-4 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Hapus Pencarian
                 </button>
               )}
-              <button 
-                onClick={() => { setEditingProduct(null); setModalOpen(true); }}
+              <button
+                onClick={() => {
+                  setEditingProduct(null);
+                  setModalOpen(true);
+                }}
                 className="inline-flex items-center gap-2 rounded-lg bg-[#ff4b86] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-[#ff6a9a]"
               >
-                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  add
+                </span>
                 Buat Produk Baru
               </button>
             </div>
@@ -303,7 +348,7 @@ function DressingRoomProductList() {
       />
 
       {/* Import CSV Modal */}
-      <DressingRoomCSVImportModal 
+      <DressingRoomCSVImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImport={handleImport}

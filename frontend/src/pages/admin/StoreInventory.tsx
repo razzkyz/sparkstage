@@ -1,29 +1,32 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import AdminLayout from '../../components/AdminLayout';
-import CategoryManager from '../../components/admin/CategoryManager';
-import ProductFormModal, { type CategoryOption, type ProductDraft } from '../../components/admin/ProductFormModal';
-import { ProductCSVImportModal } from '../../components/admin/ProductCSVImportModal';
-import QRScannerModal from '../../components/admin/QRScannerModal';
-import TableRowSkeleton from '../../components/skeletons/TableRowSkeleton';
-import { useToast } from '../../components/Toast';
-import { ADMIN_MENU_ITEMS } from '../../constants/adminMenu';
-import { useAuth } from '../../contexts/AuthContext';
-import { useAdminMenuSections } from '../../hooks/useAdminMenuSections';
-import { useInventory } from '../../hooks/useInventory';
-import { useRetailCategories } from '../../hooks/useRetailCategories';
-import { supabase } from '../../lib/supabase';
-import { getInventorySelect } from '../../hooks/inventory/inventoryQuerySchema';
-import { exportStoreStockReportToExcel } from '../../utils/storeExcelUtils';
-import { DeleteProductDialog } from './store-inventory/DeleteProductDialog';
-import { InventoryEmptyState } from './store-inventory/InventoryEmptyState';
-import { InventoryGrid } from './store-inventory/InventoryGrid';
-import { InventoryToolbar } from './store-inventory/InventoryToolbar';
-import { InventoryVerificationPanel } from './store-inventory/InventoryVerificationPanel';
-import { mapInventoryProducts } from './store-inventory/inventoryProducts';
-import { useInventoryImageMetrics } from './store-inventory/useInventoryImageMetrics';
-import { useInventoryProductActions } from './store-inventory/useInventoryProductActions';
-import { useStoreInventoryFilters } from './store-inventory/useStoreInventoryFilters';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import AdminLayout from "../../components/AdminLayout";
+import CategoryManager from "../../components/admin/CategoryManager";
+import ProductFormModal, {
+  type CategoryOption,
+  type ProductDraft,
+} from "../../components/admin/ProductFormModal";
+import { ProductCSVImportModal } from "../../components/admin/ProductCSVImportModal";
+import QRScannerModal from "../../components/admin/QRScannerModal";
+import TableRowSkeleton from "../../components/skeletons/TableRowSkeleton";
+import { useToast } from "../../components/Toast";
+import { ADMIN_MENU_ITEMS } from "../../constants/adminMenu";
+import { useAuth } from "../../contexts/AuthContext";
+import { useAdminMenuSections } from "../../hooks/useAdminMenuSections";
+import { useInventory } from "../../hooks/useInventory";
+import { useRetailCategories } from "../../hooks/useRetailCategories";
+import { supabase } from "../../lib/supabase";
+import { getInventorySelect } from "../../hooks/inventory/inventoryQuerySchema";
+import { exportStoreStockReportToExcel } from "../../utils/storeExcelUtils";
+import { DeleteProductDialog } from "./store-inventory/DeleteProductDialog";
+import { InventoryEmptyState } from "./store-inventory/InventoryEmptyState";
+import { InventoryGrid } from "./store-inventory/InventoryGrid";
+import { InventoryToolbar } from "./store-inventory/InventoryToolbar";
+import { InventoryVerificationPanel } from "./store-inventory/InventoryVerificationPanel";
+import { mapInventoryProducts } from "./store-inventory/inventoryProducts";
+import { useInventoryImageMetrics } from "./store-inventory/useInventoryImageMetrics";
+import { useInventoryProductActions } from "./store-inventory/useInventoryProductActions";
+import { useStoreInventoryFilters } from "./store-inventory/useStoreInventoryFilters";
 const INVENTORY_PRODUCTS_PER_PAGE = 24;
 
 const normalizePickupCode = (value: string) => value.trim().toUpperCase();
@@ -35,7 +38,7 @@ const StoreInventory = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [orderCode, setOrderCode] = useState('');
+  const [orderCode, setOrderCode] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -58,7 +61,10 @@ const StoreInventory = () => {
     departmentFilter: filters.departmentFilter,
   });
   const resolvedTotalProducts = data?.totalCount ?? 0;
-  const totalPages = Math.max(1, Math.ceil(resolvedTotalProducts / INVENTORY_PRODUCTS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(resolvedTotalProducts / INVENTORY_PRODUCTS_PER_PAGE),
+  );
   const { currentPage, setCurrentPage } = filters;
 
   useEffect(() => {
@@ -78,42 +84,48 @@ const StoreInventory = () => {
 
   useEffect(() => {
     if (error) {
-      showToast('error', error instanceof Error ? error.message : 'Failed to load inventory');
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Failed to load inventory",
+      );
     }
   }, [error, showToast]);
 
   const { categories: retailCategories } = useRetailCategories();
 
   // Filter category dropdown options by currently selected department
-  const categoryOptions = useMemo(
-    (): CategoryOption[] => {
-      // Only show root categories (parent_id === null)
-      let rootCats = retailCategories.filter((c) => c.parent_id === null);
-      // Filter by department unless "all"
-      if (filters.departmentFilter && filters.departmentFilter !== 'all') {
-        rootCats = rootCats.filter((c) => c.department === filters.departmentFilter);
-      }
-      return rootCats.map((category) => ({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        is_active: category.is_active ?? undefined,
-        parent_id: category.parent_id ?? null,
-      }));
-    },
-    [retailCategories, filters.departmentFilter]
-  );
+  const categoryOptions = useMemo((): CategoryOption[] => {
+    // Only show root categories (parent_id === null)
+    let rootCats = retailCategories.filter((c) => c.parent_id === null);
+    // Filter by department unless "all"
+    if (filters.departmentFilter && filters.departmentFilter !== "all") {
+      rootCats = rootCats.filter(
+        (c) => c.department === filters.departmentFilter,
+      );
+    }
+    return rootCats.map((category) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      is_active: category.is_active ?? undefined,
+      parent_id: category.parent_id ?? null,
+    }));
+  }, [retailCategories, filters.departmentFilter]);
 
   // Reset category filter when department changes
   const handleDepartmentFilterChange = useCallback(
     (value: Parameters<typeof filters.setDepartmentFilter>[0]) => {
       filters.setDepartmentFilter(value);
-      filters.setCategoryFilter('');
+      filters.setCategoryFilter("");
     },
-    [filters]
+    [filters],
   );
-  const inventoryProducts = useMemo(() => mapInventoryProducts(data?.products ?? []), [data?.products]);
-  const { thumbFallbackIds, trackImageResult, markThumbFallback } = useInventoryImageMetrics(inventoryProducts, currentPage);
+  const inventoryProducts = useMemo(
+    () => mapInventoryProducts(data?.products ?? []),
+    [data?.products],
+  );
+  const { thumbFallbackIds, trackImageResult, markThumbFallback } =
+    useInventoryImageMetrics(inventoryProducts, currentPage);
   const productActions = useInventoryProductActions({
     products: data?.products ?? [],
     session,
@@ -126,20 +138,20 @@ const StoreInventory = () => {
   const handleVerify = (code?: string) => {
     const value = normalizePickupCode(code ?? orderCode);
     if (!value) {
-      showToast('error', 'Masukkan pickup code terlebih dahulu.');
+      showToast("error", "Masukkan pickup code terlebih dahulu.");
       return;
     }
 
-    setOrderCode('');
-    showToast('info', `Membuka verifikasi pickup untuk ${value}.`);
+    setOrderCode("");
+    showToast("info", `Membuka verifikasi pickup untuk ${value}.`);
     navigate({
-      pathname: '/admin/product-orders',
+      pathname: "/admin/product-orders",
       search: `?pickupCode=${encodeURIComponent(value)}`,
     });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       handleVerify();
     }
   };
@@ -165,8 +177,8 @@ const StoreInventory = () => {
 
     setIsImportingExcel(false);
     showToast(
-      failCount === 0 ? 'success' : 'info',
-      `Import selesai: ${successCount} produk berhasil${failCount > 0 ? `, ${failCount} gagal` : ''}`
+      failCount === 0 ? "success" : "info",
+      `Import selesai: ${successCount} produk berhasil${failCount > 0 ? `, ${failCount} gagal` : ""}`,
     );
   };
 
@@ -176,10 +188,10 @@ const StoreInventory = () => {
 
     try {
       const { data: allProducts, error } = await supabase
-        .from('products')
-        .select(getInventorySelect('', ''))
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
+        .from("products")
+        .select(getInventorySelect("", ""))
+        .is("deleted_at", null)
+        .order("name", { ascending: true });
 
       if (error) {
         throw error;
@@ -187,14 +199,17 @@ const StoreInventory = () => {
 
       const rows = mapInventoryProducts((allProducts as any) ?? []);
       if (rows.length === 0) {
-        showToast('error', 'Tidak ada data produk untuk di-export.');
+        showToast("error", "Tidak ada data produk untuk di-export.");
         return;
       }
 
       exportStoreStockReportToExcel(rows);
-      showToast('success', 'Laporan stok berhasil diunduh.');
+      showToast("success", "Laporan stok berhasil diunduh.");
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Gagal mengunduh laporan stok');
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Gagal mengunduh laporan stok",
+      );
     } finally {
       setIsExportingCSV(false);
     }
@@ -214,7 +229,9 @@ const StoreInventory = () => {
             aria-label="Categories"
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-neutral-900 shadow-sm transition-colors hover:bg-gray-50 sm:px-4"
           >
-            <span className="material-symbols-outlined text-[20px]">category</span>
+            <span className="material-symbols-outlined text-[20px]">
+              category
+            </span>
             <span className="hidden sm:inline">Categories</span>
           </button>
           <button
@@ -223,7 +240,9 @@ const StoreInventory = () => {
             disabled={isExportingCSV}
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-bold text-neutral-900 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
           >
-            <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+            <span className="material-symbols-outlined text-[20px]">
+              inventory_2
+            </span>
             <span className="hidden sm:inline">Stock Report</span>
           </button>
           <button
@@ -231,7 +250,9 @@ const StoreInventory = () => {
             aria-label="Import Excel"
             className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 sm:px-4"
           >
-            <span className="material-symbols-outlined text-[20px]">upload_file</span>
+            <span className="material-symbols-outlined text-[20px]">
+              upload_file
+            </span>
             <span className="hidden sm:inline">Import Excel</span>
           </button>
           <button
@@ -309,26 +330,35 @@ const StoreInventory = () => {
             {resolvedTotalProducts > 0 && totalPages > 1 && (
               <div className="mt-10 flex flex-col items-center gap-4">
                 <p className="text-sm text-gray-500 font-sans">
-                  Page {currentPage} of {totalPages} ({resolvedTotalProducts} items)
+                  Page {currentPage} of {totalPages} ({resolvedTotalProducts}{" "}
+                  items)
                 </p>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage <= 1}
                     className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      chevron_left
+                    </span>
                     Prev
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage >= totalPages}
                     className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
-                    <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      chevron_right
+                    </span>
                   </button>
                 </div>
               </div>
@@ -338,7 +368,9 @@ const StoreInventory = () => {
       </section>
 
       {productActions.saveError && (
-        <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">{productActions.saveError}</div>
+        <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">
+          {productActions.saveError}
+        </div>
       )}
 
       <ProductFormModal

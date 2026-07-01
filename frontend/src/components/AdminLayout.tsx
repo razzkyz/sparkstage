@@ -254,29 +254,32 @@ const AdminLayout = ({
       </aside>
 
       <main className={`flex-1 flex flex-col h-full overflow-hidden bg-gray-50 relative ${mainClassName ?? ''}`.trim()}>
-        <header className="flex-none px-4 md:px-8 py-4 flex justify-between items-center gap-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {/* Hamburger menu - mobile only */}
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"
-              aria-label="Open menu"
-            >
-              <span className="material-symbols-outlined text-2xl">menu</span>
-            </button>
-            <div className="min-w-0">
-              <h2 className="text-lg md:text-xl font-black text-gray-900 truncate">{title}</h2>
-              {subtitle ? <p className="hidden md:block text-xs text-gray-500 truncate">{subtitle}</p> : null}
+        <header className="flex-none px-4 md:px-8 py-4 flex flex-col gap-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+          <div className="flex items-center justify-between w-full gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {/* Hamburger menu - mobile only */}
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden text-gray-700 hover:text-gray-900 flex-shrink-0"
+                aria-label="Open menu"
+              >
+                <span className="material-symbols-outlined text-2xl">menu</span>
+              </button>
+              <div className="min-w-0">
+                <h2 className="text-lg md:text-xl font-black text-gray-900 truncate">{title}</h2>
+                {subtitle ? <p className="hidden md:block text-xs text-gray-500 truncate">{subtitle}</p> : null}
+              </div>
+            </div>
+            
+            {/* Avatar stays top right */}
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0">
+              {getUserInitials()}
             </div>
           </div>
-	          <div className="flex items-center gap-3 min-w-0">
-	            {headerActions ? (
-	              <div className="max-w-[60vw] overflow-x-auto sm:max-w-none sm:overflow-visible">
-	                <div className="flex items-center gap-3 whitespace-nowrap pr-1">{headerActions}</div>
-	              </div>
-	            ) : null}
+
+          <div className="flex flex-col items-stretch gap-3 min-w-0 w-full">
             {showHeaderSearch ? (
-              <div className="relative w-full max-w-xs hidden sm:block">
+              <div className="relative w-full shrink-0">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                   search
                 </span>
@@ -294,9 +297,11 @@ const AdminLayout = ({
                 />
               </div>
             ) : null}
-            <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-900">
-              {getUserInitials()}
-            </div>
+            {headerActions ? (
+              <div className="w-full overflow-x-auto min-w-0 pb-1">
+                <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap pr-1 justify-start">{headerActions}</div>
+              </div>
+            ) : null}
           </div>
         </header>
 

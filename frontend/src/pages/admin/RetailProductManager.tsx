@@ -134,7 +134,9 @@ export default function RetailProductManager() {
         });
         showToast(
           "success",
-          catParentId ? "Sub-category berhasil ditambahkan" : "Category berhasil ditambahkan",
+          catParentId
+            ? "Sub-category berhasil ditambahkan"
+            : "Category berhasil ditambahkan",
         );
       }
       resetCatForm();
@@ -169,19 +171,19 @@ export default function RetailProductManager() {
 
   const filteredProducts = useMemo(() => {
     let list = products;
-    
+
     // Filter by department
     if (activeDept !== "all") {
       list = list.filter((p) => p.retail_category === activeDept);
     }
-    
+
     // Filter by active/inactive status
     if (activeStatusFilter === "active") {
       list = list.filter((p) => p.is_active === true);
     } else if (activeStatusFilter === "inactive") {
       list = list.filter((p) => p.is_active === false);
     }
-    
+
     // Filter by category
     if (categoryFilter === "no-category") {
       list = list.filter((p) => !p.retail_category_id);
@@ -193,9 +195,11 @@ export default function RetailProductManager() {
         .filter((c) => c.parent_id === catId)
         .map((c) => c.id);
       const matchIds = new Set([catId, ...childIds]);
-      list = list.filter((p) => p.retail_category_id && matchIds.has(p.retail_category_id));
+      list = list.filter(
+        (p) => p.retail_category_id && matchIds.has(p.retail_category_id),
+      );
     }
-    
+
     // Search filter
     if (search) {
       const q = search.toLowerCase();
@@ -204,9 +208,16 @@ export default function RetailProductManager() {
           p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
       );
     }
-    
+
     return list;
-  }, [products, categories, activeDept, activeStatusFilter, categoryFilter, search]);
+  }, [
+    products,
+    categories,
+    activeDept,
+    activeStatusFilter,
+    categoryFilter,
+    search,
+  ]);
 
   // Reset to first page when filters change
   const totalPages = Math.max(
@@ -292,27 +303,27 @@ export default function RetailProductManager() {
 
       // Upload image if selected
       if (imageFile) {
-        const useR2 = import.meta.env.VITE_USE_R2_UPLOAD === 'true';
-        
+        const useR2 = import.meta.env.VITE_USE_R2_UPLOAD === "true";
+
         if (useR2) {
           // Use Cloudflare R2 upload (new flow)
-          console.log('Uploading to R2...');
+          console.log("Uploading to R2...");
           const tempProductId = editingId || 999999; // Use temp ID for new products
           finalImageUrl = await uploadToR2({
             file: imageFile,
             productId: tempProductId,
           });
-          console.log('R2 upload successful:', finalImageUrl);
+          console.log("R2 upload successful:", finalImageUrl);
         } else {
           // Fallback to ImageKit upload (legacy flow)
-          console.log('Uploading to ImageKit (fallback)...');
+          console.log("Uploading to ImageKit (fallback)...");
           const fileName = `${formData.slug}-${Date.now()}`;
           finalImageUrl = await uploadPublicAssetToImageKit({
             file: imageFile,
             fileName,
             folderPath: "public/retail-products",
           });
-          console.log('ImageKit upload successful:', finalImageUrl);
+          console.log("ImageKit upload successful:", finalImageUrl);
         }
       }
 
@@ -486,7 +497,10 @@ export default function RetailProductManager() {
                 {catRootCategories.map((root) => {
                   const subs = catSubsByParent.get(root.id) ?? [];
                   return (
-                    <div key={root.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div
+                      key={root.id}
+                      className="border border-gray-200 rounded-xl overflow-hidden"
+                    >
                       {/* Root row */}
                       <div className="flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 transition-colors group">
                         <div>
@@ -498,7 +512,9 @@ export default function RetailProductManager() {
                               </span>
                             )}
                           </h4>
-                          <p className="text-xs text-gray-400 font-mono">/{root.slug}</p>
+                          <p className="text-xs text-gray-400 font-mono">
+                            /{root.slug}
+                          </p>
                         </div>
                         <div className="flex gap-1">
                           <button
@@ -515,7 +531,11 @@ export default function RetailProductManager() {
                             onClick={() => {
                               setCatEditingId(root.id);
                               setCatParentId(null);
-                              setCatFormData({ name: root.name, slug: root.slug, is_active: root.is_active });
+                              setCatFormData({
+                                name: root.name,
+                                slug: root.slug,
+                                is_active: root.is_active,
+                              });
                             }}
                             className="text-blue-500 p-1 hover:bg-blue-50 rounded"
                           >
@@ -540,7 +560,9 @@ export default function RetailProductManager() {
                             >
                               <div>
                                 <span className="text-sm text-gray-700 flex items-center gap-1">
-                                  <span className="text-gray-300 text-xs">└</span>
+                                  <span className="text-gray-300 text-xs">
+                                    └
+                                  </span>
                                   {sub.name}
                                   {!sub.is_active && (
                                     <span className="text-[9px] bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 uppercase">
@@ -548,21 +570,29 @@ export default function RetailProductManager() {
                                     </span>
                                   )}
                                 </span>
-                                <p className="text-xs text-gray-400 font-mono pl-3">/{sub.slug}</p>
+                                <p className="text-xs text-gray-400 font-mono pl-3">
+                                  /{sub.slug}
+                                </p>
                               </div>
                               <div className="flex gap-1">
                                 <button
                                   onClick={() => {
                                     setCatEditingId(sub.id);
                                     setCatParentId(sub.parent_id);
-                                    setCatFormData({ name: sub.name, slug: sub.slug, is_active: sub.is_active });
+                                    setCatFormData({
+                                      name: sub.name,
+                                      slug: sub.slug,
+                                      is_active: sub.is_active,
+                                    });
                                   }}
                                   className="text-blue-500 p-1 hover:bg-blue-50 rounded"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleCatDelete(sub.id, sub.name)}
+                                  onClick={() =>
+                                    handleCatDelete(sub.id, sub.name)
+                                  }
                                   className="text-red-500 p-1 hover:bg-red-50 rounded"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -600,7 +630,8 @@ export default function RetailProductManager() {
               {/* Show parent info when adding sub */}
               {!catEditingId && catParentId && (
                 <div className="mb-3 px-3 py-2 bg-pink-50 border border-pink-100 rounded-lg text-xs text-pink-700 font-semibold">
-                  Parent: {catRootCategories.find((c) => c.id === catParentId)?.name}
+                  Parent:{" "}
+                  {catRootCategories.find((c) => c.id === catParentId)?.name}
                 </div>
               )}
 
@@ -660,7 +691,11 @@ export default function RetailProductManager() {
                   onClick={handleCatSave}
                   className="w-full bg-[#ff4b86] text-white py-2 rounded-md text-sm font-bold hover:bg-[#e63d75] transition-colors mt-2"
                 >
-                  {catEditingId ? "Update" : catParentId ? "Tambah Sub-Category" : "Tambah Category"}
+                  {catEditingId
+                    ? "Update"
+                    : catParentId
+                      ? "Tambah Sub-Category"
+                      : "Tambah Category"}
                 </button>
               </div>
             </div>
@@ -752,7 +787,9 @@ export default function RetailProductManager() {
               <div className="w-px h-4 bg-gray-300 mx-1"></div>
               <button
                 onClick={() => {
-                  setCategoryFilter(categoryFilter === "no-category" ? "all" : "no-category");
+                  setCategoryFilter(
+                    categoryFilter === "no-category" ? "all" : "no-category",
+                  );
                   setCurrentPage(1);
                 }}
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-category" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
@@ -1152,7 +1189,9 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        retail_subcategory_id: e.target.value ? Number(e.target.value) : null,
+                        retail_subcategory_id: e.target.value
+                          ? Number(e.target.value)
+                          : null,
                       }))
                     }
                     disabled={!formData.retail_category_id || isLoadingCats}
@@ -1179,7 +1218,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        price: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        price:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1195,7 +1237,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        stock: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        stock:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1211,7 +1256,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        weight: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        weight:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1230,7 +1278,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        length: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        length:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1246,7 +1297,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        width: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        width:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
@@ -1262,7 +1316,10 @@ export default function RetailProductManager() {
                     onChange={(e) =>
                       setFormData((p) => ({
                         ...p,
-                        height: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                        height:
+                          e.target.value === ""
+                            ? ("" as any)
+                            : Number(e.target.value),
                       }))
                     }
                     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm outline-none"
