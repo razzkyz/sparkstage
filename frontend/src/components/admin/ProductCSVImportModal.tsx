@@ -159,9 +159,9 @@ export function ProductCSVImportModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl max-h-[95vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2 border-b border-gray-100">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Import Produk Excel</h2>
             <p className="text-sm text-gray-500">Upload file .xls atau .xlsx untuk menambahkan produk secara batch.</p>
@@ -176,30 +176,53 @@ export function ProductCSVImportModal({
         </div>
 
         {/* Instructions */}
-        <div className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 overflow-hidden">
+          <div className="p-4 sm:p-5 flex flex-col gap-4">
             <div>
-              <p className="text-sm text-blue-900 font-semibold mb-1">Import Excel Produk</p>
-              <p className="text-xs text-blue-800 font-mono leading-5">
-                product_name, sku, description, department, category, sub_category, price, stock, variant_name, variant_sku, color, size, is_active, slug
-              </p>
-              <p className="text-xs text-blue-800 mt-2">
-                Wajib: product_name, sku | Opsional: kolom lainnya (isi "department" / "category" / "sub_category" dengan teks nama kategorinya)
-              </p>
+              <p className="text-sm text-blue-900 font-bold mb-2">Panduan Import & Export Excel</p>
+              <ul className="text-xs text-blue-800 space-y-2 list-disc pl-4">
+                <li>
+                  <strong className="font-semibold">Sistem Aman (Update & Insert):</strong> Sistem hanya akan memproses data yang ada di file Excel. Produk lama yang <strong>tidak disertakan</strong> di dalam file Excel <strong>TIDAK AKAN terhapus atau terganggu</strong>.
+                </li>
+                <li>
+                  <strong className="font-semibold">Template Kosong:</strong> Unduh ini jika Anda ingin menginput banyak produk baru dari nol. Hanya berisi kolom format dan daftar nama kategori.
+                </li>
+                <li>
+                  <strong className="font-semibold">Export Data Excel:</strong> Unduh ini jika Anda ingin melakukan <em>update massal</em> (contoh: ubah harga/stok). File akan berisi semua data produk di toko saat ini.
+                </li>
+              </ul>
             </div>
-            <button
-              type="button"
-              disabled={isDownloading}
-              onClick={async () => {
-                setIsDownloading(true);
-                await downloadStoreProductTemplateExcel(categories || [], retailCategories || []);
-                setIsDownloading(false);
-              }}
-              className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {isDownloading && <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />}
-              {isDownloading ? 'Downloading...' : 'Download Template Excel'}
-            </button>
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-1">
+              <button
+                type="button"
+                disabled={isDownloading}
+                onClick={async () => {
+                  setIsDownloading(true);
+                  await downloadStoreProductTemplateExcel(categories || [], retailCategories || [], false);
+                  setIsDownloading(false);
+                }}
+                className="flex-1 sm:flex-none justify-center rounded-lg border border-blue-300 bg-white px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDownloading && <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />}
+                <span className="material-symbols-outlined text-[16px]">description</span>
+                Template Kosong
+              </button>
+              <button
+                type="button"
+                disabled={isDownloading}
+                onClick={async () => {
+                  setIsDownloading(true);
+                  await downloadStoreProductTemplateExcel(categories || [], retailCategories || [], true);
+                  setIsDownloading(false);
+                }}
+                className="flex-1 sm:flex-none justify-center rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+              >
+                {isDownloading && <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+                <span className="material-symbols-outlined text-[16px]">download</span>
+                Export Data Excel
+              </button>
+            </div>
           </div>
         </div>
 

@@ -33,84 +33,86 @@ export function exportStoreStockReportToExcel(products: InventoryProduct[]) {
 
 // ─── TEMPLATE ─────────────────────────────────────────────────────────────────
 
-export async function downloadStoreProductTemplateExcel(categories: CategoryOption[] = [], retailCategories: CategoryOption[] = []) {
+export async function downloadStoreProductTemplateExcel(categories: CategoryOption[] = [], retailCategories: CategoryOption[] = [], exportData: boolean = true) {
   let sample: any[] = [];
 
-  try {
-    const { data: dbProducts, error } = await supabase
-      .from('products')
-      .select(`
-        name, slug, sku, description, is_active,
-        categories (name),
-        retail_categories!products_retail_category_id_fkey (name, department),
-        sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
-        product_variants (name, sku, price, stock, is_active),
-        product_images (image_url, display_order)
-      `)
-      .is('deleted_at', null)
-      .order('name', { ascending: true });
+  if (exportData) {
+    try {
+      const { data: dbProducts, error } = await supabase
+        .from('products')
+        .select(`
+          name, slug, sku, description, is_active,
+          categories (name),
+          retail_categories!products_retail_category_id_fkey (name, department),
+          sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
+          product_variants (name, sku, price, stock, is_active),
+          product_images (image_url, display_order)
+        `)
+        .is('deleted_at', null)
+        .order('name', { ascending: true });
 
-    if (!error && dbProducts && dbProducts.length > 0) {
-      dbProducts.forEach((p: any) => {
-        const departmentName = p.retail_categories?.department || '';
-        const categoryName = p.retail_categories?.name || '';
-        const subCategoryName = p.sub_categories?.name || '';
-        const variants = Array.isArray(p.product_variants) 
-          ? p.product_variants.filter((v: any) => v.is_active !== false)
-          : [];
-        const images = Array.isArray(p.product_images) ? p.product_images : [];
-        images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
-        const img1 = images[0]?.image_url || '';
-        const img2 = images[1]?.image_url || '';
-        const img3 = images[2]?.image_url || '';
-        
-        if (variants.length > 0) {
-          variants.forEach((v: any, index: number) => {
+      if (!error && dbProducts && dbProducts.length > 0) {
+        dbProducts.forEach((p: any) => {
+          const departmentName = p.retail_categories?.department || '';
+          const categoryName = p.retail_categories?.name || '';
+          const subCategoryName = p.sub_categories?.name || '';
+          const variants = Array.isArray(p.product_variants) 
+            ? p.product_variants.filter((v: any) => v.is_active !== false)
+            : [];
+          const images = Array.isArray(p.product_images) ? p.product_images : [];
+          images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+          const img1 = images[0]?.image_url || '';
+          const img2 = images[1]?.image_url || '';
+          const img3 = images[2]?.image_url || '';
+          
+          if (variants.length > 0) {
+            variants.forEach((v: any, index: number) => {
+              sample.push({
+                product_name: index === 0 ? p.name : '',
+                slug: index === 0 ? (p.slug || '') : '',
+                sku: index === 0 ? (p.sku || '') : '',
+                description: index === 0 ? (p.description || '') : '',
+                department: index === 0 ? departmentName : '',
+                category: index === 0 ? categoryName : '',
+                sub_category: index === 0 ? subCategoryName : '',
+                is_active: index === 0 ? (p.is_active ? 'ya' : 'tidak') : '',
+                variant_name: v.name,
+                variant_sku: v.sku,
+                price: v.price || 0,
+                stock: v.stock || 0,
+                size: '',
+                color: '',
+                image_url_1: index === 0 ? img1 : '',
+                image_url_2: index === 0 ? img2 : '',
+                image_url_3: index === 0 ? img3 : '',
+              });
+            });
+          } else {
             sample.push({
-              product_name: index === 0 ? p.name : '',
-              slug: index === 0 ? (p.slug || '') : '',
-              sku: index === 0 ? (p.sku || '') : '',
-              description: index === 0 ? (p.description || '') : '',
-              department: index === 0 ? departmentName : '',
-              category: index === 0 ? categoryName : '',
-              sub_category: index === 0 ? subCategoryName : '',
-              is_active: index === 0 ? (p.is_active ? 'ya' : 'tidak') : '',
-              variant_name: v.name,
-              variant_sku: v.sku,
-              price: v.price || 0,
-              stock: v.stock || 0,
+              product_name: p.name,
+              slug: p.slug || '',
+              sku: p.sku || '',
+              description: p.description || '',
+              department: departmentName,
+              category: categoryName,
+              sub_category: subCategoryName,
+              is_active: p.is_active ? 'ya' : 'tidak',
+              variant_name: 'Default',
+              variant_sku: p.sku || '',
+              price: 0,
+              stock: 0,
               size: '',
               color: '',
-              image_url_1: index === 0 ? img1 : '',
-              image_url_2: index === 0 ? img2 : '',
-              image_url_3: index === 0 ? img3 : '',
+              image_url_1: img1,
+              image_url_2: img2,
+              image_url_3: img3,
             });
-          });
-        } else {
-          sample.push({
-            product_name: p.name,
-            slug: p.slug || '',
-            sku: p.sku || '',
-            description: p.description || '',
-            department: departmentName,
-            category: categoryName,
-            sub_category: subCategoryName,
-            is_active: p.is_active ? 'ya' : 'tidak',
-            variant_name: 'Default',
-            variant_sku: p.sku || '',
-            price: 0,
-            stock: 0,
-            size: '',
-            color: '',
-            image_url_1: img1,
-            image_url_2: img2,
-            image_url_3: img3,
-          });
-        }
-      });
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch products for template', err);
     }
-  } catch (err) {
-    console.error('Failed to fetch products for template', err);
   }
 
   if (sample.length === 0) {
@@ -177,7 +179,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(sample);
-  XLSX.utils.book_append_sheet(wb, ws, 'Template Import');
+  XLSX.utils.book_append_sheet(wb, ws, exportData ? 'Data Produk' : 'Template Import');
 
   const categoryData: { 'Nama Kategori': string; 'Tipe': string; 'Keterangan': string }[] = [];
   
@@ -216,7 +218,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
     XLSX.utils.book_append_sheet(wb, wsCat, 'Daftar Kategori');
   }
 
-  XLSX.writeFile(wb, 'template-import-produk-store.xlsx');
+  XLSX.writeFile(wb, exportData ? 'export-data-produk-store.xlsx' : 'template-import-produk-store.xlsx');
 }
 
 // ─── PARSE IMPORT ─────────────────────────────────────────────────────────────
