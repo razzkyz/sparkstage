@@ -87,7 +87,7 @@ export function BookingSummarySidebar(props: BookingSummarySidebarProps) {
             <div className="flex-1">
               <p className="text-sm font-bold uppercase tracking-tighter opacity-60">{copy.time_label}</p>
               <p className="font-display font-medium">
-                {selectedTime ? selectedTime.substring(0, 5) : isAllDayTicket ? "2,5 hours all stage access" : copy.not_selected_label}
+                {selectedTime ? selectedTime.substring(0, 5) : isAllDayTicket ? "All day access" : copy.not_selected_label}
               </p>
 
               {selectedTime && (() => {
