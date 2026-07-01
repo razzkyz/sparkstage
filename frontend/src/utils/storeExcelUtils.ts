@@ -18,6 +18,7 @@ export function exportStoreStockReportToExcel(products: InventoryProduct[]) {
     price_max: product.price_max,
     stock_available: product.stock_available,
     variant_count: product.variant_count,
+    image_url: product.image_url || '',
   }));
 
   if (rows.length === 0) return;
@@ -43,7 +44,8 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         categories (name),
         retail_categories!products_retail_category_id_fkey (name, department),
         sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
-        product_variants (name, sku, price, stock, is_active)
+        product_variants (name, sku, price, stock, is_active),
+        product_images (image_url, display_order)
       `)
       .is('deleted_at', null)
       .order('name', { ascending: true });
@@ -56,6 +58,11 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         const variants = Array.isArray(p.product_variants) 
           ? p.product_variants.filter((v: any) => v.is_active !== false)
           : [];
+        const images = Array.isArray(p.product_images) ? p.product_images : [];
+        images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+        const img1 = images[0]?.image_url || '';
+        const img2 = images[1]?.image_url || '';
+        const img3 = images[2]?.image_url || '';
         
         if (variants.length > 0) {
           variants.forEach((v: any, index: number) => {
@@ -74,6 +81,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
               stock: v.stock || 0,
               size: '',
               color: '',
+              image_url_1: index === 0 ? img1 : '',
+              image_url_2: index === 0 ? img2 : '',
+              image_url_3: index === 0 ? img3 : '',
             });
           });
         } else {
@@ -92,6 +102,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
             stock: 0,
             size: '',
             color: '',
+            image_url_1: img1,
+            image_url_2: img2,
+            image_url_3: img3,
           });
         }
       });
@@ -117,6 +130,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 10,
         size: 'S',
         color: 'Hitam',
+        image_url_1: 'https://example.com/image1.jpg',
+        image_url_2: '',
+        image_url_3: '',
       },
       {
         product_name: '',
@@ -133,6 +149,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 15,
         size: 'M',
         color: 'Hitam',
+        image_url_1: '',
+        image_url_2: '',
+        image_url_3: '',
       },
       {
         product_name: 'Kacamata Retro',
@@ -149,6 +168,9 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 5,
         size: '30',
         color: 'Olive',
+        image_url_1: '',
+        image_url_2: '',
+        image_url_3: '',
       },
     ];
   }
@@ -199,7 +221,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
 
 // ─── PARSE IMPORT ─────────────────────────────────────────────────────────────
 
-export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> {
+export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & { image_urls?: string[] })[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Gagal membaca file'));
@@ -218,13 +240,18 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-        const products: ProductDraft[] = [];
-        let currentProduct: ProductDraft | null = null;
+        const products: (ProductDraft & { image_urls?: string[] })[] = [];
+        let currentProduct: (ProductDraft & { image_urls?: string[] }) | null = null;
 
         raw.forEach((row) => {
           const productName = String(row['product_name'] ?? '').trim();
           const variantSku = String(row['variant_sku'] ?? row['sku'] ?? '').trim();
           const variantName = String(row['variant_name'] ?? '').trim();
+          
+          const img1 = String(row['image_url_1'] ?? '').trim();
+          const img2 = String(row['image_url_2'] ?? '').trim();
+          const img3 = String(row['image_url_3'] ?? '').trim();
+          const imageUrls = [img1, img2, img3].filter(Boolean);
 
           if (productName) {
             currentProduct = {
@@ -241,8 +268,12 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
               sku: String(row['sku'] ?? '').trim(),
               is_active: String(row['is_active'] ?? 'ya').trim().toLowerCase() !== 'tidak',
               variants: [],
+              image_urls: imageUrls.length > 0 ? imageUrls : undefined,
             };
             products.push(currentProduct);
+          } else if (currentProduct && imageUrls.length > 0) {
+             // If they put images in variant rows
+             currentProduct.image_urls = [...(currentProduct.image_urls || []), ...imageUrls];
           }
 
           if (variantSku && currentProduct) {
@@ -267,6 +298,10 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
               stock: 0,
             });
           }
+          // deduplicate images
+          if (p.image_urls) {
+             p.image_urls = Array.from(new Set(p.image_urls));
+          }
         }
 
         if (products.length === 0) {
@@ -287,3 +322,4 @@ export function parseStoreProductsFromFile(file: File): Promise<ProductDraft[]> 
     }
   });
 }
+
