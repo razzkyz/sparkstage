@@ -245,8 +245,10 @@ serve(async (req: Request) => {
       },
       payment: {
         payment_due_date: PAYMENT_EXPIRY_MINUTES,
-        // No payment_method_types filter - show all available methods (QRIS, VA, e-wallet, etc.)
-        // Same behavior as ticket checkout
+        // Filter payment methods based on DOKU_PAYMENT_METHOD_TYPES secret
+        ...(dokuEnv.paymentMethodTypes.length > 0
+          ? { payment_method_types: dokuEnv.paymentMethodTypes }
+          : {}),
       },
       customer: {
         name: sanitizeDokuString(payload.customerName, 255),

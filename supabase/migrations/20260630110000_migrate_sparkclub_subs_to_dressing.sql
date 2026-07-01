@@ -21,7 +21,8 @@ BEGIN
   LIMIT 1;
 
   IF spark_club_cat_id IS NULL THEN
-    RAISE EXCEPTION 'Kategori "Spark club" tidak ditemukan di database!';
+    RAISE NOTICE 'Kategori "Spark club" tidak ditemukan — migrasi dilewati (sudah diproses sebelumnya atau tidak ada).';
+    RETURN;
   END IF;
 
   -- 2. Ambil semua subkategori yang berada di bawah "Spark club"

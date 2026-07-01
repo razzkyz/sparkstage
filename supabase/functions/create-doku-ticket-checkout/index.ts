@@ -668,10 +668,10 @@ serve(async (req: Request) => {
       },
       payment: {
         payment_due_date: paymentExpiryMinutes,
-        // Remove payment method types to show all available methods including e-wallet
-        // ...(dokuEnv.paymentMethodTypes.length > 0
-        //   ? { payment_method_types: dokuEnv.paymentMethodTypes }
-        //   : {}),
+        // Filter payment methods based on DOKU_PAYMENT_METHOD_TYPES secret
+        ...(dokuEnv.paymentMethodTypes.length > 0
+          ? { payment_method_types: dokuEnv.paymentMethodTypes }
+          : {}),
       },
       customer: {
         id: sanitizeDokuString(userId, 50),

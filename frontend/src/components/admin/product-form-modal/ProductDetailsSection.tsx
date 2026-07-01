@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { slugify } from '../../../utils/merchant';
 import { useRetailCategories } from '../../../hooks/useRetailCategories';
@@ -19,23 +19,41 @@ export function ProductDetailsSection({
   setSlugTouched,
 }: ProductDetailsSectionProps) {
 
-
   const { categories: retailCategories } = useRetailCategories();
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
 
-  useEffect(() => {
-    if (draft.retail_category_id && retailCategories.length > 0) {
-      const cat = retailCategories.find(c => c.id === draft.retail_category_id);
-      if (cat) {
-        setSelectedDepartment(cat.department);
-      }
-    }
+  // Track which product we last initialized for, to detect "form switched to new product"
+  const [lastDraftId, setLastDraftId] = useState<number | null | undefined>(undefined);
+  // Explicit department override — user manually selected a department
+  const [departmentOverride, setDepartmentOverride] = useState<string | null>(null);
+
+  // Derive the department from the current retail_category_id (source of truth from DB)
+  const derivedDepartment = useMemo(() => {
+    if (!draft.retail_category_id || retailCategories.length === 0) return '';
+    const cat = retailCategories.find(c => c.id === draft.retail_category_id);
+    return cat?.department ?? '';
   }, [draft.retail_category_id, retailCategories]);
 
+  // When editing a different product, clear the override so we fall back to derived value
+  useEffect(() => {
+    const currentId = draft.id ?? null;
+    if (lastDraftId !== currentId) {
+      setLastDraftId(currentId);
+      setDepartmentOverride(null);
+    }
+  }, [draft.id, lastDraftId]);
+
+  // The effective department: override (user explicitly picked) or derived from DB value
+  const selectedDepartment = departmentOverride !== null ? departmentOverride : derivedDepartment;
+
   const retailRootOptions = retailCategories.filter(c => !c.parent_id && c.department === selectedDepartment);
-  const retailSubOptions = draft.retail_category_id 
+  const retailSubOptions = draft.retail_category_id
     ? retailCategories.filter(c => c.parent_id === draft.retail_category_id)
     : [];
+
+  const handleDepartmentChange = (newDept: string) => {
+    setDepartmentOverride(newDept);
+    setDraft((current) => ({ ...current, retail_category_id: null, retail_subcategory_id: null }));
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -90,7 +108,7 @@ export function ProductDetailsSection({
             placeholder="PROD-001"
           />
         </label>
-        
+
         <label className="flex flex-col gap-1">
           <span className="text-xs font-bold text-gray-600">Base Price</span>
           <RupiahPriceInput
@@ -129,17 +147,14 @@ export function ProductDetailsSection({
         </label>
       </div>
 
-      {/* --- NEW RETAIL CATEGORIES --- */}
+      {/* --- RETAIL CATEGORIES --- */}
       <div className="mt-2 flex flex-col gap-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-bold text-blue-800">Department</span>
             <select
               value={selectedDepartment}
-              onChange={(event) => {
-                setSelectedDepartment(event.target.value);
-                setDraft((current) => ({ ...current, retail_category_id: null, retail_subcategory_id: null }));
-              }}
+              onChange={(event) => handleDepartmentChange(event.target.value)}
               className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select department</option>
@@ -191,8 +206,21 @@ export function ProductDetailsSection({
             </select>
           </label>
         )}
+
+        {/* Show current category breadcrumb when editing and department not changed yet */}
+        {draft.id != null && derivedDepartment && departmentOverride === null && (
+          <p className="text-xs text-blue-600">
+            <span className="font-semibold">Kategori saat ini:</span>{' '}
+            {derivedDepartment.charAt(0).toUpperCase() + derivedDepartment.slice(1)}
+            {(() => {
+              const cat = retailCategories.find(c => c.id === draft.retail_category_id);
+              const sub = retailCategories.find(c => c.id === draft.retail_subcategory_id);
+              return [cat?.name, sub?.name].filter(Boolean).map(n => ` › ${n}`).join('');
+            })()}
+          </p>
+        )}
       </div>
-      {/* --- END NEW RETAIL CATEGORIES --- */}
+      {/* --- END RETAIL CATEGORIES --- */}
 
       <label className="flex flex-col gap-1">
         <span className="text-xs font-bold text-gray-600">Description</span>
