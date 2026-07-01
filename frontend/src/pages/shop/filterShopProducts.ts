@@ -48,9 +48,17 @@ export function filterShopProducts({
 
       const allowedSlugs = allowedSlugMap.get(activeNode);
       if (allowedSlugs) {
-        currentProducts = products.filter((product) => product.categorySlug && allowedSlugs.has(product.categorySlug));
+        currentProducts = products.filter(
+          (product) =>
+            (product.categorySlug && allowedSlugs.has(product.categorySlug)) ||
+            (product.retailCategorySlug && allowedSlugs.has(product.retailCategorySlug)),
+        );
       } else {
-        currentProducts = products.filter((product) => product.categorySlug === activeNode);
+        currentProducts = products.filter(
+          (product) =>
+            product.categorySlug === activeNode ||
+            product.retailCategorySlug === activeNode,
+        );
       }
     }
   }

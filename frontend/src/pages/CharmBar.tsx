@@ -582,6 +582,17 @@ export default function CharmBar() {
                 </span>
                 Spark
               </Link>
+
+              {/* Dressing */}
+              <Link
+                to="/dressing"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+              >
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
+                  checkroom
+                </span>
+                Dressing
+              </Link>
             </div>
           </div>
 

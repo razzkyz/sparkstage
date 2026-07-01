@@ -24,6 +24,11 @@ const CHARM_BAR_ONLY_CATEGORIES = new Set([
   "lucky-charm",
 ]);
 
+// Categories that have moved to the Dressing page — hide from Shop
+const DRESSING_ONLY_CATEGORIES = new Set([
+  "spark-club",
+]);
+
 // Categories that should only appear in Glam, not in Shop
 const GLAM_ONLY_CATEGORIES = new Set([
   "makeup",
@@ -53,7 +58,8 @@ export function buildShopCategoryIndex(
     // Skip charm-bar-only and glam-only categories from appearing in Shop
     if (
       CHARM_BAR_ONLY_CATEGORIES.has(slugLower) ||
-      GLAM_ONLY_CATEGORIES.has(slugLower)
+      GLAM_ONLY_CATEGORIES.has(slugLower) ||
+      DRESSING_ONLY_CATEGORIES.has(slugLower)
     ) {
       continue;
     }

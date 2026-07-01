@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { mapSearchQueryToRoute } from "../lib/searchRouteMap";
-import useSeo from "../hooks/useSeo";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCart } from "../contexts/cartStore";
@@ -9,17 +8,14 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { formatCurrency } from "../utils/formatters";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
-// import { useBanners } from '../hooks/useBanners';
+import { useRetailCategories } from "../hooks/useRetailCategories";
+import { useBanners } from "../hooks/useBanners";
 import { fetchProductDetail } from "../hooks/useProduct";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
 import { useToast } from "../components/Toast";
 import { PageTransition } from "../components/PageTransition";
 import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
 import { queryKeys } from "../lib/queryKeys";
-// import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
-import { buildShopCategoryIndex } from "./shop/buildShopCategoryIndex";
-import { filterShopProducts } from "./shop/filterShopProducts";
 import { useShopFilters } from "./shop/useShopFilters";
 import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
@@ -27,7 +23,7 @@ import { buildImageKitThumbUrl } from "../lib/imagekit";
 
 const PRODUCTS_PER_PAGE = 20;
 
-type ShopResultsProps = {
+type DressingShopResultsProps = {
   filteredProducts: Product[];
   loading: boolean;
   resetSignal: string;
@@ -35,13 +31,13 @@ type ShopResultsProps = {
   onAddToCart: (product: Product) => void;
 };
 
-function ShopResults({
+function DressingShopResults({
   filteredProducts,
   loading,
   resetSignal,
   onPrefetchProduct,
   onAddToCart,
-}: ShopResultsProps) {
+}: DressingShopResultsProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const totalProducts = filteredProducts.length;
@@ -202,8 +198,8 @@ function ShopResults({
               disabled={page >= totalPages}
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 duration-200 ux-transition-color hover:border-[#ff4b86] hover:text-[#ff4b86] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next
               <ChevronRight className="h-4 w-4" />
+              Next
             </button>
           </div>
         </div>
@@ -212,14 +208,7 @@ function ShopResults({
   );
 }
 
-const Shop = () => {
-  useSeo({
-    title: "SparkStage Shop · Stage 55",
-    description:
-      "Discover Glam Room, Charm Bar, and Spark Club products in SparkStage Shop.",
-    canonical: `${window.location.origin}/shop`,
-  });
-
+const DressingShop = () => {
   const queryClient = useQueryClient();
   const { addItem } = useCart();
   const { user } = useAuth();
@@ -228,8 +217,6 @@ const Shop = () => {
   const productsRef = useRef<HTMLDivElement>(null);
   const {
     activeCategory,
-    activeSubcategory,
-    activeSubSubcategory,
     searchQuery,
     setSearchQuery,
     updateFilters,
@@ -244,14 +231,17 @@ const Shop = () => {
     refetch: refetchProducts,
   } = useProductSummaries();
   const {
-    data: categories = [],
+    categories = [],
     error: categoriesError,
     isLoading: categoriesLoading,
-    refetch: refetchCategories,
-  } = useCategories();
-  // const { data: shopBanners = [] } = useBanners('shop');
+  } = useRetailCategories();
+  useBanners("dressing"); // preload dressing banners (reserved for future hero section)
   const { settings: charmBarSettings, isLoading: charmBarLoading } =
     useCharmBarSettings();
+
+  const dressingCategoriesFlat = useMemo(() => {
+    return categories.filter((c) => c.department === "dressing" && c.is_active);
+  }, [categories]);
 
   const loading =
     (productsLoading || categoriesLoading || charmBarLoading) &&
@@ -262,13 +252,10 @@ const Shop = () => {
     if (error) {
       showToast(
         "error",
-        error instanceof Error ? error.message : "Failed to load shop data",
+        error instanceof Error ? error.message : "Failed to load dressing data",
       );
     }
   }, [error, showToast]);
-
-  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
-    useMemo(() => buildShopCategoryIndex(categories), [categories]);
 
   const GLAM_CATEGORY_SLUGS = new Set([
     "makeup",
@@ -285,9 +272,6 @@ const Shop = () => {
   const nonCharmBarProducts = useMemo(
     () =>
       products.filter((p) => {
-        // Exclude dressing department products (moved to /dressing page)
-        if (p.department === "dressing") return false;
-
         const nameLower = p.name.toLowerCase();
 
         // Filter out specific products by name (in case they don't have a category slug)
@@ -298,13 +282,12 @@ const Shop = () => {
           nameLower.includes("lucky charm") ||
           nameLower.includes("lucky") ||
           nameLower.includes("lucky-charm") ||
-          nameLower.includes("charm") ||
-          nameLower.includes("speckles")
+          nameLower.includes("charm")
         ) {
           return false;
         }
+
         if (!p.categorySlug) return true;
-        
         const slugLower = p.categorySlug.toLowerCase();
         return (
           !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) &&
@@ -314,55 +297,77 @@ const Shop = () => {
     [products],
   );
 
-  const filteredProducts = useMemo(
-    () =>
-      filterShopProducts({
-        products: nonCharmBarProducts,
-        activeCategory,
-        activeSubcategory,
-        activeSubSubcategory,
-        searchQuery: deferredSearchQuery,
-        allowedSlugMap,
-        bestSellerIds: charmBarSettings?.best_seller_charms || [],
-      }),
-    [
-      nonCharmBarProducts,
-      activeCategory,
-      activeSubcategory,
-      activeSubSubcategory,
-      deferredSearchQuery,
-      allowedSlugMap,
-      charmBarSettings,
-    ],
-  );
+  const filteredProducts = useMemo(() => {
+    let matches = nonCharmBarProducts;
 
-  // Only show category tabs that have at least one product (auto-hides empty/moved categories)
-  const visibleParentCategories = useMemo(() => {
-    const productSlugs = new Set<string>();
-    for (const p of nonCharmBarProducts) {
-      if (p.categorySlug) productSlugs.add(p.categorySlug);
-      if (p.retailCategorySlug) productSlugs.add(p.retailCategorySlug);
-    }
-    return parentCategories.filter((cat) => {
-      const allowed = allowedSlugMap.get(cat.slug);
-      if (!allowed) return false;
-      for (const slug of allowed) {
-        if (productSlugs.has(slug)) return true;
+    // 1. Filter by category
+    const currentActiveCategory =
+      activeCategory === null ? "all" : activeCategory;
+    if (currentActiveCategory !== "all") {
+      const cat = dressingCategoriesFlat.find(
+        (c) => c.slug === currentActiveCategory,
+      );
+      if (cat) {
+        matches = matches.filter(
+          (product) => product.retail_category_id === cat.id,
+        );
+      } else {
+        matches = matches.filter(
+          (product) =>
+            product.retailCategorySlug === currentActiveCategory ||
+            product.categorySlug === currentActiveCategory,
+        );
       }
-      return false;
-    });
-  }, [parentCategories, nonCharmBarProducts, allowedSlugMap]);
+    } else {
+      // If "All Products" is selected, only show products that belong to the dressing department categories
+      const dressingCategoryIds = new Set(
+        dressingCategoriesFlat.map((c) => c.id),
+      );
+      const dressingCategorySlugs = new Set(
+        dressingCategoriesFlat.map((c) => c.slug),
+      );
 
-  const activeSubcategories = useMemo(() => {
-    if (activeCategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeCategory) ?? [];
-  }, [activeCategory, childCategoriesByParentSlug]);
+      matches = matches.filter(
+        (product) =>
+          (product.retail_category_id &&
+            dressingCategoryIds.has(product.retail_category_id)) ||
+          (product.retailCategorySlug &&
+            dressingCategorySlugs.has(product.retailCategorySlug)) ||
+          (product.categorySlug &&
+            dressingCategorySlugs.has(product.categorySlug)),
+      );
+    }
 
-  const activeSubSubcategories = useMemo(() => {
-    if (activeSubcategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
-  }, [activeSubcategory, childCategoriesByParentSlug]);
+    // 2. Search
+    if (deferredSearchQuery) {
+      const q = deferredSearchQuery.toLowerCase();
+      matches = matches.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.description && p.description.toLowerCase().includes(q)),
+      );
+    }
 
+    // Sort best sellers if needed
+    if (charmBarSettings?.best_seller_charms?.length) {
+      matches.sort((a, b) => {
+        const aIndex = charmBarSettings.best_seller_charms.indexOf(a.id);
+        const bIndex = charmBarSettings.best_seller_charms.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    }
+
+    return matches;
+  }, [
+    activeCategory,
+    deferredSearchQuery,
+    dressingCategoriesFlat,
+    charmBarSettings,
+    nonCharmBarProducts,
+  ]);
   const handleAddToCart = (product: Product) => {
     if (!user) {
       showToast("error", "Please login to add items to cart");
@@ -404,7 +409,7 @@ const Shop = () => {
 
   useEffect(() => {
     handleCategoryChange();
-  }, [activeCategory, activeSubcategory, activeSubSubcategory]);
+  }, [activeCategory]);
 
   const prefetchProduct = (productId: number) => {
     void queryClient.prefetchQuery({
@@ -421,51 +426,11 @@ const Shop = () => {
   return (
     <PageTransition>
       <div className="bg-white min-h-screen">
-        {/* menonaktidakn sementara banner */}
-        {/* <header className="relative w-full overflow-hidden">
-          {shopBanners.length > 0 ? (
-            <HeroBannerCarousel
-              slides={shopBanners}
-              intervalMs={5000}
-              containerClassName="relative w-full"
-              imageClassName="w-full h-auto object-contain opacity-90"
-              autoHeight={true}
-              prevButtonClassName="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-gray-900 p-3 rounded-full ux-transition-color"
-              nextButtonClassName="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-gray-900 p-3 rounded-full ux-transition-color"
-              indicatorActiveClassName="bg-primary"
-              indicatorInactiveClassName="bg-white/50 hover:bg-white/70"
-              overlayClassName="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"
-              renderOverlay={(slide) => (
-                <>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 sm:px-6 md:px-8">
-                    <div className="max-w-full md:max-w-4xl mx-auto">
-                      {slide.title && (
-                        <h1 className="text-white text-xl sm:text-3xl md:text-5xl lg:text-6xl font-black mb-2 sm:mb-3 md:mb-4 drop-shadow-lg line-clamp-3">{slide.title}</h1>
-                      )}
-                      {slide.subtitle ? (
-                        <p className="text-white/95 text-xs sm:text-sm md:text-lg lg:text-xl drop-shadow-md line-clamp-2">{slide.subtitle}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                </>
-              )}
-            />
-          ) : (
-            <>
-              <img
-                alt="Soft artistic studio setting"
-                className="w-full h-full object-contain opacity-90"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXsDj0az3zzKzPuGWFNVkv93Z05vEWEttTgUqh4SS7iW-kLSNN2_0jvc-v4pho8kz2OqrqnpiQWh4vBzn87isw1yCP1VE1HXsHHOHubRuhCY6LmQpM3KdjfATKhPb2413xZu1naHDWVkwgWTK9sWUI-jwpMrYUO-6Uad1Qcq7NStqNGjpzbzTLH7nXSLD8e_CIiD6qurTg-eVxRwpK34LWyWrNCYPlMJqhFEbs2rUPPUn2uOz-B8JOZCi3FsjDK7b_ExLsUFMJyrA"
-              />
-            </>
-          )}
-        </header> */}
-
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
             <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam — current page (active) */}
+              {/* Glam */}
               <Link
                 to="/beauty"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
@@ -490,7 +455,7 @@ const Shop = () => {
               {/* Spark Club */}
               <Link
                 to="/shop"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
               >
                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
                   shopping_bag
@@ -498,10 +463,10 @@ const Shop = () => {
                 Spark
               </Link>
 
-              {/* Dressing */}
+              {/* Dressing — current page (active) */}
               <Link
                 to="/dressing"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
+                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
               >
                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
                   checkroom
@@ -511,21 +476,13 @@ const Shop = () => {
             </div>
           </div>
 
-          <div className="flex justify-center mb-6 mt-4">
-            <img
-              src="/images/landing/SPARK CLUB.webp"
-              alt="Charm Bar"
-              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
-            />
-          </div>
-
           <div
             ref={productsRef}
-            className="mb-3 border-b border-gray-100 pb-0 sticky top-0 md:top-4 bg-white z-40 pt-4 -mt-6"
+            className="mb-8 border-b border-gray-100 pb-0 sticky top-0 bg-white z-40 pt-4 -mt-6"
           >
             <div className="flex flex-col space-y-4">
               <div className="relative w-full max-w-md mx-auto mb-2 px-2">
-                <div className="relative mb-3">
+                <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
@@ -561,7 +518,7 @@ const Shop = () => {
                 </div>
               </div>
 
-              <div className="w-full mt-4 mb-5">
+              <div className="w-full mt-4 mb-2">
                 <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
                   <div className="flex items-center space-x-6 md:space-x-8 pb-2">
                     <button
@@ -581,7 +538,7 @@ const Shop = () => {
                     >
                       All Products
                     </button>
-                    {visibleParentCategories.map((category) => {
+                    {dressingCategoriesFlat.map((category) => {
                       const isActive = activeCategory === category.slug;
                       return (
                         <button
@@ -607,91 +564,6 @@ const Shop = () => {
                   </div>
                 </div>
               </div>
-
-              {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full mt-2 mb-2">
-                  <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-2">
-                    <div className="flex gap-1.5 md:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === "all"
-                          ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                          : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() => {
-                          updateFilters({
-                            subcategory: subcategory.slug,
-                            subsubcategory: null,
-                          });
-                        }}
-                        className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                            : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                </div>
-              ) : null}
-
-              {activeCategory !== "all" &&
-              activeSubcategory !== "all" &&
-              activeSubSubcategories.length > 0 ? (
-                <div className="w-full mt-1 mb-2">
-                  <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-3">
-                    <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === "all"
-                          ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All{" "}
-                      {activeSubcategories.find(
-                        (s) => s.slug === activeSubcategory,
-                      )?.name || ""}
-                    </button>
-                    {activeSubSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() =>
-                          updateFilters({ subsubcategory: subcategory.slug })
-                        }
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                </div>
-              ) : null}
             </div>
           </div>
 
@@ -700,13 +572,12 @@ const Shop = () => {
               <p className="text-sm text-red-700 mb-4">
                 {error instanceof Error
                   ? error.message
-                  : "Failed to load shop data"}
+                  : "Failed to load dressing data"}
               </p>
               <button
                 type="button"
                 onClick={() => {
                   refetchProducts();
-                  refetchCategories();
                 }}
                 className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark ux-transition-color text-sm font-medium"
               >
@@ -715,7 +586,7 @@ const Shop = () => {
             </div>
           ) : null}
 
-          <ShopResults
+          <DressingShopResults
             filteredProducts={filteredProducts}
             loading={loading}
             resetSignal={resultsResetSignal}
@@ -728,4 +599,4 @@ const Shop = () => {
   );
 };
 
-export default Shop;
+export default DressingShop;

@@ -20,7 +20,8 @@ export interface Banner {
     | "shop"
     | "process"
     | "spark-map"
-    | "spark-club";
+    | "spark-club"
+    | "dressing";
   display_order: number;
   is_active: boolean;
 }
@@ -35,7 +36,8 @@ async function fetchBanners(
     | "shop"
     | "process"
     | "spark-map"
-    | "spark-club",
+    | "spark-club"
+    | "dressing",
   signal?: AbortSignal,
 ): Promise<Banner[]> {
   let query = supabase
@@ -70,7 +72,8 @@ export function useBanners(
     | "shop"
     | "process"
     | "spark-map"
-    | "spark-club",
+    | "spark-club"
+    | "dressing",
 ) {
   return useQuery({
     queryKey: queryKeys.banners(type),
