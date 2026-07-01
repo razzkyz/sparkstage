@@ -108,6 +108,9 @@ const RentalTransactions = lazy(
 const CreateRentalTransaction = lazy(
   () => import("../../pages/admin/CreateRentalTransaction"),
 );
+const ProductQRCatalog = lazy(
+  () => import("../../pages/admin/ProductQRCatalog"),
+);
 
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
@@ -157,4 +160,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/print-orders", Page: PrintOrdersReport },
   { path: "/admin/rental-transactions", Page: RentalTransactions },
   { path: "/admin/rental-order", Page: CreateRentalTransaction },
+  { path: "/admin/product-qr-catalog", Page: ProductQRCatalog },
 ];

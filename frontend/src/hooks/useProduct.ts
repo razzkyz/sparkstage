@@ -6,6 +6,7 @@ import { queryKeys } from '../lib/queryKeys';
 type Variant = {
   id: number;
   name: string;
+  sku?: string;
   price: number;
   available: number;
   imageUrl?: string;
@@ -22,6 +23,7 @@ type ProductImageRow = {
 export type ProductDetail = {
   id: number;
   name: string;
+  sku?: string;
   description: string;
   categoryName?: string;
   imageUrl?: string;
@@ -36,11 +38,12 @@ export async function fetchProductDetail(numericId: number, signal: AbortSignal)
       `
           id,
           name,
+          sku,
           description,
           categories(name),
           image_url,
           product_images(image_url, is_primary, display_order),
-          product_variants(id, name, price, attributes, is_active, stock, reserved_stock)
+          product_variants(id, name, sku, price, attributes, is_active, stock, reserved_stock)
         `
     )
     .abortSignal(signal)
@@ -67,6 +70,7 @@ export async function fetchProductDetail(numericId: number, signal: AbortSignal)
   const variants = ((data as { product_variants?: unknown[] }).product_variants || []) as {
     id: number;
     name: string;
+    sku?: string;
     price: string | number | null;
     attributes: Record<string, unknown> | null;
     is_active: boolean | null;
@@ -85,6 +89,7 @@ export async function fetchProductDetail(numericId: number, signal: AbortSignal)
       return {
         id: Number(v.id),
         name: String(v.name),
+        sku: v.sku ? String(v.sku) : undefined,
         price: Number.isFinite(price) ? price : 0,
         available,
         imageUrl: imageUrl ?? primaryImageUrl,
@@ -100,6 +105,7 @@ export async function fetchProductDetail(numericId: number, signal: AbortSignal)
   return {
     id: Number((data as { id: number | string }).id),
     name: String((data as { name: string }).name),
+    sku: typeof (data as any).sku === 'string' ? (data as any).sku : undefined,
     description: String((data as { description?: string | null }).description ?? ''),
     categoryName,
     imageUrl: primaryImageUrl,

@@ -266,6 +266,12 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         path: "/admin/store",
       },
       {
+        id: "product-qr-catalog",
+        label: "Katalog QR Produk",
+        icon: "qr_code_2",
+        path: "/admin/product-qr-catalog",
+      },
+      {
         id: "stock-opening",
         label: "Stock Opening",
         icon: "wb_twilight",
@@ -499,6 +505,12 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Stok & Produk",
         icon: "inventory_2",
         path: "/admin/store",
+      },
+      {
+        id: "product-qr-catalog",
+        label: "Katalog QR Produk",
+        icon: "qr_code_2",
+        path: "/admin/product-qr-catalog",
       },
       {
         id: "stock-opening",

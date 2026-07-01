@@ -11,6 +11,7 @@ import { ProductImageCarousel } from "../components/ProductImageCarousel";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../lib/queryKeys";
 import { ShoppingBag, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
+import QRCode from "react-qr-code";
 import useSeo from "../hooks/useSeo";
 
 export default function ProductDetailPage() {
@@ -220,6 +221,24 @@ export default function ProductDetailPage() {
                           Pick up at studio
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-4 text-center shadow-sm w-full max-w-sm">
+                    <div className="bg-white p-2 rounded-xl border border-gray-100 shadow-sm">
+                      {product && (
+                        <QRCode
+                          value={selectedVariant?.sku || product.sku || product.id.toString()}
+                          size={120}
+                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                          viewBox={`0 0 256 256`}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900 mb-1">Barcode / SKU Produk</p>
+                      <p className="text-xs text-gray-500">Gunakan scanner untuk identifikasi produk (Kasir/Gudang)</p>
                     </div>
                   </div>
                 </div>
