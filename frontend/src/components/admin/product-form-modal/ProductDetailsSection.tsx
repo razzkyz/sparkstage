@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { slugify } from '../../../utils/merchant';
 import { useRetailCategories } from '../../../hooks/useRetailCategories';
-import type { CategoryOption, ProductDraft } from './productFormModalTypes';
+import { RupiahPriceInput } from '../../RupiahPriceInput';
+import type { ProductDraft } from './productFormModalTypes';
 
 type ProductDetailsSectionProps = {
   draft: ProductDraft;
   slugTouched: boolean;
-  categoryOptions: CategoryOption[];
   setDraft: Dispatch<SetStateAction<ProductDraft>>;
   setSlugTouched: Dispatch<SetStateAction<boolean>>;
 };
@@ -15,27 +15,10 @@ type ProductDetailsSectionProps = {
 export function ProductDetailsSection({
   draft,
   slugTouched,
-  categoryOptions,
   setDraft,
   setSlugTouched,
 }: ProductDetailsSectionProps) {
-  const lineage: number[] = [];
-  let currentId: number | null | undefined = draft.category_id;
-  const visited = new Set<number>();
-  while (currentId && !visited.has(currentId)) {
-    visited.add(currentId);
-    lineage.unshift(currentId);
-    const cat = categoryOptions.find((c) => c.id === currentId);
-    currentId = cat?.parent_id;
-  }
 
-  const rootId = lineage[0] ?? null;
-  const subId = lineage[1] ?? null;
-  const subsubId = lineage[2] ?? null;
-
-  const rootOptions = categoryOptions.filter((c) => !c.parent_id);
-  const subOptions = rootId ? categoryOptions.filter((c) => c.parent_id === rootId) : [];
-  const subsubOptions = subId ? categoryOptions.filter((c) => c.parent_id === subId) : [];
 
   const { categories: retailCategories } = useRetailCategories();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -88,78 +71,63 @@ export function ProductDetailsSection({
         </label>
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold text-gray-600">Product SKU</span>
-        <input
-          value={draft.sku}
-          onChange={(event) => setDraft((current) => ({ ...current, sku: event.target.value.toUpperCase() }))}
-          className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          placeholder="PROD-001"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold text-gray-600">Category</span>
-        <select
-          value={rootId ?? ''}
-          onChange={(event) => {
-            const val = event.target.value ? Number(event.target.value) : null;
-            setDraft((current) => ({ ...current, category_id: val }));
-          }}
-          className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        >
-          <option value="">Select category</option>
-          {rootOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {subOptions.length > 0 && (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-gray-600">
-            {rootId ? categoryOptions.find((c) => c.id === rootId)?.name + ' Subcategory' : 'Subcategory'}
-          </span>
-          <select
-            value={subId ?? ''}
+          <span className="text-xs font-bold text-gray-600">Product SKU</span>
+          <input
+            value={draft.sku}
             onChange={(event) => {
-              const val = event.target.value ? Number(event.target.value) : rootId;
-              setDraft((current) => ({ ...current, category_id: val }));
+              const newSku = event.target.value.toUpperCase();
+              setDraft((current) => {
+                const nextVariants = [...current.variants];
+                if (nextVariants.length > 0) {
+                  nextVariants[0] = { ...nextVariants[0], sku: newSku };
+                }
+                return { ...current, sku: newSku, variants: nextVariants };
+              });
             }}
             className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          >
-            <option value="">Select subcategory</option>
-            {subOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+            placeholder="PROD-001"
+          />
         </label>
-      )}
-
-      {subsubOptions.length > 0 && (
+        
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-gray-600">Type</span>
-          <select
-            value={subsubId ?? ''}
+          <span className="text-xs font-bold text-gray-600">Base Price</span>
+          <RupiahPriceInput
+            value={draft.variants[0]?.price ?? ''}
+            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            onChange={(raw) => {
+              setDraft((current) => {
+                const nextVariants = [...current.variants];
+                if (nextVariants.length > 0) {
+                  nextVariants[0] = { ...nextVariants[0], price: raw };
+                }
+                return { ...current, variants: nextVariants };
+              });
+            }}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-gray-600">Base Stock</span>
+          <input
+            type="number"
+            min="0"
+            value={draft.variants[0]?.stock ?? 0}
             onChange={(event) => {
-              const val = event.target.value ? Number(event.target.value) : subId;
-              setDraft((current) => ({ ...current, category_id: val }));
+              const newStock = Number(event.target.value);
+              setDraft((current) => {
+                const nextVariants = [...current.variants];
+                if (nextVariants.length > 0) {
+                  nextVariants[0] = { ...nextVariants[0], stock: Number.isFinite(newStock) ? newStock : 0 };
+                }
+                return { ...current, variants: nextVariants };
+              });
             }}
             className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          >
-            <option value="">Select type</option>
-            {subsubOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
-      )}
+      </div>
 
       {/* --- NEW RETAIL CATEGORIES --- */}
       <div className="mt-2 flex flex-col gap-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">

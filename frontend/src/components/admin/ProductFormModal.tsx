@@ -20,7 +20,6 @@ export default function ProductFormModal(props: ProductFormModalProps) {
     saving,
     error,
     isOnline,
-    categoryOptions,
     activeExistingImages,
     setDraft,
     setImages,
@@ -83,7 +82,6 @@ export default function ProductFormModal(props: ProductFormModalProps) {
               <ProductDetailsSection
                 draft={draft}
                 slugTouched={controller.slugTouched}
-                categoryOptions={categoryOptions}
                 setDraft={setDraft}
                 setSlugTouched={setSlugTouched}
               />

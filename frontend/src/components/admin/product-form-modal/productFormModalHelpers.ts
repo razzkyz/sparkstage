@@ -84,7 +84,6 @@ export function validateProductDraft(params: {
   if (!draft.name.trim()) return 'Name is required.';
   if (!draft.slug.trim()) return 'Slug is required.';
   if (!draft.sku.trim()) return 'Product SKU is required.';
-  if (!draft.category_id) return 'Category is required.';
   if (!draft.variants.length) return 'At least one variant is required.';
 
   const totalImages = imagesLength + existingImages.length - removedImageUrlsLength;

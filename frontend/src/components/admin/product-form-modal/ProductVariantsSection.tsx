@@ -11,6 +11,25 @@ type ProductVariantsSectionProps = {
 
 
 export function ProductVariantsSection({ draft, saving, setDraft }: ProductVariantsSectionProps) {
+  if (draft.variants.length <= 1) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 flex flex-col items-center justify-center text-center">
+         <div className="h-10 w-10 rounded-full bg-pink-50 text-[#ff4b86] flex items-center justify-center mb-3">
+           <span className="material-symbols-outlined">style</span>
+         </div>
+         <p className="text-sm font-bold text-gray-900 mb-1">Product Variants</p>
+         <p className="text-xs text-gray-500 mb-4 max-w-xs">Does this product come in multiple sizes, colors, or types? Add variants here.</p>
+         <button
+          type="button"
+          onClick={() => setDraft((current) => ({ ...current, variants: [...current.variants, createEmptyVariant()] }))}
+          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+        >
+          + Add Variant
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
       <div className="flex items-center justify-between">
