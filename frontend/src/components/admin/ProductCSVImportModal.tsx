@@ -51,13 +51,34 @@ export function ProductCSVImportModal({
       let currentRetailCategories = [...(retailCategories || [])];
 
       // Ambil daftar slug produk yang sudah ada untuk fitur UPSERT (Update/Insert)
-      const { data: existingProducts } = await supabase
-        .from('products')
-        .select('id, slug')
-        .is('deleted_at', null);
+      // Menggunakan paginasi karena limit default Supabase adalah 1000 baris
+      let allExistingProducts: { id: number; slug: string }[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, slug')
+          .is('deleted_at', null)
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allExistingProducts = [...allExistingProducts, ...data];
+          page++;
+          if (data.length < pageSize) {
+             hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
       
       const existingSlugMap = new Map(
-        (existingProducts || []).map(p => [p.slug, p.id])
+        allExistingProducts.map(p => [p.slug, p.id])
       );
 
       for (const p of parsedProducts) {
