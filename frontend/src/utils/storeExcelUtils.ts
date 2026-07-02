@@ -38,20 +38,40 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
 
   if (exportData) {
     try {
-      const { data: dbProducts, error } = await supabase
-        .from('products')
-        .select(`
-          name, slug, sku, description, is_active,
-          categories (name),
-          retail_categories!products_retail_category_id_fkey (name, department),
-          sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
-          product_variants (name, sku, price, stock, is_active),
-          product_images (image_url, display_order)
-        `)
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
+      let allProducts: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (!error && dbProducts && dbProducts.length > 0) {
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            name, slug, sku, description, is_active,
+            categories (name),
+            retail_categories!products_retail_category_id_fkey (name, department),
+            sub_categories:retail_categories!products_retail_subcategory_id_fkey (name),
+            product_variants (name, sku, price, stock, is_active),
+            product_images (image_url, display_order)
+          `)
+          .is('deleted_at', null)
+          .order('name', { ascending: true })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allProducts = [...allProducts, ...data];
+          page++;
+          if (data.length < pageSize) hasMore = false;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      const dbProducts = allProducts;
+
+      if (dbProducts && dbProducts.length > 0) {
         dbProducts.forEach((p: any) => {
           const departmentName = p.retail_categories?.department || '';
           const categoryName = p.retail_categories?.name || '';

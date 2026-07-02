@@ -187,14 +187,28 @@ const StoreInventory = () => {
     setIsExportingCSV(true);
 
     try {
-      const { data: allProducts, error } = await supabase
-        .from("products")
-        .select(getInventorySelect("", ""))
-        .is("deleted_at", null)
-        .order("name", { ascending: true });
+      let allProducts: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("products")
+          .select(getInventorySelect("", ""))
+          .is("deleted_at", null)
+          .order("name", { ascending: true })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allProducts = [...allProducts, ...data];
+          page++;
+          if (data.length < pageSize) hasMore = false;
+        } else {
+          hasMore = false;
+        }
       }
 
       const rows = mapInventoryProducts((allProducts as any) ?? []);
