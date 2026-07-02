@@ -98,7 +98,7 @@ export function ProductDetailsSection({
               const newSku = event.target.value.toUpperCase();
               setDraft((current) => {
                 const nextVariants = [...current.variants];
-                if (nextVariants.length > 0) {
+                if (nextVariants.length === 1) {
                   nextVariants[0] = { ...nextVariants[0], sku: newSku };
                 }
                 return { ...current, sku: newSku, variants: nextVariants };
@@ -117,7 +117,7 @@ export function ProductDetailsSection({
             onChange={(raw) => {
               setDraft((current) => {
                 const nextVariants = [...current.variants];
-                if (nextVariants.length > 0) {
+                if (nextVariants.length === 1) {
                   nextVariants[0] = { ...nextVariants[0], price: raw };
                 }
                 return { ...current, variants: nextVariants };
@@ -131,13 +131,14 @@ export function ProductDetailsSection({
           <input
             type="number"
             min="0"
-            value={draft.variants[0]?.stock ?? 0}
+            value={draft.variants[0]?.stock ?? ''}
             onChange={(event) => {
-              const newStock = Number(event.target.value);
+              const val = event.target.value;
+              const newStock = val === '' ? '' : Number(val);
               setDraft((current) => {
                 const nextVariants = [...current.variants];
-                if (nextVariants.length > 0) {
-                  nextVariants[0] = { ...nextVariants[0], stock: Number.isFinite(newStock) ? newStock : 0 };
+                if (nextVariants.length === 1) {
+                  nextVariants[0] = { ...nextVariants[0], stock: newStock };
                 }
                 return { ...current, variants: nextVariants };
               });
@@ -240,9 +241,9 @@ export function ProductDetailsSection({
         <button
           type="button"
           onClick={() => setDraft((current) => ({ ...current, is_active: !current.is_active }))}
-          className={`relative h-7 w-12 rounded-full transition-colors ${draft.is_active ? 'bg-primary' : 'bg-gray-100'}`}
+          className={`relative h-7 w-12 rounded-full transition-colors ${draft.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
         >
-          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${draft.is_active ? 'left-6' : 'left-1'}`} />
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${draft.is_active ? 'left-6' : 'left-1'}`} />
         </button>
       </div>
     </div>

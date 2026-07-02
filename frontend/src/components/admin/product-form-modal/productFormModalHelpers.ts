@@ -103,7 +103,8 @@ export function validateProductDraft(params: {
       return `Variant "${variant.name || 'unnamed'}" must have a valid price greater than 0.`;
     }
 
-    if (!Number.isInteger(variant.stock) || variant.stock < 0) {
+    const stockNum = Number(variant.stock);
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
       return `Variant "${variant.name || 'unnamed'}" must have stock 0 or greater.`;
     }
   }

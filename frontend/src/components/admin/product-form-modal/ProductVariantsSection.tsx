@@ -104,12 +104,15 @@ export function ProductVariantsSection({ draft, saving, setDraft }: ProductVaria
                 </td>
                 <td className="py-2 pr-3">
                   <input
-                    value={String(variant.stock)}
+                    type="number"
+                    min="0"
+                    value={variant.stock === 0 && variant.stock.toString() === '0' ? variant.stock : variant.stock}
                     onChange={(event) =>
                       setDraft((current) => {
                         const next = current.variants.slice();
-                        const stock = Number(event.target.value);
-                        next[index] = { ...next[index], stock: Number.isFinite(stock) ? stock : 0 };
+                        const val = event.target.value;
+                        const stock = val === '' ? '' : Number(val);
+                        next[index] = { ...next[index], stock };
                         return { ...current, variants: next };
                       })
                     }

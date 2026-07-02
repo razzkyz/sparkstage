@@ -14,7 +14,7 @@ export type ProductVariantDraft = {
   name: string;
   sku: string;
   price: string;
-  stock: number;
+  stock: number | string;
   size?: string;
   color?: string;
 };

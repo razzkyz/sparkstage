@@ -200,8 +200,26 @@ export function useProductFormModalController(props: ProductFormModalProps): Pro
   }, [isDirty, isOpen, saving]);
 
   const handleSave = useCallback(async () => {
+    // Auto-sync main fields to the default variant if there's only 1 variant
+    const draftToSave = { ...draft };
+    draftToSave.variants = draftToSave.variants.map((v) => ({
+      ...v,
+      stock: v.stock === '' ? 0 : Number(v.stock),
+    }));
+
+    if (draftToSave.variants.length === 1) {
+      const v = draftToSave.variants[0];
+      draftToSave.variants = [
+        {
+          ...v,
+          name: v.name === 'Default' || !v.name ? draftToSave.name : v.name,
+          sku: !v.sku ? draftToSave.sku : v.sku,
+        },
+      ];
+    }
+
     const message = validateProductDraft({
-      draft,
+      draft: draftToSave,
       imagesLength: images.length,
       existingImages,
       removedImageUrlsLength: removedImageUrls.length,
@@ -217,7 +235,7 @@ export function useProductFormModalController(props: ProductFormModalProps): Pro
       const newImageFiles = images.map((image) => image.file);
       const timeoutMs = getSaveTimeoutMs(newImageFiles.length);
       await Promise.race([
-        Promise.resolve(onSave({ draft, newImages: newImageFiles, removedImageUrls })),
+        Promise.resolve(onSave({ draft: draftToSave, newImages: newImageFiles, removedImageUrls })),
         new Promise<void>((_, reject) => {
           window.setTimeout(() => {
             reject(
