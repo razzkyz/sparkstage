@@ -28,7 +28,6 @@ interface QRCardItem {
   productName: string;
   variantName?: string;
   sku: string;
-  imageUrl?: string;
 }
 
 export default function ProductQRCatalog() {
@@ -90,8 +89,7 @@ export default function ProductQRCatalog() {
         key: `${product.id}-${v.id}`,
         productName: product.name,
         variantName: v.name,
-        sku: v.sku || product.sku || product.id.toString(),
-        imageUrl: product.image_url
+        sku: v.sku || product.sku || product.id.toString()
       }));
       return variantItems;
     }
@@ -100,8 +98,7 @@ export default function ProductQRCatalog() {
       key: product.id.toString(),
       productName: product.name,
       variantName: undefined,
-      sku: product.sku || product.id.toString(),
-      imageUrl: product.image_url
+      sku: product.sku || product.id.toString()
     }];
     return singleItem;
   });
@@ -177,7 +174,6 @@ export default function ProductQRCatalog() {
                   productName={item.productName}
                   variantName={item.variantName}
                   sku={item.sku}
-                  imageUrl={item.imageUrl}
                 />
               ))}
             </div>
@@ -254,34 +250,101 @@ export default function ProductQRCatalog() {
   );
 }
 
-function QRCard({ productName, variantName, sku, imageUrl }: { productName: string, variantName?: string, sku: string, imageUrl?: string }) {
+function QRCard({ productName, variantName, sku }: { productName: string, variantName?: string, sku: string }) {
   // If variant name is exactly the same as product name or it's "Default", hide it to avoid redundancy
   const showVariant = variantName && variantName !== "Default" && variantName.toLowerCase() !== productName.toLowerCase();
 
+  const handleDownloadQR = () => {
+    const canvas = document.getElementById(`qr-${sku}`) as HTMLCanvasElement;
+    if (!canvas) {
+      console.error('QR canvas not found');
+      return;
+    }
+
+    // Get the SVG QR code
+    const svg = canvas.querySelector('svg');
+    if (!svg) {
+      console.error('QR SVG not found');
+      return;
+    }
+
+    // Create a canvas to convert SVG to PNG
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size (larger for better quality)
+    const size = 512;
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+
+    // Fill white background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // Convert SVG to image
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+
+      // Download as PNG with SKU as filename
+      tempCanvas.toBlob((blob) => {
+        if (!blob) return;
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${sku}.png`;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+      }, 'image/png');
+    };
+    img.src = url;
+  };
+
   return (
     <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md flex flex-col items-center text-center transition-shadow relative overflow-hidden group">
-      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm mb-4 w-40 h-40 flex items-center justify-center">
+      {/* Product Name */}
+      <h3 className="font-bold text-gray-900 text-base leading-tight line-clamp-2 w-full px-1 mb-3">
+        {productName}
+      </h3>
+
+      {/* Variant Badge */}
+      {showVariant && (
+        <span className="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-md mb-4 font-medium">
+          {variantName}
+        </span>
+      )}
+
+      {/* QR Code - Large and centered */}
+      <div id={`qr-${sku}`} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4 w-48 h-48 flex items-center justify-center">
         <QRCode
           value={sku}
-          size={140}
+          size={176}
           style={{ height: "auto", maxWidth: "100%", width: "100%" }}
           viewBox={`0 0 256 256`}
         />
       </div>
-      <div className="flex items-center gap-3 w-full justify-center">
-        {imageUrl && (
-          <img src={imageUrl} alt={productName} className="w-8 h-8 object-cover rounded-md border border-gray-100" />
-        )}
-        <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{productName}</h3>
-      </div>
-      {showVariant && (
-        <span className="bg-gray-100 text-gray-700 text-[11px] px-2.5 py-1 rounded-md mt-2 font-medium">
-          {variantName}
-        </span>
-      )}
-      <p className="text-main-500 font-mono text-xs font-bold bg-main-50 px-3 py-1.5 rounded-md mt-4 w-full truncate border border-main-100" title={sku}>
+
+      {/* SKU */}
+      <p className="text-main-500 font-mono text-sm font-bold bg-main-50 px-4 py-2 rounded-md w-full truncate border border-main-100 mb-3" title={sku}>
         {sku}
       </p>
+
+      {/* Download Button */}
+      <button
+        onClick={handleDownloadQR}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors text-sm"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download QR
+      </button>
     </div>
   );
 }
