@@ -184,7 +184,8 @@ export default function BeautyPage() {
   ];
 
   const glamCategories = useMemo(() => {
-    return categories.filter((c) => c.department === "glam" && c.is_active);
+    // Get all subcategories (categories with parent_id)
+    return categories.filter((c) => c.department === "glam" && c.is_active && c.parent_id !== null);
   }, [categories]);
 
   const makeupProducts = useMemo(() => {
