@@ -429,13 +429,6 @@ const DressingShop = () => {
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           {/* No department tabs - Dressing is now standalone in main navbar */}
 
-          <div className="flex justify-center mb-6 mt-4">
-            <img
-              src="/images/landing/DRESSING.webp"
-              alt="Dressing Room"
-              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
-            />
-          </div>
 
           <div
             ref={productsRef}
