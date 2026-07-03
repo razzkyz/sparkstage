@@ -4,7 +4,7 @@ import { queryKeys } from '../lib/queryKeys';
 
 export interface RetailCategory {
   id: number;
-  department: 'glam' | 'charmbar' | 'sparkclub' | 'dressing';
+  department: 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop';
   name: string;
   slug: string;
   parent_id: number | null;

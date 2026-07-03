@@ -23,7 +23,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../components/Toast";
 import { useAdminRetailProducts } from "../../hooks/useAdminRetailProducts";
-import { useRetailCategories } from "../../hooks/useRetailCategories";
+import { useRetailCategories, type RetailCategory } from "../../hooks/useRetailCategories";
 import { uploadPublicAssetToImageKit } from "../../lib/publicImagekitUpload";
 import { uploadToR2 } from "../../lib/r2Upload";
 import { supabase } from "../../lib/supabase";
@@ -39,6 +39,7 @@ const DEPARTMENTS = [
   { id: "charmbar", label: "Charm Bar" },
   { id: "sparkclub", label: "Spark Club" },
   { id: "dressing", label: "Dressing" },
+  { id: "shop", label: "Shop" },
 ];
 
 export default function RetailProductManager() {
@@ -98,7 +99,7 @@ export default function RetailProductManager() {
   // Category Manager State
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [catActiveDept, setCatActiveDept] = useState<
-    "glam" | "charmbar" | "sparkclub" | "dressing"
+    "glam" | "charmbar" | "sparkclub" | "dressing" | "shop"
   >("glam");
   const [catEditingId, setCatEditingId] = useState<number | null>(null);
   // null = adding root category, number = adding sub to this parent id
@@ -126,7 +127,7 @@ export default function RetailProductManager() {
         showToast("success", "Berhasil diperbarui");
       } else {
         await createCategory({
-          department: catActiveDept,
+          department: catActiveDept as RetailCategory['department'],
           name: catFormData.name,
           slug: catFormData.slug,
           is_active: catFormData.is_active,
