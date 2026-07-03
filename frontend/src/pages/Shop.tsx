@@ -10,6 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "../utils/formatters";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
 import { useCategories } from "../hooks/useCategories";
+import { useRetailCategories } from "../hooks/useRetailCategories";
 // import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from "../hooks/useProduct";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
@@ -249,12 +250,16 @@ const Shop = () => {
     isLoading: categoriesLoading,
     refetch: refetchCategories,
   } = useCategories();
+  const {
+    categories: retailCategories = [],
+    isLoading: retailCategoriesLoading,
+  } = useRetailCategories();
   // const { data: shopBanners = [] } = useBanners('shop');
   const { settings: charmBarSettings, isLoading: charmBarLoading } =
     useCharmBarSettings();
 
   const loading =
-    (productsLoading || categoriesLoading || charmBarLoading) &&
+    (productsLoading || categoriesLoading || charmBarLoading || retailCategoriesLoading) &&
     products.length === 0;
   const error = productsError || categoriesError;
 
@@ -273,11 +278,11 @@ const Shop = () => {
   // GLAM categories from retail_categories table (department = 'glam')
   const glamCategorySlugs = useMemo(() => {
     return new Set(
-      categories
+      retailCategories
         .filter((c) => c.department === "glam" && c.is_active)
         .map((c) => c.slug)
     );
-  }, [categories]);
+  }, [retailCategories]);
 
   // Legacy GLAM slugs for backward compatibility (old products without retail_category_id)
   const LEGACY_GLAM_CATEGORY_SLUGS = new Set([
