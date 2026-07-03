@@ -23,10 +23,10 @@ export function ProductOrderDetailsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose}></div>
       <div
-        className="relative w-full max-w-2xl rounded-xl bg-white border border-gray-200 shadow-xl animate-fade-in-scale"
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl bg-white border border-gray-200 shadow-xl animate-fade-in-scale"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-4">
+        <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-4 flex-shrink-0">
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest text-gray-500">Pickup Code</p>
             <h3 className="text-2xl font-bold text-neutral-900 truncate">{details.order.pickup_code}</h3>
@@ -39,10 +39,10 @@ export function ProductOrderDetailsModal({
           </button>
         </div>
 
-        <div className="p-6">
-          {actionError && <div className="mb-4 text-sm text-red-600">{actionError}</div>}
+        <div className="p-6 overflow-y-auto flex-1 flex flex-col min-h-0">
+          {actionError && <div className="mb-4 text-sm text-red-600 flex-shrink-0">{actionError}</div>}
 
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
             <div className="grid grid-cols-2 gap-4 text-sm">
               {details.order.sales_staff_name && (
                 <div>
@@ -71,21 +71,23 @@ export function ProductOrderDetailsModal({
             </div>
           </div>
 
-          <div className="space-y-3">
-            {details.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-neutral-900 truncate">{item.productName}</p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {item.variantName} · {item.quantity} × {formatCurrency(item.price)}
-                  </p>
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2">
+              {details.items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-neutral-900 truncate">{item.productName}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {item.variantName} · {item.quantity} × {formatCurrency(item.price)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-neutral-900">{formatCurrency(item.subtotal)}</span>
                 </div>
-                <span className="text-sm font-bold text-neutral-900">{formatCurrency(item.subtotal)}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div className="mt-6 border-t border-gray-200 pt-4 flex items-center justify-between">
+          <div className="mt-4 border-t border-gray-200 pt-4 flex items-center justify-between flex-shrink-0">
             <span className="text-xs uppercase tracking-widest text-gray-500">Total</span>
             <span className="text-xl font-bold text-primary">{formatCurrency(Number(details.order.total ?? 0))}</span>
           </div>
@@ -93,7 +95,7 @@ export function ProductOrderDetailsModal({
           <button
             onClick={onCompletePickup}
             disabled={submitting}
-            className="mt-6 w-full rounded-lg bg-[#ff4b86] px-6 py-3 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 w-full rounded-lg bg-[#ff4b86] px-6 py-3 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center gap-2"
           >
             {submitting ? 'Memproses...' : 'Konfirmasi Pembayaran & Serah Barang'}
           </button>

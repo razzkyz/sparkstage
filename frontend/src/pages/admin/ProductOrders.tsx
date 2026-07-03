@@ -47,6 +47,8 @@ export default function ProductOrders() {
     completedOrders,
     displayOrders,
     menuSections,
+    selectedBatchCodes,
+    isBatchSubmitting,
     setActiveTab,
     setScannerOpen,
     setLookupCode,
@@ -55,6 +57,8 @@ export default function ProductOrders() {
     handleSelectOrder,
     handleCloseDetails,
     handleCompletePickup,
+    toggleBatchCode,
+    handleBatchCompletePickup,
   } = controller;
 
   const handleScanWithDetails = useCallback(
@@ -126,12 +130,18 @@ export default function ProductOrders() {
         isFetching={isFetching}
         ordersError={ordersError}
         displayOrders={displayOrders}
+        selectedBatchCodes={selectedBatchCodes}
+        isBatchSubmitting={isBatchSubmitting}
         onChangeTab={setActiveTab}
         onRefresh={() => {
           void refetch();
         }}
         onSelectOrder={(pickupCode) => {
           void handleSelectOrder(pickupCode);
+        }}
+        onToggleBatchCode={toggleBatchCode}
+        onBatchComplete={() => {
+          void handleBatchCompletePickup();
         }}
       />
 

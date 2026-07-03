@@ -34,11 +34,18 @@ export function useProductOrdersController({
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [selectedPickupCode, setSelectedPickupCode] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [selectedBatchCodes, setSelectedBatchCodes] = useState<Set<string>>(new Set());
+  const [isBatchSubmitting, setIsBatchSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (ordersError) showToast('error', ordersError);
   }, [ordersError, showToast]);
+
+  const handleTabChange = useCallback((tab: ProductOrdersTab) => {
+    setActiveTab(tab);
+    setSelectedBatchCodes(new Set()); // Clear selection on tab change
+  }, []);
 
   const detailsQuery = useQuery<ProductOrderDetails>({
     queryKey: selectedPickupCode ? queryKeys.productOrderDetail(selectedPickupCode) : [...queryKeys.productOrderDetails(), 'idle'],
@@ -162,6 +169,46 @@ export function useProductOrdersController({
     await completePickupMutation.mutateAsync(pickupCode);
   }, [completePickupMutation, detailsQuery.data?.order.pickup_code]);
 
+  const toggleBatchCode = useCallback((code: string) => {
+    setSelectedBatchCodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) {
+        next.delete(code);
+      } else {
+        next.add(code);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBatchCompletePickup = useCallback(async () => {
+    if (selectedBatchCodes.size === 0) return;
+    setIsBatchSubmitting(true);
+    setActionError(null);
+    try {
+      const codes = Array.from(selectedBatchCodes);
+      await Promise.all(
+        codes.map((code) =>
+          completeProductPickup({
+            pickupCode: code,
+            session,
+          })
+        )
+      );
+      setSelectedBatchCodes(new Set());
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrders() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrderDetails() }),
+      ]);
+      showToast('success', `${codes.length} pesanan berhasil diverifikasi`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Gagal memverifikasi beberapa barang');
+      showToast('error', 'Terjadi kesalahan saat memproses beberapa pesanan');
+    } finally {
+      setIsBatchSubmitting(false);
+    }
+  }, [selectedBatchCodes, session, queryClient, showToast]);
+
   const safeOrders = orders.length > 0 ? orders : EMPTY_ORDERS;
   const pendingPaymentOrders = useMemo(() => getPendingPaymentOrders(safeOrders), [safeOrders]);
   const pendingOrders = useMemo(() => getPendingOrders(safeOrders), [safeOrders]);
@@ -193,7 +240,9 @@ export function useProductOrdersController({
     shippingOrders,
     displayOrders,
     menuSections,
-    setActiveTab,
+    selectedBatchCodes,
+    isBatchSubmitting,
+    setActiveTab: handleTabChange,
     setScannerOpen,
     setLookupCode,
     handleLookup,
@@ -201,5 +250,7 @@ export function useProductOrdersController({
     handleSelectOrder,
     handleCloseDetails,
     handleCompletePickup,
+    toggleBatchCode,
+    handleBatchCompletePickup,
   };
 }
