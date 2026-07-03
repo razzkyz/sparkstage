@@ -18,7 +18,6 @@ import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
 import { queryKeys } from "../lib/queryKeys";
 import { HeroBannerCarousel } from "../components/HeroBannerCarousel";
 import { useShopFilters } from "./shop/useShopFilters";
-import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
 
@@ -242,9 +241,9 @@ const SparkClub = () => {
   const { settings: charmBarSettings, isLoading: charmBarLoading } =
     useCharmBarSettings();
 
-  const sparkClubCategoriesFlat = useMemo(() => {
+  const shopCategoriesFlat = useMemo(() => {
     return categories.filter(
-      (c) => c.department === "sparkclub" && c.is_active,
+      (c) => c.department === "shop" && c.is_active,
     );
   }, [categories]);
 
@@ -259,59 +258,33 @@ const SparkClub = () => {
         "error",
         error instanceof Error
           ? error.message
-          : "Failed to load spark club data",
+          : "Failed to load shop data",
       );
     }
   }, [error, showToast]);
 
-  const GLAM_CATEGORY_SLUGS = new Set([
-    "makeup",
-    "eyewear",
-    "glitter",
-    "headliner",
-    "starglitter",
-    "star-glitter",
-    "popsocket",
-    "pop-socket",
-    "popsockets",
-  ]);
-
-  const nonCharmBarProducts = useMemo(
+  // Filter products by department 'shop' - include ALL shop products with their categories
+  const shopProducts = useMemo(
     () =>
       products.filter((p) => {
-        const nameLower = p.name.toLowerCase();
-
-        // Filter out specific products by name (in case they don't have a category slug)
-        if (
-          nameLower.includes("headliner") ||
-          nameLower.includes("pop socket") ||
-          nameLower.includes("popsocket") ||
-          nameLower.includes("lucky charm") ||
-          nameLower.includes("lucky") ||
-          nameLower.includes("lucky-charm") ||
-          nameLower.includes("charm")
-        ) {
-          return false;
+        // Include products that belong to shop department categories
+        if (p.retail_category_id) {
+          const category = categories.find((c) => c.id === p.retail_category_id);
+          return category?.department === 'shop' && category?.is_active;
         }
-
-        if (!p.categorySlug) return true;
-        const slugLower = p.categorySlug.toLowerCase();
-        return (
-          !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) &&
-          !GLAM_CATEGORY_SLUGS.has(slugLower)
-        );
+        return false;
       }),
-    [products],
+    [products, categories],
   );
 
   const filteredProducts = useMemo(() => {
-    let matches = nonCharmBarProducts;
+    let matches = shopProducts;
 
     // 1. Filter by category
     const currentActiveCategory =
       activeCategory === null ? "all" : activeCategory;
     if (currentActiveCategory !== "all") {
-      const cat = sparkClubCategoriesFlat.find(
+      const cat = shopCategoriesFlat.find(
         (c) => c.slug === currentActiveCategory,
       );
       if (cat) {
@@ -353,8 +326,9 @@ const SparkClub = () => {
   }, [
     activeCategory,
     deferredSearchQuery,
-    sparkClubCategoriesFlat,
+    shopCategoriesFlat,
     charmBarSettings,
+    shopProducts,
   ]);
   const handleAddToCart = (product: Product) => {
     if (!user) {
@@ -501,7 +475,7 @@ const SparkClub = () => {
                     >
                       All Products
                     </button>
-                    {sparkClubCategoriesFlat.map((category) => {
+                    {shopCategoriesFlat.map((category) => {
                       const isActive = activeCategory === category.slug;
                       return (
                         <button
@@ -535,7 +509,7 @@ const SparkClub = () => {
               <p className="text-sm text-red-700 mb-4">
                 {error instanceof Error
                   ? error.message
-                  : "Failed to load spark club data"}
+                  : "Failed to load shop data"}
               </p>
               <button
                 type="button"

@@ -9,7 +9,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { formatCurrency } from "../utils/formatters";
 import { useProductSummaries, type Product } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
 import { useRetailCategories } from "../hooks/useRetailCategories";
 // import { useBanners } from '../hooks/useBanners';
 import { fetchProductDetail } from "../hooks/useProduct";
@@ -18,11 +17,7 @@ import { useToast } from "../components/Toast";
 import { PageTransition } from "../components/PageTransition";
 import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
 import { queryKeys } from "../lib/queryKeys";
-// import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
-import { buildShopCategoryIndex } from "./shop/buildShopCategoryIndex";
-import { filterShopProducts } from "./shop/filterShopProducts";
 import { useShopFilters } from "./shop/useShopFilters";
-import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 import { AppLoadingScreen } from "../app/AppLoadingScreen";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
 
@@ -230,7 +225,6 @@ const Shop = () => {
   const {
     activeCategory,
     activeSubcategory,
-    activeSubSubcategory,
     searchQuery,
     setSearchQuery,
     updateFilters,
@@ -245,12 +239,6 @@ const Shop = () => {
     refetch: refetchProducts,
   } = useProductSummaries();
   const {
-    data: categories = [],
-    error: categoriesError,
-    isLoading: categoriesLoading,
-    refetch: refetchCategories,
-  } = useCategories();
-  const {
     categories: retailCategories = [],
     isLoading: retailCategoriesLoading,
   } = useRetailCategories();
@@ -259,9 +247,9 @@ const Shop = () => {
     useCharmBarSettings();
 
   const loading =
-    (productsLoading || categoriesLoading || charmBarLoading || retailCategoriesLoading) &&
+    (productsLoading || charmBarLoading || retailCategoriesLoading) &&
     products.length === 0;
-  const error = productsError || categoriesError;
+  const error = productsError;
 
   useEffect(() => {
     if (error) {
@@ -272,116 +260,127 @@ const Shop = () => {
     }
   }, [error, showToast]);
 
-  const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
-    useMemo(() => buildShopCategoryIndex(categories), [categories]);
-
-  // GLAM categories from retail_categories table (department = 'glam')
-  const glamCategorySlugs = useMemo(() => {
-    return new Set(
-      retailCategories
-        .filter((c) => c.department === "glam" && c.is_active)
-        .map((c) => c.slug)
+  // Shop categories from retail_categories table (department = 'shop')
+  // Only show parent categories (main categories, not subcategories)
+  const shopCategoriesFlat = useMemo(() => {
+    return retailCategories.filter(
+      (c) => c.department === "shop" && c.is_active && c.parent_id === null
     );
   }, [retailCategories]);
 
-  // Legacy GLAM slugs for backward compatibility (old products without retail_category_id)
-  const LEGACY_GLAM_CATEGORY_SLUGS = new Set([
-    "makeup",
-    "eyewear",
-    "glitter",
-    "headliner",
-    "starglitter",
-    "star-glitter",
-    "popsocket",
-    "pop-socket",
-    "popsockets",
-  ]);
+  // Get subcategories for the active category
+  const activeSubcategories = useMemo(() => {
+    if (!activeCategory || activeCategory === "all") return [];
+    
+    const selectedCategory = shopCategoriesFlat.find(
+      (c) => c.slug === activeCategory
+    );
+    
+    if (!selectedCategory) return [];
+    
+    return retailCategories.filter(
+      (c) => c.department === "shop" && c.is_active && c.parent_id === selectedCategory.id
+    );
+  }, [activeCategory, shopCategoriesFlat, retailCategories]);
 
-  // Combined GLAM slugs (new + legacy)
-  const GLAM_CATEGORY_SLUGS = useMemo(() => {
-    return new Set([...glamCategorySlugs, ...LEGACY_GLAM_CATEGORY_SLUGS]);
-  }, [glamCategorySlugs]);
-
-  const nonCharmBarProducts = useMemo(
+  // Filter products to only include shop department products
+  const shopProducts = useMemo(
     () =>
       products.filter((p) => {
-        // Exclude dressing department products (moved to /dressing page)
-        if (p.department === "dressing") return false;
-
-        const nameLower = p.name.toLowerCase();
-
-        // Filter out specific products by name (in case they don't have a category slug)
-        if (
-          nameLower.includes("headliner") ||
-          nameLower.includes("pop socket") ||
-          nameLower.includes("popsocket") ||
-          nameLower.includes("lucky charm") ||
-          nameLower.includes("lucky") ||
-          nameLower.includes("lucky-charm") ||
-          nameLower.includes("charm") ||
-          nameLower.includes("speckles")
-        ) {
-          return false;
+        // Include products that belong to shop department categories
+        if (p.retail_category_id) {
+          const category = retailCategories.find((c) => c.id === p.retail_category_id);
+          return category?.department === 'shop' && category?.is_active;
         }
-        if (!p.categorySlug) return true;
-        
-        const slugLower = p.categorySlug.toLowerCase();
-        return (
-          !CHARM_BAR_CATEGORY_SLUGS.has(slugLower) &&
-          !GLAM_CATEGORY_SLUGS.has(slugLower)
+        return false;
+      }),
+    [products, retailCategories],
+  );
+
+  const filteredProducts = useMemo(() => {
+    let matches = shopProducts;
+
+    // 1. Filter by category and subcategory
+    const currentActiveCategory =
+      activeCategory === null ? "all" : activeCategory;
+    const currentActiveSubcategory =
+      activeSubcategory === null ? "all" : activeSubcategory;
+    
+    if (currentActiveCategory !== "all") {
+      const cat = shopCategoriesFlat.find(
+        (c) => c.slug === currentActiveCategory,
+      );
+      if (cat) {
+        // If subcategory is selected, filter by subcategory only
+        if (currentActiveSubcategory !== "all") {
+          const subcat = activeSubcategories.find(
+            (sc) => sc.slug === currentActiveSubcategory,
+          );
+          if (subcat) {
+            matches = matches.filter(
+              (product) => 
+                product.retail_category_id === subcat.id ||
+                product.retail_subcategory_id === subcat.id
+            );
+          }
+        } else {
+          // No subcategory selected, show products from:
+          // 1. Products directly in the parent category
+          // 2. Products in any of the subcategories
+          const subcategoryIds = activeSubcategories.map((sc) => sc.id);
+          matches = matches.filter(
+            (product) => {
+              // Product is directly in parent category
+              if (product.retail_category_id === cat.id) return true;
+              // Product is in a subcategory (via retail_category_id)
+              if (product.retail_category_id && subcategoryIds.includes(product.retail_category_id)) return true;
+              // Product is in a subcategory (via retail_subcategory_id)
+              if (product.retail_subcategory_id && subcategoryIds.includes(product.retail_subcategory_id)) return true;
+              return false;
+            }
+          );
+        }
+      } else {
+        matches = matches.filter(
+          (product) =>
+            product.retailCategorySlug === currentActiveCategory ||
+            product.categorySlug === currentActiveCategory,
         );
-      }),
-    [products],
-  );
-
-  const filteredProducts = useMemo(
-    () =>
-      filterShopProducts({
-        products: nonCharmBarProducts,
-        activeCategory,
-        activeSubcategory,
-        activeSubSubcategory,
-        searchQuery: deferredSearchQuery,
-        allowedSlugMap,
-        bestSellerIds: charmBarSettings?.best_seller_charms || [],
-      }),
-    [
-      nonCharmBarProducts,
-      activeCategory,
-      activeSubcategory,
-      activeSubSubcategory,
-      deferredSearchQuery,
-      allowedSlugMap,
-      charmBarSettings,
-    ],
-  );
-
-  // Only show category tabs that have at least one product (auto-hides empty/moved categories)
-  const visibleParentCategories = useMemo(() => {
-    const productSlugs = new Set<string>();
-    for (const p of nonCharmBarProducts) {
-      if (p.categorySlug) productSlugs.add(p.categorySlug);
-      if (p.retailCategorySlug) productSlugs.add(p.retailCategorySlug);
-    }
-    return parentCategories.filter((cat) => {
-      const allowed = allowedSlugMap.get(cat.slug);
-      if (!allowed) return false;
-      for (const slug of allowed) {
-        if (productSlugs.has(slug)) return true;
       }
-      return false;
-    });
-  }, [parentCategories, nonCharmBarProducts, allowedSlugMap]);
+    }
 
-  const activeSubcategories = useMemo(() => {
-    if (activeCategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeCategory) ?? [];
-  }, [activeCategory, childCategoriesByParentSlug]);
+    // 2. Search
+    if (deferredSearchQuery) {
+      const q = deferredSearchQuery.toLowerCase();
+      matches = matches.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.description && p.description.toLowerCase().includes(q)),
+      );
+    }
 
-  const activeSubSubcategories = useMemo(() => {
-    if (activeSubcategory === "all") return [];
-    return childCategoriesByParentSlug.get(activeSubcategory) ?? [];
-  }, [activeSubcategory, childCategoriesByParentSlug]);
+    // Sort best sellers if needed
+    if (charmBarSettings?.best_seller_charms?.length) {
+      matches.sort((a, b) => {
+        const aIndex = charmBarSettings.best_seller_charms.indexOf(a.id);
+        const bIndex = charmBarSettings.best_seller_charms.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    }
+
+    return matches;
+  }, [
+    activeCategory,
+    activeSubcategory,
+    deferredSearchQuery,
+    shopCategoriesFlat,
+    activeSubcategories,
+    charmBarSettings,
+    shopProducts,
+  ]);
 
   const handleAddToCart = (product: Product) => {
     if (!user) {
@@ -424,7 +423,7 @@ const Shop = () => {
 
   useEffect(() => {
     handleCategoryChange();
-  }, [activeCategory, activeSubcategory, activeSubSubcategory]);
+  }, [activeCategory]);
 
   const prefetchProduct = (productId: number) => {
     void queryClient.prefetchQuery({
@@ -482,50 +481,16 @@ const Shop = () => {
         </header> */}
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-          {/* ── Shop Section Navigator ──────────────────────────── */}
-          <div className="mb-6">
-            <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam */}
-              <Link
-                to="/beauty"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  face_retouching_natural
-                </span>
-                Glam
-              </Link>
-
-              {/* Charm Bar */}
-              <Link
-                to="/charm-bar"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  diamond
-                </span>
-                Charm
-              </Link>
-
-              {/* Spark Club - active */}
-              <Link
-                to="/shop"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  shopping_bag
-                </span>
-                Spark
-              </Link>
+          {/* Shop Header */}
+          <div className="flex justify-center mb-8 mt-4">
+            <div className="text-center">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-800 mb-2 tracking-tight">
+                SHOP
+              </h1>
+              <p className="text-sm sm:text-base text-gray-500">
+                Discover our curated collection
+              </p>
             </div>
-          </div>
-
-          <div className="flex justify-center mb-6 mt-4">
-            <img
-              src="/images/landing/SPARK CLUB.webp"
-              alt="Charm Bar"
-              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
-            />
           </div>
 
           <div
@@ -590,7 +555,7 @@ const Shop = () => {
                     >
                       All Products
                     </button>
-                    {visibleParentCategories.map((category) => {
+                    {shopCategoriesFlat.map((category) => {
                       const isActive = activeCategory === category.slug;
                       return (
                         <button
@@ -617,88 +582,46 @@ const Shop = () => {
                 </div>
               </div>
 
+              {/* Subcategory tabs - shown when a category is selected and has subcategories */}
               {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full mt-2 mb-2">
+                <div className="w-full mt-2 mb-3">
                   <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-2">
                     <div className="flex gap-1.5 md:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubcategory === "all"
-                          ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
-                          : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((subcategory) => (
                       <button
-                        key={subcategory.slug}
                         type="button"
                         onClick={() => {
                           updateFilters({
-                            subcategory: subcategory.slug,
-                            subsubcategory: null,
+                            subcategory: null,
                           });
                         }}
                         className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubcategory === subcategory.slug
+                          activeSubcategory === "all"
                             ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
                             : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
                         }`}
                       >
-                        {subcategory.name}
+                        All
                       </button>
-                    ))}
+                      {activeSubcategories.map((subcategory) => (
+                        <button
+                          key={subcategory.slug}
+                          type="button"
+                          onClick={() => {
+                            updateFilters({
+                              subcategory: subcategory.slug,
+                            });
+                          }}
+                          className={`px-3 md:px-5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border ux-transition-color ${
+                            activeSubcategory === subcategory.slug
+                              ? "bg-[#ff4b86] text-white border-[#ff4b86] shadow-sm"
+                              : "bg-white text-gray-500 border-gray-200 hover:border-[#ff4b86] hover:text-[#ff4b86]"
+                          }`}
+                        >
+                          {subcategory.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                </div>
-              ) : null}
-
-              {activeCategory !== "all" &&
-              activeSubcategory !== "all" &&
-              activeSubSubcategories.length > 0 ? (
-                <div className="w-full mt-1 mb-2">
-                  <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-3">
-                    <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateFilters({ subsubcategory: null })}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                        activeSubSubcategory === "all"
-                          ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All{" "}
-                      {activeSubcategories.find(
-                        (s) => s.slug === activeSubcategory,
-                      )?.name || ""}
-                    </button>
-                    {activeSubSubcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.slug}
-                        type="button"
-                        onClick={() =>
-                          updateFilters({ subsubcategory: subcategory.slug })
-                        }
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border ux-transition-color ${
-                          activeSubSubcategory === subcategory.slug
-                            ? "bg-[#ff4b86]/10 text-[#ff4b86] border-[#ff4b86]/30"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#ff4b86]/50 hover:text-[#ff4b86]"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 </div>
               ) : null}
             </div>
@@ -715,7 +638,6 @@ const Shop = () => {
                 type="button"
                 onClick={() => {
                   refetchProducts();
-                  refetchCategories();
                 }}
                 className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark ux-transition-color text-sm font-medium"
               >
