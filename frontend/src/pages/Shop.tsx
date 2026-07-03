@@ -485,7 +485,7 @@ const Shop = () => {
           {/* ── Shop Section Navigator ──────────────────────────── */}
           <div className="mb-6">
             <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam — current page (active) */}
+              {/* Glam */}
               <Link
                 to="/beauty"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
@@ -507,7 +507,7 @@ const Shop = () => {
                 Charm
               </Link>
 
-              {/* Spark Club */}
+              {/* Spark Club - active */}
               <Link
                 to="/shop"
                 className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
@@ -516,17 +516,6 @@ const Shop = () => {
                   shopping_bag
                 </span>
                 Spark
-              </Link>
-
-              {/* Dressing */}
-              <Link
-                to="/dressing"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  checkroom
-                </span>
-                Dressing
               </Link>
             </div>
           </div>

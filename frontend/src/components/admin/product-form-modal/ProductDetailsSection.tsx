@@ -163,6 +163,7 @@ export function ProductDetailsSection({
               <option value="charmbar">Charmbar</option>
               <option value="sparkclub">Sparkclub</option>
               <option value="dressing">Dressing</option>
+              <option value="shop">Shop</option>
             </select>
           </label>
 

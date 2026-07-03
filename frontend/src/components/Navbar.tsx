@@ -84,6 +84,7 @@ const Navbar = () => {
       path.startsWith("/chamr-bar")
     )
       return "shop";
+    if (path.startsWith("/dressing")) return "dressing";
     if (path.startsWith("/news")) return "news";
     if (path.startsWith("/dressing-room") || path.startsWith("/fashion"))
       return "dressing-room";
@@ -102,6 +103,7 @@ const Navbar = () => {
     },
     // { key: "rollerblade", label: "ROLLER BLADE", to: "/rollerblade", icon: ShoppingBag },
     { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
+    { key: "dressing", label: "DRESSING", to: "/dressing", icon: ShoppingBag },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
   ];

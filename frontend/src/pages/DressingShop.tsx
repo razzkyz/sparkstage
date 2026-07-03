@@ -427,53 +427,14 @@ const DressingShop = () => {
     <PageTransition>
       <div className="bg-white min-h-screen">
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-          {/* ── Shop Section Navigator ──────────────────────────── */}
-          <div className="mb-6">
-            <div className="flex gap-3 sm:gap-4 justify-center flex-nowrap w-full px-2 sm:px-0 pb-2 -mb-2">
-              {/* Glam */}
-              <Link
-                to="/beauty"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  face_retouching_natural
-                </span>
-                Glam
-              </Link>
+          {/* No department tabs - Dressing is now standalone in main navbar */}
 
-              {/* Charm Bar */}
-              <Link
-                to="/charm-bar"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  diamond
-                </span>
-                Charm
-              </Link>
-
-              {/* Spark Club */}
-              <Link
-                to="/shop"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  shopping_bag
-                </span>
-                Spark
-              </Link>
-
-              {/* Dressing — current page (active) */}
-              <Link
-                to="/dressing"
-                className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-[#ff4b86] bg-[#ff4b86] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-                  checkroom
-                </span>
-                Dressing
-              </Link>
-            </div>
+          <div className="flex justify-center mb-6 mt-4">
+            <img
+              src="/images/landing/DRESSING.webp"
+              alt="Dressing Room"
+              className="h-16 sm:h-20 md:h-24 lg:h-32 object-contain drop-shadow-sm"
+            />
           </div>
 
           <div

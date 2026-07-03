@@ -290,17 +290,6 @@ export default function BeautyPage() {
             </span>
             Spark
           </Link>
-
-          {/* Dressing */}
-          <Link
-            to="/dressing"
-            className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 border-gray-200 text-gray-600 text-[11px] sm:text-sm font-bold uppercase tracking-wider hover:border-[#ff4b86] hover:text-[#ff4b86] hover:shadow-md transition-all duration-200"
-          >
-            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">
-              checkroom
-            </span>
-            Dressing
-          </Link>
         </div>
         <section className="">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-10 sm:gap-8 sm:px-8 sm:py-12 md:flex-row md:justify-center md:gap-10 lg:gap-20 lg:px-12 lg:py-16">

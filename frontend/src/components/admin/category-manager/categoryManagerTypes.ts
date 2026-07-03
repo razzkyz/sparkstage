@@ -1,6 +1,8 @@
+export type Department = 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop';
+
 export type Category = {
   id: number;
-  department: 'glam' | 'charmbar' | 'sparkclub' | 'dressing';
+  department: Department;
   name: string;
   slug: string;
   is_active: boolean;
@@ -11,7 +13,7 @@ export type Category = {
 
 export type CategoryDraft = {
   id?: number;
-  department: 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | '';
+  department: Department | '';
   name: string;
   slug: string;
   is_active: boolean;
