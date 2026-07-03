@@ -10,7 +10,7 @@ import {
   getParents,
   toCategoryDraft,
 } from './categoryManagerHelpers';
-import type { Category, CategoryDraft, CategoryManagerProps } from './categoryManagerTypes';
+import type { Category, CategoryDraft, CategoryManagerProps, Department } from './categoryManagerTypes';
 
 export function useCategoryManagerController({ isOpen, onUpdate }: Pick<CategoryManagerProps, 'isOpen' | 'onUpdate'>) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -19,7 +19,7 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [expandedParents, setExpandedParents] = useState<number[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<'glam' | 'charmbar' | 'sparkclub' | 'dressing'>('glam');
+  const [selectedDepartment, setSelectedDepartment] = useState<Department>('glam');
 
   const [draft, setDraft] = useState<CategoryDraft>(() => {
     const d = emptyCategoryDraft();
@@ -55,7 +55,7 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
     setSuccess(null);
   }, []);
 
-  const handleNew = useCallback((deptOverride?: typeof selectedDepartment) => {
+  const handleNew = useCallback((deptOverride?: Department) => {
     setEditingId(null);
     const emptyDraft = emptyCategoryDraft();
     emptyDraft.department = deptOverride ?? selectedDepartment;

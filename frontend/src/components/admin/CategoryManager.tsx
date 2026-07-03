@@ -34,7 +34,7 @@ export default function CategoryManager({ isOpen, onClose, onUpdate }: CategoryM
 
           {/* Department Tabs */}
           <div className="mb-6 flex space-x-2 border-b border-gray-200">
-            {(['glam', 'charmbar', 'sparkclub', 'dressing'] as const).map((dept) => (
+            {(['glam', 'charmbar', 'sparkclub', 'dressing', 'shop'] as const).map((dept) => (
               <button
                 key={dept}
                 onClick={() => {
