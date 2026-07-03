@@ -26,7 +26,8 @@ export const STOCK_FILTER_FALLBACK_WARNING =
 async function fetchInventoryProductDetails(
   signal: AbortSignal,
   productIds: number[],
-  categoryFilter: string
+  categoryFilter: string,
+  departmentFilter?: string
 ): Promise<ProductRow[]> {
   if (productIds.length === 0) {
     return [];
@@ -34,7 +35,7 @@ async function fetchInventoryProductDetails(
 
   const { data: detailData, error: detailError } = await supabase
     .from('products')
-    .select(getInventorySelect(categoryFilter, ''))
+    .select(getInventorySelect(categoryFilter, departmentFilter))
     .abortSignal(signal)
     .is('deleted_at', null)
     .in('id', productIds);
@@ -81,7 +82,7 @@ async function fetchInventoryPageByRpc(
   const totalCount = pageRows.length > 0 ? toNumber(pageRows[0].total_count, 0) : 0;
 
   return {
-    data: await fetchInventoryProductDetails(signal, productIds, filters.categoryFilter),
+    data: await fetchInventoryProductDetails(signal, productIds, filters.categoryFilter, filters.departmentFilter),
     error: null,
     count: totalCount,
     fullScan: false,
