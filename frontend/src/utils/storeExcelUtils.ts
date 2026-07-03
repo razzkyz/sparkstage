@@ -205,6 +205,10 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
   
   if (categories.length > 0) {
     categoryData.push({
+      'Nama Kategori': 'shop',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
+    }, {
       'Nama Kategori': 'sparkclub',
       'Tipe': 'Department',
       'Keterangan': 'Copy ke kolom department'
