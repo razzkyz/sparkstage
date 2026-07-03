@@ -819,7 +819,7 @@ export default function SalesReport() {
         </div>
       )}
       {/* ── Summary Cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Pendapatan', value: formatRupiah(totalRevenue), icon: 'payments', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
           { label: 'Tiket Terpakai', value: `${ticketStats.paid} tiket`, icon: 'confirmation_number', color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
@@ -831,11 +831,11 @@ export default function SalesReport() {
           { label: 'Pendapatan Rollerblade', value: formatRupiah(rollerbladeStats.revenue), icon: 'roller_skating', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200' },
         ].map(card => (
           <div key={card.label} className={`rounded-xl border ${card.bg} p-4 flex flex-col gap-2`}>
-            <div className="flex items-center gap-2">
-              <span className={`material-symbols-outlined text-xl ${card.color}`}>{card.icon}</span>
-              <p className="text-xs text-gray-500">{card.label}</p>
+            <div className="flex items-center gap-1.5">
+              <span className={`material-symbols-outlined text-lg flex-shrink-0 ${card.color}`}>{card.icon}</span>
+              <p className="text-xs text-gray-500 leading-tight">{card.label}</p>
             </div>
-            <p className="text-xl font-black text-gray-900 leading-tight">{card.value}</p>
+            <p className="text-lg font-black text-gray-900 leading-tight">{card.value}</p>
           </div>
         ))}
       </div>
