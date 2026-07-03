@@ -12,13 +12,18 @@ export interface InventoryProduct {
   reserved_stock: number;
   price: number;
   is_active: boolean;
+  retail_category_id?: number | null;
+  department?: string | null;
 }
 
-export const useInventoryProducts = (searchQuery: string = '') => {
+export const useInventoryProducts = (
+  searchQuery: string = '', 
+  departmentFilter: string = 'all'
+) => {
   return useQuery({
-    queryKey: ['inventory-products', searchQuery],
+    queryKey: ['inventory-products', searchQuery, departmentFilter],
     queryFn: async () => {
-      console.log('🔍 Fetching inventory products, searchQuery:', searchQuery);
+      console.log('🔍 Fetching inventory products, searchQuery:', searchQuery, 'department:', departmentFilter);
       
       try {
         // Fetch ALL products (no limit for complete inventory)
@@ -37,7 +42,9 @@ export const useInventoryProducts = (searchQuery: string = '') => {
               id,
               name,
               sku,
-              is_active
+              is_active,
+              retail_category_id,
+              retail_categories:retail_categories!products_retail_category_id_fkey(department)
             )
           `)
           .eq('is_active', true)
@@ -62,7 +69,15 @@ export const useInventoryProducts = (searchQuery: string = '') => {
         let transformed: InventoryProduct[] = data
           .filter((v: any) => {
             // Filter out items where products is null or inactive
-            return v.products && v.products.is_active === true;
+            if (!v.products || v.products.is_active !== true) return false;
+            
+            // Filter by department if specified
+            if (departmentFilter && departmentFilter !== 'all') {
+              const dept = v.products.retail_categories?.department;
+              if (dept !== departmentFilter) return false;
+            }
+            
+            return true;
           })
           .map((v: any) => ({
             variant_id: v.id,
@@ -75,9 +90,11 @@ export const useInventoryProducts = (searchQuery: string = '') => {
             reserved_stock: v.reserved_stock || 0,
             price: v.price || 0,
             is_active: v.is_active,
+            retail_category_id: v.products?.retail_category_id,
+            department: v.products?.retail_categories?.department,
           }));
 
-        console.log('✅ Transformed products:', transformed.length, 'items');
+        console.log('✅ Transformed products:', transformed.length, 'items after department filter');
 
         // Client-side filtering for multi-field search
         if (searchQuery) {
