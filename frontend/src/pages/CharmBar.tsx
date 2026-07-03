@@ -399,34 +399,54 @@ export default function CharmBar() {
   }, []);
 
   const charmBarCategories = useMemo(() => {
+    // Show all charmbar categories (both old and new)
     return categories.filter((c) => c.department === "charmbar" && c.is_active);
   }, [categories]);
 
   const filteredProducts = useMemo(() => {
     if (!products || !categories) return [];
 
+    // Get charm bar category slugs for legacy fallback
+    const charmBarSlugs = CHARM_BAR_CATEGORIES.filter((cat) => cat.isActive).map((cat) => cat.slug);
+
+    // TEMPORARY WORKAROUND: Filter products by name containing "charm", "bangle", "bracelet", etc.
+    // This is because categorySlug is coming back as NULL from the database
+    const charmKeywords = ['charm', 'bangle', 'bracelet', 'welded', 'pendant', 'keychain', 'ring', 'necklace'];
+    
+    // Get all charm bar products
     let charmBarProducts = products.filter((p) => {
+      // Check if product has charmbar department (new system)
       if (p.department === "charmbar") return true;
 
-      // Legacy fallback
-      const charmBarSlugs = CHARM_BAR_CATEGORIES.filter((cat) => cat.isActive).map((cat) => cat.slug);
+      // Legacy fallback - include products with old category slugs
       if (p.categorySlug && charmBarSlugs.includes(p.categorySlug)) return true;
+
+      // TEMPORARY WORKAROUND: Check product name for charm keywords
+      const nameLower = p.name.toLowerCase();
+      if (charmKeywords.some(keyword => nameLower.includes(keyword))) return true;
 
       return false;
     });
 
+    // Filter by active category
     if (activeCategory && activeCategory !== "all") {
       const cat = charmBarCategories.find((c) => c.slug === activeCategory);
       if (cat) {
-        charmBarProducts = charmBarProducts.filter(product => product.retail_category_id === cat.id);
-      } else {
-        charmBarProducts = charmBarProducts.filter(product => 
-          product.retailCategorySlug === activeCategory || 
-          product.categorySlug === activeCategory
-        );
+        // Try new category ID first
+        const byNewCat = charmBarProducts.filter(product => product.retail_category_id === cat.id);
+        if (byNewCat.length > 0) {
+          charmBarProducts = byNewCat;
+        } else {
+          // Fallback to old categorySlug matching
+          charmBarProducts = charmBarProducts.filter(product => 
+            product.retailCategorySlug === activeCategory || 
+            product.categorySlug === activeCategory
+          );
+        }
       }
     }
 
+    // Apply search filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       charmBarProducts = charmBarProducts.filter(p => 

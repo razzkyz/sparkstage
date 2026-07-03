@@ -270,7 +270,17 @@ const Shop = () => {
   const { parentCategories, childCategoriesByParentSlug, allowedSlugMap } =
     useMemo(() => buildShopCategoryIndex(categories), [categories]);
 
-  const GLAM_CATEGORY_SLUGS = new Set([
+  // GLAM categories from retail_categories table (department = 'glam')
+  const glamCategorySlugs = useMemo(() => {
+    return new Set(
+      categories
+        .filter((c) => c.department === "glam" && c.is_active)
+        .map((c) => c.slug)
+    );
+  }, [categories]);
+
+  // Legacy GLAM slugs for backward compatibility (old products without retail_category_id)
+  const LEGACY_GLAM_CATEGORY_SLUGS = new Set([
     "makeup",
     "eyewear",
     "glitter",
@@ -281,6 +291,11 @@ const Shop = () => {
     "pop-socket",
     "popsockets",
   ]);
+
+  // Combined GLAM slugs (new + legacy)
+  const GLAM_CATEGORY_SLUGS = useMemo(() => {
+    return new Set([...glamCategorySlugs, ...LEGACY_GLAM_CATEGORY_SLUGS]);
+  }, [glamCategorySlugs]);
 
   const nonCharmBarProducts = useMemo(
     () =>

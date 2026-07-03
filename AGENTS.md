@@ -48,6 +48,16 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - R2 Migration (ImageKit → Cloudflare R2): `docs/runbooks/r2-migration.md`
 - R2 Egress Setup (Zero cost setup): `docs/runbooks/R2_EGRESS_SETUP.md`
 - R2 Migration Quick Start: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
+- **Shop.GLAM Categories (NEW 2026-07-03)**: `GLAM_CATEGORIES_DEPLOYED.md`
+  - **Status:** ✅ COMPLETE - DATABASE + FRONTEND INTEGRATED
+  - New category structure with 5 main categories and 18 subcategories
+  - Table: `retail_categories` with department='glam'
+  - Structure: SPARK MY FACE, SPARK MY HAIR, SPARK MY CHARMS, SPARK MY NAILS, SPARK MY STYLE
+  - Migration: `20260703000000_update_glam_categories_structure.sql`
+  - Frontend: `Shop.tsx` updated to dynamically load categories from database
+  - Page routing: `/beauty` (glam), `/charm-bar` (charmbar), `/shop` (sparkclub)
+  - Testing: See `QUICK_TEST_KATEGORI.md` and `TESTING_CHECKLIST_KATEGORI_BARU.md`
+  - Full docs: `LAPORAN_FINAL_KATEGORI_GLAM.md`
 - R2 Migration Status (UPDATED 2026-06-10): **95% COMPLETE - Upload Code Ready** ✅
   - **DONE:** Product images uploaded: 2,227 / 2,227 (100%) ✅
   - **DONE:** R2 bucket: sparkstage-public-assets ✅

@@ -147,6 +147,10 @@ function transformProductSummary(row: ProductRow): ProductSummary {
 
   if (!Number.isFinite(priceMin)) priceMin = 0;
 
+  // Extract categorySlug - handle both object and array responses
+  const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+  const categorySlug = typeof category?.slug === 'string' ? category.slug : null;
+
   return {
     id: toNumber(row.id, 0),
     name: typeof row.name === 'string' ? row.name : String(row.name ?? ''),
@@ -155,7 +159,7 @@ function transformProductSummary(row: ProductRow): ProductSummary {
     image,
     images: images.length > 0 ? images : undefined,
     placeholder: image ? undefined : 'inventory_2',
-    categorySlug: typeof row.categories?.slug === 'string' ? row.categories.slug : null,
+    categorySlug,
     defaultVariantId,
     defaultVariantName,
     retail_category_id: toNumber(row.retail_category_id, null as any),
@@ -183,13 +187,17 @@ function transformProductPickerOption(row: ProductRow): ProductPickerOption {
 
   const image = getPrimaryImage(row.product_images);
 
+  // Extract categorySlug - handle both object and array responses
+  const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+  const categorySlug = typeof category?.slug === 'string' ? category.slug : null;
+
   return {
     id: toNumber(row.id, 0),
     name: typeof row.name === 'string' ? row.name : String(row.name ?? ''),
     price: priceMin,
     image,
     placeholder: image ? undefined : 'inventory_2',
-    categorySlug: typeof row.categories?.slug === 'string' ? row.categories.slug : null,
+    categorySlug,
   };
 }
 
