@@ -12,7 +12,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../hooks/useProducts";
-import { CHARM_BAR_CATEGORY_SLUGS } from "./shop/charmBarSlugs";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -387,36 +386,16 @@ const OnStage = () => {
   const { data: products = [], isLoading: productsLoading } =
     useProductSummaries();
 
-  const GLAM_SLUGS = useMemo(
-    () =>
-      new Set([
-        "makeup",
-        "eyewear",
-        "glitter",
-        "headliner",
-        "starglitter",
-        "star-glitter",
-        "popsocket",
-        "pop-socket",
-        "popsockets",
-      ]),
-    [],
-  );
-
   const featuredProducts = useMemo(() => {
     if (!products.length) return [];
     return products
       .filter(
         (p) =>
           p.defaultVariantId &&
-          !CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug?.toLowerCase() || "") &&
-          !GLAM_SLUGS.has(p.categorySlug?.toLowerCase() || "") &&
-          !p.name.toLowerCase().includes("headliner") &&
-          !p.name.toLowerCase().includes("pop socket") &&
-          !p.name.toLowerCase().includes("popsocket"),
+          p.retailCategoryName?.toLowerCase() === "spark my style",
       )
       .slice(0, 10);
-  }, [products, GLAM_SLUGS]);
+  }, [products]);
 
   const glamProducts = useMemo(() => {
     if (!products.length) return [];
@@ -424,13 +403,10 @@ const OnStage = () => {
       .filter(
         (p) =>
           p.defaultVariantId &&
-          (GLAM_SLUGS.has(p.categorySlug?.toLowerCase() || "") ||
-            p.name.toLowerCase().includes("headliner") ||
-            p.name.toLowerCase().includes("pop socket") ||
-            p.name.toLowerCase().includes("popsocket")),
+          p.retailCategoryName?.toLowerCase() === "spark my face",
       )
       .slice(0, 10);
-  }, [products, GLAM_SLUGS]);
+  }, [products]);
 
   const charmProducts = useMemo(() => {
     if (!products.length) return [];
@@ -438,7 +414,7 @@ const OnStage = () => {
       .filter(
         (p) =>
           p.defaultVariantId &&
-          CHARM_BAR_CATEGORY_SLUGS.has(p.categorySlug?.toLowerCase() || ""),
+          p.retailCategoryName?.toLowerCase() === "spark my charms",
       )
       .slice(0, 10);
   }, [products]);
