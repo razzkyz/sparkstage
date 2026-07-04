@@ -2,7 +2,7 @@ import type { ActiveFilter, StockFilter, DepartmentFilter } from './storeInvento
 
 const STOCK_FILTER_VALUES: ReadonlySet<StockFilter> = new Set(['in', 'low', 'out']);
 const ACTIVE_FILTER_VALUES: ReadonlySet<ActiveFilter> = new Set(['active', 'inactive']);
-const DEPARTMENT_FILTER_VALUES: ReadonlySet<DepartmentFilter> = new Set(['all', 'glam', 'charmbar', 'sparkclub', 'dressing', 'shop']);
+const DEPARTMENT_FILTER_VALUES: ReadonlySet<DepartmentFilter> = new Set(['all', 'dressing', 'shop']);
 
 export const parseQueryInt = (value: string | null, fallback: number) => {
   if (!value) return fallback;

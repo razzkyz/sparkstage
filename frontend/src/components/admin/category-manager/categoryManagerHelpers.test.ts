@@ -9,10 +9,10 @@ import {
 import type { Category } from './categoryManagerTypes';
 
 const categories: Category[] = [
-  { id: 2, name: 'Face', slug: 'face', department: 'glam', is_active: true, parent_id: 1, created_at: null, updated_at: null },
-  { id: 1, name: 'Beauty', slug: 'beauty', department: 'glam', is_active: true, parent_id: null, created_at: null, updated_at: null },
-  { id: 3, name: 'Hair', slug: 'hair', department: 'glam', is_active: true, parent_id: null, created_at: null, updated_at: null },
-  { id: 4, name: 'Orphan', slug: 'orphan', department: 'glam', is_active: false, parent_id: 999, created_at: null, updated_at: null },
+  { id: 2, name: 'Face', slug: 'face', department: 'dressing', is_active: true, parent_id: 1, created_at: null, updated_at: null },
+  { id: 1, name: 'Beauty', slug: 'beauty', department: 'dressing', is_active: true, parent_id: null, created_at: null, updated_at: null },
+  { id: 3, name: 'Hair', slug: 'hair', department: 'dressing', is_active: true, parent_id: null, created_at: null, updated_at: null },
+  { id: 4, name: 'Orphan', slug: 'orphan', department: 'dressing', is_active: false, parent_id: 999, created_at: null, updated_at: null },
 ];
 
 describe('categoryManagerHelpers', () => {

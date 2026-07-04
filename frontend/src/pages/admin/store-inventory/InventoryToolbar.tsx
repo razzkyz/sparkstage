@@ -41,18 +41,12 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
         {(
           [
             "all",
-            "glam",
-            "charmbar",
-            "sparkclub",
             "dressing",
             "shop",
           ] as DepartmentFilter[]
         ).map((dept) => {
           const labels: Record<DepartmentFilter, string> = {
             all: "All Departments",
-            glam: "Glam",
-            charmbar: "Charm Bar",
-            sparkclub: "Spark Club",
             dressing: "Dressing",
             shop: "Shop",
           };

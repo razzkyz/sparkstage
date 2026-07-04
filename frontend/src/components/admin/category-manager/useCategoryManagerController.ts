@@ -19,11 +19,11 @@ export function useCategoryManagerController({ isOpen, onUpdate }: Pick<Category
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [expandedParents, setExpandedParents] = useState<number[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<Department>('glam');
+  const [selectedDepartment, setSelectedDepartment] = useState<Department>('dressing');
 
   const [draft, setDraft] = useState<CategoryDraft>(() => {
     const d = emptyCategoryDraft();
-    d.department = 'glam';
+    d.department = 'dressing';
     return d;
   });
   const [slugTouched, setSlugTouched] = useState(false);
