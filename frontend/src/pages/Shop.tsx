@@ -66,11 +66,9 @@ function ShopResults({
       "product-skeleton-6",
       "product-skeleton-7",
       "product-skeleton-8",
-      "product-skeleton-9",
-      "product-skeleton-10",
     ];
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
         {skeletonKeys.map((skeletonKey) => (
           <ProductCardSkeleton key={skeletonKey} />
         ))}
@@ -88,7 +86,7 @@ function ShopResults({
         </div>
       ) : (
         <div
-          className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 transition-opacity duration-300 ${isAnimating ? "opacity-0" : "opacity-100"}`}
+          className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6 transition-opacity duration-300 ${isAnimating ? "opacity-0" : "opacity-100"}`}
         >
           {paginatedProducts.map((product, index) => (
             <Link
@@ -147,19 +145,19 @@ function ShopResults({
                     </span>
                   )}
                 </div>
-                <div className="p-3 flex flex-col flex-grow">
-                  <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1 ux-transition-color group-hover:text-[#ff4b86]">
+                <div className="p-3.5 md:p-4 flex flex-col flex-grow">
+                  <h3 className="font-semibold text-sm md:text-base text-gray-900 mb-1.5 line-clamp-2 ux-transition-color group-hover:text-[#ff4b86]">
                     {product.name}
                   </h3>
-                  <p className="text-[11px] text-gray-400 mb-2 line-clamp-1 font-light min-h-[16px]">
+                  <p className="text-[11px] md:text-xs text-gray-400 mb-2.5 line-clamp-2 font-light min-h-[32px] md:min-h-[36px]">
                     {product.description || "\u00A0"}
                   </p>
                   <div className="flex items-center gap-2 mt-auto">
-                    <span className="text-base font-black text-[#ff4b86]">
+                    <span className="text-base md:text-lg font-black text-[#ff4b86]">
                       {formatCurrency(product.price)}
                     </span>
                     {product.originalPrice ? (
-                      <span className="text-xs text-gray-400 line-through font-light">
+                      <span className="text-xs md:text-sm text-gray-400 line-through font-light">
                         {formatCurrency(product.originalPrice)}
                       </span>
                     ) : null}
@@ -262,13 +260,15 @@ const Shop = () => {
 
   // Shop categories from retail_categories table (department = 'shop')
   // Only show parent categories (main categories, not subcategories)
+  // Sort by display_order
   const shopCategoriesFlat = useMemo(() => {
-    return retailCategories.filter(
-      (c) => c.department === "shop" && c.is_active && c.parent_id === null
-    );
+    return retailCategories
+      .filter((c) => c.department === "shop" && c.is_active && c.parent_id === null)
+      .sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
   }, [retailCategories]);
 
   // Get subcategories for the active category
+  // Sort by display_order
   const activeSubcategories = useMemo(() => {
     if (!activeCategory || activeCategory === "all") return [];
     
@@ -278,9 +278,9 @@ const Shop = () => {
     
     if (!selectedCategory) return [];
     
-    return retailCategories.filter(
-      (c) => c.department === "shop" && c.is_active && c.parent_id === selectedCategory.id
-    );
+    return retailCategories
+      .filter((c) => c.department === "shop" && c.is_active && c.parent_id === selectedCategory.id)
+      .sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
   }, [activeCategory, shopCategoriesFlat, retailCategories]);
 
   // Filter products to only include shop department products
@@ -535,7 +535,7 @@ const Shop = () => {
                 </div>
               </div>
 
-              <div className="w-full mt-4 mb-5">
+              <div className="w-full mt-3 mb-3">
                 <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
                   <div className="flex items-center space-x-6 md:space-x-8 pb-2">
                     <button
@@ -584,7 +584,7 @@ const Shop = () => {
 
               {/* Subcategory tabs - shown when a category is selected and has subcategories */}
               {activeCategory !== "all" && activeSubcategories.length > 0 ? (
-                <div className="w-full mt-2 mb-3">
+                <div className="w-full -mt-1 mb-3">
                   <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-2">
                     <div className="flex gap-1.5 md:gap-2">
                       <button

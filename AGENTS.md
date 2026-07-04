@@ -48,7 +48,7 @@ Spark Stage is a fullstack booking ticket and commerce app.
 - R2 Migration (ImageKit → Cloudflare R2): `docs/runbooks/r2-migration.md`
 - R2 Egress Setup (Zero cost setup): `docs/runbooks/R2_EGRESS_SETUP.md`
 - R2 Migration Quick Start: `docs/runbooks/R2_MIGRATION_QUICKSTART.md`
-- **Shop.GLAM Categories (NEW 2026-07-03)**: `GLAM_CATEGORIES_DEPLOYED.md`
+- **Shop.GLAM Categories (NEW 2026-07-03)**: `docs/archive/features/GLAM_CATEGORIES_DEPLOYED.md`
   - **Status:** ✅ COMPLETE - DATABASE + FRONTEND INTEGRATED
   - New category structure with 5 main categories and 18 subcategories
   - Table: `retail_categories` with department='glam'
@@ -56,8 +56,14 @@ Spark Stage is a fullstack booking ticket and commerce app.
   - Migration: `20260703000000_update_glam_categories_structure.sql`
   - Frontend: `Shop.tsx` updated to dynamically load categories from database
   - Page routing: `/beauty` (glam), `/charm-bar` (charmbar), `/shop` (sparkclub)
-  - Testing: See `QUICK_TEST_KATEGORI.md` and `TESTING_CHECKLIST_KATEGORI_BARU.md`
-  - Full docs: `LAPORAN_FINAL_KATEGORI_GLAM.md`
+  - Testing: See `docs/testing/QUICK_TEST_KATEGORI.md` and `docs/testing/TESTING_CHECKLIST_KATEGORI_BARU.md`
+  - Full docs: `docs/archive/features/LAPORAN_FINAL_KATEGORI_GLAM.md`
+- **Category Display Order (NEW 2026-07-04)**: `docs/runbooks/category-display-order.md`
+  - **Status:** ✅ READY TO DEPLOY
+  - Custom ordering for retail categories via `display_order` column
+  - Database migration: `20260704000000_add_display_order_to_retail_categories.sql`
+  - Deployment guide: `docs/deployment/CATEGORY_DISPLAY_ORDER_READY.md`
+  - Allows admin to reorder categories without code changes
 - R2 Migration Status (UPDATED 2026-06-10): **95% COMPLETE - Upload Code Ready** ✅
   - **DONE:** Product images uploaded: 2,227 / 2,227 (100%) ✅
   - **DONE:** R2 bucket: sparkstage-public-assets ✅
@@ -110,6 +116,9 @@ Fullstack CMS untuk Rollerblade page dengan admin editing capability.
 - Admin: `frontend/src/pages/admin/RollerbladePageManager.tsx`
 - Frontend: `frontend/src/pages/RollerbladePage.tsx`
 - Plan: `docs/decisions/ROLLERBLADE_CMS_PLAN.md`
+- System: `docs/decisions/ROLLERBLADE_RENTAL_SYSTEM.md`
+- Setup: `docs/runbooks/ROLLERBLADE_ROLE_SETUP.md`
+- User Creation: `docs/runbooks/CREATE_ROLLERBLADE_USER.md`
 
 **Usage:**
 ```bash
@@ -194,7 +203,7 @@ All pages visible in admin menu under "Toko" > "Inventaris" section for admin an
 3. Test locally with `npm run dev`
 4. Deploy to production
 
-**Status:** ✅ Production ready with full CRUD operations + Realtime auto-refresh. See `STOCK_EDIT_DELETE_COMPLETE.md` for complete feature documentation.
+**Status:** ✅ Production ready with full CRUD operations + Realtime auto-refresh. See `docs/archive/features/STOCK_EDIT_DELETE_COMPLETE.md` for complete feature documentation.
 
 ## Core Commands
 

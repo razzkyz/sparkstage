@@ -9,6 +9,7 @@ export interface RetailCategory {
   slug: string;
   parent_id: number | null;
   is_active: boolean;
+  display_order?: number;
   created_at: string;
 }
 
@@ -28,6 +29,7 @@ export function useRetailCategories() {
         .from('retail_categories')
         .select('*')
         .order('department', { ascending: true })
+        .order('display_order', { ascending: true })
         .order('name', { ascending: true });
 
       if (error) throw new Error(error.message);
