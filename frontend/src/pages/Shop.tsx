@@ -23,6 +23,39 @@ import { buildImageKitThumbUrl } from "../lib/imagekit";
 
 const PRODUCTS_PER_PAGE = 20;
 
+/**
+ * Deterministic shuffle using a seeded PRNG (mulberry32).
+ * Same seed always produces the same order — we use the date string
+ * so products rotate daily while staying stable within a single day.
+ */
+function seededShuffle<T>(array: T[], seed: string): T[] {
+  // Simple string → number hash
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  }
+  // mulberry32 PRNG
+  const rng = () => {
+    h |= 0;
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/** Returns today's date as YYYY-MM-DD, used as the daily shuffle seed. */
+function todaySeed(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 type ShopResultsProps = {
   filteredProducts: Product[];
   loading: boolean;
@@ -369,6 +402,18 @@ const Shop = () => {
         if (bIndex !== -1) return 1;
         return 0;
       });
+    }
+
+    // 3. Daily randomization — rotate product order every day.
+    //    Applies to: "All Products" view AND category "All" subcategory view.
+    //    Skipped when a specific subcategory is selected or a search is active.
+    const noSearch = !deferredSearchQuery;
+    const isAllProducts = currentActiveCategory === "all";
+    const isAllSubcategory = currentActiveSubcategory === "all";
+    if (noSearch && (isAllProducts || isAllSubcategory)) {
+      // Mix category slug into seed so each category gets a unique daily order
+      const seed = todaySeed() + (isAllProducts ? "" : `-${currentActiveCategory}`);
+      matches = seededShuffle(matches, seed);
     }
 
     return matches;
