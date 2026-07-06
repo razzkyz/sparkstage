@@ -274,6 +274,15 @@ serve(async (req: Request) => {
       secretKeyLength: dokuEnv.secretKey.length,
     })
 
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > 1_000_000) {
+      console.log('[DOKU WEBHOOK] ERROR: Payload too large', { contentLength })
+      return new Response(JSON.stringify({ error: 'Payload too large' }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const rawBody = await req.text()
     console.log('[DOKU WEBHOOK] Received notification', {
       bodyLength: rawBody.length,
@@ -337,6 +346,17 @@ serve(async (req: Request) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    if (requestTimestamp) {
+      const webhookAgeMs = Date.now() - new Date(requestTimestamp).getTime()
+      if (webhookAgeMs > 5 * 60 * 1000) { // 5 minutes
+        console.log('[DOKU WEBHOOK] ERROR: Webhook timestamp expired', { requestTimestamp, webhookAgeMs })
+        return new Response(JSON.stringify({ error: 'Webhook expired' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     if (clientId !== dokuEnv.clientId) {

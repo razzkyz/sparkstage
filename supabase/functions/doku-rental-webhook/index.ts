@@ -102,6 +102,12 @@ serve(async (req: Request) => {
     // Get DOKU environment
     const dokuEnv = getDokuEnv();
 
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > 1_000_000) {
+      console.error("[doku-rental-webhook] Payload too large", { contentLength });
+      return jsonError(req, 413, "Payload too large");
+    }
+
     // Read raw body for signature verification
     const rawBody = await req.text();
     let payload: DokuWebhookPayload;
@@ -122,6 +128,14 @@ serve(async (req: Request) => {
     if (!clientId || !requestId || !requestTimestamp || !signature) {
       console.error("[doku-rental-webhook] Missing signature headers");
       return jsonError(req, 400, "Missing signature headers");
+    }
+
+    if (requestTimestamp) {
+      const webhookAgeMs = Date.now() - new Date(requestTimestamp).getTime();
+      if (webhookAgeMs > 5 * 60 * 1000) {
+        console.error("[doku-rental-webhook] Webhook timestamp expired", { requestTimestamp, webhookAgeMs });
+        return jsonError(req, 403, "Webhook expired");
+      }
     }
 
     // Verify signature

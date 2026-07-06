@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const MAX_ATTEMPTS = 5;
-const LOCK_TIME_MS = 5 * 60 * 1000; // 5 minutes
+const BASE_ATTEMPTS = 5;
+const BASE_LOCK_TIME_MS = 30 * 1000; // 30 seconds for first lockout
+const MAX_LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutes max
 
 export function useLoginRateLimit(email: string) {
   const [isLocked, setIsLocked] = useState(false);
@@ -68,10 +69,15 @@ export function useLoginRateLimit(email: string) {
         count = (parsed.count || 0) + 1;
       }
       
-      if (count >= MAX_ATTEMPTS) {
-        lockUntil = Date.now() + LOCK_TIME_MS;
+      if (count >= BASE_ATTEMPTS) {
+        const excessAttempts = count - BASE_ATTEMPTS;
+        // Progressive delay: 30s, 60s, 120s, 240s...
+        const currentLockMs = BASE_LOCK_TIME_MS * Math.pow(2, Math.min(excessAttempts, 5));
+        const finalLockMs = Math.min(currentLockMs, MAX_LOCK_TIME_MS);
+        
+        lockUntil = Date.now() + finalLockMs;
         setIsLocked(true);
-        setLockTimeRemaining(Math.ceil(LOCK_TIME_MS / 1000));
+        setLockTimeRemaining(Math.ceil(finalLockMs / 1000));
       }
       
       localStorage.setItem(storageKey, JSON.stringify({ count, lockUntil }));

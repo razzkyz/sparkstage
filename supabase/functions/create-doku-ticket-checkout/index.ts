@@ -174,9 +174,10 @@ serve(async (req: Request) => {
     );
 
     // CHECK RATE LIMIT: Max 10 checkouts per user per minute
+    const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
     const rateLimitResult = await checkRateLimit(
       supabase,
-      auth.user.id,
+      `${auth.user.id}:${ip}`,
       {
         maxRequests: 10,
         windowMs: 60000, // 1 minute

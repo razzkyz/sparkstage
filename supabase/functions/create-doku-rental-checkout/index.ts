@@ -123,9 +123,10 @@ serve(async (req: Request) => {
     );
 
     // Rate limit check
+    const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
     const rateLimitResult = await checkRateLimit(
       supabase,
-      `rental-checkout:${requestOrigin || "unknown"}`,
+      `${auth.user.id}:${ip}`,
       {
         maxRequests: 10,
         windowMs: 60000,
