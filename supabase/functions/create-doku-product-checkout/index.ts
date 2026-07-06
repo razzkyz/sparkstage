@@ -138,7 +138,7 @@ async function persistProductPaymentData(params: {
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -296,6 +296,10 @@ serve(async (req) => {
       const dbPrice = toNumber((variant as { price: unknown }).price, 0);
       const unitPrice = item.sentPrice > 0 ? item.sentPrice : dbPrice;
 
+      if (item.sentPrice > 0 && Math.abs(item.sentPrice - dbPrice) > 1) {
+        console.warn(`[SECURITY_ALERT] PRICE_MISMATCH: User mencoba checkout variant=${item.productVariantId} dengan harga Rp${item.sentPrice} (Harga Asli DB: Rp${dbPrice})`);
+      }
+
       console.log(
         `[create-doku-product-checkout] Variant ${item.productVariantId}: sentPrice=${item.sentPrice}, dbPrice=${dbPrice}, unitPrice=${unitPrice}`
       );
@@ -402,7 +406,7 @@ serve(async (req) => {
 
       const productIds = variantCategories.map((v: { product_id?: number | null }) =>
         v.product_id
-      ).filter((id): id is number => typeof id === "number");
+      ).filter((id: number | null | undefined): id is number => typeof id === "number");
       const { data: products, error: productsError } = await supabase
         .from("products")
         .select("category_id")
@@ -414,7 +418,7 @@ serve(async (req) => {
 
       const categoryIds = products.map((p: { category_id?: number | null }) =>
         p.category_id
-      ).filter((id): id is number => typeof id === "number");
+      ).filter((id: number | null | undefined): id is number => typeof id === "number");
 
       // Call validate_and_reserve_voucher RPC
       const { data: voucherResult, error: voucherError } = await supabase.rpc(

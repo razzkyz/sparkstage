@@ -275,8 +275,10 @@ serve(async (req: Request) => {
     })
 
     const rawBody = await req.text()
-    console.log('[DOKU WEBHOOK] Raw body length:', rawBody.length)
-    console.log('[DOKU WEBHOOK] Raw body (first 500 chars):', rawBody.substring(0, 500))
+    console.log('[DOKU WEBHOOK] Received notification', {
+      bodyLength: rawBody.length,
+      contentType: req.headers.get('Content-Type'),
+    })
 
     if (!rawBody.trim()) {
       console.log('[DOKU WEBHOOK] ERROR: Empty payload')
@@ -288,7 +290,7 @@ serve(async (req: Request) => {
 
     try {
       notification = JSON.parse(rawBody)
-      console.log('[DOKU WEBHOOK] Parsed notification:', JSON.stringify(notification).substring(0, 500))
+      console.log('[DOKU WEBHOOK] Successfully parsed notification')
     } catch (parseError) {
       console.log('[DOKU WEBHOOK] ERROR: Invalid JSON payload', parseError)
       return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {

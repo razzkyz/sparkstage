@@ -184,9 +184,11 @@ export function toNumber(value: unknown, fallback: number) {
 
 export function generateTicketCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const randomBytes = new Uint8Array(12) // 12 chars = ~62 bits entropy
+  crypto.getRandomValues(randomBytes)
   let result = 'TKT-'
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(randomBytes[i] % chars.length)
   }
   return result + '-' + Date.now().toString(36).toUpperCase()
 }
@@ -420,7 +422,7 @@ export async function sendTicketNotificationsIfNeeded(params: {
     scope: 'ticket_order',
     orderRef: order.order_number,
     effectType: 'send_ticket_notifications',
-    skipResult: { notified: false, skipped: true },
+    skipResult: { notified: false, skipped: true, details: null },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
       // Fetch order details with customer info and first booking date
@@ -1111,12 +1113,13 @@ export async function sendWhatsAppInvoiceViaFontneIfNeeded(params: {
     scope: 'ticket_order',
     orderRef: order.order_number,
     effectType: 'send_whatsapp_invoice_fonnte',
-    skipResult: { sent: false, skipped: true },
+    skipResult: { sent: false, skipped: true, messageId: '', reason: 'skipped' },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
-      // Get Fonnte token from environment (device token preferred, fallback to account token)
+      // @ts-ignore
       let fontneToken = Deno.env.get('FONNTE_DEVICE_TOKEN')
       if (!fontneToken) {
+        // @ts-ignore
         fontneToken = Deno.env.get('FONNTE_API_TOKEN')
       }
       
