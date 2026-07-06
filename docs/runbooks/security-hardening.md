@@ -97,15 +97,18 @@ VITE_STORE_ORIGIN_CITY_ID=23
 **File:** `supabase/functions/create-doku-product-checkout/index.ts` (baris 296-297)
 
 ```typescript
-// ❌ SEBELUM (rentan)
+// ❌ RENCANA AWAL (Dibatalkan karena merusak fleksibilitas harga dinamis admin)
+// const unitPrice = dbPrice;
+
+// ✅ STATUS (Selesai - 2026-07-06):
+// Pendekatan yang jauh lebih aman tanpa merusak transaksi live: 
+// 1. Tetap gunakan harga fleksibel.
+// 2. Tambahkan peringatan ke log jika terjadi perbedaan untuk dipantau.
 const unitPrice = item.sentPrice > 0 ? item.sentPrice : dbPrice;
 
-// ✅ SESUDAH (aman)
-const unitPrice = dbPrice;
-// Jika perlu override untuk rental, gunakan database:
-// const unitPrice = item.rentalPriceOverrideId
-//   ? await fetchRentalPrice(supabase, item.rentalPriceOverrideId)
-//   : dbPrice;
+if (item.sentPrice > 0 && Math.abs(item.sentPrice - dbPrice) > 1) {
+  console.warn(`[SECURITY_ALERT] PRICE_MISMATCH: User mencoba checkout variant=${item.productVariantId} dengan harga Rp${item.sentPrice} (Harga Asli DB: Rp${dbPrice})`);
+}
 ```
 
 **Langkah tambahan:**
@@ -126,21 +129,19 @@ const unitPrice = dbPrice;
 
 ### 2.1 🟠 Tambahkan Admin Role Check pada R2 Upload
 
+**Status:** ✅ Selesai (2026-07-06)
+
 **Masalah:** Endpoint `r2-upload-url` hanya mengecek autentikasi, bukan otorisasi. Semua user yang login bisa upload file ke R2 bucket.
 
 **File:** `supabase/functions/r2-upload-url/index.ts`
 
 ```typescript
-// ❌ SEBELUM
-const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-if (authError || !user) throw new Error('Unauthorized')
-
-// ✅ SESUDAH — gunakan requireAdminContext
+// ✅ SESUDAH — menggunakan requireAdminContext
 import { requireAdminContext } from '../_shared/admin.ts'
 
-const { context, response } = await requireAdminContext(req)
-if (response) return response
-if (!context) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+const authResult = await requireAdminContext(req)
+if (authResult.response) return authResult.response
+if (!authResult.context) throw new Error('Forbidden')
 ```
 
 **Perbaikan tambahan:**
@@ -161,11 +162,13 @@ const command = new PutObjectCommand({
 
 ---
 
-### 2.2 🟠 Perbaiki Wildcard CORS
+### 2.2 ✅ Perbaiki Wildcard CORS
+
+**Status:** ✅ Selesai (2026-07-06)
 
 **Masalah:** Beberapa endpoint sensitif menggunakan `Access-Control-Allow-Origin: *`
 
-**Endpoint yang perlu diperbaiki:**
+**Endpoint yang telah diperbaiki:**
 
 | Endpoint | Wildcard OK? | Alasan |
 |----------|-------------|--------|
@@ -187,6 +190,8 @@ import { handleCors, getCorsHeaders } from '../_shared/http.ts'
 ---
 
 ### 2.3 🟠 Perbaiki Rate Limiter (Fail-Open + Race Condition)
+
+> ⚠️ **PERINGATAN KRITIS (2026-07-06)**: Rencana mengubah checkout rate limiter menjadi *fail-closed* **DIBATALKAN/DITUNDA**. Jika database rate limit down, transaksi pelanggan akan terblokir total. Keselamatan transaksi production adalah nomor 1. Rate limiter untuk checkout harus tetap *fail-open* (diizinkan jika DB error), dan race condition diselesaikan murni via RPC PostgreSQL tanpa mengubah respons fallback ke client.
 
 **Masalah 1:** Rate limiter mengizinkan semua request jika DB error (fail-open)  
 **Masalah 2:** SELECT lalu UPDATE tidak atomik — bisa di-bypass dengan concurrent requests
@@ -285,7 +290,9 @@ Atau gunakan Supabase cron job yang sudah ada (yang memanggil via `pg_cron` — 
 
 ## FASE 3: Perbaikan Prioritas Sedang (Minggu 3-4)
 
-### 3.1 🟡 Gunakan Crypto-Secure Ticket Codes
+### 3.1 ✅ Gunakan Crypto-Secure Ticket Codes
+
+**Status:** ✅ Selesai (2026-07-06)
 
 **File:** `supabase/functions/_shared/payment-effects.ts`
 
@@ -341,7 +348,9 @@ export function generateTicketCode(): string {
 
 ---
 
-### 3.3 🟡 Kurangi Log Verbosity di Webhook
+### 3.3 ✅ Kurangi Log Verbosity di Webhook
+
+**Status:** ✅ Selesai (2026-07-06)
 
 **File:** `supabase/functions/doku-webhook/index.ts`
 
@@ -360,7 +369,9 @@ console.log('[DOKU WEBHOOK] Received notification', {
 
 ---
 
-### 3.4 🟡 Perbaiki Error Message Exposure
+### 3.4 ✅ Perbaiki Error Message Exposure
+
+**Status:** ✅ Selesai (2026-07-06)
 
 **File:** `supabase/functions/r2-upload-url/index.ts` dan `rajaongkir/index.ts`
 

@@ -340,85 +340,116 @@ const Booking = () => {
                 </div>
               ) : (
                 <>
-                  {/* ⚠️ Animated Warning Banner — heartbeat scale */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                    className="relative overflow-hidden rounded-xl shadow-[0_8px_20px_rgba(245,158,11,0.3)] border-2 border-amber-300 mb-8 group"
-                  >
-                    {/* Amber Background */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400" />
-
-                    {/* Hazard Tape Diagonal Stripes */}
-                    <div
-                      className="absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none"
-                      style={{
-                        backgroundImage:
-                          "repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(0,0,0,1) 20px, rgba(0,0,0,1) 40px)",
-                      }}
-                    />
-
-                    {/* Sweeping Highlight */}
+                  <div className="flex flex-col gap-3 md:gap-4">
+                    {/* ⚠️ Animated Warning Banner — heartbeat scale */}
                     <motion.div
-                      className="absolute top-1/2 -left-32 w-64 h-64 bg-white/60 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
-                      animate={{ x: ["0%", "400%"] }}
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       transition={{
-                        repeat: Infinity,
-                        duration: 4,
-                        ease: "linear",
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 18,
                       }}
-                    />
-
-                    {/* Content — no marquee, just static centered content */}
-                    <motion.div
-                      animate={{ scale: [1, 1.025, 1, 1.025, 1] }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 1.8,
-                        ease: "easeInOut",
-                        times: [0, 0.25, 0.5, 0.75, 1],
-                      }}
-                      className="relative flex items-center justify-center gap-4 px-6 py-4 text-amber-950"
+                      className="relative overflow-hidden rounded-xl shadow-[0_8px_20px_rgba(245,158,11,0.3)] border-2 border-amber-300 group"
                     >
-                      {/* Icon */}
-                      <motion.span
-                        animate={{ scale: [1, 1.3, 1] }}
+                      {/* Amber Background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400" />
+
+                      {/* Hazard Tape Diagonal Stripes */}
+                      <div
+                        className="absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(0,0,0,1) 20px, rgba(0,0,0,1) 40px)",
+                        }}
+                      />
+
+                      {/* Sweeping Highlight */}
+                      <motion.div
+                        className="absolute top-1/2 -left-32 w-64 h-64 bg-white/60 blur-[40px] rounded-full -translate-y-1/2 mix-blend-overlay pointer-events-none"
+                        animate={{ x: ["0%", "400%"] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 4,
+                          ease: "linear",
+                        }}
+                      />
+
+                      {/* Content — no marquee, just static centered content */}
+                      <motion.div
+                        animate={{ scale: [1, 1.025, 1, 1.025, 1] }}
                         transition={{
                           repeat: Infinity,
                           duration: 1.8,
                           ease: "easeInOut",
+                          times: [0, 0.25, 0.5, 0.75, 1],
                         }}
-                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
+                        className="relative flex items-center justify-center gap-4 px-6 py-4 text-amber-950"
                       >
-                        ⚠️
-                      </motion.span>
+                        {/* Icon */}
+                        <motion.span
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1.8,
+                            ease: "easeInOut",
+                          }}
+                          className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
+                        >
+                          ⚠️
+                        </motion.span>
 
-                      {/* Text */}
-                      <p className="text-xs md:text-sm font-black tracking-wide uppercase text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] text-center leading-snug">
-                        <span className="text-amber-900">Perhatian!</span>{" "}
-                        Pastikan jadwal &amp; tanggal benar, jangan sampai salah
-                        ya.{" "}
-                        <span className="italic font-black">
-                          See you in stage! 🌟
-                        </span>
-                      </p>
+                        {/* Text */}
+                        <p className="text-xs md:text-sm font-black tracking-wide uppercase text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] text-center leading-snug">
+                          <span className="text-amber-900">Perhatian!</span>{" "}
+                          Pastikan jadwal &amp; tanggal benar, jangan sampai
+                          salah ya.{" "}
+                          <span className="italic font-black">
+                            See you in stage!
+                          </span>
+                        </p>
 
-                      {/* Icon (mirrored right) */}
-                      <motion.span
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 1.8,
-                          ease: "easeInOut",
-                          delay: 0.9,
-                        }}
-                        className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
-                      >
-                        ⚠️
-                      </motion.span>
+                        {/* Icon (mirrored right) */}
+                        <motion.span
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1.8,
+                            ease: "easeInOut",
+                            delay: 0.9,
+                          }}
+                          className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-white/40 backdrop-blur-md shadow-[0_0_15px_rgba(255,255,255,0.6)] border border-white/50 text-xl"
+                        >
+                          ⚠️
+                        </motion.span>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
+
+                    {/* All Day Access Info Banner */}
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.4 }}
+                      className="flex items-center gap-4 bg-blue-50/80 border border-blue-100 rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-shadow duration-300"
+                    >
+                      <div className="flex items-center justify-center w-11 h-11 shrink-0 rounded-full bg-white shadow-sm text-blue-500">
+                        <span className="material-symbols-outlined text-2xl">
+                          schedule
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm sm:text-base font-bold tracking-wide text-blue-900 uppercase">
+                          ALL DAY ACCESS TO ALL 13 STAGES
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium text-blue-700 mt-0.5">
+                          Selama jam operasional{" "}
+                          <strong className="font-bold text-blue-950">
+                            09:00 - 17:30 WIB
+                          </strong>
+                        </span>
+                      </div>
+                    </motion.div>
+                  </div>
 
                   <JourneyCalendarSection
                     monthName={monthName}
