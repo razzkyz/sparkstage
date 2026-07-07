@@ -382,13 +382,14 @@ const Shop = () => {
       }
     }
 
-    // 2. Search
+    // 2. Search (by name, description, or SKU)
     if (deferredSearchQuery) {
       const q = deferredSearchQuery.toLowerCase();
       matches = matches.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          (p.description && p.description.toLowerCase().includes(q)),
+          (p.description && p.description.toLowerCase().includes(q)) ||
+          (p.sku && p.sku.toLowerCase().includes(q)),
       );
     }
 

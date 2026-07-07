@@ -16,6 +16,7 @@ export interface ProductSummary {
   categorySlug?: string | null;
   defaultVariantId?: number;
   defaultVariantName?: string;
+  sku?: string | null;
   retail_category_id?: number | null;
   retail_subcategory_id?: number | null;
   department?: string | null;
@@ -42,6 +43,7 @@ type ProductVariantRow = {
   is_active?: unknown;
   stock?: unknown;
   reserved_stock?: unknown;
+  sku?: unknown;
 };
 
 type ProductImageRow = {
@@ -128,6 +130,8 @@ function transformProductSummary(row: ProductRow): ProductSummary {
   let defaultVariantId: number | undefined;
   let defaultVariantName: string | undefined;
   let defaultVariantPrice = Number.POSITIVE_INFINITY;
+  // Collect all SKUs from all active variants (deduplicated)
+  const skuSet = new Set<string>();
 
   for (const variant of variants) {
     if (variant.is_active === false) continue;
@@ -142,6 +146,10 @@ function transformProductSummary(row: ProductRow): ProductSummary {
       defaultVariantPrice = price;
       defaultVariantId = toNumber(variant.id, 0);
       defaultVariantName = typeof variant.name === 'string' ? variant.name : String(variant.name ?? '');
+    }
+
+    if (typeof variant.sku === 'string' && variant.sku.trim()) {
+      skuSet.add(variant.sku.trim());
     }
   }
 
@@ -162,6 +170,7 @@ function transformProductSummary(row: ProductRow): ProductSummary {
     categorySlug,
     defaultVariantId,
     defaultVariantName,
+    sku: skuSet.size > 0 ? [...skuSet].join(' ') : null,
     retail_category_id: toNumber(row.retail_category_id, null as any),
     retail_subcategory_id: toNumber(row.retail_subcategory_id, null as any),
     department: typeof row.retail_categories?.department === 'string' ? row.retail_categories.department : null,
@@ -220,7 +229,7 @@ async function fetchProductSummaries(signal?: AbortSignal) {
             retail_categories!products_retail_category_id_fkey(department, name, slug),
             retail_subcategories:retail_categories!products_retail_subcategory_id_fkey(name, slug),
             product_images(image_url, is_primary, display_order),
-            product_variants(id, name, price, is_active, stock, reserved_stock)
+            product_variants(id, name, price, is_active, stock, reserved_stock, sku)
           `
           )
           .abortSignal(timeoutSignal)
