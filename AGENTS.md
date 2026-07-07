@@ -64,15 +64,14 @@ Spark Stage is a fullstack booking ticket and commerce app.
   - Database migration: `20260704000000_add_display_order_to_retail_categories.sql`
   - Deployment guide: `docs/deployment/CATEGORY_DISPLAY_ORDER_READY.md`
   - Allows admin to reorder categories without code changes
-- R2 Migration Status (UPDATED 2026-06-10): **95% COMPLETE - Upload Code Ready** ✅
+- R2 Migration Status (UPDATED 2026-07-07): **100% COMPLETE** ✅
   - **DONE:** Product images uploaded: 2,227 / 2,227 (100%) ✅
   - **DONE:** R2 bucket: sparkstage-public-assets ✅
   - **DONE:** Custom domain: `cdn.sparkstage55.com` (active, zero-cost egress) ✅
   - **DONE:** DNS: Cloudflare nameservers (hope.ns.cloudflare.com, simon.ns.cloudflare.com) ✅
   - **DONE:** Database cutover: All URLs updated to cdn.sparkstage55.com ✅
   - **DONE:** Website verified: Images loading correctly ✅
-  - **READY:** Upload code: R2 Edge Function + Frontend helper written ✅
-  - **PENDING:** Deployment: Needs 30-45 minutes to deploy upload code ⏸️
+  - **DONE:** Upload code: R2 Edge Function (`r2-upload-url`) deployed and Frontend helper activated ✅
   - Migration guide: `R2_MIGRATION_COMPLETE_SUMMARY.md` ✅
   - Deployment guide: `R2_UPLOAD_DEPLOYMENT_GUIDE.md` ✅
   - Rollback scripts: Available for instant revert if needed ✅
