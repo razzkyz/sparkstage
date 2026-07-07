@@ -64,7 +64,7 @@ export const applyInventoryFilters = <T>(query: T, filters: InventoryListFilters
   const normalizedCategory = filters.categoryFilter.trim();
   if (normalizedCategory) {
     if (normalizedCategory === 'uncategorized') {
-      next = next.is('category_id', null) as typeof next;
+      next = next.is('retail_category_id', null) as typeof next;
     } else if (normalizedCategory.startsWith('rc-')) {
       // Retail category ID filter — filter by retail_category_id
       const rcId = normalizedCategory.replace('rc-', '');

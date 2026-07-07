@@ -9,6 +9,7 @@
 ## Ringkasan Audit
 
 Audit keamanan menyeluruh telah dilakukan pada seluruh stack SparkStage:
+
 - **Frontend** (Vite + React + TypeScript)
 - **Backend** (Supabase Edge Functions / Deno)
 - **Database** (PostgreSQL via Supabase, RLS, RPC)
@@ -16,19 +17,19 @@ Audit keamanan menyeluruh telah dilakukan pada seluruh stack SparkStage:
 
 ### Skor Keseluruhan
 
-| Area | Status | Prioritas |
-|------|--------|-----------|
-| Autentikasi & Sesi | ✅ Kuat | — |
-| Otorisasi (RLS) | ✅ Baik | Rendah |
-| Keamanan Pembayaran (DOKU) | ✅ Sangat Kuat | — |
-| Validasi Input | 🟡 Memadai | Sedang |
-| Manajemen Secrets | 🔴 Perlu Perbaikan | **Kritis** |
-| CORS Policy | 🟠 Perlu Perbaikan | Tinggi |
-| Perlindungan XSS | ✅ Bersih | — |
-| Rate Limiting | 🟡 Memadai | Sedang |
-| HTTP Security Headers | ✅ Baik | Rendah |
-| Fungsi SQL | ✅ Baik (baru) | Rendah |
-| API Proxy | 🟡 Perlu Auth | Sedang |
+| Area                       | Status             | Prioritas  |
+| -------------------------- | ------------------ | ---------- |
+| Autentikasi & Sesi         | ✅ Kuat            | —          |
+| Otorisasi (RLS)            | ✅ Baik            | Rendah     |
+| Keamanan Pembayaran (DOKU) | ✅ Sangat Kuat     | —          |
+| Validasi Input             | 🟡 Memadai         | Sedang     |
+| Manajemen Secrets          | 🔴 Perlu Perbaikan | **Kritis** |
+| CORS Policy                | 🟠 Perlu Perbaikan | Tinggi     |
+| Perlindungan XSS           | ✅ Bersih          | —          |
+| Rate Limiting              | 🟡 Memadai         | Sedang     |
+| HTTP Security Headers      | ✅ Baik            | Rendah     |
+| Fungsi SQL                 | ✅ Baik (baru)     | Rendah     |
+| API Proxy                  | 🟡 Perlu Auth      | Sedang     |
 
 ---
 
@@ -39,6 +40,7 @@ Audit keamanan menyeluruh telah dilakukan pada seluruh stack SparkStage:
 **Masalah:** File `.env` dan `.env.staging` berisi API key live (RajaOngkir, Supabase anon key) dalam plaintext. Meskipun termasuk `.gitignore`, jika pernah ter-commit maka semua key terekspos.
 
 **File terdampak:**
+
 - `.env` — `VITE_SUPABASE_ANON_KEY`
 - `.env.staging` — `VITE_SUPABASE_ANON_KEY` staging
 
@@ -68,6 +70,7 @@ git filter-branch --force --index-filter \
 ```
 
 Buat file `.env.example`:
+
 ```env
 # Supabase (frontend - anon key aman untuk frontend)
 VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -101,21 +104,26 @@ VITE_STORE_ORIGIN_CITY_ID=23
 // const unitPrice = dbPrice;
 
 // ✅ STATUS (Selesai - 2026-07-06):
-// Pendekatan yang jauh lebih aman tanpa merusak transaksi live: 
+// Pendekatan yang jauh lebih aman tanpa merusak transaksi live:
 // 1. Tetap gunakan harga fleksibel.
 // 2. Tambahkan peringatan ke log jika terjadi perbedaan untuk dipantau.
 const unitPrice = item.sentPrice > 0 ? item.sentPrice : dbPrice;
 
 if (item.sentPrice > 0 && Math.abs(item.sentPrice - dbPrice) > 1) {
-  console.warn(`[SECURITY_ALERT] PRICE_MISMATCH: User mencoba checkout variant=${item.productVariantId} dengan harga Rp${item.sentPrice} (Harga Asli DB: Rp${dbPrice})`);
+  console.warn(
+    `[SECURITY_ALERT] PRICE_MISMATCH: User mencoba checkout variant=${item.productVariantId} dengan harga Rp${item.sentPrice} (Harga Asli DB: Rp${dbPrice})`,
+  );
 }
 ```
 
 **Langkah tambahan:**
+
 1. Tambahkan logging jika `sentPrice` dan `dbPrice` berbeda signifikan:
    ```typescript
    if (item.sentPrice > 0 && Math.abs(item.sentPrice - dbPrice) > 1) {
-     console.warn(`[SECURITY] Price mismatch: variant=${item.productVariantId} sent=${item.sentPrice} db=${dbPrice}`);
+     console.warn(
+       `[SECURITY] Price mismatch: variant=${item.productVariantId} sent=${item.sentPrice} db=${dbPrice}`,
+     );
    }
    ```
 2. Untuk rental items dengan dynamic pricing, simpan harga di tabel `rental_pricing` dan ambil dari database
@@ -137,27 +145,28 @@ if (item.sentPrice > 0 && Math.abs(item.sentPrice - dbPrice) > 1) {
 
 ```typescript
 // ✅ SESUDAH — menggunakan requireAdminContext
-import { requireAdminContext } from '../_shared/admin.ts'
+import { requireAdminContext } from "../_shared/admin.ts";
 
-const authResult = await requireAdminContext(req)
-if (authResult.response) return authResult.response
-if (!authResult.context) throw new Error('Forbidden')
+const authResult = await requireAdminContext(req);
+if (authResult.response) return authResult.response;
+if (!authResult.context) throw new Error("Forbidden");
 ```
 
 **Perbaikan tambahan:**
+
 - Ganti hardcoded CORS `*` dengan shared CORS helper
 - Tambahkan validasi ukuran file (max 10MB)
 - Validasi `productId` ke database
 
 ```typescript
 // Tambahkan ke PutObjectCommand
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const command = new PutObjectCommand({
-  Bucket: Deno.env.get('R2_BUCKET_NAME') ?? '',
+  Bucket: Deno.env.get("R2_BUCKET_NAME") ?? "",
   Key: s3Key,
   ContentType: fileType,
   ContentLength: MAX_FILE_SIZE, // Limit upload size
-})
+});
 ```
 
 ---
@@ -170,13 +179,14 @@ const command = new PutObjectCommand({
 
 **Endpoint yang telah diperbaiki:**
 
-| Endpoint | Wildcard OK? | Alasan |
-|----------|-------------|--------|
-| `doku-webhook` | ✅ Ya | DOKU server perlu akses, dilindungi HMAC signature |
-| `r2-upload-url` | ❌ Tidak | Upload file — harus admin origin saja |
-| `send-whatsapp-invoice` | ❌ Tidak | Aksi admin — harus origin terbatas |
+| Endpoint                | Wildcard OK? | Alasan                                             |
+| ----------------------- | ------------ | -------------------------------------------------- |
+| `doku-webhook`          | ✅ Ya        | DOKU server perlu akses, dilindungi HMAC signature |
+| `r2-upload-url`         | ❌ Tidak     | Upload file — harus admin origin saja              |
+| `send-whatsapp-invoice` | ❌ Tidak     | Aksi admin — harus origin terbatas                 |
 
 **Perbaikan:**
+
 ```typescript
 // r2-upload-url/index.ts — ganti hardcoded CORS
 // ❌ SEBELUM
@@ -191,7 +201,7 @@ import { handleCors, getCorsHeaders } from '../_shared/http.ts'
 
 ### 2.3 🟠 Perbaiki Rate Limiter (Fail-Open + Race Condition)
 
-> ⚠️ **PERINGATAN KRITIS (2026-07-06)**: Rencana mengubah checkout rate limiter menjadi *fail-closed* **DIBATALKAN/DITUNDA**. Jika database rate limit down, transaksi pelanggan akan terblokir total. Keselamatan transaksi production adalah nomor 1. Rate limiter untuk checkout harus tetap *fail-open* (diizinkan jika DB error), dan race condition diselesaikan murni via RPC PostgreSQL tanpa mengubah respons fallback ke client.
+> ⚠️ **PERINGATAN KRITIS (2026-07-06)**: Rencana mengubah checkout rate limiter menjadi _fail-closed_ **DIBATALKAN/DITUNDA**. Jika database rate limit down, transaksi pelanggan akan terblokir total. Keselamatan transaksi production adalah nomor 1. Rate limiter untuk checkout harus tetap _fail-open_ (diizinkan jika DB error), dan race condition diselesaikan murni via RPC PostgreSQL tanpa mengubah respons fallback ke client.
 
 **Masalah 1:** Rate limiter mengizinkan semua request jika DB error (fail-open)  
 **Masalah 2:** SELECT lalu UPDATE tidak atomik — bisa di-bypass dengan concurrent requests
@@ -238,6 +248,7 @@ $$;
 ```
 
 **Untuk fail-open behavior pada checkout:**
+
 ```typescript
 // Ubah catch block untuk checkout — fail-closed
 } catch (error) {
@@ -258,6 +269,7 @@ $$;
 **Status:** Selesai (2026-07-04)
 
 **Catatan:** RajaOngkir telah dihapus sepenuhnya dari repository karena SparkStage beralih menggunakan sistem omnichannel dengan e-commerce lain seperti Shopee dan TikTok Shop.
+
 - Folder `supabase/functions/rajaongkir` dihapus.
 - `RAJAONGKIR_API_KEY` dihapus dari `.env` dan `.env.staging`.
 - Endpoint proxy RajaOngkir yang rentan (tanpa otentikasi) sudah ditutup.
@@ -267,8 +279,9 @@ $$;
 ### 2.5 🟠 Amankan Cron/System Endpoints
 
 **Masalah:** Endpoint system berikut tidak memiliki autentikasi dan bisa dipanggil oleh siapapun:
+
 - `expire-product-orders` — bisa memaksa expire order
-- `expire-tickets` — bisa memaksa expire tiket  
+- `expire-tickets` — bisa memaksa expire tiket
 - `retention-cleanup` — bisa menghapus data
 - `reconcile-doku-payments` — bisa trigger reconciliation
 
@@ -276,11 +289,11 @@ $$;
 
 ```typescript
 // Di setiap cron endpoint, tambahkan:
-const cronSecret = Deno.env.get('CRON_SECRET')
-const providedSecret = req.headers.get('Authorization')?.replace('Bearer ', '')
+const cronSecret = Deno.env.get("CRON_SECRET");
+const providedSecret = req.headers.get("Authorization")?.replace("Bearer ", "");
 
 if (cronSecret && providedSecret !== cronSecret) {
-  return jsonError(req, 401, 'Unauthorized cron request')
+  return jsonError(req, 401, "Unauthorized cron request");
 }
 ```
 
@@ -299,24 +312,24 @@ Atau gunakan Supabase cron job yang sudah ada (yang memanggil via `pg_cron` — 
 ```typescript
 // ❌ SEBELUM (Math.random tidak aman secara kriptografis)
 export function generateTicketCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let result = 'TKT-'
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "TKT-";
   for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return result + '-' + Date.now().toString(36).toUpperCase()
+  return result + "-" + Date.now().toString(36).toUpperCase();
 }
 
 // ✅ SESUDAH (crypto.getRandomValues)
 export function generateTicketCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  const randomBytes = new Uint8Array(12) // 12 chars = ~62 bits entropy
-  crypto.getRandomValues(randomBytes)
-  let result = 'TKT-'
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const randomBytes = new Uint8Array(12); // 12 chars = ~62 bits entropy
+  crypto.getRandomValues(randomBytes);
+  let result = "TKT-";
   for (let i = 0; i < 12; i++) {
-    result += chars.charAt(randomBytes[i] % chars.length)
+    result += chars.charAt(randomBytes[i] % chars.length);
   }
-  return result + '-' + Date.now().toString(36).toUpperCase()
+  return result + "-" + Date.now().toString(36).toUpperCase();
 }
 ```
 
@@ -330,12 +343,18 @@ export function generateTicketCode(): string {
 {
   "source": "/(.*)",
   "headers": [
-    { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload" },
+    {
+      "key": "Strict-Transport-Security",
+      "value": "max-age=31536000; includeSubDomains; preload"
+    },
     { "key": "X-Content-Type-Options", "value": "nosniff" },
     { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
     { "key": "X-XSS-Protection", "value": "1; mode=block" },
     { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-    { "key": "Permissions-Policy", "value": "geolocation=(), microphone=*, camera=*, payment=()" },
+    {
+      "key": "Permissions-Policy",
+      "value": "geolocation=(), microphone=*, camera=*, payment=()"
+    },
     {
       "key": "Content-Security-Policy",
       "value": "default-src 'self'; script-src 'self' https://sandbox.doku.com https://jokul.doku.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://cdn.sparkstage55.com https://*.supabase.co data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.doku.com https://api-sandbox.doku.com; frame-src https://sandbox.doku.com https://jokul.doku.com;"
@@ -356,13 +375,16 @@ export function generateTicketCode(): string {
 
 ```typescript
 // ❌ SEBELUM — log raw body yang mungkin berisi PII
-console.log('[DOKU WEBHOOK] Raw body (first 500 chars):', rawBody.substring(0, 500))
+console.log(
+  "[DOKU WEBHOOK] Raw body (first 500 chars):",
+  rawBody.substring(0, 500),
+);
 
 // ✅ SESUDAH — log minimal tanpa PII
-console.log('[DOKU WEBHOOK] Received notification', {
+console.log("[DOKU WEBHOOK] Received notification", {
   bodyLength: rawBody.length,
-  contentType: req.headers.get('Content-Type'),
-})
+  contentType: req.headers.get("Content-Type"),
+});
 ```
 
 **Prinsip:** Jangan log nama customer, nomor telepon, atau email di production logs.
@@ -393,6 +415,7 @@ return new Response(JSON.stringify({
 Beberapa fungsi SQL lama menggunakan `SECURITY DEFINER` tanpa `SET search_path = public`. Fungsi baru (2026-06+) sudah benar.
 
 **Audit:**
+
 ```sql
 -- Jalankan query ini di Supabase SQL Editor
 SELECT
@@ -422,13 +445,14 @@ npx better-npm-audit audit
 ```
 
 Buat `.github/workflows/security.yml`:
+
 ```yaml
 name: Security Scan
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 6 * * 1' # Setiap Senin
+    - cron: "0 6 * * 1" # Setiap Senin
 
 jobs:
   audit:
@@ -463,15 +487,16 @@ Saat ini rate limiter hanya berdasarkan `user_id`. Tambahkan rate limit per IP u
 
 ```typescript
 // Ambil IP dari header
-const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  || req.headers.get('x-real-ip')
-  || 'unknown'
+const clientIp =
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("x-real-ip") ||
+  "unknown";
 
 const rateLimitResult = await checkRateLimit(supabase, clientIp, {
   maxRequests: 60,
   windowMs: 60000,
-  keyPrefix: 'ip_general',
-})
+  keyPrefix: "ip_general",
+});
 ```
 
 ---
@@ -514,11 +539,11 @@ Saat ini `isAdmin` adalah boolean yang mencakup 12 roles. Pertimbangkan:
 ```typescript
 // Tambahkan granular route protection
 const ROUTE_PERMISSIONS = {
-  '/admin/stock-opname': ['admin', 'super_admin', 'owner'],
-  '/admin/rollerblade-page': ['admin', 'super_admin', 'rollerblade'],
-  '/admin/kasir': ['admin', 'super_admin', 'kasir'],
-  '/admin/dressing-room': ['admin', 'super_admin', 'dressing_room_admin'],
-} as const
+  "/admin/stock-opname": ["admin", "super_admin", "owner"],
+  "/admin/rollerblade-page": ["admin", "super_admin", "rollerblade"],
+  "/admin/kasir": ["admin", "super_admin", "kasir"],
+  "/admin/dressing-room": ["admin", "super_admin", "dressing_room_admin"],
+} as const;
 ```
 
 ---
@@ -527,9 +552,9 @@ const ROUTE_PERMISSIONS = {
 
 **Masalah:** Set admin roles berbeda antara frontend dan backend:
 
-| File | Roles |
-|------|-------|
-| `frontend/src/auth/adminRole.ts` | 12 roles (termasuk `devops`, `owner`, `print`, `rollerblade`) |
+| File                                  | Roles                                                              |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `frontend/src/auth/adminRole.ts`      | 12 roles (termasuk `devops`, `owner`, `print`, `rollerblade`)      |
 | `supabase/functions/_shared/admin.ts` | 8 roles (tidak termasuk `devops`, `owner`, `print`, `rollerblade`) |
 
 **Rekomendasi:** Sinkronkan kedua set roles, atau idealnya load dari database agar single source of truth.
@@ -555,17 +580,17 @@ Gunakan checklist ini sebelum setiap deployment:
 
 ## Status Security Headers (vercel.json) ✅
 
-| Header | Nilai | Status |
-|--------|-------|--------|
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | ✅ Excellent |
-| `X-Content-Type-Options` | `nosniff` | ✅ |
-| `X-Frame-Options` | `SAMEORIGIN` | ✅ |
-| `X-XSS-Protection` | `1; mode=block` | ✅ |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | ✅ |
-| `Permissions-Policy` | `geolocation=(), microphone=*, camera=*, payment=()` | ✅ |
-| `Content-Security-Policy` | ❌ Belum ada | **Perlu ditambahkan** |
-| `.env` redirect | `/.env(.*)` → `/` (301) | ✅ |
-| `.git` redirect | `/.git(.*)` → `/` (301) | ✅ |
+| Header                      | Nilai                                                | Status                |
+| --------------------------- | ---------------------------------------------------- | --------------------- |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload`       | ✅ Excellent          |
+| `X-Content-Type-Options`    | `nosniff`                                            | ✅                    |
+| `X-Frame-Options`           | `SAMEORIGIN`                                         | ✅                    |
+| `X-XSS-Protection`          | `1; mode=block`                                      | ✅                    |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin`                    | ✅                    |
+| `Permissions-Policy`        | `geolocation=(), microphone=*, camera=*, payment=()` | ✅                    |
+| `Content-Security-Policy`   | ❌ Belum ada                                         | **Perlu ditambahkan** |
+| `.env` redirect             | `/.env(.*)` → `/` (301)                              | ✅                    |
+| `.git` redirect             | `/.git(.*)` → `/` (301)                              | ✅                    |
 
 ---
 
