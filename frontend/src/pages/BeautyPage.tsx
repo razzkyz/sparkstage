@@ -222,17 +222,24 @@ export default function BeautyPage() {
       );
     });
 
-    // Sort to put Speckles/Patch products first so they appear together side-by-side
+    // Sort to group products together sequentially: Headliner -> Star Glitter -> Speckles/Patch -> Others
     return matches.sort((a, b) => {
-      const aIsSpeckles =
-        a.name.toLowerCase().includes("speckles") ||
-        a.name.toLowerCase().includes("patch");
-      const bIsSpeckles =
-        b.name.toLowerCase().includes("speckles") ||
-        b.name.toLowerCase().includes("patch");
-      if (aIsSpeckles && !bIsSpeckles) return -1;
-      if (!aIsSpeckles && bIsSpeckles) return 1;
-      return 0;
+      const getGroupPriority = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes("headliner")) return 1;
+        if (lowerName.includes("star glitter")) return 2;
+        if (lowerName.includes("speckles") || lowerName.includes("patch")) return 3;
+        return 4;
+      };
+
+      const priorityA = getGroupPriority(a.name);
+      const priorityB = getGroupPriority(b.name);
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      return a.name.localeCompare(b.name);
     });
   }, [normalizedQuery, makeupProducts, activeCategory, glamCategories]);
 
