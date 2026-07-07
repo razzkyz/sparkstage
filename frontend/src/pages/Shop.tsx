@@ -412,9 +412,26 @@ const Shop = () => {
     const isAllProducts = currentActiveCategory === "all";
     const isAllSubcategory = currentActiveSubcategory === "all";
     if (noSearch && (isAllProducts || isAllSubcategory)) {
-      // Mix category slug into seed so each category gets a unique daily order
-      const seed = todaySeed() + (isAllProducts ? "" : `-${currentActiveCategory}`);
-      matches = seededShuffle(matches, seed);
+      if (currentActiveCategory === "spark-my-face") {
+        // Custom sort for Spark My Face to group collections neatly
+        matches.sort((a, b) => {
+          const getGroupPriority = (name: string) => {
+            const lowerName = name.toLowerCase();
+            if (lowerName.includes("headliner")) return 1;
+            if (lowerName.includes("star glitter")) return 2;
+            if (lowerName.includes("speckles") || lowerName.includes("patch")) return 3;
+            return 4;
+          };
+          const priorityA = getGroupPriority(a.name);
+          const priorityB = getGroupPriority(b.name);
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          return a.name.localeCompare(b.name);
+        });
+      } else {
+        // Mix category slug into seed so each category gets a unique daily order
+        const seed = todaySeed() + (isAllProducts ? "" : `-${currentActiveCategory}`);
+        matches = seededShuffle(matches, seed);
+      }
     }
 
     return matches;
