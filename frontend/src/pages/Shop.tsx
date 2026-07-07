@@ -405,33 +405,32 @@ const Shop = () => {
       });
     }
 
-    // 3. Daily randomization — rotate product order every day.
-    //    Applies to: "All Products" view AND category "All" subcategory view.
-    //    Skipped when a specific subcategory is selected or a search is active.
+    // 3. Daily randomization or Custom Sort
     const noSearch = !deferredSearchQuery;
     const isAllProducts = currentActiveCategory === "all";
     const isAllSubcategory = currentActiveSubcategory === "all";
-    if (noSearch && (isAllProducts || isAllSubcategory)) {
-      if (currentActiveCategory === "spark-my-face") {
-        // Custom sort for Spark My Face to group collections neatly
-        matches.sort((a, b) => {
-          const getGroupPriority = (name: string) => {
-            const lowerName = name.toLowerCase();
-            if (lowerName.includes("headliner")) return 1;
-            if (lowerName.includes("star glitter")) return 2;
-            if (lowerName.includes("speckles") || lowerName.includes("patch")) return 3;
-            return 4;
-          };
-          const priorityA = getGroupPriority(a.name);
-          const priorityB = getGroupPriority(b.name);
-          if (priorityA !== priorityB) return priorityA - priorityB;
-          return a.name.localeCompare(b.name);
-        });
-      } else {
-        // Mix category slug into seed so each category gets a unique daily order
-        const seed = todaySeed() + (isAllProducts ? "" : `-${currentActiveCategory}`);
-        matches = seededShuffle(matches, seed);
-      }
+    
+    // Always apply our custom group sorting for spark-my-face (regardless of search/subcategory status)
+    if (currentActiveCategory === "spark-my-face") {
+      matches.sort((a, b) => {
+        const getGroupPriority = (name: string) => {
+          const lowerName = name.toLowerCase();
+          if (lowerName.includes("headliner")) return 1;
+          if (lowerName.includes("star glitter")) return 2;
+          if (lowerName.includes("speckles") || lowerName.includes("patch")) return 3;
+          return 4;
+        };
+        const priorityA = getGroupPriority(a.name);
+        const priorityB = getGroupPriority(b.name);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return a.name.localeCompare(b.name);
+      });
+    } 
+    // For other categories, apply daily shuffle when viewing "All"
+    else if (noSearch && (isAllProducts || isAllSubcategory)) {
+      // Mix category slug into seed so each category gets a unique daily order
+      const seed = todaySeed() + (isAllProducts ? "" : `-${currentActiveCategory}`);
+      matches = seededShuffle(matches, seed);
     }
 
     return matches;
