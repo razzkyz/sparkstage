@@ -24,6 +24,16 @@ Deno.serve(async (req) => {
     // Initialize Supabase client with service role key for admin access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Security check: ensure the request is authorized (e.g. from Supabase pg_net cron)
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader !== `Bearer ${supabaseServiceKey}`) {
+      console.warn('[Expire Tickets] Unauthorized attempt to trigger expiry');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
     supabase = createServiceClient(supabaseUrl, supabaseServiceKey);
 

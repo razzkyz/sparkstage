@@ -38,6 +38,18 @@ Deno.serve(async (req) => {
 
   try {
     const { url: supabaseUrl, serviceRoleKey: supabaseServiceKey } = getSupabaseEnv()
+
+    // Security check: ensure the request is authorized (e.g. from Supabase pg_net cron)
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader !== `Bearer ${supabaseServiceKey}`) {
+      console.warn('[Expire Product Orders] Unauthorized attempt to trigger expiry');
+      return jsonError(req, 401, {
+        success: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     const supabase = createServiceClient(supabaseUrl, supabaseServiceKey)
 
     console.log('[Expire Product Orders] Starting 5-minute expiry sweep...')

@@ -1,0 +1,51 @@
+-- ============================================
+-- Migration: Harden SECURITY DEFINER functions with search_path
+-- ============================================
+
+ALTER FUNCTION create_starguide_user() SET search_path = public;
+ALTER FUNCTION public.handle_new_user() SET search_path = public;
+ALTER FUNCTION public.log_audit_event(UUID, VARCHAR, VARCHAR, VARCHAR, JSONB, JSONB, TEXT) SET search_path = public;
+ALTER FUNCTION public.trigger_audit_admin_role_changes() SET search_path = public;
+ALTER FUNCTION public.cleanup_old_rate_limits() SET search_path = public;
+ALTER FUNCTION get_user_divisions(UUID) SET search_path = public;
+ALTER FUNCTION user_has_division_access(UUID, division_type) SET search_path = public;
+ALTER FUNCTION audit_division_assignment() SET search_path = public;
+ALTER FUNCTION audit_voucher_insert() SET search_path = public;
+ALTER FUNCTION audit_voucher_update() SET search_path = public;
+ALTER FUNCTION audit_voucher_delete() SET search_path = public;
+ALTER FUNCTION audit_product_update() SET search_path = public;
+ALTER FUNCTION audit_order_status_update() SET search_path = public;
+ALTER FUNCTION audit_product_order_status_update() SET search_path = public;
+ALTER FUNCTION generate_referral_code() SET search_path = public;
+ALTER FUNCTION apply_referral_code(VARCHAR, UUID) SET search_path = public;
+ALTER FUNCTION get_referral_stats(UUID) SET search_path = public;
+ALTER FUNCTION get_referred_users(UUID) SET search_path = public;
+ALTER FUNCTION get_admin_users() SET search_path = public;
+ALTER FUNCTION get_all_users_for_admin() SET search_path = public;
+ALTER FUNCTION public.audit_product_update() SET search_path = public;
+ALTER FUNCTION get_admin_users() SET search_path = public;
+ALTER FUNCTION get_all_users_for_admin() SET search_path = public;
+ALTER FUNCTION audit_purchased_tickets_update() SET search_path = public;
+ALTER FUNCTION audit_orders_insert() SET search_path = public;
+ALTER FUNCTION audit_product_orders_insert() SET search_path = public;
+ALTER FUNCTION public.get_dummy_data_summary() SET search_path = public;
+ALTER FUNCTION public.identify_dummy_products() SET search_path = public;
+ALTER FUNCTION public.identify_test_orders() SET search_path = public;
+ALTER FUNCTION get_total_registered_customers_count() SET search_path = public;
+ALTER FUNCTION get_customer_registration_stats() SET search_path = public;
+ALTER FUNCTION public.audit_dashboard_settings() SET search_path = public;
+ALTER FUNCTION public.log_admin_login() SET search_path = public;
+ALTER FUNCTION public.update_dressing_room_products_updated_at() SET search_path = public;
+ALTER FUNCTION public.get_rental_item_status_history(BIGINT) SET search_path = public;
+ALTER FUNCTION public.increment_dr_variant_available(BIGINT, INT) SET search_path = public;
+ALTER FUNCTION public.increment_dr_variant_laundry(BIGINT, INT) SET search_path = public;
+ALTER FUNCTION public.increment_dr_variant_damaged(BIGINT, INT) SET search_path = public;
+ALTER FUNCTION public.validate_rental_pickup(TEXT) SET search_path = public;
+ALTER FUNCTION public.test_reschedule() SET search_path = public;
+ALTER FUNCTION public.test_trigger_end_to_end() SET search_path = public;
+ALTER FUNCTION public.test_trigger_end_to_end() SET search_path = public;
+ALTER FUNCTION user_has_division_access(UUID, division_type) SET search_path = public;
+ALTER FUNCTION audit_voucher_update() SET search_path = public;
+ALTER FUNCTION audit_voucher_delete() SET search_path = public;
+ALTER FUNCTION audit_product_update() SET search_path = public;
+ALTER FUNCTION get_admin_users() SET search_path = public;

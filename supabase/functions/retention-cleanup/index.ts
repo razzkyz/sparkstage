@@ -26,6 +26,16 @@ Deno.serve(async (req) => {
     })
   }
 
+  // Security check: ensure the request is authorized (e.g. from Supabase pg_net cron)
+  const authHeader = req.headers.get('Authorization');
+  if (authHeader !== `Bearer ${supabaseServiceKey}`) {
+    console.warn('[Retention Cleanup] Unauthorized attempt to trigger cleanup');
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   const webhookRetentionDays = getEnvNumber('RETENTION_WEBHOOK_LOGS_DAYS', 90)
   const pendingReservationRetentionDays = getEnvNumber('RETENTION_RESERVATIONS_PENDING_DAYS', 7)
   const staleReservationRetentionDays = getEnvNumber('RETENTION_RESERVATIONS_STALE_DAYS', 30)
