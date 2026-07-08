@@ -181,6 +181,9 @@ export default function BeautyPage() {
     "pop-socket",
     "popsockets",
     "body-glitter",
+    "star-glitter",
+    "speakles",
+    "spark-my-face",
   ];
 
   const glamCategories = useMemo(() => {
