@@ -276,28 +276,28 @@ $$;
 
 ---
 
-### 2.5 🟠 Amankan Cron/System Endpoints
+### 2.5 ✅ Amankan Cron/System Endpoints
 
-**Masalah:** Endpoint system berikut tidak memiliki autentikasi dan bisa dipanggil oleh siapapun:
+**Status:** ✅ Selesai (2026-07-08)
 
-- `expire-product-orders` — bisa memaksa expire order
-- `expire-tickets` — bisa memaksa expire tiket
-- `retention-cleanup` — bisa menghapus data
-- `reconcile-doku-payments` — bisa trigger reconciliation
+**Masalah:** Endpoint system sebelumnya tidak memiliki autentikasi dan bisa dipanggil oleh siapapun:
 
-**Rekomendasi:** Tambahkan API key check sederhana:
+- `expire-product-orders`
+- `expire-tickets`
+- `retention-cleanup`
+- `reconcile-doku-payments`
+
+**Perbaikan:**
+Seluruh endpoint cron/system di atas telah diamankan menggunakan `SUPABASE_SERVICE_ROLE_KEY` sebagai Bearer token authorization header, memastikan hanya Supabase `pg_net` cron (atau admin dengan akses service role) yang bisa men-trigger fungsi tersebut.
 
 ```typescript
-// Di setiap cron endpoint, tambahkan:
-const cronSecret = Deno.env.get("CRON_SECRET");
-const providedSecret = req.headers.get("Authorization")?.replace("Bearer ", "");
-
-if (cronSecret && providedSecret !== cronSecret) {
-  return jsonError(req, 401, "Unauthorized cron request");
+// Di setiap cron endpoint telah ditambahkan:
+const authHeader = req.headers.get('Authorization');
+if (authHeader !== `Bearer ${supabaseServiceKey}`) {
+  console.warn('Unauthorized attempt to trigger...');
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 }
 ```
-
-Atau gunakan Supabase cron job yang sudah ada (yang memanggil via `pg_cron` — sudah aman karena berjalan di server).
 
 ---
 
@@ -410,25 +410,14 @@ return new Response(JSON.stringify({
 
 ---
 
-### 3.5 🟡 Cleanup Legacy SECURITY DEFINER Functions
+### 3.5 ✅ Cleanup Legacy SECURITY DEFINER Functions
 
-Beberapa fungsi SQL lama menggunakan `SECURITY DEFINER` tanpa `SET search_path = public`. Fungsi baru (2026-06+) sudah benar.
+**Status:** ✅ Selesai (2026-07-08)
 
-**Audit:**
+Beberapa fungsi SQL lama yang menggunakan `SECURITY DEFINER` tanpa `SET search_path = public` telah diperbaiki untuk menghindari potensi exploit search_path hijacking.
 
-```sql
--- Jalankan query ini di Supabase SQL Editor
-SELECT
-  proname AS function_name,
-  prosecdef AS is_security_definer,
-  proconfig AS config
-FROM pg_proc
-WHERE prosecdef = true
-  AND pronamespace = 'public'::regnamespace
-  AND (proconfig IS NULL OR NOT proconfig @> ARRAY['search_path=public']);
-```
-
-**Perbaikan:** Buat migration untuk re-create setiap fungsi yang ditemukan dengan `SET search_path = public`.
+**Perbaikan:** 
+Telah dibuat migration file `20260708000000_harden_security_definer_rpc.sql` yang melakukan re-create / `ALTER FUNCTION` dengan `SET search_path = public` untuk seluruh fungsi yang rentan. (User tinggal menjalankan `npm run supabase:db:push` secara mandiri).
 
 ---
 
