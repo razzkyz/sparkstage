@@ -422,7 +422,17 @@ export async function sendTicketNotificationsIfNeeded(params: {
     scope: 'ticket_order',
     orderRef: order.order_number,
     effectType: 'send_ticket_notifications',
-    skipResult: { notified: false, skipped: true, details: null },
+    skipResult: {
+      notified: false,
+      skipped: true,
+      details: {
+        whatsapp_sent: false,
+        whatsapp_error: null,
+        phone: null,
+        email: false,
+        points_awarded: false,
+      },
+    },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
       // Fetch order details with customer info and first booking date
@@ -1113,7 +1123,7 @@ export async function sendWhatsAppInvoiceViaFontneIfNeeded(params: {
     scope: 'ticket_order',
     orderRef: order.order_number,
     effectType: 'send_whatsapp_invoice_fonnte',
-    skipResult: { sent: false, skipped: true, messageId: '', reason: 'skipped' },
+    skipResult: { sent: false, skipped: true, reason: 'skipped' },
     metadataOnComplete: { order_id: order.id, processed_at: nowIso },
     run: async () => {
       // @ts-ignore
