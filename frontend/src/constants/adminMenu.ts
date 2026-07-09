@@ -74,6 +74,13 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
         highlight: true,
       },
       {
+        id: "nfc-cashless",
+        label: "NFC Cashless (Top Up)",
+        icon: "credit_card",
+        path: "/admin/nfc",
+        highlight: true,
+      },
+      {
         id: "cashier-dashboard",
         label: "Dashboard Penjualan",
         icon: "dashboard",
@@ -362,6 +369,13 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Kelola Stage",
         icon: "grid_view",
         path: "/admin/stages",
+      },
+      {
+        id: "nfc-cashless-admin",
+        label: "Kelola NFC Cashless",
+        icon: "credit_card",
+        path: "/admin/nfc",
+        highlight: true,
       },
       {
         id: "qr-bulk",

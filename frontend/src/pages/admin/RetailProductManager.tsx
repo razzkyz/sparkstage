@@ -14,6 +14,8 @@ import {
   Star,
   Upload,
   Images,
+  FileDown,
+  FileUp,
 } from "lucide-react";
 import AdminLayout from "../../components/AdminLayout";
 import {
@@ -33,6 +35,7 @@ import {
 } from "../../hooks/useRetailProductImages";
 import type { ProductRetail } from "../../types";
 import { formatCurrency } from "../../utils/formatters";
+import { exportProductsToExcel, parseExcelToProducts } from "../../utils/excelHelpers";
 
 const DEPARTMENTS = [
   { id: "glam", label: "Glam" },
@@ -145,6 +148,77 @@ export default function RetailProductManager() {
       showToast("error", err.message);
     }
   };
+
+  const excelFileRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleExportExcel = () => {
+    try {
+      exportProductsToExcel(filteredProducts, "sparkstage_products.xlsx");
+      showToast("success", "Produk berhasil diexport ke Excel!");
+    } catch (error: any) {
+      showToast("error", "Gagal export produk: " + error.message);
+    }
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("Apakah Anda yakin ingin mengimport dan mengupdate data produk?")) {
+      if (excelFileRef.current) excelFileRef.current.value = "";
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      const data = await parseExcelToProducts(file);
+      if (data.length === 0) throw new Error("File Excel kosong.");
+
+      let successCount = 0;
+      for (const row of data) {
+        if (!row.Name || !row.Slug) continue;
+        
+        const payload: any = {
+          name: row.Name,
+          slug: row.Slug,
+          description: row.Description || null,
+          price: row.Price || 0,
+          stock: row.Stock || 0,
+          weight: row.Weight || 0,
+          length: row.Length || null,
+          width: row.Width || null,
+          height: row.Height || null,
+          image: row.Image_URL || null,
+          is_active: row.Is_Active === "Yes",
+          retail_category: row.Department || null,
+          retail_category_id: row.Category_ID || null,
+          retail_subcategory_id: row.Subcategory_ID || null,
+          variant: row.Variant || null,
+        };
+
+        if (row.ID) {
+          payload.id = row.ID;
+        }
+
+        const { error } = await supabase.from("products").upsert(payload, { onConflict: 'slug' });
+        if (error) {
+          console.error("Error upserting product:", error);
+          throw new Error(error.message);
+        }
+        successCount++;
+      }
+
+      showToast("success", `${successCount} produk berhasil diimport/diupdate!`);
+      queryClient.invalidateQueries({ queryKey: ["admin_retail_products"] });
+    } catch (error: any) {
+      showToast("error", "Gagal import Excel: " + error.message);
+    } finally {
+      setIsImporting(false);
+      if (excelFileRef.current) excelFileRef.current.value = "";
+    }
+  };
+
 
   const handleCatDelete = async (id: number, name: string) => {
     if (!window.confirm(`Delete category "${name}"?`)) return;
@@ -822,6 +896,26 @@ export default function RetailProductManager() {
               >
                 <Plus className="w-4 h-4" /> Add Product
               </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center justify-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600 shadow-sm"
+              >
+                <FileDown className="w-4 h-4" /> Export
+              </button>
+              <button
+                onClick={() => excelFileRef.current?.click()}
+                disabled={isImporting}
+                className="flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 shadow-sm disabled:opacity-50"
+              >
+                <FileUp className="w-4 h-4" /> {isImporting ? "Importing..." : "Import"}
+              </button>
+              <input
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                ref={excelFileRef}
+                onChange={handleImportExcel}
+              />
             </div>
             {filteredProducts.length > 0 && (
               <p className="text-xs text-gray-500 font-sans">

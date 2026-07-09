@@ -105,6 +105,7 @@ const PrintOrdersReport = lazy(
 const RentalTransactions = lazy(
   () => import("../../pages/admin/RentalTransactions"),
 );
+const NFCDashboard = lazy(() => import("../../pages/admin/NFCDashboard"));
 const CreateRentalTransaction = lazy(
   () => import("../../pages/admin/CreateRentalTransaction"),
 );
@@ -119,6 +120,7 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/cashier-orders", Page: CashierOrders },
   { path: "/admin/dressing-room-dashboard", Page: DressingRoomDashboard },
   { path: "/admin/dressing-room-inventory", Page: DressingRoomInventory },
+  { path: "/admin/nfc", Page: NFCDashboard },
   { path: "/admin/dressing-room-products", Page: DressingRoomProductList },
   { path: "/admin/tickets", Page: TicketsManagement },
   { path: "/admin/store", Page: StoreInventory },
