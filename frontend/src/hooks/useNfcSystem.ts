@@ -107,6 +107,23 @@ export const useUpdateNfcUser = () => {
   });
 };
 
+export const useDeleteNfcUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('nfc_users')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['nfc_users'] });
+    },
+  });
+};
+
 export const useProcessNfcTopup = () => {
   const queryClient = useQueryClient();
   return useMutation({
