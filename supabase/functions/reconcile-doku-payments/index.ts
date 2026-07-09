@@ -292,7 +292,7 @@ async function reconcileStaleProductOrder(params: {
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
   const corsHeaders = getCorsHeaders(req)
@@ -303,6 +303,14 @@ serve(async (req) => {
 
   try {
     const { url: supabaseUrl, serviceRoleKey: supabaseServiceKey } = getSupabaseEnv()
+    
+    // Security check: ensure the request is authorized (e.g. from Supabase pg_net cron)
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader !== `Bearer ${supabaseServiceKey}`) {
+      console.warn('[Reconcile Payments] Unauthorized attempt to trigger reconciliation');
+      return json(req, { error: 'Unauthorized' }, { status: 401 });
+    }
+
     const dokuEnv = getDokuEnv()
     const supabase = createServiceClient(supabaseUrl, supabaseServiceKey)
     const nowIso = new Date().toISOString()
