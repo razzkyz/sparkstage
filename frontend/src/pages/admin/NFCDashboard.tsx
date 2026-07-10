@@ -39,6 +39,8 @@ export default function NFCDashboard() {
   };
   const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
 
+  const [connectionMode, setConnectionMode] = useState<'usb' | 'bluetooth'>('usb');
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (uidInput.trim()) {
@@ -94,7 +96,6 @@ export default function NFCDashboard() {
     }
   };
 
-
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
@@ -120,9 +121,33 @@ export default function NFCDashboard() {
         </div>
 
         {/* UID Input */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-1">Cari / Deteksi Coin</h2>
-          <p className="text-sm text-gray-500 mb-4">Pastikan kursor ketik Anda berada di kotak bawah ini, lalu tempelkan koin ke scanner Anda.</p>
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+            <h2 className="text-lg font-semibold text-gray-800">Cari / Deteksi Coin</h2>
+            <div className="flex p-1 bg-indigo-100/50 rounded-lg w-full sm:w-auto">
+              <button
+                onClick={() => setConnectionMode('usb')}
+                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'usb' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Kabel USB (PC)
+              </button>
+              <button
+                onClick={() => setConnectionMode('bluetooth')}
+                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'bluetooth' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Bluetooth (HP)
+              </button>
+            </div>
+          </div>
+          
+          <div className="bg-white/60 p-3 rounded-lg mb-4 text-sm text-gray-600 border border-indigo-50">
+            {connectionMode === 'usb' ? (
+              <p><strong>Panduan USB:</strong> Colokkan alat ke PC. Pastikan aplikasi <code>UIDtoKeyboard.exe</code> berjalan sebagai Administrator. Klik kotak pencarian di bawah, lalu scan koin.</p>
+            ) : (
+              <p><strong>Panduan Bluetooth:</strong> Nyalakan mode Bluetooth di alat ACR1555 (lampu biru berkedip). Buka pengaturan Bluetooth HP Anda, cari & hubungkan alat. Setelah tersambung, cukup sentuh kotak pencarian di bawah lalu scan koin. <strong className="text-indigo-600">Tidak perlu instal aplikasi apapun di HP!</strong></p>
+            )}
+          </div>
+          
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full sm:max-w-lg">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
@@ -130,7 +155,7 @@ export default function NFCDashboard() {
                 type="text"
                 value={uidInput}
                 onChange={e => setUidInput(e.target.value)}
-                placeholder=""
+                placeholder={connectionMode === 'bluetooth' ? "Ketuk di sini sebelum scan..." : ""}
                 className="w-full pl-10 pr-3 py-2 border border-indigo-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white font-mono text-lg shadow-sm"
                 autoFocus
               />
