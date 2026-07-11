@@ -397,6 +397,13 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         highlight: true,
       },
       {
+        id: "nfc-detection",
+        label: "Deteksi NFC",
+        icon: "contactless",
+        path: "/admin/nfc-detection",
+        highlight: true,
+      },
+      {
         id: "qr-bulk",
         label: "Kelola QR Massal",
         icon: "qr_code_2",
