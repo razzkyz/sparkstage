@@ -176,9 +176,28 @@ export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
     ],
   },
   {
-    id: "inventory",
-    label: "Inventaris",
+    id: "store",
+    label: "Toko",
     items: [
+      {
+        id: "product-orders",
+        label: "Pesanan Produk",
+        icon: "shopping_bag",
+        path: "/admin/product-orders",
+        badge: 0,
+      },
+      {
+        id: "store-inventory",
+        label: "Stok & Produk",
+        icon: "inventory_2",
+        path: "/admin/store",
+      },
+      {
+        id: "product-qr-catalog",
+        label: "Katalog QR Produk",
+        icon: "qr_code_2",
+        path: "/admin/product-qr-catalog",
+      },
       {
         id: "stock-opening",
         label: "Stock Opening",

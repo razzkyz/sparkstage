@@ -109,7 +109,7 @@ export default function NFCDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-indigo-500" />
+            <CreditCard className="w-6 h-6 text-[#ff4b86]" />
             NFC Cashless Dashboard
           </h1>
           <button
@@ -121,30 +121,30 @@ export default function NFCDashboard() {
         </div>
 
         {/* UID Input */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100 rounded-xl p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
             <h2 className="text-lg font-semibold text-gray-800">Cari / Deteksi Coin</h2>
-            <div className="flex p-1 bg-indigo-100/50 rounded-lg w-full sm:w-auto">
+            <div className="flex p-1 bg-[#ff4b86]/10 rounded-lg w-full sm:w-auto">
               <button
                 onClick={() => setConnectionMode('usb')}
-                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'usb' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'usb' ? 'bg-white text-[#ff4b86] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Kabel USB (PC)
               </button>
               <button
                 onClick={() => setConnectionMode('bluetooth')}
-                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'bluetooth' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${connectionMode === 'bluetooth' ? 'bg-white text-[#ff4b86] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Bluetooth (HP)
               </button>
             </div>
           </div>
           
-          <div className="bg-white/60 p-3 rounded-lg mb-4 text-sm text-gray-600 border border-indigo-50">
+          <div className="bg-white/60 p-3 rounded-lg mb-4 text-sm text-gray-600 border border-pink-100">
             {connectionMode === 'usb' ? (
               <p><strong>Panduan USB:</strong> Colokkan alat ke PC. Pastikan aplikasi <code>UIDtoKeyboard.exe</code> berjalan sebagai Administrator. Klik kotak pencarian di bawah, lalu scan koin.</p>
             ) : (
-              <p><strong>Panduan Bluetooth:</strong> Nyalakan mode Bluetooth di alat ACR1555 (lampu biru berkedip). Buka pengaturan Bluetooth HP Anda, cari & hubungkan alat. Setelah tersambung, cukup sentuh kotak pencarian di bawah lalu scan koin. <strong className="text-indigo-600">Tidak perlu instal aplikasi apapun di HP!</strong></p>
+              <p><strong>Panduan Bluetooth:</strong> Nyalakan mode Bluetooth di alat ACR1555 (lampu biru berkedip). Buka pengaturan Bluetooth HP Anda, cari & hubungkan alat. Setelah tersambung, cukup sentuh kotak pencarian di bawah lalu scan koin. <strong className="text-[#ff4b86]">Tidak perlu instal aplikasi apapun di HP!</strong></p>
             )}
           </div>
           
@@ -156,13 +156,13 @@ export default function NFCDashboard() {
                 value={uidInput}
                 onChange={e => setUidInput(e.target.value)}
                 placeholder={connectionMode === 'bluetooth' ? "Ketuk di sini sebelum scan..." : ""}
-                className="w-full pl-10 pr-3 py-2 border border-indigo-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white font-mono text-lg shadow-sm"
+                className="w-full pl-10 pr-3 py-2 border border-pink-200 rounded-lg focus:ring-[#ff4b86] focus:border-[#ff4b86] bg-white font-mono text-lg shadow-sm"
                 autoFocus
               />
             </div>
             <button
               type="submit"
-              className="w-full sm:w-auto px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+              className="w-full sm:w-auto px-5 py-2 bg-[#ff4b86] hover:bg-[#ff6a9a] text-white rounded-lg font-medium transition-colors"
             >
               Cari
             </button>
@@ -221,7 +221,7 @@ export default function NFCDashboard() {
                 </div>
                 <div className="bg-white rounded-lg p-4 shadow-inner border border-green-100">
                   <p className="text-sm text-gray-500 mb-1">Nilai Poin Saat Ini</p>
-                  <p className="text-4xl font-black text-indigo-600 flex items-center gap-2">
+                  <p className="text-4xl font-black text-[#ff4b86] flex items-center gap-2">
                     <span className="text-yellow-400 text-3xl">★</span> {nfcUser.saldo}
                   </p>
                 </div>
@@ -233,11 +233,11 @@ export default function NFCDashboard() {
                   <div className="relative">
                     <input type="number" value={nominal} onChange={e => setNominal(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="Masukkan nilai poin..." min={0}
-                      className="w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 pl-3 pr-10 py-2" />
+                      className="w-full rounded-md border border-gray-300 shadow-sm focus:border-[#ff4b86] pl-3 pr-10 py-2" />
                     <span className="absolute right-3 top-2.5 text-gray-400">★</span>
                   </div>
                   <button type="submit" disabled={updateNfcUser.isPending || nominal === ''}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2 font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
+                    className="w-full bg-[#ff4b86] hover:bg-[#ff6a9a] text-white rounded-md py-2 font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
                     <CreditCard className="w-4 h-4" />
                     {updateNfcUser.isPending ? 'Menyimpan...' : 'Tetapkan Nilai'}
                   </button>
@@ -283,7 +283,7 @@ export default function NFCDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {allCoins.map((coin, idx) => (
-                    <tr key={coin.id} className={`hover:bg-indigo-50 transition-colors ${scannedUid === coin.uid_nfc ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''}`}>
+                    <tr key={coin.id} className={`hover:bg-pink-50 transition-colors ${scannedUid === coin.uid_nfc ? 'bg-pink-50 border-l-4 border-[#ff4b86]' : ''}`}>
                       <td className="px-4 py-3 text-sm text-gray-400">{idx + 1}</td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-sm font-semibold text-gray-800">{coin.uid_nfc ?? '-'}</span>
@@ -298,7 +298,7 @@ export default function NFCDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-lg font-black text-indigo-600 flex items-center justify-end gap-1">
+                        <span className="text-lg font-black text-[#ff4b86] flex items-center justify-end gap-1">
                           <span className="text-yellow-400">★</span> {coin.saldo}
                         </span>
                       </td>
@@ -308,7 +308,7 @@ export default function NFCDashboard() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => { setUidInput(coin.uid_nfc ?? ''); setScannedUid(coin.uid_nfc?.toUpperCase() ?? ''); }}
-                          className="text-xs px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors font-medium"
+                          className="text-xs px-3 py-1 bg-[#ff4b86] hover:bg-[#ff6a9a] text-white rounded-md transition-colors font-medium"
                         >
                           Ubah Nilai
                         </button>
@@ -359,7 +359,7 @@ export default function NFCDashboard() {
               ) : (
                 <button
                   onClick={closeModal}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 w-full"
+                  className="px-4 py-2 bg-[#ff4b86] text-white rounded-lg font-medium hover:bg-[#ff6a9a] w-full"
                 >
                   Tutup
                 </button>
