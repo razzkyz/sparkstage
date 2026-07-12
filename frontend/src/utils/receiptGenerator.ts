@@ -2,7 +2,9 @@ import { EscPosBuilder } from '../lib/escpos';
 
 export interface ReceiptItem {
   name: string;
+  variant: string;
   price: number;
+  subtotal: number;
   qty: number;
 }
 
@@ -46,10 +48,18 @@ export const generatePickupReceipt = (data: ReceiptData): Uint8Array => {
     .init()
     .alignCenter()
     .bold(true)
-    .text('SPARKSTAGE')
+    .text('SPARKSTAGE55')
     .newline()
     .bold(false)
-    .text('Senayan Park, Jakarta')
+    .text('Jl. Flores No.8, Citarum,')
+    .newline()
+    .text('Kec. Bandung Wetan, Bandung,')
+    .newline()
+    .text('Jawa Barat 40115')
+    .newline()
+    .text('Telp: 081558200089')
+    .newline()
+    .text('IG: @spark_stage55')
     .newline()
     .separator(); // --------------------------------
 
@@ -66,14 +76,25 @@ export const generatePickupReceipt = (data: ReceiptData): Uint8Array => {
 
   // --- ITEMS ---
   data.items.forEach(item => {
-    let itemName = item.name;
-    if (item.qty > 1) {
-      itemName = `${item.qty}x ${item.name}`;
+    // Baris 1: Nama Produk (potong jika terlalu panjang agar tidak merusak layout)
+    let title = `${item.name}`;
+    if (item.variant && item.variant.toLowerCase() !== 'default') {
+      title += ` - ${item.variant}`;
     }
-    const itemPrice = formatCurrency(item.price);
+    // Jika lebih dari 32, potong
+    if (title.length > 32) title = title.substring(0, 32);
     
     printer
-      .text(createLineRow(itemName, itemPrice))
+      .alignLeft()
+      .text(title)
+      .newline();
+
+    // Baris 2: Qty x Harga        Subtotal
+    const leftText = `${item.qty}x ${formatCurrency(item.price)}`;
+    const rightText = formatCurrency(item.subtotal);
+    
+    printer
+      .text(createLineRow(leftText, rightText))
       .newline();
   });
 
@@ -98,9 +119,13 @@ export const generatePickupReceipt = (data: ReceiptData): Uint8Array => {
     
   // --- FOOTER ---
   printer
-    .text('Terima kasih atas pesanan')
+    .text('Terima Kasih Telah Berbelanja')
     .newline()
-    .text('Anda!')
+    .text('Di SPARKSTAGE55!')
+    .newline()
+    .text('Kami Tunggu Kedatangannya')
+    .newline()
+    .text('Kembali :)')
     .newline()
     .feedAndTear(); // Feed paper
 

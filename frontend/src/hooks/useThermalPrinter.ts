@@ -145,9 +145,10 @@ export function useThermalPrinter() {
         writer.releaseLock();
       } 
       else if (connectionType === 'bluetooth' && bluetoothCharacteristicRef.current) {
-        // Bluetooth LE usually has a MTU (Maximum Transmission Unit) limit per write (often 512 bytes or smaller).
-        // We split the data into chunks to prevent "Data too long" errors.
-        const CHUNK_SIZE = 512;
+        // Banyak printer Bluetooth murah memiliki buffer/MTU yang sangat kecil per transmisi.
+        // Jika kita mengirim 512 bytes, sisa datanya akan hilang/terpotong.
+        // Kita gunakan CHUNK_SIZE 100 bytes yang sangat aman untuk semua printer BLE.
+        const CHUNK_SIZE = 100;
         for (let i = 0; i < data.length; i += CHUNK_SIZE) {
           const chunk = data.slice(i, i + CHUNK_SIZE);
           if (bluetoothCharacteristicRef.current.properties.writeWithoutResponse) {
@@ -155,8 +156,8 @@ export function useThermalPrinter() {
           } else {
             await bluetoothCharacteristicRef.current.writeValue(chunk);
           }
-          // Small delay between chunks to let printer buffer process
-          await new Promise(resolve => setTimeout(resolve, 50)); 
+          // Delay agar buffer printer sempat memproses cetakan sebelum menerima chunk berikutnya
+          await new Promise(resolve => setTimeout(resolve, 40)); 
         }
       }
     } catch (err: any) {

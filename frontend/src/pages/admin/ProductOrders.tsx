@@ -87,7 +87,9 @@ export default function ProductOrders() {
         customerName: details.order.profiles?.name || details.order.profiles?.email || 'Customer',
         items: details.items.map(i => ({
           name: i.productName,
+          variant: i.variantName || '',
           price: i.price,
+          subtotal: i.subtotal,
           qty: i.quantity
         })),
         total: Number(details.order.total || 0)
