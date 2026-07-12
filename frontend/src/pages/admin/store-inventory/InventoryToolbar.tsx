@@ -43,12 +43,14 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
             "all",
             "dressing",
             "shop",
+            "service",
           ] as DepartmentFilter[]
         ).map((dept) => {
           const labels: Record<DepartmentFilter, string> = {
             all: "All Departments",
             dressing: "Dressing",
             shop: "Shop",
+            service: "Service",
           };
           return (
             <button
@@ -124,7 +126,7 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
           <div className="flex gap-1 bg-gray-100 p-1 rounded-lg items-center">
             <select
               className="bg-transparent text-xs font-bold text-gray-700 outline-none px-2 py-1 cursor-pointer"
-              value={categoryFilter === "uncategorized" ? "" : categoryFilter}
+              value={categoryFilter === "no-image" ? "" : categoryFilter}
               onChange={(event) => onCategoryFilterChange(event.target.value)}
             >
               <option value="">All Categories</option>
@@ -138,12 +140,12 @@ export function InventoryToolbar(props: InventoryToolbarProps) {
             <button
               onClick={() =>
                 onCategoryFilterChange(
-                  categoryFilter === "uncategorized" ? "" : "uncategorized",
+                  categoryFilter === "no-image" ? "" : "no-image",
                 )
               }
-              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "uncategorized" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-image" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
-              ⚠ No Category
+              🖼️ No Image
             </button>
           </div>
         </div>

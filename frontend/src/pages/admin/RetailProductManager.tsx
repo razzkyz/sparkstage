@@ -63,7 +63,7 @@ export default function RetailProductManager() {
   const [search, setSearch] = useState("");
   const [activeDept, setActiveDept] = useState<string>("all");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all"); // all, active, inactive
-  const [categoryFilter, setCategoryFilter] = useState<string>("all"); // all, no-category, or "cat-<id>"
+  const [categoryFilter, setCategoryFilter] = useState<string>("all"); // all, no-image, or "cat-<id>"
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -260,8 +260,8 @@ export default function RetailProductManager() {
     }
 
     // Filter by category
-    if (categoryFilter === "no-category") {
-      list = list.filter((p) => !p.retail_category_id);
+    if (categoryFilter === "no-image") {
+      list = list.filter((p) => !p.image);
     } else if (categoryFilter.startsWith("cat-")) {
       const catId = Number(categoryFilter.replace("cat-", ""));
       // Match products whose retail_category_id is the selected category
@@ -863,13 +863,13 @@ export default function RetailProductManager() {
               <button
                 onClick={() => {
                   setCategoryFilter(
-                    categoryFilter === "no-category" ? "all" : "no-category",
+                    categoryFilter === "no-image" ? "all" : "no-image",
                   );
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-category" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${categoryFilter === "no-image" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
-                ⚠ No Category
+                ⚠ No Image
               </button>
             </div>
           </div>

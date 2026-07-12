@@ -2,7 +2,7 @@ import type { InventoryListFilters, ProductRow } from './inventoryTypes';
 
 export const getInventorySelect = (categoryFilter: string, departmentFilter?: string) => {
   const trimmedCategory = categoryFilter.trim();
-  const isFilteringByOldCategory = trimmedCategory !== '' && trimmedCategory !== 'uncategorized' && !trimmedCategory.startsWith('rc-');
+  const isFilteringByOldCategory = trimmedCategory !== '' && trimmedCategory !== 'uncategorized' && trimmedCategory !== 'no-image' && !trimmedCategory.startsWith('rc-');
   const isFilteringByDept = !!departmentFilter && departmentFilter.trim() !== '' && departmentFilter.trim() !== 'all';
   return `
   id,
@@ -63,7 +63,10 @@ export const applyInventoryFilters = <T>(query: T, filters: InventoryListFilters
 
   const normalizedCategory = filters.categoryFilter.trim();
   if (normalizedCategory) {
-    if (normalizedCategory === 'uncategorized') {
+    if (normalizedCategory === 'no-image') {
+      // Direct fetch doesn't support 'no-image' well, RPC handles it.
+      // We do nothing here, but we could add a dummy filter if needed.
+    } else if (normalizedCategory === 'uncategorized') {
       next = next.is('retail_category_id', null) as typeof next;
     } else if (normalizedCategory.startsWith('rc-')) {
       // Retail category ID filter — filter by retail_category_id

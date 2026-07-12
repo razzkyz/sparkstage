@@ -271,7 +271,7 @@ export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & 
 
         raw.forEach((row) => {
           const productName = String(row['product_name'] ?? '').trim();
-          const variantSku = String(row['variant_sku'] ?? row['sku'] ?? '').trim();
+          const variantSku = String(row['variant_sku'] || row['sku'] || '').trim();
           const variantName = String(row['variant_name'] ?? '').trim();
           
           const img1 = String(row['image_url_1'] ?? '').trim();

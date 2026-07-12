@@ -142,13 +142,23 @@ async function fetchInventoryPage(
   filters: { searchQuery: string; categoryFilter: string; activeFilter: string; departmentFilter?: string }
 ): Promise<InventoryProductFetchResult> {
   const normalizedSearch = normalizeSearchTerm(filters.searchQuery);
+  
+  if (filters.categoryFilter === 'no-image') {
+    try {
+      return await fetchInventoryPageByRpc(signal, page, pageSize, filters, '');
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') throw error;
+      console.warn('RPC failed for no-image, falling back', error);
+      return fetchInventoryPageDirect(signal, page, pageSize, filters);
+    }
+  }
+
   if (!normalizedSearch) {
     return fetchInventoryPageDirect(signal, page, pageSize, filters);
   }
 
   try {
-    // RPC doesn't support activeFilter natively; fall back to direct for now
-    const result = await fetchInventoryPageDirect(signal, page, pageSize, filters);
+    const result = await fetchInventoryPageByRpc(signal, page, pageSize, filters, '');
     return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
