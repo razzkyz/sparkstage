@@ -8,6 +8,9 @@ type ProductOrderDetailsModalProps = {
   actionError: string | null;
   onClose: () => void;
   onCompletePickup: () => void;
+  isConnected?: boolean;
+  isPrinting?: boolean;
+  onPrintReceipt?: () => void;
 };
 
 export function ProductOrderDetailsModal({
@@ -16,6 +19,9 @@ export function ProductOrderDetailsModal({
   actionError,
   onClose,
   onCompletePickup,
+  isConnected = false,
+  isPrinting = false,
+  onPrintReceipt,
 }: ProductOrderDetailsModalProps) {
   if (!details) return null;
 
@@ -92,13 +98,36 @@ export function ProductOrderDetailsModal({
             <span className="text-xl font-bold text-primary">{formatCurrency(Number(details.order.total ?? 0))}</span>
           </div>
 
-          <button
-            onClick={onCompletePickup}
-            disabled={submitting}
-            className="mt-4 w-full rounded-lg bg-[#ff4b86] px-6 py-3 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center gap-2"
-          >
-            {submitting ? 'Memproses...' : 'Konfirmasi Pembayaran & Serah Barang'}
-          </button>
+          {details.order.pickup_status !== 'completed' ? (
+            <button
+              onClick={onCompletePickup}
+              disabled={submitting}
+              className="mt-4 w-full rounded-lg bg-[#ff4b86] px-6 py-3 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center gap-2"
+            >
+              {submitting ? 'Memproses...' : 'Konfirmasi Pembayaran & Serah Barang'}
+            </button>
+          ) : (
+            <div className="mt-4 w-full rounded-lg bg-gray-100 px-6 py-3 text-sm font-bold text-gray-500 text-center border border-gray-200 flex-shrink-0">
+              Pesanan Sudah Diserahkan (Selesai)
+            </div>
+          )}
+
+          {details.order.pickup_status === 'completed' && isConnected && (
+            <button
+              onClick={onPrintReceipt}
+              disabled={isPrinting}
+              className="mt-2 w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-bold text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center gap-2 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[20px]">print</span>
+              {isPrinting ? 'Mencetak...' : 'Cetak Struk Transaksi'}
+            </button>
+          )}
+          
+          {details.order.pickup_status === 'completed' && !isConnected && (
+            <div className="mt-2 text-center text-xs text-amber-600">
+              Hubungkan printer di menu atas untuk mencetak struk.
+            </div>
+          )}
         </div>
       </div>
     </div>

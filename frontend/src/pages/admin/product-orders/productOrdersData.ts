@@ -25,7 +25,7 @@ export async function loadProductOrderDetailsByPickupCode(pickupCode: string): P
   }
 
   const pickupStatus = String((orderRow as { pickup_status?: string | null }).pickup_status || '').toLowerCase();
-  if (pickupStatus === 'completed') throw new Error('Barang sudah diambil');
+  // if (pickupStatus === 'completed') throw new Error('Barang sudah diambil'); // Di-comment agar admin bisa buka struk
   if (pickupStatus === 'expired') throw new Error('Pickup code sudah expired');
 
   const expiresAt = (orderRow as { pickup_expires_at?: string | null }).pickup_expires_at ?? null;

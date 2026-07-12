@@ -10,6 +10,8 @@ import { ProductOrderDetailsModal } from './product-orders/ProductOrderDetailsMo
 import { ProductOrdersListSection } from './product-orders/ProductOrdersListSection';
 import { ProductOrdersLookupPanel } from './product-orders/ProductOrdersLookupPanel';
 import { useProductOrdersController } from './product-orders/useProductOrdersController';
+import { useThermalPrinter } from '../../hooks/useThermalPrinter';
+import { generatePickupReceipt } from '../../utils/receiptGenerator';
 
 export default function ProductOrders() {
   const { signOut, session } = useAuth();
@@ -32,6 +34,8 @@ export default function ProductOrders() {
     session,
     showToast,
   });
+  
+  const { isConnected, isPrinting, connectionType, connectUSB, connectBluetooth, disconnect, print } = useThermalPrinter();
   const {
     activeTab,
     scannerOpen,
@@ -74,6 +78,28 @@ export default function ProductOrders() {
     [handleScan, details]
   );
 
+  const handlePrintReceipt = async () => {
+    if (!details || !isConnected) return;
+    try {
+      const receiptData = generatePickupReceipt({
+        orderCode: details.order.pickup_code || '',
+        date: new Date().toLocaleString('id-ID'),
+        customerName: details.order.profiles?.name || details.order.profiles?.email || 'Customer',
+        items: details.items.map(i => ({
+          name: i.productName,
+          price: i.price,
+          qty: i.quantity
+        })),
+        total: Number(details.order.total || 0)
+      });
+      await print(receiptData);
+      showToast('success', 'Struk berhasil dikirim ke printer');
+    } catch (e: any) {
+      console.error(e);
+      showToast('error', 'Gagal mencetak struk: ' + (e.message || ''));
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const pickupCode = params.get('pickupCode')?.trim().toUpperCase();
@@ -100,13 +126,42 @@ export default function ProductOrders() {
       title="Pesanan Produk"
       subtitle="Scan pickup code untuk verifikasi barang."
       headerActions={
-        <button
-          onClick={() => setScannerOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-[#ff4b86] px-3 md:px-4 py-2.5 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors shadow-md"
-        >
-          <span className="material-symbols-outlined text-[20px]">qr_code_scanner</span>
-          <span className="hidden sm:inline">Scan QR</span>
-        </button>
+        <div className="flex gap-2">
+          {isConnected ? (
+            <button
+              onClick={disconnect}
+              className="flex items-center justify-center gap-2 rounded-lg bg-green-500 px-3 md:px-4 py-2.5 text-sm font-bold text-white hover:bg-green-600 transition-colors shadow-md"
+              title={`Printer terhubung via ${connectionType}`}
+            >
+              <span className="material-symbols-outlined text-[20px]">print</span>
+              <span className="hidden sm:inline">Printer OK</span>
+            </button>
+          ) : (
+            <div className="flex gap-1">
+              <button
+                onClick={connectUSB}
+                className="flex items-center justify-center gap-2 rounded-lg bg-gray-100 border border-gray-300 px-3 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors shadow-sm"
+                title="Hubungkan Printer USB"
+              >
+                <span className="material-symbols-outlined text-[20px]">usb</span>
+              </button>
+              <button
+                onClick={connectBluetooth}
+                className="flex items-center justify-center gap-2 rounded-lg bg-blue-100 border border-blue-300 px-3 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-200 transition-colors shadow-sm"
+                title="Hubungkan Printer Bluetooth"
+              >
+                <span className="material-symbols-outlined text-[20px]">bluetooth</span>
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => setScannerOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#ff4b86] px-3 md:px-4 py-2.5 text-sm font-bold text-white hover:bg-[#ff6a9a] transition-colors shadow-md"
+          >
+            <span className="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+            <span className="hidden sm:inline">Scan QR</span>
+          </button>
+        </div>
       }
       onLogout={signOut}
     >
@@ -165,6 +220,9 @@ export default function ProductOrders() {
         onCompletePickup={() => {
           void handleCompletePickup();
         }}
+        isConnected={isConnected}
+        isPrinting={isPrinting}
+        onPrintReceipt={() => { void handlePrintReceipt(); }}
       />
     </AdminLayout>
   );
