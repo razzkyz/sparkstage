@@ -161,6 +161,7 @@ export function ProductDetailsSection({
               <option value="">Select department</option>
               <option value="dressing">Dressing</option>
               <option value="shop">Shop</option>
+              <option value="service">Service</option>
             </select>
           </label>
 

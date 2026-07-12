@@ -1,4 +1,4 @@
-export type Department = 'dressing' | 'shop';
+export type Department = 'dressing' | 'shop' | 'service';
 
 export type Category = {
   id: number;
