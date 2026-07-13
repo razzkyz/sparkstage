@@ -93,7 +93,7 @@ export function ProductCSVImportModal({
         let matchedRetailCategoryId = p.retail_category_id;
         if (!matchedRetailCategoryId && p.retail_category_name) {
           const dept = p.category_name?.toLowerCase() || 'glam';
-          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing', 'shop'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop') : 'glam';
+          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing', 'shop', 'service'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop' | 'service') : 'glam';
 
           let matchedRetail = currentRetailCategories.find(c => 
             c.name.toLowerCase() === p.retail_category_name!.toLowerCase() &&
@@ -122,7 +122,7 @@ export function ProductCSVImportModal({
         let matchedRetailSubcategoryId = p.retail_subcategory_id;
         if (!matchedRetailSubcategoryId && p.retail_subcategory_name && matchedRetailCategoryId) {
           const dept = p.category_name?.toLowerCase() || 'glam';
-          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing', 'shop'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop') : 'glam';
+          const validDept = ['glam', 'charmbar', 'sparkclub', 'dressing', 'shop', 'service'].includes(dept) ? (dept as 'glam' | 'charmbar' | 'sparkclub' | 'dressing' | 'shop' | 'service') : 'glam';
 
           let matchedSub = currentRetailCategories.find(c => 
             c.name.toLowerCase() === p.retail_subcategory_name!.toLowerCase() &&

@@ -224,6 +224,10 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
       'Nama Kategori': 'dressing',
       'Tipe': 'Department',
       'Keterangan': 'Copy ke kolom department'
+    }, {
+      'Nama Kategori': 'service',
+      'Tipe': 'Department',
+      'Keterangan': 'Copy ke kolom department'
     });
   }
 
