@@ -11,14 +11,16 @@ type ClaimTabProps = {
   isLoading: boolean;
   searchQuery?: string;
   setSearchQuery?: (q: string) => void;
+  allowedStatuses?: string[];
+  claimSuffix?: string;
 };
 
-export default function ClaimTab({ orders, isLoading, searchQuery: propsSearchQuery, setSearchQuery: propsSetSearchQuery }: ClaimTabProps) {
+export default function ClaimTab({ orders, isLoading, searchQuery: propsSearchQuery, setSearchQuery: propsSetSearchQuery, allowedStatuses = ['completed'], claimSuffix = '' }: ClaimTabProps) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   const unclaimedOrders = orders.filter(
-    (o) => o.pickup_status === 'completed' && !o.sales_staff_name
+    (o) => o.pickup_status && allowedStatuses.includes(o.pickup_status) && !o.sales_staff_name
   );
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -87,7 +89,7 @@ export default function ClaimTab({ orders, isLoading, searchQuery: propsSearchQu
     try {
       const { error } = await supabase
         .from('order_products')
-        .update({ sales_staff_name: staffName.trim() })
+        .update({ sales_staff_name: staffName.trim() + claimSuffix })
         .in('id', Array.from(selectedIds));
 
       if (error) throw error;

@@ -14,6 +14,7 @@ import SimpleReportModal from './SimpleReportModal';
 type ReportTabProps = {
   orders: OrderSummaryRow[];
   isLoading: boolean;
+  staffBadge?: string;
 };
 
 type StaffReport = {
@@ -41,7 +42,7 @@ function getAvatarColor(name: string) {
   return AVATAR_COLORS[idx];
 }
 
-export default function ReportTab({ orders, isLoading }: ReportTabProps) {
+export default function ReportTab({ orders, isLoading, staffBadge }: ReportTabProps) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<OrderSummaryRow | null>(null);
@@ -218,7 +219,9 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
       {/* PRINT_FEATURE_DISABLED - print views removed, only staff view active */}
       {viewMode === 'staff' ? (
         staffReports.map((report, rank) => {
-          const avatarColor = getAvatarColor(report.staffName);
+          const isDressing = report.staffName.endsWith(' (Dressing)');
+          const displayName = isDressing ? report.staffName.replace(' (Dressing)', '') : report.staffName;
+          const avatarColor = getAvatarColor(displayName);
           const sharePercent = grandTotal > 0 ? (report.totalRevenue / grandTotal) * 100 : 0;
 
           return (
@@ -230,7 +233,7 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
                   <div className="flex items-center gap-4">
                     <div className="relative flex-shrink-0">
                       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${avatarColor} flex items-center justify-center shadow-md`}>
-                        <span className="text-white font-black text-2xl">{report.staffName.charAt(0).toUpperCase()}</span>
+                        <span className="text-white font-black text-2xl">{displayName.charAt(0).toUpperCase()}</span>
                       </div>
                       <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black shadow-sm ${
                         rank === 0 ? 'bg-yellow-400 text-yellow-900' :
@@ -242,7 +245,19 @@ export default function ReportTab({ orders, isLoading }: ReportTabProps) {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-gray-900">{report.staffName}</h3>
+                      <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        {displayName}
+                        {isDressing && (
+                          <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                            Dressing Room
+                          </span>
+                        )}
+                        {!isDressing && staffBadge && (
+                          <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                            {staffBadge}
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-xs font-medium text-gray-500">
                         {report.totalOrders} Transaksi • {report.totalItems} Item Terjual
                       </p>

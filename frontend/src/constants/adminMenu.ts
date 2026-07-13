@@ -358,6 +358,13 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         icon: "styler",
         path: "/admin/dressing-room",
       },
+      {
+        id: "dressing-room-claim",
+        label: "Klaim & Laporan",
+        icon: "fact_check",
+        path: "/admin/dressing-room-claim",
+        highlight: true,
+      },
       // DISABLED: Sewa Dressing Room
       // {
       //   id: "rental-orders",
@@ -612,6 +619,13 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Dressing Room Manager",
         icon: "styler",
         path: "/admin/dressing-room",
+      },
+      {
+        id: "dressing-room-claim",
+        label: "Klaim & Laporan",
+        icon: "fact_check",
+        path: "/admin/dressing-room-claim",
+        highlight: true,
       },
       // DISABLED: Sewa Dressing Room
       // {

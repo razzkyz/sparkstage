@@ -1,18 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import { ADMIN_MENU_ITEMS, CASHIER_MENU_SECTIONS, OWNER_MENU_SECTIONS, PRINT_MENU_SECTIONS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
+import { ADMIN_MENU_ITEMS, DRESSING_ROOM_ADMIN_MENU_SECTIONS, OWNER_MENU_SECTIONS, PRINT_MENU_SECTIONS, ADMIN_MENU_SECTIONS } from '../../constants/adminMenu';
 import { useProductOrders } from '../../hooks/useProductOrders';
+
 import { lookupUserRole } from '../../auth/adminRole';
 
 import ClaimTab from './retail/ClaimTab';
 import ReportTab from './retail/ReportTab';
 
-export default function RetailDashboard() {
+export default function DressingRoomClaimDashboard() {
   const { signOut, user } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   
-  const [activeTab, setActiveTab] = useState<'pos' | 'claim' | 'report'>('claim');
+  const [activeTab, setActiveTab] = useState<'claim' | 'report'>('claim');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Get user role
@@ -21,12 +22,8 @@ export default function RetailDashboard() {
       const result = await lookupUserRole(user?.id);
       if (result.ok) {
         setUserRole(result.role ?? null);
-        // Auto-redirect owner to report tab
-        if (result.role === 'owner') {
-          setActiveTab('report');
-        }
-        // Auto-redirect print to report tab
-        if (result.role === 'print') {
+        // Auto-redirect owner/print to report tab
+        if (result.role === 'owner' || result.role === 'print') {
           setActiveTab('report');
         }
       }
@@ -34,21 +31,23 @@ export default function RetailDashboard() {
   }, [user?.id]);
   
   // Ambil data pesanan selesai dari hook useProductOrders
-  // Hook ini sudah meng-handle cache dan real-time subscriptions
+  // Sama persis dengan RetailDashboard — SEMUA pesanan, tidak difilter per kategori
   const { data: orderData, isLoading: isLoadingOrders } = useProductOrders();
-  
+  // Untuk tab Klaim: semua pesanan retail yang sudah dibayar (paid)
+  // termasuk yang sudah dikonfirmasi (completed) maupun yang masih pending (pending_pickup)
   const completedOrders = useMemo(() => {
     if (!orderData?.orders) return [];
-    // Untuk tab Klaim: pesanan selesai diambil (completed) yang belum diklaim
-    return orderData.orders.filter(o => o.pickup_status === 'completed');
+    return orderData.orders.filter(o =>
+      o.payment_status === 'paid' && 
+      (o.pickup_status === 'completed' || o.pickup_status === 'pending_pickup')
+    );
   }, [orderData]);
 
-  // Untuk tab Laporan: SEMUA pesanan yang sudah paid DAN ada nama staffnya (kecuali klaim dari Dressing Room)
-  // Ini termasuk POS offline yang mungkin pickup_status-nya masih pending_pickup
+  // Untuk tab Laporan: hanya order yang sudah paid DAN ada nama staffnya khusus dari Dressing Room
   const reportOrders = useMemo(() => {
     if (!orderData?.orders) return [];
-    return orderData.orders.filter(o => 
-      o.payment_status === 'paid' && !!o.sales_staff_name && !o.sales_staff_name.endsWith(' (Dressing)')
+    return orderData.orders.filter(o =>
+      o.payment_status === 'paid' && !!o.sales_staff_name && o.sales_staff_name.endsWith(' (Dressing)')
     );
   }, [orderData]);
 
@@ -61,30 +60,18 @@ export default function RetailDashboard() {
     userRole === 'owner' ? OWNER_MENU_SECTIONS : 
     userRole === 'print' ? PRINT_MENU_SECTIONS : 
     (userRole === 'admin' || userRole === 'super_admin' || userRole === 'devops') ? ADMIN_MENU_SECTIONS :
-    CASHIER_MENU_SECTIONS;
+    DRESSING_ROOM_ADMIN_MENU_SECTIONS;
 
   return (
     <AdminLayout
       menuItems={ADMIN_MENU_ITEMS}
       menuSections={menuSections}
-      defaultActiveMenuId="retail-dashboard"
-      title="Sales Back Office (POS)"
-      subtitle="Input penjualan langsung dan klaim riwayat transaksi"
+      defaultActiveMenuId="dressing-room-claim"
+      title="Dressing Room Sales Back Office"
+      subtitle="Klaim dan buat laporan riwayat transaksi produk dressing room"
       onLogout={signOut}
     >
       <div className="mb-6 flex flex-col sm:flex-row gap-2 border-b border-gray-200 pb-4">
-        {/* Tab Kasir POS - dinonaktifkan sementara, kode tetap ada */}
-        {/* <button
-          onClick={() => setActiveTab('pos')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
-            activeTab === 'pos' 
-              ? 'bg-[#ff4b86] text-white shadow-md' 
-              : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
-          Kasir (POS)
-        </button> */}
         {userRole !== 'owner' && userRole !== 'print' && (
           <button
             onClick={() => setActiveTab('claim')}
@@ -127,9 +114,7 @@ export default function RetailDashboard() {
       </div>
 
       <div className="mt-4">
-        {/* POS Tab - dinonaktifkan sementara */}
-        {/* {activeTab === 'pos' && <PosTab session={session} />} */}
-        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
+        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} allowedStatuses={['completed', 'pending_pickup']} claimSuffix=" (Dressing)" />}
         {activeTab === 'report' && <ReportTab orders={reportOrders} isLoading={isLoadingOrders} />}
       </div>
     </AdminLayout>

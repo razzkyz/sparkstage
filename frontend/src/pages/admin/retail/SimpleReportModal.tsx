@@ -221,15 +221,25 @@ export default function SimpleReportModal({ orders, onClose }: SimpleReportModal
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h4 className="text-sm font-bold text-gray-600 mb-3 uppercase">Rincian Per Staff ({staffSummaries.length} Staff)</h4>
                   <div className="space-y-2">
-                    {staffSummaries.map((staff, index) => (
+                    {staffSummaries.map((staff, index) => {
+                      const isDressing = staff.staffName.endsWith(' (Dressing)');
+                      const displayName = isDressing ? staff.staffName.replace(' (Dressing)', '') : staff.staffName;
+                      return (
                       <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                              <span className="text-white font-black text-lg">{staff.staffName.charAt(0).toUpperCase()}</span>
+                              <span className="text-white font-black text-lg">{displayName.charAt(0).toUpperCase()}</span>
                             </div>
                             <div className="min-w-0">
-                              <p className="font-black text-gray-900 truncate">{staff.staffName}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-black text-gray-900 truncate">{displayName}</p>
+                                {isDressing && (
+                                  <span className="inline-flex flex-shrink-0 items-center rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                    Dressing Room
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-gray-500">{staff.totalOrders} Transaksi</p>
                             </div>
                           </div>
@@ -239,7 +249,8 @@ export default function SimpleReportModal({ orders, onClose }: SimpleReportModal
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

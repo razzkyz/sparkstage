@@ -13,6 +13,9 @@ const CashierOrders = lazy(() => import("../../pages/admin/CashierOrders"));
 const DressingRoomDashboard = lazy(
   () => import("../../pages/admin/DressingRoomDashboard"),
 );
+const DressingRoomClaimDashboard = lazy(
+  () => import("../../pages/admin/DressingRoomClaimDashboard"),
+);
 const DressingRoomInventory = lazy(
   () => import("../../pages/admin/DressingRoomInventory"),
 );
@@ -120,6 +123,7 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/cashier-dashboard", Page: CashierDashboard },
   { path: "/admin/cashier-orders", Page: CashierOrders },
   { path: "/admin/dressing-room-dashboard", Page: DressingRoomDashboard },
+  { path: "/admin/dressing-room-claim", Page: DressingRoomClaimDashboard },
   { path: "/admin/dressing-room-inventory", Page: DressingRoomInventory },
   { path: "/admin/nfc", Page: NFCDashboard },
   { path: "/admin/nfc-detection", Page: NFCDetection },
