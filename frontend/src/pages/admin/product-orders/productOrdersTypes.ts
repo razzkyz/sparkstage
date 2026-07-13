@@ -24,6 +24,7 @@ export type ProductOrderDetails = {
     shipping_cost?: number | null;
     tracking_number?: string | null;
     shipped_at?: string | null;
+    order_department?: string | null;
   };
   items: OrderItemRow[];
 };

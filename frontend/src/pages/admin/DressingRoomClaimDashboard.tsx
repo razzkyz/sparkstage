@@ -33,13 +33,13 @@ export default function DressingRoomClaimDashboard() {
   // Ambil data pesanan selesai dari hook useProductOrders
   // Sama persis dengan RetailDashboard — SEMUA pesanan, tidak difilter per kategori
   const { data: orderData, isLoading: isLoadingOrders } = useProductOrders();
-  // Untuk tab Klaim: semua pesanan retail yang sudah dibayar (paid)
-  // termasuk yang sudah dikonfirmasi (completed) maupun yang masih pending (pending_pickup)
+  // Untuk tab Klaim: pesanan retail yang sudah dibayar (paid) dan sudah dikonfirmasi (completed)
+  // Pesanan yang masih pending_pickup TIDAK dimunculkan sebelum dikonfirmasi di halaman Product Orders
   const completedOrders = useMemo(() => {
     if (!orderData?.orders) return [];
     return orderData.orders.filter(o =>
       o.payment_status === 'paid' && 
-      (o.pickup_status === 'completed' || o.pickup_status === 'pending_pickup')
+      o.pickup_status === 'completed'
     );
   }, [orderData]);
 
@@ -114,7 +114,7 @@ export default function DressingRoomClaimDashboard() {
       </div>
 
       <div className="mt-4">
-        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} allowedStatuses={['completed', 'pending_pickup']} claimSuffix=" (Dressing)" />}
+        {activeTab === 'claim' && <ClaimTab orders={completedOrders} isLoading={isLoadingOrders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} allowedStatuses={['completed']} claimSuffix=" (Dressing)" />}
         {activeTab === 'report' && <ReportTab orders={reportOrders} isLoading={isLoadingOrders} />}
       </div>
     </AdminLayout>

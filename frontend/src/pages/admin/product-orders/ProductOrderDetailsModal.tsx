@@ -1,6 +1,10 @@
 import { formatCurrency } from '../../../utils/formatters';
 import { formatDateTimeWIB } from '../../../utils/timezone';
 import type { ProductOrderDetails } from './productOrdersTypes';
+import { useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 
 type ProductOrderDetailsModalProps = {
   details: ProductOrderDetails | null;
@@ -23,7 +27,94 @@ export function ProductOrderDetailsModal({
   isPrinting = false,
   onPrintReceipt,
 }: ProductOrderDetailsModalProps) {
+  const queryClient = useQueryClient();
+  const [staffName, setStaffName] = useState('');
+  const [isEditingStaff, setIsEditingStaff] = useState(false);
+  const [isSavingStaff, setIsSavingStaff] = useState(false);
+  const [staffSaveError, setStaffSaveError] = useState<string | null>(null);
+
+  const [department, setDepartment] = useState<string>('');
+  const [isSavingDept, setIsSavingDept] = useState(false);
+  const [deptSaveError, setDeptSaveError] = useState<string | null>(null);
+
   if (!details) return null;
+
+  // Sync department state from details if not yet set
+  const currentDept = department || (details.order.order_department ?? '');
+
+  const currentStaffName = details.order.sales_staff_name;
+
+  const handleEditStaff = () => {
+    setStaffName(currentStaffName ?? '');
+    setIsEditingStaff(true);
+    setStaffSaveError(null);
+  };
+
+  const handleSaveStaff = async () => {
+    if (!staffName.trim()) {
+      setStaffSaveError('Nama staff tidak boleh kosong');
+      return;
+    }
+    setIsSavingStaff(true);
+    setStaffSaveError(null);
+    try {
+      const { error } = await supabase
+        .from('order_products')
+        .update({ sales_staff_name: staffName.trim() })
+        .eq('id', details.order.id);
+      if (error) throw error;
+      setIsEditingStaff(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrders() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrderDetails() }),
+      ]);
+    } catch (err: unknown) {
+      setStaffSaveError(err instanceof Error ? err.message : 'Gagal menyimpan nama staff');
+    } finally {
+      setIsSavingStaff(false);
+    }
+  };
+
+  const handleClearStaff = async () => {
+    setIsSavingStaff(true);
+    setStaffSaveError(null);
+    try {
+      const { error } = await supabase
+        .from('order_products')
+        .update({ sales_staff_name: null })
+        .eq('id', details.order.id);
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrders() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrderDetails() }),
+      ]);
+    } catch (err: unknown) {
+      setStaffSaveError(err instanceof Error ? err.message : 'Gagal menghapus nama staff');
+    } finally {
+      setIsSavingStaff(false);
+    }
+  };
+
+  const handleSaveDepartment = async (newDept: string) => {
+    setIsSavingDept(true);
+    setDeptSaveError(null);
+    try {
+      const { error } = await supabase
+        .from('order_products')
+        .update({ order_department: newDept || null })
+        .eq('id', details.order.id);
+      if (error) throw error;
+      setDepartment(newDept);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrders() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.productOrderDetails() }),
+      ]);
+    } catch (err: unknown) {
+      setDeptSaveError(err instanceof Error ? err.message : 'Gagal menyimpan departemen');
+    } finally {
+      setIsSavingDept(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -50,12 +141,96 @@ export function ProductOrderDetailsModal({
 
           <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
             <div className="grid grid-cols-2 gap-4 text-sm">
-              {details.order.sales_staff_name && (
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Sales Staff</p>
-                  <p className="font-medium text-gray-900">{details.order.sales_staff_name}</p>
+              {/* EDITABLE: Sales Staff Name */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Yang Menjual</p>
+                {isEditingStaff ? (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={staffName}
+                      onChange={(e) => setStaffName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') void handleSaveStaff(); if (e.key === 'Escape') setIsEditingStaff(false); }}
+                      placeholder="Nama staff yang menjual..."
+                      autoFocus
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86]"
+                    />
+                    <button
+                      onClick={() => void handleSaveStaff()}
+                      disabled={isSavingStaff}
+                      className="rounded-lg bg-[#ff4b86] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#ff6a9a] disabled:opacity-50 transition-colors"
+                    >
+                      {isSavingStaff ? 'Simpan...' : 'Simpan'}
+                    </button>
+                    <button
+                      onClick={() => setIsEditingStaff(false)}
+                      className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className={`font-medium ${currentStaffName ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {currentStaffName
+                        ? currentStaffName.replace(' (Dressing)', '')
+                        : 'Belum ada nama staff'}
+                    </p>
+                    {currentStaffName?.endsWith(' (Dressing)') && (
+                      <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                        Dressing Room
+                      </span>
+                    )}
+                    <button
+                      onClick={handleEditStaff}
+                      className="ml-1 rounded-md p-1 text-gray-400 hover:text-[#ff4b86] hover:bg-pink-50 transition-colors"
+                      title="Ubah nama staff"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                    </button>
+                    {currentStaffName && (
+                      <button
+                        onClick={() => { void handleClearStaff(); }}
+                        disabled={isSavingStaff}
+                        className="rounded-md p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        title="Hapus nama staff"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">person_remove</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+                {staffSaveError && <p className="mt-1 text-xs text-red-500">{staffSaveError}</p>}
+              </div>
+
+              {/* EDITABLE: Department / Divisi */}
+              <div className="col-span-2">
+                <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Divisi / Department</p>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={currentDept}
+                    onChange={(e) => { void handleSaveDepartment(e.target.value); }}
+                    disabled={isSavingDept}
+                    className={`rounded-lg border px-3 py-1.5 text-sm font-medium focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] transition-colors ${
+                      currentDept === 'shop'
+                        ? 'border-blue-300 bg-blue-50 text-blue-800'
+                        : currentDept === 'dressing'
+                        ? 'border-purple-300 bg-purple-50 text-purple-800'
+                        : currentDept === 'service'
+                        ? 'border-green-300 bg-green-50 text-green-800'
+                        : 'border-gray-300 bg-white text-gray-500 italic'
+                    }`}
+                  >
+                    <option value="">— Pilih divisi —</option>
+                    <option value="shop">🛍️ Shop</option>
+                    <option value="dressing">👗 Dressing</option>
+                    <option value="service">✂️ Service</option>
+                  </select>
+                  {isSavingDept && <span className="text-xs text-gray-400 animate-pulse">Menyimpan...</span>}
+                  {deptSaveError && <span className="text-xs text-red-500">{deptSaveError}</span>}
                 </div>
-              )}
+              </div>
+
               {details.order.paid_at && (
                 <div>
                   <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Waktu Pembayaran</p>
