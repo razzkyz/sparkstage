@@ -10,6 +10,9 @@ const CashierDashboard = lazy(
   () => import("../../pages/admin/CashierDashboard"),
 );
 const CashierOrders = lazy(() => import("../../pages/admin/CashierOrders"));
+const CategorySalesPage = lazy(
+  () => import("../../pages/admin/CategorySalesPage"),
+);
 const DressingRoomDashboard = lazy(
   () => import("../../pages/admin/DressingRoomDashboard"),
 );
@@ -169,4 +172,5 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/rental-transactions", Page: RentalTransactions },
   { path: "/admin/rental-order", Page: CreateRentalTransaction },
   { path: "/admin/product-qr-catalog", Page: ProductQRCatalog },
+  { path: "/admin/category-sales", Page: CategorySalesPage },
 ];

@@ -88,6 +88,13 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
         highlight: false,
       },
       {
+        id: "category-sales",
+        label: "Penjualan per Kategori",
+        icon: "category",
+        path: "/admin/category-sales",
+        highlight: true,
+      },
+      {
         id: "cashier-orders",
         label: "Cek Pesanan",
         icon: "receipt_long",
@@ -171,6 +178,13 @@ export const OWNER_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Sales Back Office",
         icon: "point_of_sale",
         path: "/admin/retail-dashboard",
+        highlight: true,
+      },
+      {
+        id: "category-sales",
+        label: "Penjualan per Kategori",
+        icon: "category",
+        path: "/admin/category-sales",
         highlight: true,
       },
     ],
