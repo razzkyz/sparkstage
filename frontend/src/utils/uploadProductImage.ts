@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { deleteImageKitFile, type ProductImageRecordInput, uploadFileToImageKit } from '../lib/imagekit';
+import { deleteImageKitFile, type ProductImageRecordInput } from '../lib/imagekit';
+import { uploadToR2 } from '../lib/r2Upload';
 import { bytesToMb } from './merchant';
 import { MAX_PRODUCT_IMAGE_SIZE_MB, PRODUCT_IMAGE_UPLOAD_CONCURRENCY } from '../constants/productImages';
 
@@ -85,18 +86,22 @@ export async function uploadProductImage(
     throw new Error('Missing access token for ImageKit upload.');
   }
 
-  const fileName = `${uuid}.${ext}`;
+  const fileName = `products/${productId}/${uuid}.${ext}`;
 
-  return withTimeout(
-    uploadFileToImageKit({
-      accessToken,
-      file,
-      fileName,
-      productId,
-    }),
+  // Upload to R2 (ImageKit was disabled; all new uploads go to R2/CDN)
+  const publicUrl = await withTimeout(
+    uploadToR2({ file, productId: Number(productId) || 0 }),
     timeoutMs,
     'Upload gambar terlalu lama (timeout). Coba lagi saat koneksi lebih stabil.'
   );
+
+  return {
+    image_url: publicUrl,
+    image_provider: 'supabase' as const,
+    provider_file_id: null,
+    provider_file_path: fileName,
+    provider_original_url: null,
+  };
 }
 
 /**
