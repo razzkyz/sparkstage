@@ -105,7 +105,7 @@ const Navbar = () => {
     },
     // { key: "rollerblade", label: "ROLLER BLADE", to: "/rollerblade", icon: ShoppingBag },
     { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
-    { key: "dressing", label: "DRESSING", to: "/dressing", icon: ShoppingBag },
+
     { key: "service", label: "SERVICE", to: "/service", icon: Wrench },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },

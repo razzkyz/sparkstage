@@ -135,6 +135,59 @@ export const CASHIER_MENU_SECTIONS: AdminMenuSection[] = [
       },
     ],
   },
+  {
+    id: "store",
+    label: "Toko",
+    items: [
+      {
+        id: "product-orders",
+        label: "Pesanan Produk",
+        icon: "shopping_bag",
+        path: "/admin/product-orders",
+        badge: 0,
+      },
+      {
+        id: "vouchers",
+        label: "Voucher & Diskon",
+        icon: "confirmation_number",
+        path: "/admin/vouchers",
+      },
+      {
+        id: "store-inventory",
+        label: "Stok & Produk",
+        icon: "inventory_2",
+        path: "/admin/store",
+      },
+      {
+        id: "product-qr-catalog",
+        label: "Katalog QR Produk",
+        icon: "qr_code_2",
+        path: "/admin/product-qr-catalog",
+      },
+      {
+        id: "stock-opening",
+        label: "Stock Opening",
+        icon: "wb_twilight",
+        path: "/admin/stock-opening",
+        highlight: true,
+      },
+      {
+        id: "stock-adjustments",
+        label: "Stock Adjustments",
+        icon: "tune",
+        path: "/admin/stock-adjustments",
+        highlight: true,
+      },
+      {
+        id: "stock-opname",
+        label: "Stock Opname",
+        icon: "fact_check",
+        path: "/admin/stock-opname",
+        highlight: true,
+      },
+    ],
+  },
+
 ];
 
 // Menu khusus untuk role "rollerblade" - HANYA rental transactions
@@ -357,6 +410,12 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Dressing Room Manager",
         icon: "styler",
         path: "/admin/dressing-room",
+      },
+      {
+        id: "dressing-store",
+        label: "Dressing Store",
+        icon: "storefront",
+        path: "/admin/dressing",
       },
       {
         id: "dressing-room-claim",
@@ -619,6 +678,12 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         label: "Dressing Room Manager",
         icon: "styler",
         path: "/admin/dressing-room",
+      },
+      {
+        id: "dressing-store",
+        label: "Dressing Store",
+        icon: "storefront",
+        path: "/admin/dressing",
       },
       {
         id: "dressing-room-claim",

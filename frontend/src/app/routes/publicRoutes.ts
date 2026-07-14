@@ -25,12 +25,12 @@ const BeautyPage = lazy(() => import("../../pages/BeautyPage"));
 const Booking = lazy(() => import("../../pages/Booking"));
 const RetailShopPage = lazy(() => import("../../pages/RetailShopPage"));
 const RollerbladePage = lazy(() => import("../../pages/RollerbladePage"));
-const DressingShop = lazy(() => import("../../pages/DressingShop"));
+
 const ServiceShop = lazy(() => import("../../pages/ServiceShop"));
 
 export const publicRouteConfigs: AppRouteConfig[] = [
   { path: "rollerblade", Page: RollerbladePage },
-  { path: "dressing", Page: DressingShop },
+
   { path: "service", Page: ServiceShop },
   { path: "shop", Page: Shop },
   { path: "dressing-room", Page: DressingRoomLandingPage },

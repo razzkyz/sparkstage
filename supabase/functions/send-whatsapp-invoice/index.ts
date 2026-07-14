@@ -293,7 +293,7 @@ async function saveWhatsAppMessage(
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsResponse = handleCors(req, { allowAllOrigins: true });
   if (corsResponse) return corsResponse;
   const corsHeaders = getCorsHeaders(req, { allowAllOrigins: true });
@@ -556,7 +556,7 @@ serve(async (req) => {
         status: "success",
         message: "WhatsApp invoice sent successfully",
         orderNumber,
-        messageId: fontneResult.messageId,
+        messageId: n8nMessageId,
       }),
       {
         status: 200,

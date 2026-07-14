@@ -13,7 +13,9 @@ import { useBanners } from "../hooks/useBanners";
 import { fetchProductDetail } from "../hooks/useProduct";
 import { useCharmBarSettings } from "../hooks/useCharmBarSettings";
 import { useToast } from "../components/Toast";
-import { PageTransition } from "../components/PageTransition";
+import AdminLayout from "../components/AdminLayout";
+import { ADMIN_MENU_ITEMS } from "../constants/adminMenu";
+import { useAdminMenuSections } from "../hooks/useAdminMenuSections";
 import ProductCardSkeleton from "../components/skeletons/ProductCardSkeleton";
 import { queryKeys } from "../lib/queryKeys";
 import { useShopFilters } from "./shop/useShopFilters";
@@ -211,10 +213,11 @@ function DressingShopResults({
 const DressingShop = () => {
   const queryClient = useQueryClient();
   const { addItem } = useCart();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const productsRef = useRef<HTMLDivElement>(null);
+  const menuSections = useAdminMenuSections();
   const {
     activeCategory,
     searchQuery,
@@ -424,122 +427,125 @@ const DressingShop = () => {
   }
 
   return (
-    <PageTransition>
-      <div className="bg-white min-h-screen">
-        <main className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-          {/* No department tabs - Dressing is now standalone in main navbar */}
-
-
-          <div
-            ref={productsRef}
-            className="mb-8 border-b border-gray-100 pb-0 sticky top-0 bg-white z-40 pt-4 -mt-6"
-          >
-            <div className="flex flex-col space-y-4">
-              <div className="relative w-full max-w-md mx-auto mb-2 px-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      updateFilters({ q: e.target.value });
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const mapped = mapSearchQueryToRoute(searchQuery || "");
-                        if (mapped) {
-                          e.currentTarget.blur();
-                          navigate(mapped);
-                        }
+    <AdminLayout
+      menuItems={ADMIN_MENU_ITEMS}
+      menuSections={menuSections}
+      defaultActiveMenuId="dressing-store"
+      title="Dressing Store"
+      onLogout={signOut}
+    >
+      <div className="flex flex-col w-full relative">
+        <div
+          ref={productsRef}
+          className="sticky -top-4 md:-top-8 z-40 pt-4 md:pt-8 pb-2 bg-gray-50 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-gray-200 mb-6"
+        >
+          <div className="flex flex-col space-y-4 max-w-4xl mx-auto w-full">
+            <div className="relative w-full max-w-md mx-auto mb-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    updateFilters({ q: e.target.value });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const mapped = mapSearchQueryToRoute(searchQuery || "");
+                      if (mapped) {
+                        e.currentTarget.blur();
+                        navigate(mapped);
                       }
+                    }
+                  }}
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color shadow-sm"
+                />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      updateFilters({ q: null });
                     }}
-                    placeholder="Search products..."
-                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#ff4b86] focus:ring-1 focus:ring-[#ff4b86] ux-transition-color"
-                  />
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  {searchQuery ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery("");
-                        updateFilters({ q: null });
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 ux-transition-color"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  ) : null}
-                </div>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-100 ux-transition-color"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : null}
               </div>
+            </div>
 
-              <div className="w-full mt-4 mb-2">
-                <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-4 sm:px-6">
-                  <div className="flex items-center space-x-6 md:space-x-8 pb-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateFilters({
-                          category: null,
-                          subcategory: null,
-                          subsubcategory: null,
-                        });
-                      }}
-                      className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
-                        !activeCategory || activeCategory === "all"
-                          ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
-                          : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
-                      }`}
-                    >
-                      All Products
-                    </button>
-                    {dressingCategoriesFlat.map((category) => {
-                      const isActive = activeCategory === category.slug;
-                      return (
-                        <button
-                          key={category.slug}
-                          type="button"
-                          onClick={() => {
-                            updateFilters({
-                              category: isActive ? null : category.slug,
-                              subcategory: null,
-                              subsubcategory: null,
-                            });
-                          }}
-                          className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
-                            isActive
-                              ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
-                              : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
-                          }`}
-                        >
-                          {category.name}
-                        </button>
-                      );
-                    })}
-                  </div>
+            <div className="w-full mt-4 mb-2">
+              <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll px-1">
+                <div className="flex items-center space-x-6 md:space-x-8 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateFilters({
+                        category: null,
+                        subcategory: null,
+                        subsubcategory: null,
+                      });
+                    }}
+                    className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                      !activeCategory || activeCategory === "all"
+                        ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                        : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                    }`}
+                  >
+                    All Products
+                  </button>
+                  {dressingCategoriesFlat.map((category) => {
+                    const isActive = activeCategory === category.slug;
+                    return (
+                      <button
+                        key={category.slug}
+                        type="button"
+                        onClick={() => {
+                          updateFilters({
+                            category: isActive ? null : category.slug,
+                            subcategory: null,
+                            subsubcategory: null,
+                          });
+                        }}
+                        className={`text-sm whitespace-nowrap pb-2 border-b-2 transition-colors ${
+                          isActive
+                            ? "font-semibold text-[#ff4b86] border-[#ff4b86]"
+                            : "font-semibold text-gray-500 border-transparent hover:text-[#ff4b86]"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {error ? (
-            <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
-              <p className="text-sm text-red-700 mb-4">
-                {error instanceof Error
-                  ? error.message
-                  : "Failed to load dressing data"}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  refetchProducts();
-                }}
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark ux-transition-color text-sm font-medium"
-              >
-                Retry
-              </button>
-            </div>
-          ) : null}
+        {error ? (
+          <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center mx-4 md:mx-8">
+            <p className="text-sm text-red-700 mb-4">
+              {error instanceof Error
+                ? error.message
+                : "Failed to load dressing data"}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                refetchProducts();
+              }}
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark ux-transition-color text-sm font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
 
+        <div className="w-full">
           <DressingShopResults
             filteredProducts={filteredProducts}
             loading={loading}
@@ -547,9 +553,9 @@ const DressingShop = () => {
             onPrefetchProduct={prefetchProduct}
             onAddToCart={handleAddToCart}
           />
-        </main>
+        </div>
       </div>
-    </PageTransition>
+    </AdminLayout>
   );
 };
 
