@@ -102,6 +102,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
                 stock: v.stock || 0,
                 size: '',
                 color: '',
+                image: '',
                 image_url_1: index === 0 ? img1 : '',
                 image_url_2: index === 0 ? img2 : '',
                 image_url_3: index === 0 ? img3 : '',
@@ -123,6 +124,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
               stock: 0,
               size: '',
               color: '',
+              image: '',
               image_url_1: img1,
               image_url_2: img2,
               image_url_3: img3,
@@ -152,6 +154,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 10,
         size: 'S',
         color: 'Hitam',
+        image: '',
         image_url_1: 'https://example.com/image1.jpg',
         image_url_2: '',
         image_url_3: '',
@@ -171,6 +174,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 15,
         size: 'M',
         color: 'Hitam',
+        image: '',
         image_url_1: '',
         image_url_2: '',
         image_url_3: '',
@@ -190,6 +194,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
         stock: 5,
         size: '30',
         color: 'Olive',
+        image: '',
         image_url_1: '',
         image_url_2: '',
         image_url_3: '',
@@ -251,7 +256,7 @@ export async function downloadStoreProductTemplateExcel(categories: CategoryOpti
 
 // ─── PARSE IMPORT ─────────────────────────────────────────────────────────────
 
-export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & { image_urls?: string[] })[]> {
+export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & { image_urls?: string[], _rowIndex?: number })[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Gagal membaca file'));
@@ -268,12 +273,14 @@ export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & 
         }
 
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '', blankrows: true });
 
-        const products: (ProductDraft & { image_urls?: string[] })[] = [];
-        let currentProduct: (ProductDraft & { image_urls?: string[] }) | null = null;
+        const products: (ProductDraft & { image_urls?: string[], _rowIndex?: number })[] = [];
+        let currentProduct: (ProductDraft & { image_urls?: string[], _rowIndex?: number }) | null = null;
 
-        raw.forEach((row) => {
+        raw.forEach((row, index) => {
+          // Data rows start at index 1 in 0-indexed terms because row 0 is the header.
+          const rowIndex = index + 1;
           const productName = String(row['product_name'] ?? '').trim();
           const variantSku = String(row['variant_sku'] || row['sku'] || '').trim();
           const variantName = String(row['variant_name'] ?? '').trim();
@@ -299,6 +306,7 @@ export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & 
               is_active: String(row['is_active'] ?? 'ya').trim().toLowerCase() !== 'tidak',
               variants: [],
               image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+              _rowIndex: rowIndex,
             };
             products.push(currentProduct);
           } else if (currentProduct && imageUrls.length > 0) {

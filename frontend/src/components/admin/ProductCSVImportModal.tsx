@@ -4,6 +4,8 @@ import { downloadStoreProductTemplateExcel, parseStoreProductsFromFile } from '.
 import { useCategories } from '../../hooks/useCategories';
 import { useRetailCategories } from '../../hooks/useRetailCategories';
 import { supabase } from '../../lib/supabase';
+import { extractExcelImages, type EmbeddedImage } from '../../utils/extractExcelImages';
+import { uploadToR2 } from '../../lib/r2Upload';
 
 interface ProductCSVImportModalProps {
   isOpen: boolean;
@@ -23,6 +25,8 @@ export function ProductCSVImportModal({
   const [error, setError] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [imageMap, setImageMap] = useState<Map<number, EmbeddedImage[]>>(new Map());
+  const [uploadProgress, setUploadProgress] = useState<{ total: number, current: number, currentFileName: string } | null>(null);
   const { data: categories } = useCategories();
   const { categories: retailCategories, createCategory } = useRetailCategories();
 
@@ -36,10 +40,39 @@ export function ProductCSVImportModal({
 
     try {
       const products = await parseStoreProductsFromFile(file);
+      const images = await extractExcelImages(file);
+      
+      // Attempt sequential assignment for preview if strict mapping found 0 matches
+      let strictMatchCount = 0;
+      products.forEach(p => {
+         if ((p as any)._rowIndex !== undefined && images.has((p as any)._rowIndex)) {
+            strictMatchCount += images.get((p as any)._rowIndex)!.length;
+         }
+      });
+      
+      if (strictMatchCount === 0 && images.size > 0) {
+         // Modify the image map to match product row indices sequentially for preview purposes
+         const sortedRows = Array.from(images.keys()).sort((a, b) => a - b);
+         const sequentialImages = sortedRows.flatMap(row => images.get(row)!);
+         const newImageMap = new Map<number, EmbeddedImage[]>();
+         
+         let imgIndex = 0;
+         for (const p of products) {
+            if (imgIndex < sequentialImages.length && (p as any)._rowIndex !== undefined) {
+               newImageMap.set((p as any)._rowIndex, [sequentialImages[imgIndex]]);
+               imgIndex++;
+            }
+         }
+         setImageMap(newImageMap);
+      } else {
+         setImageMap(images);
+      }
+      
       setParsedProducts(products);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal parse file');
       setParsedProducts([]);
+      setImageMap(new Map());
     }
   };
 
@@ -80,6 +113,35 @@ export function ProductCSVImportModal({
       const existingSlugMap = new Map(
         allExistingProducts.map(p => [p.slug, p.id])
       );
+
+      let imagesToUpload = 0;
+      let usingSequentialFallback = false;
+      let sequentialImages: EmbeddedImage[] = [];
+
+      parsedProducts.forEach(p => {
+         if ((p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex)) {
+            imagesToUpload += imageMap.get((p as any)._rowIndex)!.length;
+         }
+      });
+
+      // FALLBACK: If strict row mapping found no images, but there ARE images in the file, 
+      // we assume they are offset or misaligned, and assign them sequentially to products.
+      if (imagesToUpload === 0 && imageMap.size > 0) {
+         usingSequentialFallback = true;
+         // Sort rows to ensure top-to-bottom order
+         const sortedRows = Array.from(imageMap.keys()).sort((a, b) => a - b);
+         for (const row of sortedRows) {
+            sequentialImages.push(...imageMap.get(row)!);
+         }
+         imagesToUpload = sequentialImages.length;
+      }
+
+      let currentImageCount = 0;
+      let sequentialImageIndex = 0;
+
+      if (imagesToUpload > 0) {
+         setUploadProgress({ total: imagesToUpload, current: 0, currentFileName: '' });
+      }
 
       for (const p of parsedProducts) {
         let matchedCategoryId = p.category_id;
@@ -149,7 +211,7 @@ export function ProductCSVImportModal({
 
         const productId = existingSlugMap.get(p.slug) || undefined;
 
-        drafts.push({
+        const draftProduct: ProductDraft = {
           id: productId,
           name: p.name,
           slug: p.slug,
@@ -163,11 +225,48 @@ export function ProductCSVImportModal({
           sku: p.sku,
           is_active: p.is_active,
           variants: p.variants,
-        });
+          image_urls: p.image_urls,
+        };
+
+        // If there are embedded images in the Excel for this row, upload them to R2
+        // We do this BEFORE we pass drafts to onImport.
+        let rowImages: EmbeddedImage[] = [];
+        if (usingSequentialFallback && sequentialImageIndex < sequentialImages.length) {
+          // In fallback mode, assign one image per product sequentially
+          rowImages = [sequentialImages[sequentialImageIndex]];
+          sequentialImageIndex++;
+          // For preview updating logic
+          if ((p as any)._rowIndex !== undefined) {
+             imageMap.set((p as any)._rowIndex, rowImages);
+          }
+        } else if (!usingSequentialFallback && (p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex)) {
+          rowImages = imageMap.get((p as any)._rowIndex)!;
+        }
+
+        if (rowImages.length > 0) {
+          const newImageUrls: string[] = [];
+          for (const img of rowImages) {
+            currentImageCount++;
+            setUploadProgress({ total: imagesToUpload, current: currentImageCount, currentFileName: img.filename });
+            try {
+               const fileToUpload = new File([img.blob], img.filename, { type: img.mimeType });
+               // Upload with productId 0 to put it in the cms folder temporarily or products folder
+               const publicUrl = await uploadToR2({ file: fileToUpload, productId: 0 });
+               newImageUrls.push(publicUrl);
+            } catch (imgErr) {
+               console.error('Gagal upload gambar ke R2:', imgErr);
+            }
+          }
+          draftProduct.image_urls = [...(draftProduct.image_urls || []), ...newImageUrls];
+        }
+
+        drafts.push(draftProduct);
       }
 
+      setUploadProgress(null);
       await onImport(drafts);
       setParsedProducts([]);
+      setImageMap(new Map());
       setFileName('');
       setError('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -290,6 +389,7 @@ export function ProductCSVImportModal({
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">SKU</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Harga</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Stok</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Gambar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -299,6 +399,17 @@ export function ProductCSVImportModal({
                       <td className="px-4 py-2 text-gray-600 text-xs font-mono">{p.sku}</td>
                       <td className="px-4 py-2 text-gray-600">Rp {p.variants[0].price}</td>
                       <td className="px-4 py-2 text-gray-600">{p.variants[0].stock}</td>
+                      <td className="px-4 py-2 text-gray-600">
+                        {(p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex) ? (
+                          <div className="flex gap-1">
+                            {imageMap.get((p as any)._rowIndex)!.map((img, i) => (
+                              <img key={i} src={URL.createObjectURL(img.blob)} alt="" className="h-8 w-8 object-cover rounded" />
+                            ))}
+                          </div>
+                        ) : (
+                          p.image_urls?.length ? <span className="text-xs">{p.image_urls.length} URL</span> : '-'
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -308,7 +419,18 @@ export function ProductCSVImportModal({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-3 mt-4">
+          {uploadProgress && (
+            <div className="flex-1 mr-4">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span className="truncate max-w-[200px]">Mengunggah: {uploadProgress.currentFileName}</span>
+                <span>{uploadProgress.current} / {uploadProgress.total}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }} />
+              </div>
+            </div>
+          )}
           <button
             onClick={onClose}
             disabled={isImporting}

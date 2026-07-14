@@ -33,6 +33,7 @@ export type ProductDraft = {
   sku: string;
   is_active: boolean;
   variants: ProductVariantDraft[];
+  image_urls?: string[];
 };
 
 export type ExistingImage = {

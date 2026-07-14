@@ -427,6 +427,15 @@ export async function saveInventoryProductMutation(params: {
   if (!accessToken) throw new Error(SESSION_EXPIRED_MESSAGE);
 
   const normalizedDraft = normalizeInventoryProductDraft(draft);
+  
+  const existingImageUrls: ProductImageRecordInput[] = (normalizedDraft.image_urls || []).map((url) => ({
+    image_url: url,
+    image_provider: 'supabase' as const,
+    provider_file_id: null,
+    provider_file_path: null,
+    provider_original_url: null,
+  }));
+
   if (normalizedDraft.id != null) {
     const uploadedImages = await uploadInventoryImagesWithRollback({
       files: newImages,
@@ -444,7 +453,7 @@ export async function saveInventoryProductMutation(params: {
     try {
       return await saveInventoryProductOnServer({
         draft: normalizedDraft,
-        newImages: uploadedImages,
+        newImages: [...uploadedImages, ...existingImageUrls],
         removedImageUrls,
         auth,
         syncVariants: true,
@@ -462,7 +471,7 @@ export async function saveInventoryProductMutation(params: {
 
   const createResponse = await saveInventoryProductOnServer({
     draft: normalizedDraft,
-    newImages: [],
+    newImages: existingImageUrls,
     removedImageUrls: [],
     auth,
     syncVariants: true,
