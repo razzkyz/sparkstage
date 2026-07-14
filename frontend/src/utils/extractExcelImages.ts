@@ -82,7 +82,9 @@ export async function extractExcelImages(file: File): Promise<Map<number, Embedd
         let blipEl = Array.from(anchor.getElementsByTagName('*')).find(el => el.localName === 'blip' || el.tagName.endsWith(':blip') || el.tagName === 'blip');
         if (!blipEl) continue;
         
-        const embedId = blipEl.getAttribute('r:embed') || blipEl.getAttribute('embed');
+        const embedId = blipEl.getAttribute('r:embed') 
+          || blipEl.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'embed')
+          || blipEl.getAttribute('embed');
         if (!embedId) continue;
         
         const imagePath = relMap.get(embedId);

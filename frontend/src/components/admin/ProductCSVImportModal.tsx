@@ -53,14 +53,13 @@ export function ProductCSVImportModal({
       if (strictMatchCount === 0 && images.size > 0) {
          // Modify the image map to match product row indices sequentially for preview purposes
          const sortedRows = Array.from(images.keys()).sort((a, b) => a - b);
-         const sequentialImages = sortedRows.flatMap(row => images.get(row)!);
          const newImageMap = new Map<number, EmbeddedImage[]>();
          
-         let imgIndex = 0;
+         let imgRowIndex = 0;
          for (const p of products) {
-            if (imgIndex < sequentialImages.length && (p as any)._rowIndex !== undefined) {
-               newImageMap.set((p as any)._rowIndex, [sequentialImages[imgIndex]]);
-               imgIndex++;
+            if (imgRowIndex < sortedRows.length && (p as any)._rowIndex !== undefined) {
+               newImageMap.set((p as any)._rowIndex, images.get(sortedRows[imgRowIndex])!);
+               imgRowIndex++;
             }
          }
          setImageMap(newImageMap);
@@ -115,8 +114,6 @@ export function ProductCSVImportModal({
       );
 
       let imagesToUpload = 0;
-      let usingSequentialFallback = false;
-      let sequentialImages: EmbeddedImage[] = [];
 
       parsedProducts.forEach(p => {
          if ((p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex)) {
@@ -124,20 +121,7 @@ export function ProductCSVImportModal({
          }
       });
 
-      // FALLBACK: If strict row mapping found no images, but there ARE images in the file, 
-      // we assume they are offset or misaligned, and assign them sequentially to products.
-      if (imagesToUpload === 0 && imageMap.size > 0) {
-         usingSequentialFallback = true;
-         // Sort rows to ensure top-to-bottom order
-         const sortedRows = Array.from(imageMap.keys()).sort((a, b) => a - b);
-         for (const row of sortedRows) {
-            sequentialImages.push(...imageMap.get(row)!);
-         }
-         imagesToUpload = sequentialImages.length;
-      }
-
       let currentImageCount = 0;
-      let sequentialImageIndex = 0;
 
       if (imagesToUpload > 0) {
          setUploadProgress({ total: imagesToUpload, current: 0, currentFileName: '' });
@@ -231,15 +215,7 @@ export function ProductCSVImportModal({
         // If there are embedded images in the Excel for this row, upload them to R2
         // We do this BEFORE we pass drafts to onImport.
         let rowImages: EmbeddedImage[] = [];
-        if (usingSequentialFallback && sequentialImageIndex < sequentialImages.length) {
-          // In fallback mode, assign one image per product sequentially
-          rowImages = [sequentialImages[sequentialImageIndex]];
-          sequentialImageIndex++;
-          // For preview updating logic
-          if ((p as any)._rowIndex !== undefined) {
-             imageMap.set((p as any)._rowIndex, rowImages);
-          }
-        } else if (!usingSequentialFallback && (p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex)) {
+        if ((p as any)._rowIndex !== undefined && imageMap.has((p as any)._rowIndex)) {
           rowImages = imageMap.get((p as any)._rowIndex)!;
         }
 
