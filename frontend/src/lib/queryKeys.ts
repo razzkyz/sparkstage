@@ -29,6 +29,7 @@ export const queryKeys = {
 
   dashboardStats: () => ['dashboard-stats'] as const,
   cashierSalesStats: () => ['cashier-sales-stats'] as const,
+  categorySalesStats: () => ['category-sales-stats'] as const,
   productOrders: () => ['admin-product-orders'] as const,
     productOrderDetails: () => ['admin-product-order-detail'] as const,
     productOrderDetail: (pickupCode: string) => ['admin-product-order-detail', pickupCode] as const,
