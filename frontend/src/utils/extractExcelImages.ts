@@ -4,6 +4,7 @@ export interface EmbeddedImage {
   blob: Blob;
   filename: string;
   mimeType: string;
+  colIndex: number;
 }
 
 /**
@@ -78,6 +79,9 @@ export async function extractExcelImages(file: File): Promise<Map<number, Embedd
         const rowIndex = parseInt(rowEl.textContent, 10);
         if (isNaN(rowIndex)) continue;
 
+        let colEl = Array.from(fromEl.getElementsByTagName('*')).find(el => el.localName === 'col' || el.tagName.endsWith(':col') || el.tagName === 'col');
+        const colIndex = colEl && colEl.textContent ? parseInt(colEl.textContent, 10) : 0;
+
         // Find the blip element which contains the embed id
         let blipEl = Array.from(anchor.getElementsByTagName('*')).find(el => el.localName === 'blip' || el.tagName.endsWith(':blip') || el.tagName === 'blip');
         if (!blipEl) continue;
@@ -109,7 +113,8 @@ export async function extractExcelImages(file: File): Promise<Map<number, Embedd
         const embeddedImage: EmbeddedImage = {
           blob: finalBlob,
           filename,
-          mimeType
+          mimeType,
+          colIndex
         };
         
         if (!imageMap.has(rowIndex)) {
@@ -117,6 +122,11 @@ export async function extractExcelImages(file: File): Promise<Map<number, Embedd
         }
         imageMap.get(rowIndex)!.push(embeddedImage);
       }
+    }
+    
+    // Sort images within each row by colIndex to ensure left-to-right ordering
+    for (const [_rowIndex, images] of imageMap.entries()) {
+      images.sort((a, b) => a.colIndex - b.colIndex);
     }
     
     return imageMap;

@@ -42,30 +42,36 @@ export function ProductCSVImportModal({
       const products = await parseStoreProductsFromFile(file);
       const images = await extractExcelImages(file);
       
-      // Attempt sequential assignment for preview if strict mapping found 0 matches
-      let strictMatchCount = 0;
-      products.forEach(p => {
-         if ((p as any)._rowIndex !== undefined && images.has((p as any)._rowIndex)) {
-            strictMatchCount += images.get((p as any)._rowIndex)!.length;
-         }
-      });
+      // Group images to the nearest product row ABOVE or EQUAL to the image's row
+      const newImageMap = new Map<number, EmbeddedImage[]>();
       
-      if (strictMatchCount === 0 && images.size > 0) {
-         // Modify the image map to match product row indices sequentially for preview purposes
-         const sortedRows = Array.from(images.keys()).sort((a, b) => a - b);
-         const newImageMap = new Map<number, EmbeddedImage[]>();
-         
-         let imgRowIndex = 0;
-         for (const p of products) {
-            if (imgRowIndex < sortedRows.length && (p as any)._rowIndex !== undefined) {
-               newImageMap.set((p as any)._rowIndex, images.get(sortedRows[imgRowIndex])!);
-               imgRowIndex++;
+      // Get product row indices sorted
+      const productRowIndices = products
+        .map(p => (p as any)._rowIndex as number)
+        .filter(r => r !== undefined)
+        .sort((a, b) => a - b);
+        
+      if (productRowIndices.length > 0) {
+        // For each image row, find the nearest product row <= image row
+        for (const [imgRowIndex, imgs] of images.entries()) {
+          let assignedProductRow = productRowIndices[0]; // Default to first product if somehow above
+          
+          for (const pRow of productRowIndices) {
+            if (pRow <= imgRowIndex) {
+              assignedProductRow = pRow;
+            } else {
+              break; // Since it's sorted, we can stop once pRow > imgRowIndex
             }
-         }
-         setImageMap(newImageMap);
-      } else {
-         setImageMap(images);
+          }
+          
+          if (!newImageMap.has(assignedProductRow)) {
+            newImageMap.set(assignedProductRow, []);
+          }
+          newImageMap.get(assignedProductRow)!.push(...imgs);
+        }
       }
+      
+      setImageMap(newImageMap);
       
       setParsedProducts(products);
     } catch (err) {
