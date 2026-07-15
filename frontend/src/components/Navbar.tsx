@@ -72,7 +72,7 @@ const Navbar = () => {
 
   const activeNavKey = (() => {
     const path = location.pathname;
-    if (path === "/") return "on-stage";
+    if (path === "/") return "home";
     if (path.startsWith("/on-stage")) return "on-stage";
     if (path.startsWith("/booking")) return "booking";
     if (path.startsWith("/events")) return "event";
@@ -590,7 +590,7 @@ const Navbar = () => {
                         />
                       )}
 
-                      {item.key === "booking" && Icon && (
+                      {(item.key === "booking" || item.key === "on-stage") && Icon && (
                         <Icon className="w-4 h-4 relative z-10" />
                       )}
                       <span className="relative z-10">{item.label}</span>
