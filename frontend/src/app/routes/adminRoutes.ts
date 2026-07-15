@@ -53,6 +53,9 @@ const CharmBarPageManager = lazy(
 const RollerbladePageManager = lazy(
   () => import("../../pages/admin/RollerbladePageManager"),
 );
+const OnStagePageManager = lazy(
+  () => import("../../pages/admin/OnStagePageManager"),
+);
 const BookingPageManager = lazy(
   () => import("../../pages/admin/BookingPageManager"),
 );
@@ -149,6 +152,7 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/news-page", Page: NewsPageManager },
   { path: "/admin/charm-bar-page", Page: CharmBarPageManager },
   { path: "/admin/rollerblade-page", Page: RollerbladePageManager },
+  { path: "/admin/onstage-page", Page: OnStagePageManager },
   { path: "/admin/dressing-room", Page: DressingRoomManager },
   { path: "/admin/rental-orders", Page: RentalOrders },
   { path: "/admin/dressing-room-scan", Page: DressingRoomScan },

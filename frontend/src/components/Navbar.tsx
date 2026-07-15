@@ -54,7 +54,6 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const desktopNavItemsRef = useRef<
@@ -95,10 +94,10 @@ const Navbar = () => {
   })();
 
   const navItems: NavItem[] = [
-    { key: "on-stage", label: "HOME", to: "/on-stage", icon: Camera },
+    { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
     {
       key: "booking",
-      label: "ON STAGE",
+      label: "BOOKING",
       to: "/booking",
       isPink: true,
       icon: Ticket,
@@ -741,82 +740,29 @@ const Navbar = () => {
 
             if (item.key === "shop") {
               return (
-                <div key={item.key} className="flex flex-col">
-                  <div
-                    className={`flex items-center justify-between px-5 py-2.5 transition-colors ${
-                      isActive
-                        ? "bg-pink-50 border-r-4 border-[#ff4b86]"
-                        : "hover:bg-pink-50/60"
-                    }`}
-                  >
-                    <Link
-                      to={item.to}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex-1 flex items-center gap-3 py-1 text-sm font-bold uppercase tracking-wider ${isActive ? "text-[#ff4b86]" : "text-gray-700 hover:text-[#ff4b86]"}`}
-                    >
-                      {Icon ? (
-                        <div className="bg-main-500 rounded-full p-1 flex-shrink-0">
-                          <Icon className="w-3.5 h-3.5 text-white" />
-                        </div>
-                      ) : (
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? "bg-[#ff4b86]" : "bg-gray-300"}`}
-                        />
-                      )}
-                      {item.label}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setShopDropdownOpen(!shopDropdownOpen);
-                      }}
-                      className="p-1.5 rounded-md text-gray-500 hover:text-[#ff4b86] hover:bg-pink-100 transition-colors"
-                    >
-                      <svg
-                        className={`w-5 h-5 transform transition-transform ${shopDropdownOpen ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  {/* Dropdown Items */}
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ${shopDropdownOpen ? "max-h-48" : "max-h-0"}`}
-                  >
-                    <div className="bg-gray-50 flex flex-col py-1.5 border-y border-gray-100">
-                      <Link
-                        to="/glam"
-                        onClick={() => setSidebarOpen(false)}
-                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
-                      >
-                        Glam Room
-                      </Link>
-                      <Link
-                        to="/charm-bar"
-                        onClick={() => setSidebarOpen(false)}
-                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
-                      >
-                        Charm Bar
-                      </Link>
-                      <Link
-                        to="/shop"
-                        onClick={() => setSidebarOpen(false)}
-                        className="px-12 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff4b86] uppercase tracking-wider"
-                      >
-                        Spark Club
-                      </Link>
+                <Link
+                  key={item.key}
+                  to={item.to}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-5 py-3.5 text-sm font-bold uppercase tracking-wider transition-colors ${
+                    isActive
+                      ? "text-[#ff4b86] bg-pink-50 border-r-4 border-[#ff4b86]"
+                      : "text-gray-700 hover:text-[#ff4b86] hover:bg-pink-50/60"
+                  }`}
+                >
+                  {Icon ? (
+                    <div className="bg-main-500 rounded-full p-1 flex-shrink-0">
+                      <Icon className="w-3.5 h-3.5 text-white" />
                     </div>
-                  </div>
-                </div>
+                  ) : (
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                        isActive ? "bg-[#ff4b86]" : "bg-gray-300"
+                      }`}
+                    />
+                  )}
+                  {item.label}
+                </Link>
               );
             }
 

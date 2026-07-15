@@ -526,6 +526,12 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         path: "/admin/charm-bar-page",
       },
       {
+        id: "onstage-page",
+        label: "On-Stage Page Config",
+        icon: "stars",
+        path: "/admin/onstage-page",
+      },
+      {
         id: "venue-reviews",
         label: "Venue Reviews",
         icon: "star",

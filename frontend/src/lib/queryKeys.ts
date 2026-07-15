@@ -42,4 +42,5 @@ export const queryKeys = {
 
   banners: (type?: 'hero' | 'portrait-hero' | 'stage' | 'promo' | 'events' | 'shop' | 'process' | 'spark-map' | 'spark-club' | 'dressing') => ['banners', type ?? 'all'] as const,
   eventSchedule: (scope?: 'public' | 'admin') => ['event-schedule', scope ?? 'public'] as const,
+  onstageSettings: () => ['onstage-page-settings'] as const,
 } as const

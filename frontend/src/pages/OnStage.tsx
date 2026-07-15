@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useBanners } from "../hooks/useBanners";
 import { useProductSummaries } from "../hooks/useProducts";
 import { formatCurrency } from "../utils/formatters";
 import { buildImageKitThumbUrl } from "../lib/imagekit";
@@ -12,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../components/Toast";
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../hooks/useProducts";
+import { useOnStageSettings, type OnStagePageSettings } from "../hooks/useOnStageSettings";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -358,10 +358,157 @@ function InfiniteProductSlider({
   );
 }
 
+// ─── Simple Image Carousel ────────────────────────────────────────────────
+function SimpleImageCarousel({ images }: { images: string[] }) {
+  // If no images, provide a fallback array of images
+  const displayImages = images && images.length > 0 
+    ? images 
+    : [
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/AURA POP.png",
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/BRONZE.png",
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/GOLD DRIP.png",
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/MIDNIGHT FX.png",
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/PINK RUSH.png",
+        "/images/glam page assets/STAR GLITTER TRANSPARENT BG/SILVER BLINK.png",
+      ];
+
+  // Repeat the array to ensure enough content for a seamless infinite marquee
+  // By duplicating it 4 times, -50% translation will shift by exactly 2 full sets.
+  const marqueeImages = [...displayImages, ...displayImages, ...displayImages, ...displayImages, ...displayImages, ...displayImages];
+
+  return (
+    <div className="w-full overflow-hidden bg-white py-8 md:py-12 mt-2 relative">
+      {/* Subtle gradient masks for smooth fade in/out at edges */}
+      <div className="absolute inset-y-0 left-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+      
+      <style>{`
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee-scroll {
+          /* Increased from 40s to 100s for a very smooth and slow glide */
+          animation: marquee-scroll 100s linear infinite;
+          will-change: transform;
+        }
+        .animate-marquee-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+      <div className="flex w-max animate-marquee-scroll gap-4 md:gap-6 px-4">
+        {marqueeImages.map((src, i) => (
+          <div key={i} className="w-[150px] sm:w-[190px] md:w-[240px] shrink-0">
+            <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-700 bg-gray-50 border border-gray-100/50">
+              <img 
+                src={src} 
+                alt={`Carousel ${i}`} 
+                className="w-full h-full object-cover hover:scale-110 transition-transform duration-1000 ease-out" 
+                loading="lazy"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Promo Package Section ────────────────────────────────────────────────
+function PromoPackageSection({ settings }: { settings?: OnStagePageSettings | null }) {
+  // Use new promo_sections array, fallback to legacy single promo for backward compatibility
+  const promoSections = settings?.promo_sections && settings.promo_sections.length > 0 
+    ? settings.promo_sections 
+    : settings?.promo_packages 
+    ? [{
+        id: 'legacy',
+        subtitle: settings.promo_subtitle || "SPARK STAGE",
+        title: settings.promo_title || "SPARKFROST",
+        title_highlight: settings.promo_title_highlight || "(Winter Edition)",
+        image_url: settings.promo_image_url || "/images/landing/POP UP WEB VIP STAR 1.jpg.webp",
+        price: settings.promo_price || "Rp 475.000,00 IDR",
+        price_suffix: settings.promo_price_suffix || "/Per Pax",
+        packages: settings.promo_packages || [
+          "Snow", "Winter", "Frozen (VIP)",
+          "Snow (2 Pax)", "Winter (2 Pax)", "Frozen (VIP) (2 Pax)",
+          "Snow (3 Pax)"
+        ]
+      }]
+    : [];
+
+  if (promoSections.length === 0) {
+    return null; // Don't render if no promo sections
+  }
+
+  return (
+    <div className="w-full bg-gradient-to-b from-white via-pink-50/50 to-white py-12 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Grid Layout for Multiple Sections */}
+        <div className={`grid gap-8 ${
+          promoSections.length === 1 
+            ? 'grid-cols-1 max-w-md mx-auto' 
+            : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+        }`}>
+          {promoSections.map((section) => (
+            <div key={section.id} className="bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden border border-pink-100/50">
+              {/* Image */}
+              <div className="w-full aspect-[3/4] relative bg-pink-50">
+                <img 
+                  src={section.image_url || "/images/landing/POP UP WEB VIP STAR 1.jpg.webp"} 
+                  alt={section.title || "Promo Package"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Content Details */}
+              <div className="pt-6 pb-4 px-4">
+                <p className="text-gray-500 text-[11px] font-medium tracking-widest uppercase mb-1">
+                  {section.subtitle || "SPARK STAGE"}
+                </p>
+                <h3 className="text-4xl font-serif text-black leading-tight mb-1">
+                  {section.title || "PROMO"}
+                </h3>
+                {section.title_highlight && (
+                  <h4 className="text-3xl font-serif text-black leading-tight mb-4">
+                    {section.title_highlight}
+                  </h4>
+                )}
+                
+                <p className="text-lg font-medium text-gray-900 mb-6">
+                  {section.price || "Rp 0,00 IDR"} {section.price_suffix && <span className="text-gray-600 text-base font-normal">{section.price_suffix}</span>}
+                </p>
+                
+                {section.packages && section.packages.length > 0 && (
+                  <>
+                    <p className="text-gray-600 text-sm mb-3">Package</p>
+                    <div className="flex flex-wrap gap-2.5">
+                      {section.packages.filter(Boolean).map((pkg, i) => (
+                        <button 
+                          key={i}
+                          className="px-4 py-1.5 rounded-[20px] border border-gray-400/50 bg-[#f8b4c4] text-black text-[15px] hover:bg-[#f59eaf] hover:scale-105 transition-all duration-200 shadow-sm"
+                        >
+                          {pkg}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const OnStage = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
+
+  // Settings from CMS
+  const { data: pageSettings } = useOnStageSettings();
 
   useEffect(() => {
     const hasSeenModal = sessionStorage.getItem("hasSeenWelcomeModal");
@@ -449,17 +596,21 @@ const OnStage = () => {
   const processTitleRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
 
-  const { data: heroBanners = [] } = useBanners("hero");
-  const { data: portraitHeroBanners = [] } = useBanners("portrait-hero");
-
-  const { data: processBanners = [] } = useBanners("process");
+  // We no longer use useBanners for these since we have a dedicated CMS
+  // const { data: heroBanners = [] } = useBanners("hero");
+  // const { data: portraitHeroBanners = [] } = useBanners("portrait-hero");
+  // const { data: processBanners = [] } = useBanners("process");
+  
+  // Settings from CMS
+  // (already defined above)
 
   const activeRealIndex = useMemo(() => {
-    if (processBanners.length <= 1) return 0;
-    if (currentIndex === 0) return processBanners.length - 1;
-    if (currentIndex === processBanners.length + 1) return 0;
+    const totalImages = pageSettings?.carousel_images?.length || 6;
+    if (totalImages <= 1) return 0;
+    if (currentIndex === 0) return totalImages - 1;
+    if (currentIndex === totalImages + 1) return 0;
     return currentIndex - 1;
-  }, [currentIndex, processBanners.length]);
+  }, [currentIndex, pageSettings?.carousel_images]);
 
   useEffect(() => {
     if (!isTransitionEnabled) {
@@ -472,9 +623,10 @@ const OnStage = () => {
     }
   }, [isTransitionEnabled]);
 
-  // Process banner auto-slide timer
+  // Carousel auto-slide timer (if you want to keep the processTitle animation logic)
   useEffect(() => {
-    if (processBanners.length <= 1) return;
+    const totalImages = pageSettings?.carousel_images?.length || 6;
+    if (totalImages <= 1) return;
 
     // GSAP animation for process title
     if (processTitleRef.current) {
@@ -490,7 +642,7 @@ const OnStage = () => {
       setCurrentIndex((prev) => prev + 1);
     }, 8000);
     return () => clearInterval(interval);
-  }, [processBanners.length, activeRealIndex]);
+  }, [pageSettings?.carousel_images?.length, activeRealIndex]);
 
   // Hero section fade-in animation
   useEffect(() => {
@@ -548,26 +700,14 @@ const OnStage = () => {
 
       {/* Hero Section */}
       <section ref={heroSectionRef} className="w-full flex flex-col bg-black">
-        <img
-          src="/images/heroBanner/homeBannerHeader.webp"
-          alt="The most iconic content wins awards & rewards"
-          className="w-full max-h-[10vh] object-contain"
-          fetchPriority="high"
-          loading="eager"
-          decoding="sync"
-          width={1920}
-          height={108}
-        />
         <Link
-          to="/booking"
+          to={pageSettings?.hero_button_link || "/booking"}
           className="w-full h-[75vh] relative group cursor-pointer overflow-hidden block"
         >
           {/* Mobile Banner */}
           <img
             src={
-              portraitHeroBanners.length > 0
-                ? portraitHeroBanners[0].image_url
-                : "/images/heroBanner/NewHeroBanner.webp"
+              pageSettings?.hero_image_mobile_url || "/images/heroBanner/NewHeroBanner.webp"
             }
             alt="Become the star"
             className="absolute inset-0 w-full h-full object-cover object-center sm:hidden"
@@ -578,9 +718,7 @@ const OnStage = () => {
           {/* Desktop Banner */}
           <img
             src={
-              heroBanners.length > 0
-                ? heroBanners[0].image_url
-                : "/images/heroBanner/LandscapeHeroBanner.webp"
+              pageSettings?.hero_image_url || "/images/heroBanner/LandscapeHeroBanner.webp"
             }
             alt="Become the star"
             className="absolute inset-0 w-full h-full object-cover object-center hidden sm:block"
@@ -595,57 +733,32 @@ const OnStage = () => {
           <div className="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10 pointer-events-none opacity-95 hover:p-5 ">
             <div className="bg-white rounded-full min-w-[200px]  px-10 py-2 flex flex-col items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.15)] transform transition-transform group-hover:scale-105">
               <span className="text-[#ff6b9d] font-black text-sm md:text-xl tracking-[0.2em] leading-tight ">
-                BECOME THE
+                {pageSettings?.hero_button_text_1 || "BECOME THE"}
               </span>
               <span className="text-[#ff6b9d] font-black text-sm md:text-xl tracking-[0.1em] leading-tight">
-                ★ STAR ★
+                {pageSettings?.hero_button_text_2 || "★ STAR ★"}
               </span>
             </div>
           </div>
         </Link>
       </section>
-      <div className="block w-full bg-black hover:bg-neutral-900 transition-colors duration-300 border-t border-neutral-800">
-        <div className="w-full py-4 md:py-0 md:h-[15vh] h-[15hv] flex md:flex-row items-center justify-center gap-6 md:gap-12 px-4">
-          {/* Left Text: VIP STAR */}
-          <div className="flex items-center gap-3 text-white font-serif font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tighter">
-            <span className="text-5xl md:text-6xl lg:text-7xl pb-2">★</span>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl md:text-4xl lg:text-5xl">VIP</span>
-              <span className="text-3xl md:text-4xl lg:text-5xl">STAR</span>
-            </div>
-          </div>
 
-          {/* Right Text: Rewards info */}
-          <div className="flex flex-col items-center text-center">
-            <p className="text-pink-400 font-black text-base md:text-md lg:text-xl mb-0.5">
-              POST.SHINE.WIN.
-            </p>
-            <Link
-              to="/booking"
-              className="flex flex-col bg-pink-400 px-5 py-1 rounded-full hover:bg-pink-500 hover:px-5.5 hover:py-1.5"
-            >
-              <span className="text-black font-black text-sm md:text-md lg:text-xl uppercase tracking-wide leading-tight">
-                WINS AWARDS &
-              </span>
-              <span className="text-black font-black text-sm md:text-md lg:text-xl uppercase tracking-wide leading-tight">
-                REWARDS UP TO 599K
-              </span>
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* Image Carousel Section */}
+      <SimpleImageCarousel images={pageSettings?.carousel_images || []} />
 
       {/* Ticket Banner */}
-      <div className="w-full py-8  mt-2 flex flex-col items-center  justify-center px-4 sm:px-6">
+      <div className="w-full py-8 flex flex-col items-center justify-center px-4 sm:px-6">
         {/* Ticket Header Title */}
         <div className="text-center mb-4 lg:mb-6 px-4 relative z-20">
           <h2 className="text-xl md:text-3xl lg:text-5xl font-black tracking-tighter text-black uppercase pb-2">
-            GET YOUR <span className="text-pink-400">TIKET</span> NOW
+            {pageSettings?.ticket_banner_title || (
+              <>GET YOUR <span className="text-pink-400">TIKET</span> NOW</>
+            )}
           </h2>
         </div>
         <Link to="/booking">
           <img
-            src="/images/landing/TICKET BOARD ENTRANCE website.webp"
+            src={pageSettings?.ticket_banner_image_url || "/images/landing/TICKET BOARD ENTRANCE website.webp"}
             alt="BE A STAR Ticket"
             className="w-full max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
             loading="lazy"
@@ -653,6 +766,9 @@ const OnStage = () => {
           />
         </Link>
       </div>
+
+      {/* Promo Package Section */}
+      <PromoPackageSection settings={pageSettings} />
 
       {/* Slider Card Product All */}
       <div className="py-7 shadow-sm">
