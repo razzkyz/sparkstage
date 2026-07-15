@@ -61,7 +61,6 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
   }, []);
 
   const today = useMemo(() => createWIBDate(toLocalDateString(currentTime)), [currentTime]);
-  const maxBookingDate = useMemo(() => addDays(today, bookingWindowDays), [bookingWindowDays, today]);
   const extractDateOnly = (value: string) => value.split('T')[0].split(' ')[0];
 
   const availabilityWindow = useMemo(() => {
@@ -69,19 +68,18 @@ export function useBookingSelectionState(params: BookingSelectionStateParams) {
 
     const ticketFromDate = extractDateOnly(ticket.available_from);
     const ticketUntilDate = extractDateOnly(ticket.available_until);
-    const maxAvailabilityDate = availabilities.reduce<string>(
-      (max, avail) => (avail.date > max ? avail.date : max),
-      ''
-    );
-
-    const effectiveUntilDate =
-      maxAvailabilityDate && maxAvailabilityDate > ticketUntilDate ? maxAvailabilityDate : ticketUntilDate;
 
     return {
       availableFrom: createWIBDate(ticketFromDate),
-      availableUntil: createWIBDate(effectiveUntilDate, '23:59:59'),
+      availableUntil: createWIBDate(ticketUntilDate, '23:59:59'),
     };
   }, [ticket, availabilities]);
+
+  const maxBookingDate = useMemo(() => {
+    const baseMaxDate = addDays(today, bookingWindowDays);
+    if (!availabilityWindow) return baseMaxDate;
+    return baseMaxDate < availabilityWindow.availableUntil ? baseMaxDate : availabilityWindow.availableUntil;
+  }, [bookingWindowDays, today, availabilityWindow]);
 
   const hasBookableDates = useMemo(() => {
     if (!availabilityWindow) return false;
