@@ -162,10 +162,30 @@ export default function DevIDCardTest() {
   const handlePrintPDF = async () => {
     if (!frontCardPdfRef.current || !backCardPdfRef.current) return;
     try {
+      // Helper: Preload image to ensure it's rendered in canvas
+      const preloadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous"; // Enable CORS
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      };
+
+      // Preload template images
+      await preloadImage(currentFront.image);
+      await preloadImage(currentBack.image);
+
+      // Small delay to ensure images are fully rendered in DOM
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // --- 1. RENDER SISI DEPAN (dengan offset kompensasi) ---
       const canvasFront = await html2canvas(frontCardPdfRef.current, {
         scale: 4,
         useCORS: true,
+        allowTaint: false,
+        logging: false,
       });
       const imgDataFront = canvasFront.toDataURL("image/png");
       const pdfFront = new jsPDF({
@@ -183,6 +203,8 @@ export default function DevIDCardTest() {
       const canvasBack = await html2canvas(backCardPdfRef.current, {
         scale: 4,
         useCORS: true,
+        allowTaint: false,
+        logging: false,
       });
       const imgDataBack = canvasBack.toDataURL("image/png");
       const pdfBack = new jsPDF({
@@ -196,7 +218,7 @@ export default function DevIDCardTest() {
       alert('✅ PDF berhasil didownload! Text di PDF sudah otomatis disesuaikan agar sesuai dengan preview.');
     } catch (err) {
       console.error("Error generating PDF:", err);
-      alert("Gagal membuat file PDF.");
+      alert("Gagal membuat file PDF. Pastikan gambar template dapat diakses dengan benar.");
     }
   };
 
@@ -354,13 +376,14 @@ export default function DevIDCardTest() {
                 <img
                   src={currentFront.image}
                   alt="Template Front"
+                  crossOrigin="anonymous"
                   className="absolute inset-0 w-full h-full"
                   style={{ borderRadius: "8px", objectFit: "fill", zIndex: 10 }}
                 />
 
                 {/* Photo Area (Di atas template) */}
                 <div
-                  className="absolute overflow-hidden flex items-center justify-center bg-white"
+                  className="absolute overflow-hidden flex items-center justify-center"
                   style={{
                     top: currentFront.photo.top,
                     left: currentFront.photo.left,
@@ -376,7 +399,7 @@ export default function DevIDCardTest() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-pink-400 text-xs text-center p-2">
+                    <div className="bg-white/50 text-pink-600 text-xs text-center p-2 rounded border-2 border-dashed border-pink-300">
                       Area Foto
                     </div>
                   )}
@@ -457,6 +480,7 @@ export default function DevIDCardTest() {
                 <img
                   src={currentBack.image}
                   alt="Template Back"
+                  crossOrigin="anonymous"
                   className="absolute inset-0 w-full h-full"
                   style={{ borderRadius: "8px", objectFit: "fill" }}
                 />
@@ -516,13 +540,14 @@ export default function DevIDCardTest() {
             <img
               src={currentFront.image}
               alt="Template Front"
+              crossOrigin="anonymous"
               className="absolute inset-0 w-full h-full"
               style={{ borderRadius: "8px", objectFit: "fill", zIndex: 10 }}
             />
 
             {/* Photo Area */}
             <div
-              className="absolute overflow-hidden flex items-center justify-center bg-white"
+              className="absolute overflow-hidden flex items-center justify-center"
               style={{
                 top: currentFront.photo.top,
                 left: currentFront.photo.left,
@@ -606,6 +631,7 @@ export default function DevIDCardTest() {
             <img
               src={currentBack.image}
               alt="Template Back"
+              crossOrigin="anonymous"
               className="absolute inset-0 w-full h-full"
               style={{ borderRadius: "8px", objectFit: "fill" }}
             />
