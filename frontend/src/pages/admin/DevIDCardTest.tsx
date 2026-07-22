@@ -11,30 +11,36 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 // ============================================================
-// TEMPLATE CONFIG — Sesuaikan koordinat di sini saat ganti template
+// PDF OFFSET COMPENSATION
 // ============================================================
-// TEMPLATE CONFIG — Gunakan Piksel (px) untuk presisi PDF
-// Canvas Size: 324px (Lebar) x 204px (Tinggi)
-// ============================================================
+// Koordinat ini HANYA dipakai saat generate PDF untuk kompensasi rendering
+// Preview tetap menggunakan koordinat asli dari template
+const PDF_OFFSET = {
+  name: -4,    // Preview di template: 87px → PDF: 87-4 = 83px
+  zodiac: -4,  // Preview di template: 115px → PDF: 115-4 = 111px
+  hobby: -4,   // Preview di template: 143px → PDF: 143-4 = 139px
+};
+
+// TEMPLATE CONFIG FALLBACK (jika tidak ada template dari database)
 const TEMPLATE_FRONT = {
   image: "/images/templates/card-front.png",
   photo: { top: "22px", left: "20px", width: "125px", height: "160px" },
   name: {
-    top: "92px",
+    top: "87px",  // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "12px",
     color: "#c2185b",
   },
   zodiac: {
-    top: "124px",
+    top: "115px",  // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "11px",
     color: "#c2185b",
   },
   hobby: {
-    top: "155px",
+    top: "143px",  // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "11px",
@@ -62,14 +68,20 @@ export default function DevIDCardTest() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [processedImg, setProcessedImg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
   const { signOut } = useAuth();
   const menuSections = useAdminMenuSections();
 
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
+  // Ref untuk preview (tampilan yang dilihat user)
   const frontCardRef = useRef<HTMLDivElement>(null);
   const backCardRef = useRef<HTMLDivElement>(null);
+  
+  // Ref untuk PDF (dengan offset kompensasi, hidden)
+  const frontCardPdfRef = useRef<HTMLDivElement>(null);
+  const backCardPdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -96,6 +108,29 @@ export default function DevIDCardTest() {
   const currentBack = activeTemplate
     ? { image: activeTemplate.back_image_url, ...activeTemplate.config_back }
     : TEMPLATE_BACK;
+
+  // Helper: Hitung koordinat dengan offset untuk PDF
+  const getPdfCoordinate = (originalPx: string, offsetPx: number): string => {
+    const num = parseInt(originalPx);
+    return `${num + offsetPx}px`;
+  };
+
+  // Koordinat untuk PDF (dengan kompensasi offset)
+  const pdfFront = {
+    ...currentFront,
+    name: {
+      ...currentFront.name,
+      top: getPdfCoordinate(currentFront.name.top, PDF_OFFSET.name),
+    },
+    zodiac: {
+      ...currentFront.zodiac,
+      top: getPdfCoordinate(currentFront.zodiac.top, PDF_OFFSET.zodiac),
+    },
+    hobby: {
+      ...currentFront.hobby,
+      top: getPdfCoordinate(currentFront.hobby.top, PDF_OFFSET.hobby),
+    },
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,10 +160,10 @@ export default function DevIDCardTest() {
   };
 
   const handlePrintPDF = async () => {
-    if (!frontCardRef.current || !backCardRef.current) return;
+    if (!frontCardPdfRef.current || !backCardPdfRef.current) return;
     try {
-      // --- 1. RENDER SISI DEPAN ---
-      const canvasFront = await html2canvas(frontCardRef.current, {
+      // --- 1. RENDER SISI DEPAN (dengan offset kompensasi) ---
+      const canvasFront = await html2canvas(frontCardPdfRef.current, {
         scale: 4,
         useCORS: true,
       });
@@ -144,8 +179,8 @@ export default function DevIDCardTest() {
       // Delay 1.5 detik agar browser tidak memblokir download kedua
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // --- 2. RENDER SISI BELAKANG ---
-      const canvasBack = await html2canvas(backCardRef.current, {
+      // --- 2. RENDER SISI BELAKANG (dengan offset kompensasi) ---
+      const canvasBack = await html2canvas(backCardPdfRef.current, {
         scale: 4,
         useCORS: true,
       });
@@ -157,6 +192,8 @@ export default function DevIDCardTest() {
       });
       pdfBack.addImage(imgDataBack, "PNG", 0, 0, 85.6, 54);
       pdfBack.save(`ID-Card-${serial}-BELAKANG.pdf`);
+      
+      alert('✅ PDF berhasil didownload! Text di PDF sudah otomatis disesuaikan agar sesuai dengan preview.');
     } catch (err) {
       console.error("Error generating PDF:", err);
       alert("Gagal membuat file PDF.");
@@ -258,7 +295,7 @@ export default function DevIDCardTest() {
             </div>
 
             <h3 className="text-lg font-semibold text-neutral-800 pt-4 border-t">
-              2. Upload Foto
+              3. Upload Foto
             </h3>
 
             <div>
@@ -287,6 +324,13 @@ export default function DevIDCardTest() {
               >
                 📄 Unduh PDF Depan + Belakang
               </button>
+              
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-800">
+                  💡 <strong>Preview</strong> menampilkan koordinat asli dari template.<br/>
+                  <strong>PDF</strong> otomatis disesuaikan agar hasil print sesuai dengan preview.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -338,7 +382,7 @@ export default function DevIDCardTest() {
                   )}
                 </div>
 
-                {/* Layer 3: Text */}
+                {/* Layer 3: Text - PREVIEW (Koordinat Asli dari Template) */}
                 {/* Name */}
                 <div
                   className="absolute font-bold whitespace-nowrap"
@@ -348,7 +392,9 @@ export default function DevIDCardTest() {
                     width: currentFront.name.width,
                     fontSize: currentFront.name.fontSize,
                     color: currentFront.name.color,
-                    lineHeight: 'normal',
+                    lineHeight: '1',
+                    padding: 0,
+                    margin: 0,
                     zIndex: 30,
                   }}
                 >
@@ -364,7 +410,9 @@ export default function DevIDCardTest() {
                     width: currentFront.zodiac.width,
                     fontSize: currentFront.zodiac.fontSize,
                     color: currentFront.zodiac.color,
-                    lineHeight: 'normal',
+                    lineHeight: '1',
+                    padding: 0,
+                    margin: 0,
                     zIndex: 30,
                   }}
                 >
@@ -380,7 +428,9 @@ export default function DevIDCardTest() {
                     width: currentFront.hobby.width,
                     fontSize: currentFront.hobby.fontSize,
                     color: currentFront.hobby.color,
-                    lineHeight: 'normal',
+                    lineHeight: '1',
+                    padding: 0,
+                    margin: 0,
                     zIndex: 30,
                   }}
                 >
@@ -420,7 +470,9 @@ export default function DevIDCardTest() {
                     width: currentBack.serial.width,
                     fontSize: currentBack.serial.fontSize,
                     color: currentBack.serial.color,
-                    lineHeight: 'normal',
+                    lineHeight: '1',
+                    padding: 0,
+                    margin: 0,
                   }}
                 >
                   {serial}
@@ -445,6 +497,152 @@ export default function DevIDCardTest() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* ========== HIDDEN PDF RENDER (dengan offset kompensasi) ========== */}
+        <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
+          {/* SISI DEPAN - PDF */}
+          <div
+            ref={frontCardPdfRef}
+            className="shadow-xl relative overflow-hidden"
+            style={{
+              width: "324px",
+              height: "204px",
+              borderRadius: "8px",
+            }}
+          >
+            <img
+              src={currentFront.image}
+              alt="Template Front"
+              className="absolute inset-0 w-full h-full"
+              style={{ borderRadius: "8px", objectFit: "fill", zIndex: 10 }}
+            />
+
+            {/* Photo Area */}
+            <div
+              className="absolute overflow-hidden flex items-center justify-center bg-white"
+              style={{
+                top: currentFront.photo.top,
+                left: currentFront.photo.left,
+                width: currentFront.photo.width,
+                height: currentFront.photo.height,
+                zIndex: 20,
+              }}
+            >
+              {processedImg || imageSrc ? (
+                <img
+                  src={processedImg || imageSrc || ""}
+                  alt="Customer"
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
+            </div>
+
+            {/* Text dengan OFFSET KOMPENSASI untuk PDF */}
+            <div
+              className="absolute font-bold whitespace-nowrap"
+              style={{
+                top: pdfFront.name.top,
+                left: pdfFront.name.left,
+                width: pdfFront.name.width,
+                fontSize: pdfFront.name.fontSize,
+                color: pdfFront.name.color,
+                lineHeight: '1',
+                padding: 0,
+                margin: 0,
+                zIndex: 30,
+              }}
+            >
+              {name}
+            </div>
+
+            <div
+              className="absolute font-semibold whitespace-nowrap"
+              style={{
+                top: pdfFront.zodiac.top,
+                left: pdfFront.zodiac.left,
+                width: pdfFront.zodiac.width,
+                fontSize: pdfFront.zodiac.fontSize,
+                color: pdfFront.zodiac.color,
+                lineHeight: '1',
+                padding: 0,
+                margin: 0,
+                zIndex: 30,
+              }}
+            >
+              {zodiac}
+            </div>
+
+            <div
+              className="absolute font-semibold whitespace-nowrap"
+              style={{
+                top: pdfFront.hobby.top,
+                left: pdfFront.hobby.left,
+                width: pdfFront.hobby.width,
+                fontSize: pdfFront.hobby.fontSize,
+                color: pdfFront.hobby.color,
+                lineHeight: '1',
+                padding: 0,
+                margin: 0,
+                zIndex: 30,
+              }}
+            >
+              {hobby}
+            </div>
+          </div>
+
+          {/* SISI BELAKANG - PDF */}
+          <div
+            ref={backCardPdfRef}
+            className="shadow-xl relative overflow-hidden"
+            style={{
+              width: "324px",
+              height: "204px",
+              borderRadius: "8px",
+            }}
+          >
+            <img
+              src={currentBack.image}
+              alt="Template Back"
+              className="absolute inset-0 w-full h-full"
+              style={{ borderRadius: "8px", objectFit: "fill" }}
+            />
+
+            <div
+              className="absolute text-center font-mono font-bold whitespace-nowrap"
+              style={{
+                bottom: currentBack.serial.bottom,
+                right: currentBack.serial.right,
+                width: currentBack.serial.width,
+                fontSize: currentBack.serial.fontSize,
+                color: currentBack.serial.color,
+                lineHeight: '1',
+                padding: 0,
+                margin: 0,
+              }}
+            >
+              {serial}
+            </div>
+
+            <div
+              className="absolute flex items-center justify-center"
+              style={{
+                bottom: currentBack.barcode.bottom,
+                right: currentBack.barcode.right,
+                width: currentBack.barcode.width,
+                height: currentBack.barcode.height,
+              }}
+            >
+              <Barcode
+                value={serial || "000000"}
+                width={0.8}
+                height={22}
+                displayValue={false}
+                margin={0}
+                background="transparent"
+              />
             </div>
           </div>
         </div>
