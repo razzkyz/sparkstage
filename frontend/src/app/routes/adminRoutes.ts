@@ -84,6 +84,9 @@ const AdminPointsManager = lazy(
   () => import("../../pages/admin/AdminPointsManager"),
 );
 
+const DevIDCardTest = lazy(() => import("../../pages/admin/DevIDCardTest"));
+const IDCardTemplateManager = lazy(() => import("../../pages/admin/IDCardTemplateManager"));
+
 const RetailProductManager = lazy(
   () => import("../../pages/admin/RetailProductManager"),
 );
@@ -179,4 +182,6 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/product-qr-catalog", Page: ProductQRCatalog },
   { path: "/admin/dressing", Page: DressingShop },
   { path: "/admin/category-sales", Page: CategorySalesPage },
+  { path: "/admin/dev-id-card-test", Page: DevIDCardTest },
+  { path: "/admin/id-card-templates", Page: IDCardTemplateManager },
 ];

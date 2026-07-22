@@ -556,6 +556,19 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
         icon: "apartment",
         path: "/admin/divisions",
       },
+      {
+        id: "dev-id-card-test",
+        label: "ID Card Print Test",
+        icon: "badge",
+        path: "/admin/dev-id-card-test",
+        highlight: true,
+      },
+      {
+        id: "id-card-templates",
+        label: "ID Card Templates",
+        icon: "style",
+        path: "/admin/id-card-templates",
+      },
     ],
   },
   {
