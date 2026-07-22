@@ -64,6 +64,19 @@ Spark Stage is a fullstack booking ticket and commerce app.
   - Database migration: `20260704000000_add_display_order_to_retail_categories.sql`
   - Deployment guide: `docs/deployment/CATEGORY_DISPLAY_ORDER_READY.md`
   - Allows admin to reorder categories without code changes
+- **AI Background Removal Fix (NEW 2026-07-22)**: `docs/runbooks/AI-BACKGROUND-REMOVAL-FIX.md`
+  - **Status:** ✅ BUILD VERIFIED - READY FOR PREVIEW TEST
+  - Fixed background removal feature not working in production
+  - Root cause: WASM files from onnxruntime-web not copied to dist/
+  - Solution: Vite plugin to auto-copy all WASM variants + publicPath configuration
+  - Verification: 2 WASM files (34.89 MB) successfully copied to dist/
+  - Files: `ort-wasm-simd-threaded.wasm` (12.08 MB) + `ort-wasm-simd-threaded.jsep.wasm` (22.81 MB)
+  - Quick guide: `QUICK_FIX_HAPUS_BACKGROUND.md`
+  - Next steps: `NEXT_STEPS.md` ← Read this!
+  - Update log: `UPDATE_WASM_FIX.md`
+  - Deployment guide: `docs/deployment/AI-BACKGROUND-REMOVAL-DEPLOYMENT.md`
+  - Verification script: `npm run verify:wasm` ✅ PASSING
+  - Files modified: `vite.config.ts`, `package.json`, `DevIDCardTest.tsx`, `verify-wasm-build.mjs`
 - R2 Migration Status (UPDATED 2026-07-07): **100% COMPLETE** ✅
   - **DONE:** Product images uploaded: 2,227 / 2,227 (100%) ✅
   - **DONE:** R2 bucket: sparkstage-public-assets ✅

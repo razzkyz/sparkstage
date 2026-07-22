@@ -146,14 +146,42 @@ export default function DevIDCardTest() {
     setIsProcessing(true);
     try {
       // AI Proses Lokal di Browser
+      // Library @imgly/background-removal will auto-detect WASM files
+      // Just pass empty config to use defaults
+      console.log('🎨 Starting background removal...');
+      console.log('📍 Current location:', window.location.href);
+      console.log('🔍 Base URL:', document.baseURI);
+      
+      // Try without explicit config first - let library auto-detect
       const imageBlob = await removeBackground(imageSrc);
+      
       const url = URL.createObjectURL(imageBlob);
       setProcessedImg(url);
+      console.log('✅ Background removal successful!');
     } catch (error) {
-      console.error("Error removing background:", error);
-      alert(
-        "Gagal memproses AI. Pastikan file bukan format HEIC atau terlalu besar.",
-      );
+      console.error("❌ Error removing background:", error);
+      console.error("Error details:", error instanceof Error ? error.message : error);
+      
+      // Show more helpful error message
+      let errorMsg = "Gagal memproses AI. ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('JSON') || error.message.includes('Unexpected token')) {
+          errorMsg += "Error loading WASM files or config. Make sure WASM files are in dist/ root.\n\n";
+          errorMsg += "Try: Check browser Network tab for failed requests.\n\n";
+        } else if (error.message.includes('fetch') || error.message.includes('network')) {
+          errorMsg += "Network error. Check if WASM files are accessible.\n\n";
+        } else if (error.message.includes('HEIC')) {
+          errorMsg += "File format not supported. Please use JPEG or PNG.\n\n";
+        } else {
+          errorMsg += "Unknown error. Check browser console for details.\n\n";
+        }
+        errorMsg += "Technical detail: " + error.message;
+      } else {
+        errorMsg += String(error);
+      }
+      
+      alert(errorMsg);
     } finally {
       setIsProcessing(false);
     }

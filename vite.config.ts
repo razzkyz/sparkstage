@@ -2,12 +2,49 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import fs from 'fs'
 
-// https://vite.dev/config/
 export default defineConfig({
   root: path.resolve(__dirname, './frontend'),
   envDir: path.resolve(__dirname, '.'),
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(), 
+    tailwindcss(),
+    // Plugin to copy ONNX runtime WASM files to dist
+    {
+      name: 'copy-onnx-wasm',
+      writeBundle() {
+        const sourceDir = path.resolve(__dirname, 'node_modules/onnxruntime-web/dist')
+        const targetDir = path.resolve(__dirname, 'dist')
+        
+        if (fs.existsSync(sourceDir)) {
+          // Copy all WASM files (including variants like .jsep.wasm)
+          const allFiles = fs.readdirSync(sourceDir)
+          const wasmFiles = allFiles.filter(f => f.endsWith('.wasm'))
+          const mjsFiles = allFiles.filter(f => f.endsWith('.mjs') && f.includes('ort'))
+          
+          const filesToCopy = [...wasmFiles, ...mjsFiles]
+          
+          filesToCopy.forEach(file => {
+            const source = path.join(sourceDir, file)
+            const target = path.join(targetDir, file)
+            try {
+              fs.copyFileSync(source, target)
+              const stats = fs.statSync(target)
+              const sizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
+              console.log(`✅ Copied ${file} (${sizeInMB} MB)`)
+            } catch (err) {
+              console.error(`❌ Failed to copy ${file}:`, err)
+            }
+          })
+          
+          console.log(`📦 Total ONNX files copied: ${filesToCopy.length}`)
+        } else {
+          console.error('❌ ONNX Runtime Web source directory not found!')
+        }
+      }
+    }
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './frontend/src')
@@ -17,6 +54,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     outDir: path.resolve(__dirname, './dist'),
     emptyOutDir: true,
+    assetsInlineLimit: 0, // Don't inline WASM files
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -66,6 +104,24 @@ export default defineConfig({
         },
       },
     },
+  },
+  // Configure server to properly handle WASM files
+  server: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
+  // Configure preview server (for npm run preview)
+  preview: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
+  // Optimize deps to include onnxruntime-web
+  optimizeDeps: {
+    exclude: ['onnxruntime-web'], // Don't pre-bundle, needs WASM files
   },
   test: {
     globals: true,

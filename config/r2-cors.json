@@ -15,7 +15,8 @@
         "*"
       ],
       "ExposeHeaders": [
-        "ETag"
+        "ETag",
+        "Access-Control-Allow-Origin"
       ],
       "MaxAgeSeconds": 3600
     }
