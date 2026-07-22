@@ -145,37 +145,53 @@ export default function DevIDCardTest() {
     if (!imageSrc) return;
     setIsProcessing(true);
     try {
-      // AI Proses Lokal di Browser
-      // Library @imgly/background-removal will auto-detect WASM files
-      // Just pass empty config to use defaults
       console.log('🎨 Starting background removal...');
-      console.log('📍 Current location:', window.location.href);
-      console.log('🔍 Base URL:', document.baseURI);
+      console.log('📍 Environment:', {
+        isDev: import.meta.env.DEV,
+        isProd: import.meta.env.PROD,
+        mode: import.meta.env.MODE,
+        baseUrl: import.meta.env.BASE_URL,
+        origin: window.location.origin,
+      });
       
-      // Try without explicit config first - let library auto-detect
-      const imageBlob = await removeBackground(imageSrc);
+      // Configure library with explicit publicPath for production
+      const config = {
+        publicPath: window.location.origin + '/',
+        debug: import.meta.env.DEV,
+      };
+      
+      console.log('🔧 Config:', config);
+      console.log('🚀 Calling removeBackground...');
+      
+      const imageBlob = await removeBackground(imageSrc, config);
       
       const url = URL.createObjectURL(imageBlob);
       setProcessedImg(url);
       console.log('✅ Background removal successful!');
     } catch (error) {
       console.error("❌ Error removing background:", error);
-      console.error("Error details:", error instanceof Error ? error.message : error);
+      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
       
       // Show more helpful error message
       let errorMsg = "Gagal memproses AI. ";
       
       if (error instanceof Error) {
-        if (error.message.includes('JSON') || error.message.includes('Unexpected token')) {
-          errorMsg += "Error loading WASM files or config. Make sure WASM files are in dist/ root.\n\n";
-          errorMsg += "Try: Check browser Network tab for failed requests.\n\n";
-        } else if (error.message.includes('fetch') || error.message.includes('network')) {
-          errorMsg += "Network error. Check if WASM files are accessible.\n\n";
-        } else if (error.message.includes('HEIC')) {
+        const msg = error.message.toLowerCase();
+        
+        if (msg.includes('wasm') || msg.includes('backend')) {
+          errorMsg += "WASM files tidak dapat diakses. Pastikan deployment include WASM files di root.\n\n";
+        } else if (msg.includes('cross-origin') || msg.includes('cors')) {
+          errorMsg += "CORS error. Pastikan server headers sudah benar.\n\n";
+        } else if (msg.includes('json') || msg.includes('unexpected token')) {
+          errorMsg += "Konfigurasi error. Check WASM file paths.\n\n";
+        } else if (msg.includes('fetch') || msg.includes('network')) {
+          errorMsg += "Network error. Check internet connection.\n\n";
+        } else if (msg.includes('heic')) {
           errorMsg += "File format not supported. Please use JPEG or PNG.\n\n";
         } else {
           errorMsg += "Unknown error. Check browser console for details.\n\n";
         }
+        
         errorMsg += "Technical detail: " + error.message;
       } else {
         errorMsg += String(error);
