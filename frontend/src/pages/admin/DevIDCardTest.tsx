@@ -146,24 +146,11 @@ export default function DevIDCardTest() {
     setIsProcessing(true);
     try {
       console.log('🎨 Starting background removal...');
-      console.log('📍 Environment:', {
-        isDev: import.meta.env.DEV,
-        isProd: import.meta.env.PROD,
-        mode: import.meta.env.MODE,
-        baseUrl: import.meta.env.BASE_URL,
-        origin: window.location.origin,
-      });
+      console.log('📍 Current location:', window.location.href);
       
-      // Configure library with explicit publicPath for production
-      const config = {
-        publicPath: window.location.origin + '/',
-        debug: import.meta.env.DEV,
-      };
-      
-      console.log('🔧 Config:', config);
-      console.log('🚀 Calling removeBackground...');
-      
-      const imageBlob = await removeBackground(imageSrc, config);
+      // No need to set publicPath - WASM files are in public/ folder
+      // Vite will serve them from root automatically
+      const imageBlob = await removeBackground(imageSrc);
       
       const url = URL.createObjectURL(imageBlob);
       setProcessedImg(url);
@@ -179,20 +166,16 @@ export default function DevIDCardTest() {
         const msg = error.message.toLowerCase();
         
         if (msg.includes('wasm') || msg.includes('backend')) {
-          errorMsg += "WASM files tidak dapat diakses. Pastikan deployment include WASM files di root.\n\n";
+          errorMsg += "WASM files tidak dapat diakses.\n\n";
         } else if (msg.includes('cross-origin') || msg.includes('cors')) {
-          errorMsg += "CORS error. Pastikan server headers sudah benar.\n\n";
-        } else if (msg.includes('json') || msg.includes('unexpected token')) {
-          errorMsg += "Konfigurasi error. Check WASM file paths.\n\n";
-        } else if (msg.includes('fetch') || msg.includes('network')) {
-          errorMsg += "Network error. Check internet connection.\n\n";
+          errorMsg += "CORS error. Check server headers.\n\n";
         } else if (msg.includes('heic')) {
-          errorMsg += "File format not supported. Please use JPEG or PNG.\n\n";
+          errorMsg += "File format not supported. Use JPEG or PNG.\n\n";
         } else {
-          errorMsg += "Unknown error. Check browser console for details.\n\n";
+          errorMsg += "Unknown error.\n\n";
         }
         
-        errorMsg += "Technical detail: " + error.message;
+        errorMsg += "Detail: " + error.message;
       } else {
         errorMsg += String(error);
       }
