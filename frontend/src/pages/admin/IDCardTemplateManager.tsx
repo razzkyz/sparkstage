@@ -36,7 +36,7 @@ export default function IDCardTemplateManager() {
       front_image_url: '',
       back_image_url: '',
       config_front: {
-        photo: { top: '22px', left: '20px', width: '125px', height: '160px' },
+        photo: { top: '22px', left: '20px', width: '125px', height: '160px', borderRadius: '0px' },
         name:  { top: '92px', left: '175px', width: '130px', fontSize: '12px', color: '#c2185b' },
         zodiac:{ top: '124px', left: '175px', width: '130px', fontSize: '11px', color: '#c2185b' },
         hobby: { top: '155px', left: '175px', width: '130px', fontSize: '11px', color: '#c2185b' }
@@ -173,6 +173,10 @@ export default function IDCardTemplateManager() {
                         <input type="text" value={formData.config_front.photo.width} onChange={e => updateConfigFront('photo', 'width', e.target.value)} placeholder="Width" className="w-full px-2 py-1 text-sm border rounded" />
                         <input type="text" value={formData.config_front.photo.height} onChange={e => updateConfigFront('photo', 'height', e.target.value)} placeholder="Height" className="w-full px-2 py-1 text-sm border rounded" />
                       </div>
+                      <div className="mt-2">
+                        <label className="block text-xs text-pink-500 mb-1">Rounded Corner (0px = kotak, 10px = sedikit melengkung, 50% = bulat penuh)</label>
+                        <input type="text" value={formData.config_front.photo.borderRadius} onChange={e => updateConfigFront('photo', 'borderRadius', e.target.value)} placeholder="0px" className="w-full px-2 py-1 text-sm border rounded" />
+                      </div>
                     </div>
 
                     <div>
@@ -239,7 +243,7 @@ export default function IDCardTemplateManager() {
                   {formData.front_image_url && <img src={formData.front_image_url} alt="Bg" className="absolute inset-0 w-full h-full object-fill z-10" />}
                   
                   {/* Photo mock */}
-                  <div className="absolute bg-gray-300 flex items-center justify-center text-xs text-gray-500 z-20" style={formData.config_front.photo}>Foto</div>
+                  <div className="absolute bg-gray-300 flex items-center justify-center text-xs text-gray-500 z-20 overflow-hidden" style={formData.config_front.photo}>Foto</div>
                   
                   <div className="absolute font-bold whitespace-nowrap z-30" style={{...formData.config_front.name, lineHeight: 'normal'}}>Nama Customer</div>
                   <div className="absolute font-semibold whitespace-nowrap z-30" style={{...formData.config_front.zodiac, lineHeight: 'normal'}}>Zodiak</div>

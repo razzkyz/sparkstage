@@ -24,7 +24,7 @@ const PDF_OFFSET = {
 // TEMPLATE CONFIG FALLBACK (jika tidak ada template dari database)
 const TEMPLATE_FRONT = {
   image: "/images/templates/card-front.png",
-  photo: { top: "22px", left: "20px", width: "125px", height: "160px" },
+  photo: { top: "22px", left: "20px", width: "125px", height: "160px", borderRadius: "0px" },
   name: {
     top: "87px",  // Koordinat asli untuk preview
     left: "175px",
@@ -389,6 +389,7 @@ export default function DevIDCardTest() {
                     left: currentFront.photo.left,
                     width: currentFront.photo.width,
                     height: currentFront.photo.height,
+                    borderRadius: currentFront.photo.borderRadius || '0px',
                     zIndex: 20, // Layer atas
                   }}
                 >
@@ -553,6 +554,7 @@ export default function DevIDCardTest() {
                 left: currentFront.photo.left,
                 width: currentFront.photo.width,
                 height: currentFront.photo.height,
+                borderRadius: currentFront.photo.borderRadius || '0px',
                 zIndex: 20,
               }}
             >
