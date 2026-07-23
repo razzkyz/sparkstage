@@ -107,17 +107,9 @@ export default defineConfig({
   },
   // Configure server to properly handle WASM files
   server: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
   },
   // Configure preview server (for npm run preview)
   preview: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
   },
   // Optimize deps to include onnxruntime-web
   optimizeDeps: {
