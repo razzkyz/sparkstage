@@ -90,7 +90,7 @@ export function ProductCSVImportModal({
 
       // Ambil daftar slug produk yang sudah ada untuk fitur UPSERT (Update/Insert)
       // Menggunakan paginasi karena limit default Supabase adalah 1000 baris
-      let allExistingProducts: { id: number; slug: string }[] = [];
+      let allExistingProducts: { id: number; slug: string; product_variants: { sku: string; stock: number }[] }[] = [];
       let page = 0;
       const pageSize = 1000;
       let hasMore = true;
@@ -98,7 +98,7 @@ export function ProductCSVImportModal({
       while (hasMore) {
         const { data, error } = await supabase
           .from('products')
-          .select('id, slug')
+          .select('id, slug, product_variants(sku, stock)')
           .is('deleted_at', null)
           .range(page * pageSize, (page + 1) * pageSize - 1);
           
@@ -118,6 +118,17 @@ export function ProductCSVImportModal({
       const existingSlugMap = new Map(
         allExistingProducts.map(p => [p.slug, p.id])
       );
+
+      const existingStockMap = new Map<string, number>();
+      allExistingProducts.forEach(p => {
+        if (p.product_variants) {
+          p.product_variants.forEach((v: any) => {
+             if (v.sku) {
+               existingStockMap.set(v.sku, v.stock);
+             }
+          });
+        }
+      });
 
       let imagesToUpload = 0;
 
@@ -214,7 +225,13 @@ export function ProductCSVImportModal({
           retail_subcategory_name: p.retail_subcategory_name,
           sku: p.sku,
           is_active: p.is_active,
-          variants: p.variants,
+          variants: p.variants.map(v => {
+            const isInvalidStock = v.stock === "" || v.stock == null || (typeof v.stock === 'number' && isNaN(v.stock));
+            if (isInvalidStock) {
+               return { ...v, stock: existingStockMap.get(v.sku) ?? 0 };
+            }
+            return v;
+          }),
           image_urls: p.image_urls,
         };
 

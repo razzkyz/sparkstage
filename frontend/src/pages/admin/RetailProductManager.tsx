@@ -184,7 +184,6 @@ export default function RetailProductManager() {
           slug: row.Slug,
           description: row.Description || null,
           price: row.Price || 0,
-          stock: row.Stock || 0,
           weight: row.Weight || 0,
           length: row.Length || null,
           width: row.Width || null,
@@ -196,6 +195,10 @@ export default function RetailProductManager() {
           retail_subcategory_id: row.Subcategory_ID || null,
           variant: row.Variant || null,
         };
+
+        if ((row.Stock as any) !== "" && row.Stock !== null && row.Stock !== undefined) {
+          payload.stock = row.Stock;
+        }
 
         if (row.ID) {
           payload.id = row.ID;
@@ -403,6 +406,12 @@ export default function RetailProductManager() {
       }
 
       const updates = { ...formData, image: finalImageUrl };
+
+      if (editingId && (updates.stock as any) === "") {
+        delete updates.stock;
+      } else if (!editingId && (updates.stock as any) === "") {
+        updates.stock = 0;
+      }
 
       let savedProductId = editingId;
       if (editingId) {

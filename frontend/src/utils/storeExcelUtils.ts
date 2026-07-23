@@ -335,11 +335,12 @@ export function parseStoreProductsFromFile(file: File): Promise<(ProductDraft & 
           }
 
           if (variantSku && currentProduct) {
+            const stockVal = row['stock'];
             const variant: ProductVariantDraft = {
               name: variantName || 'Default',
               sku: variantSku,
               price: String(Number(row['price']) || 0),
-              stock: Number(row['stock']) || 0,
+              stock: (stockVal !== "" && stockVal !== undefined && stockVal !== null) ? Number(stockVal) : "",
               size: String(row['size'] ?? '').trim() || undefined,
               color: String(row['color'] ?? '').trim() || undefined,
             };

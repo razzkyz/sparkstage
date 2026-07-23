@@ -223,7 +223,8 @@ export function validateInventorySavePayload(
       }
     }
 
-    if (variant.stock == null || !Number.isInteger(variant.stock) || variant.stock < 0) {
+    // stock == null means "preserve existing stock, don't update" — skip validation
+    if (variant.stock != null && (!Number.isInteger(variant.stock) || variant.stock < 0)) {
       return {
         message: `Stok variant "${variant.name}" harus berupa bilangan bulat 0 atau lebih.`,
         code: 'INVENTORY_VARIANT_STOCK_INVALID',
