@@ -16,31 +16,37 @@ import html2canvas from "html2canvas";
 // Koordinat ini HANYA dipakai saat generate PDF untuk kompensasi rendering
 // Preview tetap menggunakan koordinat asli dari template
 const PDF_OFFSET = {
-  name: -4,    // Preview di template: 87px → PDF: 87-4 = 83px
-  zodiac: -4,  // Preview di template: 115px → PDF: 115-4 = 111px
-  hobby: -4,   // Preview di template: 143px → PDF: 143-4 = 139px
+  name: -4, // Preview di template: 87px → PDF: 87-4 = 83px
+  zodiac: -4, // Preview di template: 115px → PDF: 115-4 = 111px
+  hobby: -4, // Preview di template: 143px → PDF: 143-4 = 139px
 };
 
 // TEMPLATE CONFIG FALLBACK (jika tidak ada template dari database)
 const TEMPLATE_FRONT = {
   image: "/images/templates/card-front.png",
-  photo: { top: "22px", left: "20px", width: "125px", height: "160px", borderRadius: "0px" },
+  photo: {
+    top: "22px",
+    left: "20px",
+    width: "125px",
+    height: "160px",
+    borderRadius: "0px",
+  },
   name: {
-    top: "87px",  // Koordinat asli untuk preview
+    top: "87px", // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "12px",
     color: "#c2185b",
   },
   zodiac: {
-    top: "115px",  // Koordinat asli untuk preview
+    top: "115px", // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "11px",
     color: "#c2185b",
   },
   hobby: {
-    top: "143px",  // Koordinat asli untuk preview
+    top: "143px", // Koordinat asli untuk preview
     left: "175px",
     width: "130px",
     fontSize: "11px",
@@ -68,7 +74,11 @@ export default function DevIDCardTest() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [processedImg, setProcessedImg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const { signOut } = useAuth();
   const menuSections = useAdminMenuSections();
 
@@ -78,7 +88,7 @@ export default function DevIDCardTest() {
   // Ref untuk preview (tampilan yang dilihat user)
   const frontCardRef = useRef<HTMLDivElement>(null);
   const backCardRef = useRef<HTMLDivElement>(null);
-  
+
   // Ref untuk PDF (dengan offset kompensasi, hidden)
   const frontCardPdfRef = useRef<HTMLDivElement>(null);
   const backCardPdfRef = useRef<HTMLDivElement>(null);
@@ -99,7 +109,57 @@ export default function DevIDCardTest() {
       }
     };
     fetchTemplates();
+
+    // Cleanup camera stream on unmount
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
   }, []);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
+      streamRef.current = stream;
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.");
+    }
+  };
+
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isCameraActive]);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        setImageSrc(dataUrl);
+        setProcessedImg(null);
+        stopCamera();
+      }
+    }
+  };
 
   const activeTemplate = templates.find((t) => t.id === selectedTemplateId);
   const currentFront = activeTemplate
@@ -145,41 +205,44 @@ export default function DevIDCardTest() {
     if (!imageSrc) return;
     setIsProcessing(true);
     try {
-      console.log('🎨 Starting background removal...');
-      console.log('📍 Current location:', window.location.href);
-      
+      console.log("🎨 Starting background removal...");
+      console.log("📍 Current location:", window.location.href);
+
       // No need to set publicPath - WASM files are in public/ folder
       // Vite will serve them from root automatically
       const imageBlob = await removeBackground(imageSrc);
-      
+
       const url = URL.createObjectURL(imageBlob);
       setProcessedImg(url);
-      console.log('✅ Background removal successful!');
+      console.log("✅ Background removal successful!");
     } catch (error) {
       console.error("❌ Error removing background:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
-      
+      console.error(
+        "Error stack:",
+        error instanceof Error ? error.stack : "No stack trace",
+      );
+
       // Show more helpful error message
       let errorMsg = "Gagal memproses AI. ";
-      
+
       if (error instanceof Error) {
         const msg = error.message.toLowerCase();
-        
-        if (msg.includes('wasm') || msg.includes('backend')) {
+
+        if (msg.includes("wasm") || msg.includes("backend")) {
           errorMsg += "WASM files tidak dapat diakses.\n\n";
-        } else if (msg.includes('cross-origin') || msg.includes('cors')) {
+        } else if (msg.includes("cross-origin") || msg.includes("cors")) {
           errorMsg += "CORS error. Check server headers.\n\n";
-        } else if (msg.includes('heic')) {
+        } else if (msg.includes("heic")) {
           errorMsg += "File format not supported. Use JPEG or PNG.\n\n";
         } else {
           errorMsg += "Unknown error.\n\n";
         }
-        
+
         errorMsg += "Detail: " + error.message;
       } else {
         errorMsg += String(error);
       }
-      
+
       alert(errorMsg);
     } finally {
       setIsProcessing(false);
@@ -241,11 +304,15 @@ export default function DevIDCardTest() {
       });
       pdfBack.addImage(imgDataBack, "PNG", 0, 0, 85.6, 54);
       pdfBack.save(`ID-Card-${serial}-BELAKANG.pdf`);
-      
-      alert('✅ PDF berhasil didownload! Text di PDF sudah otomatis disesuaikan agar sesuai dengan preview.');
+
+      alert(
+        "✅ PDF berhasil didownload! Text di PDF sudah otomatis disesuaikan agar sesuai dengan preview.",
+      );
     } catch (err) {
       console.error("Error generating PDF:", err);
-      alert("Gagal membuat file PDF. Pastikan gambar template dapat diakses dengan benar.");
+      alert(
+        "Gagal membuat file PDF. Pastikan gambar template dapat diakses dengan benar.",
+      );
     }
   };
 
@@ -254,22 +321,252 @@ export default function DevIDCardTest() {
       menuItems={ADMIN_MENU_ITEMS}
       menuSections={menuSections}
       defaultActiveMenuId="dev-id-card-test"
-      title="ID Card Print Test"
+      title="Cetak ID Card"
       onLogout={signOut}
     >
       <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-800">
-            DevOps: ID Card Print Test
+            Cetak ID Card
           </h1>
-          <p className="text-sm text-gray-500">
-            Eksperimen cetak ID Card untuk printer Epson L8050.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* ========== FORM CONTROLS ========== */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-neutral-200/60 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* ========== LIVE PREVIEW (Di Atas pada Mobile, Kanan pada Desktop) ========== */}
+          <div className="w-full lg:w-7/12 bg-neutral-100 p-4 sm:p-6 rounded-xl border border-neutral-200/60 flex flex-col items-center justify-start gap-8  order-1 lg:order-2">
+            {/* --- SISI DEPAN --- */}
+            <div className="w-full flex flex-col items-center">
+              <h3 className="text-sm font-semibold text-neutral-600 mb-4 w-full text-center uppercase tracking-wider">
+                🎴 Preview ID Card
+              </h3>
+
+              {/* Wrapper for responsive scaling */}
+              <div className="transform scale-[0.95] sm:scale-100 md:scale-110 xl:scale-125 origin-top mb-4 sm:mb-8 md:mb-12">
+                <div
+                  ref={frontCardRef}
+                  className="shadow-2xl relative overflow-hidden"
+                  style={{
+                    width: "324px",
+                    height: "204px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {/* Template Background Image */}
+                  <img
+                    src={currentFront.image}
+                    alt="Template Front"
+                    crossOrigin="anonymous"
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      borderRadius: "8px",
+                      objectFit: "fill",
+                      zIndex: 10,
+                    }}
+                  />
+
+                  {/* Photo Area (Di atas template) */}
+                  <div
+                    className={`absolute overflow-hidden flex items-center justify-center ${isCameraActive ? "bg-black" : ""}`}
+                    style={{
+                      top: currentFront.photo.top,
+                      left: currentFront.photo.left,
+                      width: currentFront.photo.width,
+                      height: currentFront.photo.height,
+                      borderRadius: currentFront.photo.borderRadius || "0px",
+                      zIndex: 20, // Layer atas
+                    }}
+                  >
+                    {isCameraActive ? (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                        style={{ transform: "scaleX(-1)" }}
+                      ></video>
+                    ) : processedImg || imageSrc ? (
+                      <img
+                        src={processedImg || imageSrc || ""}
+                        alt="Customer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="bg-white/50 text-pink-600 text-xs text-center w-full h-full flex items-center justify-center border-2 border-dashed border-pink-300">
+                        Area Foto
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Layer 3: Text - PREVIEW */}
+                  <div
+                    className="absolute font-bold whitespace-nowrap"
+                    style={{
+                      top: currentFront.name.top,
+                      left: currentFront.name.left,
+                      width: currentFront.name.width,
+                      fontSize: currentFront.name.fontSize,
+                      color: currentFront.name.color,
+                      lineHeight: "1",
+                      padding: 0,
+                      margin: 0,
+                      zIndex: 30,
+                    }}
+                  >
+                    {name}
+                  </div>
+                  <div
+                    className="absolute font-semibold whitespace-nowrap"
+                    style={{
+                      top: currentFront.zodiac.top,
+                      left: currentFront.zodiac.left,
+                      width: currentFront.zodiac.width,
+                      fontSize: currentFront.zodiac.fontSize,
+                      color: currentFront.zodiac.color,
+                      lineHeight: "1",
+                      padding: 0,
+                      margin: 0,
+                      zIndex: 30,
+                    }}
+                  >
+                    {zodiac}
+                  </div>
+                  <div
+                    className="absolute font-semibold whitespace-nowrap"
+                    style={{
+                      top: currentFront.hobby.top,
+                      left: currentFront.hobby.left,
+                      width: currentFront.hobby.width,
+                      fontSize: currentFront.hobby.fontSize,
+                      color: currentFront.hobby.color,
+                      lineHeight: "1",
+                      padding: 0,
+                      margin: 0,
+                      zIndex: 30,
+                    }}
+                  >
+                    {hobby}
+                  </div>
+                </div>
+              </div>
+
+              {/* === CAMERA CONTROLS DIRECTLY UNDER PREVIEW === */}
+              <div className="w-full max-w-[340px] bg-white p-4 rounded-xl shadow-md border border-neutral-200 mt-2">
+                <h3 className="text-sm font-bold text-neutral-800 mb-3 text-center">
+                  📸 Pengambilan Foto
+                </h3>
+                <div className="flex flex-col gap-3">
+                  {!isCameraActive ? (
+                    <>
+                      <button
+                        onClick={startCamera}
+                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-sm"
+                      >
+                        📷 Buka Kamera
+                      </button>
+                      <div className="text-center text-xs text-neutral-400 font-medium">
+                        ATAU UPLOAD FILE
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                      />
+                    </>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={capturePhoto}
+                        className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-bold shadow-md text-sm"
+                      >
+                        📸 AMBIL FOTO
+                      </button>
+                      <button
+                        onClick={stopCamera}
+                        className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors font-bold shadow-md text-sm"
+                      >
+                        BATAL
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Background Removal - Pindah ke bawah Pengambilan Foto */}
+                <div className="mt-4 pt-4 border-t border-neutral-100">
+                  <button
+                    onClick={handleRemoveBackground}
+                    disabled={!imageSrc || isProcessing}
+                    className="w-full bg-neutral-900 text-white py-3 rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition-colors font-bold shadow-md text-sm"
+                  >
+                    {isProcessing
+                      ? "⏳ Memproses AI..."
+                      : "🪄 Hapus Background"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* --- SISI BELAKANG --- */}
+            <div className="w-full flex flex-col items-center pt-8 border-t border-neutral-200">
+              <div className="transform scale-[0.95] sm:scale-100 md:scale-110 xl:scale-125 origin-top mb-4 sm:mb-8 md:mb-12">
+                <div
+                  ref={backCardRef}
+                  className="shadow-2xl relative overflow-hidden"
+                  style={{
+                    width: "324px",
+                    height: "204px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <img
+                    src={currentBack.image}
+                    alt="Template Back"
+                    crossOrigin="anonymous"
+                    className="absolute inset-0 w-full h-full"
+                    style={{ borderRadius: "8px", objectFit: "fill" }}
+                  />
+
+                  <div
+                    className="absolute text-center font-mono font-bold whitespace-nowrap"
+                    style={{
+                      bottom: currentBack.serial.bottom,
+                      right: currentBack.serial.right,
+                      width: currentBack.serial.width,
+                      fontSize: currentBack.serial.fontSize,
+                      color: currentBack.serial.color,
+                      lineHeight: "1",
+                      padding: 0,
+                      margin: 0,
+                    }}
+                  >
+                    {serial}
+                  </div>
+
+                  <div
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      bottom: currentBack.barcode.bottom,
+                      right: currentBack.barcode.right,
+                      width: currentBack.barcode.width,
+                      height: currentBack.barcode.height,
+                    }}
+                  >
+                    <Barcode
+                      value={serial || "000000"}
+                      width={0.8}
+                      height={22}
+                      displayValue={false}
+                      margin={0}
+                      background="transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========== FORM CONTROLS (Di Bawah pada Mobile, Kiri pada Desktop) ========== */}
+          <div className="w-full lg:w-5/12 bg-white p-6 rounded-xl shadow-sm border border-neutral-200/60 space-y-4 order-2 lg:order-1">
             <h3 className="text-lg font-semibold text-neutral-800">
               1. Pilih Template
             </h3>
@@ -343,216 +640,17 @@ export default function DevIDCardTest() {
               />
             </div>
 
-            <h3 className="text-lg font-semibold text-neutral-800 pt-4 border-t">
-              3. Upload Foto
-            </h3>
-
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="w-full"
-              />
-            </div>
-
-            <div className="pt-4 border-t flex flex-col gap-3">
-              <button
-                onClick={handleRemoveBackground}
-                disabled={!imageSrc || isProcessing}
-                className="w-full bg-neutral-900 text-white py-2 rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition-colors"
-              >
-                {isProcessing
-                  ? "⏳ Memproses AI..."
-                  : "🪄 Hapus Background (Tes AI)"}
-              </button>
-
+            <div className="pt-6 border-t flex flex-col gap-3">
               <button
                 onClick={handlePrintPDF}
-                className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition-colors"
+                className="w-full bg-pink-600 text-white py-3 rounded-lg hover:bg-pink-700 transition-colors font-bold shadow-md"
               >
                 📄 Unduh PDF Depan + Belakang
               </button>
-              
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <p className="text-xs text-blue-800">
-                  💡 <strong>Preview</strong> menampilkan koordinat asli dari template.<br/>
-                  <strong>PDF</strong> otomatis disesuaikan agar hasil print sesuai dengan preview.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== LIVE PREVIEW ========== */}
-          <div className="bg-neutral-100 p-6 rounded-xl border border-neutral-200/60 flex flex-col items-center justify-start gap-8 overflow-y-auto max-h-[800px]">
-            {/* --- SISI DEPAN --- */}
-            <div className="w-full flex flex-col items-center">
-              <h3 className="text-sm font-semibold text-neutral-600 mb-3 w-full text-left">
-                🎴 Sisi Depan
-              </h3>
-              <div
-                ref={frontCardRef}
-                className="shadow-xl relative overflow-hidden"
-                style={{
-                  width: "324px",
-                  height: "204px",
-                  borderRadius: "8px",
-                }}
-              >
-                {/* Template Background Image */}
-                <img
-                  src={currentFront.image}
-                  alt="Template Front"
-                  crossOrigin="anonymous"
-                  className="absolute inset-0 w-full h-full"
-                  style={{ borderRadius: "8px", objectFit: "fill", zIndex: 10 }}
-                />
-
-                {/* Photo Area (Di atas template) */}
-                <div
-                  className="absolute overflow-hidden flex items-center justify-center"
-                  style={{
-                    top: currentFront.photo.top,
-                    left: currentFront.photo.left,
-                    width: currentFront.photo.width,
-                    height: currentFront.photo.height,
-                    borderRadius: currentFront.photo.borderRadius || '0px',
-                    zIndex: 20, // Layer atas
-                  }}
-                >
-                  {processedImg || imageSrc ? (
-                    <img
-                      src={processedImg || imageSrc || ""}
-                      alt="Customer"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="bg-white/50 text-pink-600 text-xs text-center p-2 rounded border-2 border-dashed border-pink-300">
-                      Area Foto
-                    </div>
-                  )}
-                </div>
-
-                {/* Layer 3: Text - PREVIEW (Koordinat Asli dari Template) */}
-                {/* Name */}
-                <div
-                  className="absolute font-bold whitespace-nowrap"
-                  style={{
-                    top: currentFront.name.top,
-                    left: currentFront.name.left,
-                    width: currentFront.name.width,
-                    fontSize: currentFront.name.fontSize,
-                    color: currentFront.name.color,
-                    lineHeight: '1',
-                    padding: 0,
-                    margin: 0,
-                    zIndex: 30,
-                  }}
-                >
-                  {name}
-                </div>
-
-                {/* Zodiac */}
-                <div
-                  className="absolute font-semibold whitespace-nowrap"
-                  style={{
-                    top: currentFront.zodiac.top,
-                    left: currentFront.zodiac.left,
-                    width: currentFront.zodiac.width,
-                    fontSize: currentFront.zodiac.fontSize,
-                    color: currentFront.zodiac.color,
-                    lineHeight: '1',
-                    padding: 0,
-                    margin: 0,
-                    zIndex: 30,
-                  }}
-                >
-                  {zodiac}
-                </div>
-
-                {/* Hobby */}
-                <div
-                  className="absolute font-semibold whitespace-nowrap"
-                  style={{
-                    top: currentFront.hobby.top,
-                    left: currentFront.hobby.left,
-                    width: currentFront.hobby.width,
-                    fontSize: currentFront.hobby.fontSize,
-                    color: currentFront.hobby.color,
-                    lineHeight: '1',
-                    padding: 0,
-                    margin: 0,
-                    zIndex: 30,
-                  }}
-                >
-                  {hobby}
-                </div>
-              </div>
-            </div>
-
-            {/* --- SISI BELAKANG --- */}
-            <div className="w-full flex flex-col items-center pt-6 border-t border-neutral-200">
-              <h3 className="text-sm font-semibold text-neutral-600 mb-3 w-full text-left">
-                🎴 Sisi Belakang
-              </h3>
-              <div
-                ref={backCardRef}
-                className="shadow-xl relative overflow-hidden"
-                style={{
-                  width: "324px",
-                  height: "204px",
-                  borderRadius: "8px",
-                }}
-              >
-                {/* Template Background Image */}
-                <img
-                  src={currentBack.image}
-                  alt="Template Back"
-                  crossOrigin="anonymous"
-                  className="absolute inset-0 w-full h-full"
-                  style={{ borderRadius: "8px", objectFit: "fill" }}
-                />
-
-                {/* Serial Number — di atas barcode */}
-                <div
-                  className="absolute text-center font-mono font-bold whitespace-nowrap"
-                  style={{
-                    bottom: currentBack.serial.bottom,
-                    right: currentBack.serial.right,
-                    width: currentBack.serial.width,
-                    fontSize: currentBack.serial.fontSize,
-                    color: currentBack.serial.color,
-                    lineHeight: '1',
-                    padding: 0,
-                    margin: 0,
-                  }}
-                >
-                  {serial}
-                </div>
-
-                <div
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    bottom: currentBack.barcode.bottom,
-                    right: currentBack.barcode.right,
-                    width: currentBack.barcode.width,
-                    height: currentBack.barcode.height,
-                  }}
-                >
-                  <Barcode
-                    value={serial || "000000"}
-                    width={0.8}
-                    height={22}
-                    displayValue={false}
-                    margin={0}
-                    background="transparent"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
-        
+
         {/* ========== HIDDEN PDF RENDER (dengan offset kompensasi) ========== */}
         <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
           {/* SISI DEPAN - PDF */}
@@ -581,7 +679,7 @@ export default function DevIDCardTest() {
                 left: currentFront.photo.left,
                 width: currentFront.photo.width,
                 height: currentFront.photo.height,
-                borderRadius: currentFront.photo.borderRadius || '0px',
+                borderRadius: currentFront.photo.borderRadius || "0px",
                 zIndex: 20,
               }}
             >
@@ -603,7 +701,7 @@ export default function DevIDCardTest() {
                 width: pdfFront.name.width,
                 fontSize: pdfFront.name.fontSize,
                 color: pdfFront.name.color,
-                lineHeight: '1',
+                lineHeight: "1",
                 padding: 0,
                 margin: 0,
                 zIndex: 30,
@@ -620,7 +718,7 @@ export default function DevIDCardTest() {
                 width: pdfFront.zodiac.width,
                 fontSize: pdfFront.zodiac.fontSize,
                 color: pdfFront.zodiac.color,
-                lineHeight: '1',
+                lineHeight: "1",
                 padding: 0,
                 margin: 0,
                 zIndex: 30,
@@ -637,7 +735,7 @@ export default function DevIDCardTest() {
                 width: pdfFront.hobby.width,
                 fontSize: pdfFront.hobby.fontSize,
                 color: pdfFront.hobby.color,
-                lineHeight: '1',
+                lineHeight: "1",
                 padding: 0,
                 margin: 0,
                 zIndex: 30,
@@ -673,7 +771,7 @@ export default function DevIDCardTest() {
                 width: currentBack.serial.width,
                 fontSize: currentBack.serial.fontSize,
                 color: currentBack.serial.color,
-                lineHeight: '1',
+                lineHeight: "1",
                 padding: 0,
                 margin: 0,
               }}
