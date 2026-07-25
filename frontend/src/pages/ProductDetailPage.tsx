@@ -292,70 +292,39 @@ export default function ProductDetailPage() {
                       )} */}
                     </div>
 
-                    {product.variants.length < 6 ? (
-                      <div className="flex flex-wrap gap-3">
-                        {product.variants.map((variant) => {
-                          const isSelected = selectedVariantId === variant.id;
-                          const isDisabled = variant.available <= 0;
-                          return (
-                            <button
-                              key={variant.id}
-                              onClick={() => setSelectedVariantId(variant.id)}
-                              disabled={isDisabled}
-                              className={`
-                                min-w-[3rem] px-4 py-3 rounded-lg text-sm font-medium border ux-transition-color relative overflow-hidden
-                                ${
-                                  isSelected
-                                    ? "border-[#e63d75] bg-[#e63d75] text-white shadow-lg shadow-pink-200"
-                                    : isDisabled
-                                      ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice"
-                                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                                }
-                              `}
-                            >
-                              {variant.name}
-                              {isDisabled && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-full h-[1px] bg-gray-300 -rotate-45" />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={selectedVariantId ?? ""}
-                          onChange={(e) =>
-                            setSelectedVariantId(Number(e.target.value))
-                          }
-                          className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-5 py-4 text-gray-900 outline-none focus:border-[#e63d75] focus:ring-1 focus:ring-[#e63d75] ux-transition-color cursor-pointer"
-                        >
-                          {product.variants.length === 0 && (
-                            <option value="">No variants available</option>
-                          )}
-                          {product.variants.map((variant) => (
-                            <option
-                              key={variant.id}
-                              value={variant.id}
-                              disabled={variant.available <= 0}
-                            >
-                              {variant.name}{" "}
-                              {variant.available <= 0 ? "(Out of Stock)" : ""}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                          <svg
-                            className="w-4 h-4 fill-current"
-                            viewBox="0 0 20 20"
+                    <div className="flex flex-wrap gap-3">
+                      {product.variants.length === 0 && (
+                        <p className="text-gray-500 text-sm italic">No variants available</p>
+                      )}
+                      {product.variants.map((variant) => {
+                        const isSelected = selectedVariantId === variant.id;
+                        const isDisabled = variant.available <= 0;
+                        return (
+                          <button
+                            key={variant.id}
+                            onClick={() => setSelectedVariantId(variant.id)}
+                            disabled={isDisabled}
+                            className={`
+                              min-w-[3rem] px-4 py-3 rounded-lg text-sm font-medium border ux-transition-color relative overflow-hidden
+                              ${
+                                isSelected
+                                  ? "border-[#e63d75] bg-[#e63d75] text-white shadow-lg shadow-pink-200"
+                                  : isDisabled
+                                    ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                              }
+                            `}
                           >
-                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
+                            {variant.name}
+                            {isDisabled && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-full h-[1px] bg-gray-300 -rotate-45" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Actions */}

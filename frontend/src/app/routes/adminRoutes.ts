@@ -62,9 +62,10 @@ const BookingPageManager = lazy(
 const EntranceBookingManager = lazy(
   () => import("../../pages/admin/EntranceBookingManager"),
 );
-const DressingRoomManager = lazy(
-  () => import("../../pages/admin/DressingRoomManager"),
-);
+// DISABLED: Dressing Room Manager
+// const DressingRoomManager = lazy(
+//   () => import("../../pages/admin/DressingRoomManager"),
+// );
 const RentalOrders = lazy(() => import("../../pages/admin/RentalOrders"));
 const DressingRoomScan = lazy(
   () => import("../../pages/admin/DressingRoomScanPage"),
@@ -125,7 +126,8 @@ const CreateRentalTransaction = lazy(
 const ProductQRCatalog = lazy(
   () => import("../../pages/admin/ProductQRCatalog"),
 );
-const DressingShop = lazy(() => import("../../pages/DressingShop"));
+// DISABLED: Dressing Store
+// const DressingShop = lazy(() => import("../../pages/DressingShop"));
 
 export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/dashboard", Page: Dashboard },
@@ -156,7 +158,8 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/charm-bar-page", Page: CharmBarPageManager },
   { path: "/admin/rollerblade-page", Page: RollerbladePageManager },
   { path: "/admin/onstage-page", Page: OnStagePageManager },
-  { path: "/admin/dressing-room", Page: DressingRoomManager },
+  // DISABLED: Dressing Room Manager
+  // { path: "/admin/dressing-room", Page: DressingRoomManager },
   { path: "/admin/rental-orders", Page: RentalOrders },
   { path: "/admin/dressing-room-scan", Page: DressingRoomScan },
   { path: "/admin/glam-page", Page: BeautyPosterManager },
@@ -180,7 +183,8 @@ export const adminRouteConfigs: AppRouteConfig[] = [
   { path: "/admin/rental-transactions", Page: RentalTransactions },
   { path: "/admin/rental-order", Page: CreateRentalTransaction },
   { path: "/admin/product-qr-catalog", Page: ProductQRCatalog },
-  { path: "/admin/dressing", Page: DressingShop },
+  // DISABLED: Dressing Store
+  // { path: "/admin/dressing", Page: DressingShop },
   { path: "/admin/category-sales", Page: CategorySalesPage },
   { path: "/admin/dev-id-card-test", Page: DevIDCardTest },
   { path: "/admin/id-card-templates", Page: IDCardTemplateManager },

@@ -525,8 +525,8 @@ const ServiceShop = () => {
                 </div>
               </div>
 
-              {/* Subcategory tabs - shown when a category is selected and has subcategories */}
-              {activeCategory !== "all" && activeSubcategories.length > 0 ? (
+              {/* Subcategory tabs - shown when a category is selected and has more than 1 subcategory */}
+              {activeCategory !== "all" && activeSubcategories.length > 1 ? (
                 <div className="w-full -mt-1 mb-3">
                   <div className="mx-auto w-fit max-w-full overflow-x-auto category-scroll-thin px-2 pb-2">
                     <div className="flex gap-1.5 md:gap-2">

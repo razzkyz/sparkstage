@@ -419,18 +419,20 @@ export const DRESSING_ROOM_ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       //   icon: "shopping_bag",
       //   path: "/admin/dressing-room-products",
       // },
-      {
-        id: "dressing-room",
-        label: "Dressing Room Manager",
-        icon: "styler",
-        path: "/admin/dressing-room",
-      },
-      {
-        id: "dressing-store",
-        label: "Dressing Store",
-        icon: "storefront",
-        path: "/admin/dressing",
-      },
+      // DISABLED: Dressing Room Manager
+      // {
+      //   id: "dressing-room",
+      //   label: "Dressing Room Manager",
+      //   icon: "styler",
+      //   path: "/admin/dressing-room",
+      // },
+      // DISABLED: Dressing Store
+      // {
+      //   id: "dressing-store",
+      //   label: "Dressing Store",
+      //   icon: "storefront",
+      //   path: "/admin/dressing",
+      // },
       {
         id: "dressing-room-claim",
         label: "Klaim & Laporan",
@@ -706,18 +708,20 @@ export const ADMIN_MENU_SECTIONS: AdminMenuSection[] = [
       //   icon: "shopping_bag",
       //   path: "/admin/dressing-room-products",
       // },
-      {
-        id: "dressing-room",
-        label: "Dressing Room Manager",
-        icon: "styler",
-        path: "/admin/dressing-room",
-      },
-      {
-        id: "dressing-store",
-        label: "Dressing Store",
-        icon: "storefront",
-        path: "/admin/dressing",
-      },
+      // DISABLED: Dressing Room Manager
+      // {
+      //   id: "dressing-room",
+      //   label: "Dressing Room Manager",
+      //   icon: "styler",
+      //   path: "/admin/dressing-room",
+      // },
+      // DISABLED: Dressing Store
+      // {
+      //   id: "dressing-store",
+      //   label: "Dressing Store",
+      //   icon: "storefront",
+      //   path: "/admin/dressing",
+      // },
       {
         id: "dressing-room-claim",
         label: "Klaim & Laporan",
