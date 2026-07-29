@@ -539,7 +539,7 @@ const OnStage = () => {
       .filter(
         (p) =>
           p.defaultVariantId &&
-          p.retailCategoryName?.toLowerCase() === "spark my style",
+          p.retailCategoryName?.toLowerCase() === "spark my face",
       )
       .slice(0, 10);
   }, [products]);

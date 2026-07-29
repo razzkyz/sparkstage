@@ -11,11 +11,11 @@ import {
   LogOut,
   Menu,
   ReceiptText,
-  ShoppingCart,
-  ShoppingBag,
+  // ShoppingCart,
+  // ShoppingBag,
   Ticket,
   UserRound,
-  Wrench,
+  // Wrench,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -31,7 +31,7 @@ type NavItem = {
 import { useAuth } from "../contexts/AuthContext";
 import { useTicketCount } from "../hooks/useTicketCount";
 import { useOrderCount } from "../hooks/useOrderCount";
-import { useCart } from "../contexts/cartStore";
+// import { useCart } from "../contexts/cartStore";
 import {
   useLoyaltyPoints,
   getLoyaltyRankByTier,
@@ -43,7 +43,7 @@ const Navbar = () => {
   const { user, signOut, isAdmin, loggingOut } = useAuth();
   const { count: ticketCount } = useTicketCount();
   const { count: orderCount } = useOrderCount();
-  const { totalQuantity } = useCart();
+  // const { totalQuantity } = useCart();
   const { data: loyaltyData } = useLoyaltyPoints(user?.id);
   const loyaltyPoints = loyaltyData?.total_points ?? 0;
   const loyaltyTier = loyaltyData?.tier_level ?? 0;
@@ -95,17 +95,17 @@ const Navbar = () => {
 
   const navItems: NavItem[] = [
     { key: "on-stage", label: "ON STAGE", to: "/on-stage", icon: Camera },
-    {
-      key: "booking",
-      label: "BOOKING",
-      to: "/booking",
-      isPink: true,
-      icon: Ticket,
-    },
+    // {
+    //   key: "booking",
+    //   label: "BOOKING",
+    //   to: "/booking",
+    //   isPink: true,
+    //   icon: Ticket,
+    // },
     // { key: "rollerblade", label: "ROLLER BLADE", to: "/rollerblade", icon: ShoppingBag },
-    { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
+    // { key: "shop", label: "SHOP", to: "/shop", icon: ShoppingBag },
 
-    { key: "service", label: "SERVICE", to: "/service", icon: Wrench },
+    // { key: "service", label: "SERVICE", to: "/service", icon: Wrench },
     { key: "event", label: "EVENT", to: "/events", icon: CalendarDays },
     { key: "news", label: "NEWS", to: "/news", icon: Newspaper },
   ];
@@ -375,7 +375,7 @@ const Navbar = () => {
                   </Link>
 
                   {/* Cart */}
-                  <Link
+                  {/* <Link
                     to="/cart"
                     className="group relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200 active:scale-90"
                     aria-label={t("nav.cart")}
@@ -386,7 +386,7 @@ const Navbar = () => {
                         {totalQuantity}
                       </span>
                     )}
-                  </Link>
+                  </Link> */}
 
                   {/* Profile / Login */}
                   {user ? (
@@ -479,7 +479,7 @@ const Navbar = () => {
 
                   {/* Mobile: Cart */}
 
-                  <Link
+                  {/* <Link
                     to="/cart"
                     className="relative text-gray-600 hover:text-main-600 transition-colors"
                     aria-label={t("nav.cart")}
@@ -490,7 +490,7 @@ const Navbar = () => {
                         {totalQuantity}
                       </span>
                     )}
-                  </Link>
+                  </Link> */}
 
                   {/* Mobile: Profile/Login — kondisional berdasarkan status login */}
                   {user ? (
@@ -590,9 +590,8 @@ const Navbar = () => {
                         />
                       )}
 
-                      {(item.key === "booking" || item.key === "on-stage") && Icon && (
-                        <Icon className="w-4 h-4 relative z-10" />
-                      )}
+                      {(item.key === "booking" || item.key === "on-stage") &&
+                        Icon && <Icon className="w-4 h-4 relative z-10" />}
                       <span className="relative z-10">{item.label}</span>
 
                       {/* Active: sliding underline pill with glow */}
